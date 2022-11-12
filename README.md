@@ -1,2 +1,2 @@
 # CommunityLib
- A community library that contains tools for the midding of Shadows of Forbidden Gods
+ A community library that contains tools for the modding of Shadows of Forbidden Gods
