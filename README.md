@@ -14,7 +14,7 @@ The system only runs at the start of each turn, so any changes to the data struc
 
 #### Interface to Type Casting
 Due to the use of reflection to collect the data, almost all results are extracted as IList or IDictionary interfaces of unknown types. In order to resolve this, the result must be cast to the expected type.
-
+The compiler should give you a type conversion error if you have failed to do so.
 ```csharp
 // Example Code
 # using CommunityLib
@@ -28,4 +28,3 @@ public class exampleMod : Assets.Code.Modding.ModKernel
 }
 
 ```
-This step must be performed manually and accurately. Failure to do so will result in a runtime crash.
