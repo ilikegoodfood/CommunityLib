@@ -36,7 +36,7 @@ public class exampleMod : Assets.Code.Modding.ModKernel
         // Always chek that you got a value back before operating on it.
         if (warlords != null)
         {
-            // Do stuff with warlords here...
+            // Do stuff with player controlled warlords here...
         }
     }
 }
