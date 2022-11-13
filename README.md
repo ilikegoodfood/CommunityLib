@@ -15,6 +15,10 @@ The system only runs at the start of each turn, so any changes to the data struc
 #### Interface to Type Casting
 Due to the use of reflection to collect the data, almost all results are extracted as IList or IDictionary interfaces of unknown types. In order to resolve this, the result must be cast to the expected type.
 The compiler should give you a type conversion error if you have failed to do so.
+
+### Code Example
+This is an example of code that gets all the player controlled warlords belonging to a specific orc social group
+
 ```csharp
 // Example Code
 # using CommunityLib
