@@ -2,6 +2,7 @@
 using System.Collections;
 using System;
 using System.Collections.Generic;
+using static Unity.IO.LowLevel.Unsafe.AsyncReadManagerMetrics;
 
 namespace CommunityLib
 {
@@ -35,43 +36,79 @@ namespace CommunityLib
             return (IDictionary)Activator.CreateInstance(genericDictionaryType);
         }
 
+        public IList GetOrCreateKeyListPair(IDictionary dict, Type t)
+        {
+            if (dict.Contains(t))
+            {
+                return dict[t] as IList;
+            }
+            else
+            {
+                IList  value = CreateList(t);
+                dict.Add(t, value);
+                return value;
+            }
+        }
+
+        public IDictionary CreateSubDictionary(Type t)
+        {
+            return CreateDictionary(t, CreateList(t));
+        }
+
+        public bool TryCreateSubDictionary(IDictionary dict, object key, Type t)
+        {
+            if (!dict.Contains(key))
+            {
+                dict.Add(key, CreateSubDictionary(t));
+                return true;
+            }
+            return false;
+        }
+
+        public bool TryCreateSubDictionary(IDictionary dict, Type key, Type t)
+        {
+            if (!dict.Contains(key))
+            {
+                dict.Add(key, CreateSubDictionary(t));
+                return true;
+            }
+            return false;
+        }
+
+        public void CreateAndOrAddToKeyListPair(IDictionary dict, Type t, object value)
+        {
+            GetOrCreateKeyListPair(dict, t).Add(Convert.ChangeType(value, t));
+        }
+
         public void FilterSocialGroups()
         {
+            IDictionary dict = cache.socialGroupsByType;
+            IDictionary dictE = cache.socialGroupsByTypeExclusive;
+
             foreach (SocialGroup sG in map.socialGroups)
             {
+                // Initialize universal variables
                 Type t = sG.GetType();
-                IList value;
-                IDictionary dict = cache.socialGroupsByType;
-                if (dict.Contains(t))
-                {
-                    value = dict[t] as IList;
-                }
-                else
-                {
-                    value = CreateList(t);
-                    dict.Add(t, value);
-                }
-                value.Add(Convert.ChangeType(sG, t));
 
+                // Conduct one-off operations
+                // Add to Exclusive.
+                CreateAndOrAddToKeyListPair(dictE, t, sG);
+
+                // Initialize loop onl-variables
+                Type targetT = typeof(SocialGroup);
                 bool flag = false;
+
                 while (flag == false)
                 {
-                    t = t.BaseType;
+                    CreateAndOrAddToKeyListPair(dict, t, sG);
 
-                    if (dict.Contains(t))
+                    if (t == targetT)
                     {
-                        value = dict[t] as IList;
+                        flag = true;
                     }
                     else
                     {
-                        value = CreateList(t);
-                        dict.Add(t, value);
-                    }
-                    value.Add(Convert.ChangeType(sG, t));
-
-                    if (t == typeof(SocialGroup))
-                    {
-                        flag = true;
+                        t = t.BaseType;
                     }
                 }
             }
@@ -81,7 +118,7 @@ namespace CommunityLib
         {
             foreach (Unit u in map.units)
             {
-                // Initialize universal variable
+                // Initialize universal variables
                 Type t = u.GetType();
                 bool commandable = u.isCommandable();
                 IList valueL;
@@ -89,113 +126,52 @@ namespace CommunityLib
 
                 // Dictionaries being operated on at all level.
                 IDictionary uBySG = cache.unitsBySocialGroup;
+                IDictionary uBySGE = cache.unitsBySocialGroup;
                 IDictionary uBySGByT = cache.unitsBySocialGroupByType;
+                IDictionary uBySGByTE = cache.unitsBySocialGroupByType;
                 IDictionary cUBySG = cache.commandableUnitsBySocialGroup;
+                IDictionary cUBySGE = cache.commandableUnitsBySocialGroup;
                 IDictionary cUBySGByT = cache.commandableUnitsBySocialGroupByType;
+                IDictionary cUBySGByTE = cache.commandableUnitsBySocialGroupByType;
 
                 // Conduct one-off operations
                 // Add units to unitsBySocialGroups
-                if (uBySG.Contains(u.society))
-                {
-                    valueL = uBySG[u.society] as List<Unit>;
-                }
-                else
-                {
-                    valueL = new List<Unit>();
-                    uBySG.Add(t, valueL);
-                }
-                valueL.Add(u);
-                // Establish subdictionary for social group in unitsBySocialGroupsByType
-                if (!uBySGByT.Contains(u.society))
-                {
-                    valueL = CreateList(t);
-                    valueD = CreateDictionary(t, valueL);
-                    uBySGByT.Add(u.society, valueD);
-                }
-                
+                CreateAndOrAddToKeyListPair(uBySG, t, u);
+                CreateAndOrAddToKeyListPair(uBySGE, t, u);
+                // GetOrCreate subdictionary for social group in unitsBySocialGroupsByType
+                TryCreateSubDictionary(uBySGByT, u.society, t);
+                TryCreateSubDictionary(uBySGByTE, u.society, t);
+                CreateAndOrAddToKeyListPair(uBySGByTE[u.society] as IDictionary, t, u);
+
                 if (commandable)
                 {
                     // Add units to commandableUnitsBySocialGroups
-                    if (cUBySG.Contains(t))
-                    {
-                        valueL = cUBySG[t] as IList;
-                    }
-                    else
-                    {
-                        valueL = CreateList(t);
-                        cUBySG.Add(t, valueL);
-                    }
-                    valueL.Add(u);
-                    // Establish subdictionary for social group in commandableUnitsBySocialGroupsByType
-                    if (!cUBySGByT.Contains(u.society))
-                    {
-                        valueL = CreateList(t);
-                        valueD = CreateDictionary(t, valueL);
-                        cUBySGByT.Add(u.society, valueD);
-                    }
+                    CreateAndOrAddToKeyListPair(cUBySG, t, u);
+                    CreateAndOrAddToKeyListPair(cUBySGE, t, u);
+                    // GetOrCreate subdictionary for social group in commandableUnitsBySocialGroupsByType
+                    TryCreateSubDictionary(cUBySGByT, u.society, t);
+                    TryCreateSubDictionary(cUBySGByTE, u.society, t);
+                    CreateAndOrAddToKeyListPair(cUBySGByTE[u.society] as IDictionary, t, u);
                 }
 
                 // Initialize loop-only variables
                 Type targetT = typeof(Unit);
                 bool flag = false;
 
-                IDictionary uByT = cache.unitsByType;
-                IDictionary cUByT = cache.commandableUnitsByType;
-
-                // Initialize iteration specific variables
-                IDictionary uBySGByT_uByT;
-                IDictionary cUBySGByT_uByT;
                 // Conduct Operations for all Types t, from obj.GetType() to targetT, inclusively
                 while (flag == false)
                 {
-                    uBySGByT_uByT = uBySGByT[u.society] as IDictionary;
-                    cUBySGByT_uByT = cUBySGByT[u.society] as IDictionary;
+                    // The subdictionaries used in this loop were checked for, and if neccesary created, earlier in this method.
                     // Add units to unitsByType
-                    if (uByT.Contains(t))
-                    {
-                        valueL = uByT[t] as IList;
-                    }
-                    else
-                    {
-                        valueL = CreateList(t);
-                        uByT.Add(t, valueL);
-                    }
-                    valueL.Add(Convert.ChangeType(u, t));
+                    CreateAndOrAddToKeyListPair(cache.unitsByType, t, u);
                     // Add units to unitsBySocialGroupByType subdictionary, unitsByType
-                    if (uBySGByT_uByT.Contains(t))
-                    {
-                        valueL = uBySGByT_uByT[t] as IList;
-                    }
-                    else
-                    {
-                        valueL = CreateList(t);
-                        uBySGByT_uByT.Add(t, valueL);
-                    }
-                    valueL.Add(Convert.ChangeType(u, t));
+                    CreateAndOrAddToKeyListPair(uBySGByT[u.society] as IDictionary, t, u);
                     if (commandable)
                     {
                         // Add units to commandableUnitsByType
-                        if (cUByT.Contains(t))
-                        {
-                            valueL = cUByT[t] as IList;
-                        }
-                        else
-                        {
-                            valueL = CreateList(t);
-                            cUByT.Add(t, valueL);
-                        }
-                        valueL.Add(Convert.ChangeType(u, t));
+                        CreateAndOrAddToKeyListPair(cache.commandableUnitsByType, t, u);
                         // Add units to unitsBySocialGroupByType subdictionary, unitsByType
-                        if (cUBySGByT_uByT.Contains(t))
-                        {
-                            valueL = cUBySGByT_uByT[t] as IList;
-                        }
-                        else
-                        {
-                            valueL = CreateList(t);
-                            cUBySGByT_uByT.Add(t, valueL);
-                        }
-                        valueL.Add(Convert.ChangeType(u, t));
+                        CreateAndOrAddToKeyListPair(cUBySGByT[u.society] as IDictionary, t, u);
                     }
 
                     // Check if Type t is targetT. End loop if it is.
