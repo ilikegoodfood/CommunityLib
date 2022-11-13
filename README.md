@@ -21,9 +21,23 @@ The compiler should give you a type conversion error if you have failed to do so
 
 public class exampleMod : Assets.Code.Modding.ModKernel
 {
+// A method that pulls data from the CommunityLib cache.
     public void exampleMethod()
     {
-        List<UAE_Warlord> = CommunityLib.ModCore.cache.commandableUnitsBySocialGroupByType[exampleOrcSocialGroup][typeof(UAE_Warlord)] as List<UAE_Warlord>;
+        // Always check to see if a vlaue is present before getting it's data.
+        // The version of Unity's C# framework that is packaged with the game does not implement IDictionary.TryGetValue(key), thus this 'if contains key get value' structure is neccesary.
+        List<UAE_Warlord> warlords;
+        if (CommunityLib.ModCore.cache.commandableUnitsBySocialGroupByType.Contains(exampleOrcSocialGroup) && CommunityLib.ModCore.cache.commandableUnitsBySocialGroupByType[exampleOrcSocialGroup].Contains(typeof(UAE_Warlord)))
+        {
+            // Always cast the returned list to the expected type. If you use the wrong types here, you will generate runtime errors that will get past the compiler.
+            warlords = CommunityLib.ModCore.cache.commandableUnitsBySocialGroupByType[exampleOrcSocialGroup][typeof(UAE_Warlord)] as List<UAE_Warlord>;
+        {
+        
+        // Always chek that you got a value back before operating on it.
+        if (warlords != null)
+        {
+            // Do stuff with warlords here...
+        }
     }
 }
 
