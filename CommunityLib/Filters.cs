@@ -278,7 +278,7 @@ namespace CommunityLib
                         TryCreateSubDictionary(cUBySGTByTE, tSG, typeof(Type));
 
                         CreateAndOrAddToKeyListPair(cUBySGT, tSG, typeof(Unit), u);
-                        CreateAndOrAddToKeyListPair(cUBySGTByTE[tSG] as IDictionary, tSG, tU, u);
+                        CreateAndOrAddToKeyListPair(cUBySGTByTE[tSG] as IDictionary, tU, tU, u);
                     }
 
                     //Console.WriteLine("CommunityLib: Starting Unit Type Loop");
