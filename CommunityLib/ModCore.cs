@@ -35,6 +35,7 @@ namespace CommunityLib
             // Begin Filtering Process.
             filters.FilterSocialGroups();
             filters.FilterUnits();
+            filters.FilterLocations();
             //testRoutine(map);
         }
 

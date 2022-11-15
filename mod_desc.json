@@ -2,6 +2,6 @@
 	"displayedName": "CommunityLib",
 	"prefix": "CLib",
 	"description": "This is a library that contains data gathering and helper functions to increase the efficiency and power of other mods.",
-	"versionsSupported":["0.12"],
+	"versionsSupported":["0.11", "0.12"],
 	"modCredit": "CommunityLib Developement Team"
 }

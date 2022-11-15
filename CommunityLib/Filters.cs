@@ -2,7 +2,6 @@
 using System.Collections;
 using System;
 using System.Collections.Generic;
-using static Unity.IO.LowLevel.Unsafe.AsyncReadManagerMetrics;
 
 namespace CommunityLib
 {
@@ -104,121 +103,469 @@ namespace CommunityLib
             {
                 //Console.WriteLine("CommunityLib: Filtering social group " + sG.getName() + " of type: " + sG.GetType().Name);
                 // Initialize universal variables
-                Type t = sG.GetType();
+                Type tSG = sG.GetType();
 
                 // Conduct one-off operations
-                //Console.WriteLine("CommunityLib: Conducting one-off operations");
-                // Add to Exclusive.
-                //Console.WriteLine("CommunityLib: Add to sGByTE");
-                CreateAndOrAddToKeyListPair(dictE, t, t, sG);
+                CreateAndOrAddToKeyListPair(dictE, tSG, tSG, sG);
 
-                //Console.WriteLine("CommunityLib: Starting While Loop");
                 // Initialize loop onl-variables
                 Type targetT = typeof(SocialGroup);
-                bool flag = false;
+                bool iterateSGT = true;
 
-                while (flag == false)
+                //Console.WriteLine("CommunityLib: Starting Social Group Type Loop");
+                while (iterateSGT)
                 {
-                    //Console.WriteLine("CommunityLib: Add to sGByT as " + t.Name);
-                    CreateAndOrAddToKeyListPair(dict, t, t, sG);
+                    CreateAndOrAddToKeyListPair(dict, tSG, tSG, sG);
 
-                    if (t == targetT)
+                    if (tSG == targetT)
                     {
-                        flag = true;
-                        //Console.WriteLine("CommunityLib: End Loop");
+                        iterateSGT = false;
+                        //Console.WriteLine("CommunityLib: End Social Group Type Loop");
                     }
                     else
                     {
-                        t = t.BaseType;
-                        //Console.WriteLine("CommunityLib: Iterate type to " + t.Name);
+                        tSG = tSG.BaseType;
+                        //Console.WriteLine("CommunityLib: Iterate type to " + tSG.Name);
                     }
                 }
+                //Console.WriteLine("CommunityLib: End Loop for Social Group " + sG.getName() + " of Type " + sG.GetType());
             }
+            //Console.WriteLine("CommunityLib: Completed Social Group Processing");
         }
 
         public void FilterUnits()
         {
+            // Initialize universal variables
+            Type tU;
+            Type tSG;
+            bool commandable;
+
+            // Dictionaries being operated on at all level.
+            IDictionary uByT = cache.unitsByType;
+            IDictionary uByTE = cache.unitsByTypeExclusive;
+            IDictionary uBySG = cache.unitsBySocialGroup;
+            IDictionary uBySGT = cache.unitsBySocialGroupType;
+            IDictionary uBySGTE = cache.unitsBySocialGroupTypeExclusive;
+            IDictionary uBySGByT = cache.unitsBySocialGroupByType;
+            IDictionary uBySGTByT = cache.unitsBySocialGroupTypeByType;
+            IDictionary uBySGTEByT = cache.unitsBySocialGroupTypeExclusiveByType;
+            IDictionary uBySGTByTE = cache.unitsBySocialGroupTypeByTypeExclusive;
+            IDictionary uBySGTEByTE = cache.unitsBySocialGroupTypeExclusiveByTypeExclusive;
+            IDictionary cUByT = cache.commandableUnitsByType;
+            IDictionary cUByTE = cache.commandableUnitsByTypeExclusive;
+            IDictionary cUBySG = cache.commandableUnitsBySocialGroup;
+            IDictionary cUBySGT = cache.commandableUnitsBySocialGroupType;
+            IDictionary cUBySGTE = cache.commandableUnitsBySocialGroupTypeExclusive;
+            IDictionary cUBySGByT = cache.commandableUnitsBySocialGroupByType;
+            IDictionary cUBySGTByT = cache.commandableUnitsBySocialGroupTypeByType;
+            IDictionary cUBySGTEByT = cache.commandableUnitsBySocialGroupTypeExclusiveByType;
+            IDictionary cUBySGTByTE = cache.commandableUnitsBySocialGroupTypeByTypeExclusive;
+            IDictionary cUBySGTEByTE = cache.commandableUnitsBySocialGroupTypeExclusiveByTypeExclusive;
+
+            // Initialize loop-only variables
+            bool iterateSGT;
+            bool iterateUT;
+            bool excludeSGT;
+            Type targetTSG = typeof(SocialGroup);
+            Type targetTU = typeof(Unit);
+
             foreach (Unit u in map.units)
             {
                 //Console.WriteLine("CommunityLib: Filtering unit " + u.getName() + " of type: " + u.GetType().Name);
-                // Initialize universal variables
-                Type t = u.GetType();
-                bool commandable = u.isCommandable();
+                // Set universal variables
+                tU = u.GetType();
+                tSG = u.society.GetType();
+                commandable = u.isCommandable();
+                //Console.WriteLine("CommunityLib: Commandable = " + commandable.ToString());
 
-                // Dictionaries being operated on at all level.
-                IDictionary uBySG = cache.unitsBySocialGroup;
-                IDictionary uBySGE = cache.unitsBySocialGroup;
-                IDictionary uBySGByT = cache.unitsBySocialGroupByType;
-                IDictionary uBySGByTE = cache.unitsBySocialGroupByType;
-                IDictionary cUBySG = cache.commandableUnitsBySocialGroup;
-                IDictionary cUBySGE = cache.commandableUnitsBySocialGroup;
-                IDictionary cUBySGByT = cache.commandableUnitsBySocialGroupByType;
-                IDictionary cUBySGByTE = cache.commandableUnitsBySocialGroupByType;
-
-                //Console.WriteLine("CommunityLib: Conducting one-off operations");
                 // Conduct one-off operations
-                // Add units to unitsBySocialGroups
-                //Console.WriteLine("CommunityLib: Add to uBySG and uBySGE");
+                CreateAndOrAddToKeyListPair(uByTE, tU, tU, u);
                 CreateAndOrAddToKeyListPair(uBySG, u.society, typeof(Unit), u);
-                CreateAndOrAddToKeyListPair(uBySGE, u.society, typeof(Unit), u);
-                // GetOrCreate subdictionary for social group in unitsBySocialGroupsByType
-                //Console.WriteLine("CommunityLib: Establishing <SocialGroup, SubDictionary<" + typeof(Type).Name + ", List<" + t.Name + ">> Pairs");
+                CreateAndOrAddToKeyListPair(uBySGTE, tSG, typeof(Unit), u);
+
+                // TryCreate SubDictionaries
                 TryCreateSubDictionary(uBySGByT, u.society, typeof(Type));
-                TryCreateSubDictionary(uBySGByTE, u.society, typeof(Type));
-                CreateAndOrAddToKeyListPair(uBySGByTE[u.society] as IDictionary, t, t, u);
+                TryCreateSubDictionary(uBySGTEByT, tSG, typeof(Type));
+                TryCreateSubDictionary(uBySGTEByTE, tSG, typeof(Type));
+                CreateAndOrAddToKeyListPair(uBySGTEByTE[tSG] as IDictionary, tU, tU, u);
 
                 if (commandable)
                 {
-                    // Add units to commandableUnitsBySocialGroups
-                    //Console.WriteLine("CommunityLib: Add to cUBySG");
+                    CreateAndOrAddToKeyListPair(cUByTE, tU, tU, u);
                     CreateAndOrAddToKeyListPair(cUBySG, u.society, typeof(Unit), u);
-                    CreateAndOrAddToKeyListPair(cUBySGE, u.society, typeof(Unit), u);
-                    // GetOrCreate subdictionary for social group in commandableUnitsBySocialGroupsByType
-                    //Console.WriteLine("CommunityLib: Establishing Key SG, SubDictionary Pairs for commandable");
+                    CreateAndOrAddToKeyListPair(cUBySGTE, tSG, typeof(Unit), u);
+
+                    // TryCreate SubDictionaries
                     TryCreateSubDictionary(cUBySGByT, u.society, typeof(Type));
-                    TryCreateSubDictionary(cUBySGByTE, u.society, typeof(Type));
-                    CreateAndOrAddToKeyListPair(cUBySGByTE[u.society] as IDictionary, t, t, u);
+                    TryCreateSubDictionary(cUBySGTEByT, tSG, typeof(Type));
+                    TryCreateSubDictionary(cUBySGTEByTE, tSG, typeof(Type));
+                    CreateAndOrAddToKeyListPair(cUBySGTEByTE[tSG] as IDictionary, tU, tU, u);
                 }
 
-                //Console.WriteLine("CommunityLib: Starting While Loop");
-                // Initialize loop-only variables
-                Type targetT = typeof(Unit);
-                bool flag = false;
-
-                // Conduct Operations for all Types t, from obj.GetType() to targetT, inclusively
-                while (flag == false)
+                //Console.WriteLine("CommunityLib: Starting Social Group Type Loop");
+                //Console.WriteLine("ComminityLib: Filtering for Social Group " + u.society.name + " of type " + tSG.Name);
+                // Set loop-only variables
+                iterateSGT = true;
+                excludeSGT = true;
+                
+                // Conduct Operations for all Types tSG, from obj.GetType() to targetTSG, inclusively
+                while (iterateSGT)
                 {
                     // The subdictionaries used in this loop were checked for, and if neccesary created, earlier in this method.
-                    // Add units to unitsByType
-                    //Console.WriteLine("CommunityLib: Add to uByT");
-                    CreateAndOrAddToKeyListPair(cache.unitsByType, t, t, u);
-                    // Add units to unitsBySocialGroupByType subdictionary, unitsByType
-                    //Console.WriteLine("CommunityLib: Add to uBySGByT[" + u.society.name + "]");
-                    CreateAndOrAddToKeyListPair(uBySGByT[u.society] as IDictionary, t, t, u);
+                    iterateUT = true;
+                    tU = u.GetType();
+
+                    // TryCreate SubDictionaries
+                    TryCreateSubDictionary(uBySGTByT, tSG, typeof(Type));
+                    TryCreateSubDictionary(uBySGTByTE, tSG, typeof(Type));
+
+                    CreateAndOrAddToKeyListPair(uBySGT, tSG, typeof(Unit), u);
+                    CreateAndOrAddToKeyListPair(uBySGTByTE[tSG] as IDictionary, tU, tU, u);
+
                     if (commandable)
                     {
-                        // Add units to commandableUnitsByType
-                        //Console.WriteLine("CommunityLib: Add to cUByT");
-                        CreateAndOrAddToKeyListPair(cache.commandableUnitsByType, t, t, u);
-                        // Add units to unitsBySocialGroupByType subdictionary, unitsByType
-                        //Console.WriteLine("CommunityLib: Add to cUBySGByT[" + u.society.name + "]");
-                        CreateAndOrAddToKeyListPair(cUBySGByT[u.society] as IDictionary, t, t, u);
+                        // TryCreate SubDictionaries
+                        TryCreateSubDictionary(cUBySGTByT, tSG, typeof(Type));
+                        TryCreateSubDictionary(cUBySGTByTE, tSG, typeof(Type));
+
+                        CreateAndOrAddToKeyListPair(cUBySGT, tSG, typeof(Unit), u);
+                        CreateAndOrAddToKeyListPair(cUBySGTByTE[tSG] as IDictionary, tSG, tU, u);
                     }
 
-                    // Check if Type t is targetT. End loop if it is.
-                    // Else, set t to next Type up in inhertiance hierarchy
-                    if (t == targetT)
+                    //Console.WriteLine("CommunityLib: Starting Unit Type Loop");
+                    // Conduct Operations for all Types tU, from obj.GetType() to targetTU, inclusively
+                    while (iterateUT)
                     {
-                        flag = true;
-                        //Console.WriteLine("CommunityLib: End Loop");
+                        CreateAndOrAddToKeyListPair(uBySGTByT[tSG] as IDictionary, tU, tU, u);
+
+                        if (excludeSGT)
+                        {
+                            CreateAndOrAddToKeyListPair(uByT, tU, tU, u);
+                            CreateAndOrAddToKeyListPair(uBySGByT[u.society] as IDictionary, tU, tU, u);
+                            CreateAndOrAddToKeyListPair(uBySGTEByT[tSG] as IDictionary, tU, tU, u);
+                        }
+
+                        if (commandable)
+                        {
+                            CreateAndOrAddToKeyListPair(cUBySGTByT[tSG] as IDictionary, tU, tU, u);
+
+                            // Only run on first iteration of SOcial Group Type Loop
+                            if (excludeSGT)
+                            {
+                                CreateAndOrAddToKeyListPair(cUByT, tU, tU, u);
+                                
+                                CreateAndOrAddToKeyListPair(cUBySGByT[u.society] as IDictionary, tU, tU, u);
+                                CreateAndOrAddToKeyListPair(cUBySGTEByT[tSG] as IDictionary, tU, tU, u);
+
+                            }
+                        }
+
+                        if (tU == targetTU)
+                        {
+                            iterateUT = false;
+                            excludeSGT = false;
+                            //Console.WriteLine("CommunityLib: End Unit Type Loop");
+                        }
+                        else
+                        {
+                            tU = tU.BaseType;
+                            //Console.WriteLine("CommunityLib: Iterate type to " + tU.Name);
+                        }
+                    }
+
+                    if (tSG == targetTSG)
+                    {
+                        iterateSGT = false;
+                        //Console.WriteLine("CommunityLib: End Social Group Type Loop");
                     }
                     else
                     {
-                        t = t.BaseType;
-                        //Console.WriteLine("CommunityLib: Iterate type to " + t.Name);
+                        tSG = tSG.BaseType;
+                        //Console.WriteLine("CommunityLib: Iterate type to " + tSG.Name);
                     }
                 }
+                //Console.WriteLine("CommunityLib: End Loop for unit " + u.getName() + " of Type " + u.GetType());
             }
+            //Console.WriteLine("CommunityLib: Completed Unit Processing");
+        }
+
+        public void FilterLocations()
+        {
+            // Initialize universal variables
+            Settlement s;
+
+            Type tL;
+            Type tS;
+            Type tSG;
+
+            // Dictionaries being operated on at all level.
+            // Location Dictionaries
+            IDictionary lByT = cache.locationsByType;
+            IDictionary lByTE = cache.locationsByTypeExclusive;
+            IDictionary lBySG = cache.locationsBySocialGroup;
+            IDictionary lWoSGByT = cache.locationsWithoutSocialGroupByType;
+            IDictionary lWoSGByTE = cache.locationsWithoutSocialGroupByTypeExclusive;
+            IDictionary lBySGT = cache.locationsBySocialGroupType;
+            IDictionary lBySGTE = cache.locationsBySocialGroupTypeExclusive;
+            IDictionary lBySGByT = cache.locationsBySocialGroupByType;
+            IDictionary lBySGTByT = cache.locationsBySocialGroupTypeByType;
+            IDictionary lBySGTEByT = cache.locationsBySocialGroupTypeExclusiveByType;
+            IDictionary lBySGTByTE = cache.locationsBySocialGroupTypeByTypeExclusive;
+            IDictionary lBySGTEByTE = cache.locationsBySocialGroupTypeExclusiveByTypeExclusive;
+            IDictionary lWoSByT = cache.locationsWithoutSettlementByType;
+            IDictionary lWoSByTE = cache.locationsWithoutSettlementByTypeExclusive;
+            IDictionary lWoSG_SByT = cache.locationsWithoutSocialGroupsOrSettlementsByType;
+            IDictionary lWoSG_SByTE = cache.locationsWithoutSocialGroupsOrSettlementsByTypeExclusive;
+
+            // Settlement Dictionaries
+            IDictionary sByT = cache.settlementsByType;
+            IDictionary sByTE = cache.settlementsByTypeExclusive;
+            IDictionary sBySG = cache.settlementsBySocialGroup;
+            IDictionary sWoSGByT = cache.settlementsWithoutSocialGroupByType;
+            IDictionary sWoSGByTE = cache.settlementsWithoutSocialGroupByTypeExclusive;
+            IDictionary sBySGT = cache.settlementsBySocialGroupType;
+            IDictionary sBySGTE = cache.settlementsBySocialGroupTypeExclusive;
+            IDictionary sBySGByT = cache.settlementsBySocialGroupByType;
+            IDictionary sBySGTByT = cache.settlementsBySocialGroupTypeByType;
+            IDictionary sBySGTEByT = cache.settlementsBySocialGroupTypeExclusiveByType;
+            IDictionary sBySGTByTE = cache.settlementsBySocialGroupTypeByTypeExclusive;
+            IDictionary sBySGTEByTE = cache.settlementsBySocialGroupTypeExclusiveByTypeExclusive;
+
+            // Initialize loop-only variables
+            bool iterateSGT;
+            bool iterateLT;
+            bool iterateST;
+            bool excludeSGTForL;
+            bool excludeSGTForS;
+            Type targetTSG = typeof(SocialGroup);
+            Type targetTL = typeof(Location);
+            Type targetTS = typeof(Settlement);
+
+            foreach (Location l in map.locations)
+            {
+                //Console.WriteLine("CommunityLib: Filtering location " + l.getName() + " of type: " + l.GetType().Name);
+                // Set universal variables
+                s = null;
+                tS = null;
+                tSG = null;
+                tL = l.GetType();
+
+                CreateAndOrAddToKeyListPair(lByTE, tL, tL, l);
+
+                // Branch for Social Groups
+                if (l.soc != null)
+                {
+                    tSG = l.soc.GetType();
+                    //Console.WriteLine("CommunityLib: Location belongs to Social Group " + l.soc.name + " of Type " + tSG.Name);
+
+                    CreateAndOrAddToKeyListPair(lBySG, l.soc, typeof(Location), l);
+                    CreateAndOrAddToKeyListPair(lBySGTE, tSG, typeof(Location), l);
+
+                    // TryCreate SubDictionaries
+                    TryCreateSubDictionary(lBySGByT, l.soc, typeof(Type));
+                    TryCreateSubDictionary(lBySGTEByT, tSG, typeof(Type));
+                    TryCreateSubDictionary(lBySGTEByTE, tSG, typeof(Type));
+                    CreateAndOrAddToKeyListPair(lBySGTEByTE[tSG] as IDictionary, tL, tL, l);
+                }
+                else
+                {
+                    CreateAndOrAddToKeyListPair(lWoSGByTE, tL, tL, l);
+                }
+
+                // Branch for Settlements.
+                if (l.settlement != null)
+                {
+                    s = l.settlement;
+                    tS = s.GetType();
+                    Console.WriteLine("CommunityLib: Location has settlement " + s.name + " of Type " + tS.Name);
+
+                    CreateAndOrAddToKeyListPair(sByTE, tS, tS, s);
+
+                    if (tSG != null)
+                    {
+                        CreateAndOrAddToKeyListPair(sBySG, l.soc, typeof(Settlement), s);
+                        CreateAndOrAddToKeyListPair(sBySGTE, tSG, typeof(Settlement), s);
+
+                        // TryCreate SubDictionaries
+                        TryCreateSubDictionary(sBySGByT, l.soc, typeof(Type));
+                        TryCreateSubDictionary(sBySGTEByT, tSG, typeof(Type));
+                        TryCreateSubDictionary(sBySGTEByTE, tSG, typeof(Type));
+                        CreateAndOrAddToKeyListPair(sBySGTEByTE[tSG] as IDictionary, tS, tS, s);
+                    }
+                }
+                else if (tSG == null)
+                {
+                    CreateAndOrAddToKeyListPair(lWoSG_SByTE, tL, tL, l);
+                }
+                else
+                {
+                    CreateAndOrAddToKeyListPair(lWoSByTE, tL, tL, l);
+                }
+
+                // Set loop-only variables
+                iterateLT = true;
+                iterateSGT = true;
+                iterateST = true;
+                excludeSGTForL = true;
+                excludeSGTForS = true;
+
+                if (tSG != null)
+                {
+                    //Console.WriteLine("CommunityLib: Starting Scoial Group Type Loop");
+                    // Conduct Operations for all Types tSG, from obj.GetType() to targetTSG, inclusively
+                    while (iterateSGT)
+                    {
+                        // The subdictionaries used in this loop were checked for, and if neccesary created, earlier in this method
+                        iterateLT = true;
+                        tL = l.GetType();
+                        if (s != null)
+                        {
+                            iterateST = true;
+                            tS = s.GetType();
+                        }
+
+                        // TryCreate SubDictionaries
+                        TryCreateSubDictionary(lBySGTByT, tSG, typeof(Type));
+                        TryCreateSubDictionary(lBySGTByTE, tSG, typeof(Type));
+
+                        CreateAndOrAddToKeyListPair(lBySGT, tSG, typeof(Location), l);
+                        CreateAndOrAddToKeyListPair(lBySGTByTE[tSG] as IDictionary, tSG, tL, l);
+
+                        Console.WriteLine("CommunityLib: Starting Location Type Loop");
+                        // Conduct Operations for all Types tL, from obj.GetType() to targetTL, inclusively
+                        while (iterateLT)
+                        {
+                            CreateAndOrAddToKeyListPair(lBySGTByT[tSG] as IDictionary, tL, tL, l);
+
+                            if (s == null)
+                            {
+                                CreateAndOrAddToKeyListPair(lWoSByT, tL, tL, l);
+                            }
+
+                            if (excludeSGTForL)
+                            {
+                                CreateAndOrAddToKeyListPair(lByT, tL, tL, l);
+                                CreateAndOrAddToKeyListPair(lBySGByT[l.soc] as IDictionary, tL, tL, l);
+                                CreateAndOrAddToKeyListPair(lBySGTEByT[tSG] as IDictionary, tL, tL, l);
+                            }
+
+                            if (tL == targetTL)
+                            {
+                                iterateLT = false;
+                                excludeSGTForL = false;
+                                //Console.WriteLine("CommunityLib: End Location Type Loop");
+                            }
+                            else
+                            {
+                                tL = tL.BaseType;
+                                //Console.WriteLine("CommunityLib: Iterate type to " + tL.Name);
+                            }
+                        }
+
+                        // Branch for Settlements
+                        if (s != null)
+                        {
+                            //TryCreate SubDictionaries
+                            TryCreateSubDictionary(sBySGTByT, tSG, typeof(Type));
+                            TryCreateSubDictionary(sBySGTByTE, tSG, typeof(Type));
+
+                            CreateAndOrAddToKeyListPair(sBySGT, tSG, typeof(Settlement), s);
+                            CreateAndOrAddToKeyListPair(sBySGTByTE[tSG] as IDictionary, tS, tS, s);
+
+                            //Console.WriteLine("CommunityLib: Starting Settlement Type Loop");
+                            while (iterateST)
+                            {
+                                CreateAndOrAddToKeyListPair(sBySGTByT[tSG] as IDictionary, tS, tS, s);
+
+                                if (excludeSGTForS)
+                                {
+                                    CreateAndOrAddToKeyListPair(sByT, tS, typeof(Settlement), s);
+                                    CreateAndOrAddToKeyListPair(sBySGByT[l.soc] as IDictionary, tS, tS, s);
+                                    CreateAndOrAddToKeyListPair(sBySGTEByT[tSG] as IDictionary, tS, tS, s);
+                                }
+
+                                if (tS == targetTS)
+                                {
+                                    iterateST = false;
+                                    excludeSGTForS = false;
+                                    //Console.WriteLine("CommunityLib: End Settlement Type Loop");
+                                }
+                                else
+                                {
+                                    tS = tS.BaseType;
+                                    //Console.WriteLine("CommunityLib: Iterate type to " + tS.Name);
+                                }
+                            }
+                        }
+
+                        if (tSG == targetTSG)
+                        {
+                            iterateSGT = false;
+                            //Console.WriteLine("CommunityLib: End Social Group Type Loop");
+                        }
+                        else
+                        {
+                            tSG = tSG.BaseType;
+                            //Console.WriteLine("CommunityLib: Iterate type to " + tSG.Name);
+                        }
+                    }
+                }
+                else
+                {
+                    CreateAndOrAddToKeyListPair(lWoSGByTE, tL, tL, l);
+
+                    //Console.WriteLine("CommunityLib: Starting Location Type Loop");
+                    while (iterateLT)
+                    {
+                        CreateAndOrAddToKeyListPair(lByT, tL, tL, l);
+                        CreateAndOrAddToKeyListPair(lWoSGByT, tL, tL, l);
+
+                        if (s == null)
+                        {
+                            CreateAndOrAddToKeyListPair(lWoSByT, tL, tL, l);
+                            CreateAndOrAddToKeyListPair(lWoSG_SByT, tL, tL, l);
+                        }
+
+                        if (tL == targetTL)
+                        {
+                            iterateLT = false;
+                            excludeSGTForL = false;
+                            //Console.WriteLine("CommunityLib: End Location Type Loop");
+                        }
+                        else
+                        {
+                            tL = tL.BaseType;
+                            //Console.WriteLine("CommunityLib: Iterate type to " + tL.Name);
+                        }
+                    }
+
+                    if (s != null)
+                    {
+                        CreateAndOrAddToKeyListPair(sWoSGByTE, tS, tS, s);
+
+                        //Console.WriteLine("CommunityLib: Starting Settlement Type Loop");
+                        while (iterateST)
+                        {
+                            CreateAndOrAddToKeyListPair(sByT, tS, tS, s);
+                            CreateAndOrAddToKeyListPair (sWoSGByT, tS, tS, s);
+
+                            if (tS == targetTS)
+                            {
+                                iterateST = false;
+                                excludeSGTForS = false;
+                                //Console.WriteLine("CommunityLib: End Settlement Type Loop");
+                            }
+                            else
+                            {
+                                tS = tS.BaseType;
+                                //Console.WriteLine("CommunityLib: Iterate type to " + tS.Name);
+                            }
+                        }
+                    }
+                }
+                //Console.WriteLine("CommunityLib: End Loop for location " + l.getName() + " of Type " + l.GetType());
+            }
+            Console.WriteLine("CommunityLib: Completed Location Processing");
         }
     }
 }
