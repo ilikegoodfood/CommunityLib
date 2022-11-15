@@ -29,6 +29,7 @@ namespace CommunityLib
         public Dictionary<Type, Dictionary<Type, IList>> unitsBySocialGroupTypeExclusiveByType = new Dictionary<Type, Dictionary<Type, IList>>();
         public Dictionary<Type, Dictionary<Type, IList>> unitsBySocialGroupTypeByTypeExclusive = new Dictionary<Type, Dictionary<Type, IList>>();
         public Dictionary<Type, Dictionary<Type, IList>> unitsBySocialGroupTypeExclusiveByTypeExclusive = new Dictionary<Type, Dictionary<Type, IList>>();
+        public Dictionary<Location, IList> unitsByLocation = new Dictionary<Location, IList>();
 
         // Commandable Units
         public Dictionary<Type, IList> commandableUnitsByType = new Dictionary<Type, IList>();
@@ -85,6 +86,21 @@ namespace CommunityLib
         public Dictionary<Type, IList> settlementsWithoutSocialGroupByType = new Dictionary<Type, IList>();
         public Dictionary<Type, IList> settlementsWithoutSocialGroupByTypeExclusive = new Dictionary<Type, IList>();
 
+        // Distances //
+        public Dictionary<Location, Dictionary<Location, double>> distanceByLocationsFromLocation = new Dictionary<Location, Dictionary<Location, double>>();
+        public Dictionary<Location, Dictionary<Location, int>> stepsByLocationsFromLocation = new Dictionary<Location, Dictionary<Location, int>>();
+        public Dictionary<Location, Dictionary<int, IList>> locationsByStepsFromLocation = new Dictionary<Location, Dictionary<int, IList>>();
+        public Dictionary<Location, Dictionary<int, IList>> locationsByStepsExclusiveFromLocation = new Dictionary<Location, Dictionary<int, IList>>();
+        public Dictionary<Location, Dictionary<int, IList>> settlementsByStepsFromLocation = new Dictionary<Location, Dictionary<int, IList>>();
+        public Dictionary<Location, Dictionary<int, IList>> settlementsByStepsExclusiveFromLocation = new Dictionary<Location, Dictionary<int, IList>>();
+        public Dictionary<Location, Dictionary<int, IList>> unitsByStepsFromLocation = new Dictionary<Location, Dictionary<int, IList>>();
+        public Dictionary<Location, Dictionary<int, IList>> unitsByStepsExclusiveFromLocation = new Dictionary<Location, Dictionary<int, IList>>();
+
+        // Visibility
+        public Dictionary<Unit, IList> visibleUnitsByUnit = new Dictionary<Unit, IList>();
+        public Dictionary<Unit, IList> unitVisibleToUnits = new Dictionary<Unit, IList>();
+        public Dictionary<Unit, Location> commandableUnitLocations = new Dictionary<Unit, Location>();
+
 
         public Cache()
         {
@@ -125,6 +141,7 @@ namespace CommunityLib
             dicts.Add(unitsBySocialGroupTypeExclusiveByType);
             dicts.Add(unitsBySocialGroupTypeByTypeExclusive);
             dicts.Add(unitsBySocialGroupTypeExclusiveByTypeExclusive);
+            dicts.Add(unitsByLocation);
             // Commandable Units
             dicts.Add(commandableUnitsByType);
             dicts.Add(commandableUnitsByTypeExclusive);
@@ -175,6 +192,17 @@ namespace CommunityLib
             // Negative Filters
             dicts.Add(settlementsWithoutSocialGroupByType);
             dicts.Add(settlementsWithoutSocialGroupByTypeExclusive);
+
+            // Distances //
+            dicts.Add(settlementsByStepsFromLocation);
+            dicts.Add(settlementsByStepsExclusiveFromLocation);
+            dicts.Add(unitsByStepsFromLocation);
+            dicts.Add(unitsByStepsExclusiveFromLocation);
+
+            // Visibility
+            dicts.Add(visibleUnitsByUnit);
+            dicts.Add(unitVisibleToUnits);
+            dicts.Add(commandableUnitLocations);
         }
     }
 }

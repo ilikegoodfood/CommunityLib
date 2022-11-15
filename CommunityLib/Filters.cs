@@ -2,6 +2,8 @@
 using System.Collections;
 using System;
 using System.Collections.Generic;
+using UnityEngine;
+using System.Linq;
 
 namespace CommunityLib
 {
@@ -135,10 +137,18 @@ namespace CommunityLib
 
         public void FilterUnits()
         {
+            //Console.WriteLine("CommunityLib: Starting Unit Processing.");
+
             // Initialize universal variables
             Type tU;
             Type tSG;
             bool commandable;
+
+            double profile;
+            int visibleSteps;
+
+            List<Unit> unitsThatSeeMe = new List<Unit>();
+            IList unitsThatTheyCanSee = new List<Unit>();
 
             // Dictionaries being operated on at all level.
             IDictionary uByT = cache.unitsByType;
@@ -191,6 +201,11 @@ namespace CommunityLib
 
                 if (commandable)
                 {
+                    if (!cache.commandableUnitLocations.ContainsKey(u))
+                    {
+                        cache.commandableUnitLocations.Add(u, u.location);
+                    }
+
                     CreateAndOrAddToKeyListPair(cUByTE, tU, tU, u);
                     CreateAndOrAddToKeyListPair(cUBySG, u.society, typeof(Unit), u);
                     CreateAndOrAddToKeyListPair(cUBySGTE, tSG, typeof(Unit), u);
@@ -200,6 +215,40 @@ namespace CommunityLib
                     TryCreateSubDictionary(cUBySGTEByT, tSG, typeof(Type));
                     TryCreateSubDictionary(cUBySGTEByTE, tSG, typeof(Type));
                     CreateAndOrAddToKeyListPair(cUBySGTEByTE[tSG] as IDictionary, tU, tU, u);
+                }
+
+                //Console.WriteLine("CommunityLib: Starting Visibility Processing");
+                // Visibility Processing
+                profile = u.profile;
+                visibleSteps = (int)Math.Floor(u.profile / 10);
+                unitsThatSeeMe.Clear();
+                //Console.WriteLine("CommunityLib: Gathering Units that can see " + u.getName() + ".");
+                foreach (Location location in cache.locationsByStepsFromLocation[u.location][visibleSteps])
+                {
+                    if (location.units != null && location.units.Count() > 0)
+                    {
+                        unitsThatSeeMe.AddRange(location.units);
+                    }
+                }
+                unitsThatSeeMe.Remove(u);
+                cache.unitVisibleToUnits.Add(u, unitsThatSeeMe);
+
+                //Console.WriteLine("CommunityLib: Updating caches for Units that can see " + u.getName() + ".");
+                unitsThatTheyCanSee.Clear();
+                foreach (Unit unitThatSeesMe in unitsThatSeeMe)
+                {
+                    if (unitThatSeesMe == u)
+                    {
+                        continue;
+                    }
+
+                    //Console.WriteLine("CommunityLib: Updating cache for " + unitThatSeesMe.getName() + ".");
+                    if (!cache.visibleUnitsByUnit.TryGetValue(unitThatSeesMe, out unitsThatTheyCanSee))
+                    {
+                        cache.visibleUnitsByUnit.Add(unitThatSeesMe, new List<Unit>());
+                        unitsThatTheyCanSee = cache.visibleUnitsByUnit[unitThatSeesMe];
+                    }
+                    unitsThatTheyCanSee.Add(u);
                 }
 
                 //Console.WriteLine("CommunityLib: Starting Social Group Type Loop");
@@ -249,11 +298,10 @@ namespace CommunityLib
                         {
                             CreateAndOrAddToKeyListPair(cUBySGTByT[tSG] as IDictionary, tU, tU, u);
 
-                            // Only run on first iteration of SOcial Group Type Loop
+                            // Only run on first iteration of Social Group Type Loop
                             if (excludeSGT)
                             {
                                 CreateAndOrAddToKeyListPair(cUByT, tU, tU, u);
-                                
                                 CreateAndOrAddToKeyListPair(cUBySGByT[u.society] as IDictionary, tU, tU, u);
                                 CreateAndOrAddToKeyListPair(cUBySGTEByT[tSG] as IDictionary, tU, tU, u);
 
@@ -377,7 +425,7 @@ namespace CommunityLib
                 {
                     s = l.settlement;
                     tS = s.GetType();
-                    Console.WriteLine("CommunityLib: Location has settlement " + s.name + " of Type " + tS.Name);
+                    //Console.WriteLine("CommunityLib: Location has settlement " + s.name + " of Type " + tS.Name);
 
                     CreateAndOrAddToKeyListPair(sByTE, tS, tS, s);
 
@@ -392,6 +440,9 @@ namespace CommunityLib
                         TryCreateSubDictionary(sBySGTEByTE, tSG, typeof(Type));
                         CreateAndOrAddToKeyListPair(sBySGTEByTE[tSG] as IDictionary, tS, tS, s);
                     }
+
+                    cache.settlementsByStepsFromLocation.Add(l, cache.locationsByStepsFromLocation[l]);
+                    cache.settlementsByStepsExclusiveFromLocation.Add(l, cache.locationsByStepsExclusiveFromLocation[l]);
                 }
                 else if (tSG == null)
                 {
@@ -431,7 +482,7 @@ namespace CommunityLib
                         CreateAndOrAddToKeyListPair(lBySGT, tSG, typeof(Location), l);
                         CreateAndOrAddToKeyListPair(lBySGTByTE[tSG] as IDictionary, tSG, tL, l);
 
-                        Console.WriteLine("CommunityLib: Starting Location Type Loop");
+                        //Console.WriteLine("CommunityLib: Starting Location Type Loop");
                         // Conduct Operations for all Types tL, from obj.GetType() to targetTL, inclusively
                         while (iterateLT)
                         {
@@ -565,7 +616,54 @@ namespace CommunityLib
                 }
                 //Console.WriteLine("CommunityLib: End Loop for location " + l.getName() + " of Type " + l.GetType());
             }
-            Console.WriteLine("CommunityLib: Completed Location Processing");
+            //Console.WriteLine("CommunityLib: Completed Location Processing");
+        }
+
+        public void UpdateLocationDistances()
+        {
+            // Clear location-distance caches
+            Dictionary<Location, Dictionary<Location, double>> dByLfromL = cache.distanceByLocationsFromLocation;
+            Dictionary<Location, Dictionary<Location, int>> sByLfromL = cache.stepsByLocationsFromLocation;
+            Dictionary<Location, Dictionary<int, IList>> lBySfromL = cache.locationsByStepsFromLocation;
+            Dictionary<Location, Dictionary<int, IList>> lBySEfromL = cache.locationsByStepsExclusiveFromLocation;
+
+            dByLfromL.Clear();
+            lBySfromL.Clear();
+            lBySEfromL.Clear();
+
+            double distance;
+            int steps;
+            foreach (Location loc in map.locations)
+            {
+                foreach (Location loc2 in map.locations)
+                {
+                    distance = map.getDist(loc, loc2);
+                    steps = map.getStepDist(loc, loc2);
+
+                    if (!dByLfromL.ContainsKey(loc))
+                    {
+                        dByLfromL.Add(loc, new Dictionary<Location, double>());
+                    }
+                    if (!sByLfromL.ContainsKey(loc))
+                    {
+                        sByLfromL.Add(loc, new Dictionary<Location, int>());
+                    }
+
+                    TryCreateSubDictionary(lBySEfromL, loc, typeof(int));
+                    TryCreateSubDictionary(lBySfromL, loc, typeof(int));
+
+                    dByLfromL[loc].Add(loc2, distance);
+                    sByLfromL[loc].Add(loc2, steps);
+
+                    CreateAndOrAddToKeyListPair(lBySEfromL[loc], steps, typeof(Location), loc2);
+
+                    while (steps <= 50)
+                    {
+                        CreateAndOrAddToKeyListPair(lBySfromL[loc], steps, typeof(Location), loc2);
+                        steps++;
+                    }
+                }
+            }
         }
     }
 }
