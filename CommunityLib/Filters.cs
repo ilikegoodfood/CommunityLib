@@ -20,6 +20,35 @@ namespace CommunityLib
             this.map = map;
         }
 
+        public void onTurnStart(Map map)
+        {
+            cache.ClearCache();
+            FilterSocialGroups();
+            FilterLocations();
+            FilterUnits();
+        }
+
+        public void onTurnEnd(Map map)
+        {
+            UpdateCommandableUnitVisibility();
+        }
+
+        public void afterMapGenBeforeHistorical(Map map)
+        {
+            cache.ClearCache();
+            FilterSocialGroups();
+            FilterLocations();
+            FilterUnits();
+        }
+
+        public void afterMapGenAfterHistorical(Map map)
+        {
+            cache.ClearCache();
+            FilterSocialGroups();
+            FilterLocations();
+            FilterUnits();
+        }
+
         public List<Location> getLocationsWithinDistance(Location source, double distance)
         {
             List<Location> result = new List<Location>();
@@ -941,6 +970,7 @@ namespace CommunityLib
                 {
                     continue;
                 }
+                cUL[cU] = cU.location;
 
                 if (vUToU.ContainsKey(cU) && vUToU[cU] != null)
                 {

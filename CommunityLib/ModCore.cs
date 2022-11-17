@@ -34,31 +34,22 @@ namespace CommunityLib
                 filters = new Filters(cache, map);
             }
 
-            cache.ClearCache();
-            filters.FilterSocialGroups();
-            filters.FilterLocations();
-            filters.FilterUnits();
+            filters.afterMapGenBeforeHistorical(map);
         }
 
         public override void afterMapGenAfterHistorical(Map map)
         {
             base.afterMapGenAfterHistorical(map);
 
-            cache.ClearCache();
-            filters.FilterSocialGroups();
-            filters.FilterLocations();
-            filters.FilterUnits();
+            filters.afterMapGenAfterHistorical(map);
         }
 
         public override void onTurnStart(Map map)
         {
             base.onTurnStart(map);
 
-            // Begin Filtering Process.
-            cache.ClearCache();
-            filters.FilterSocialGroups();
-            filters.FilterLocations();
-            filters.FilterUnits();
+            filters.onTurnStart(map);
+
             // testRoutine(map);
             // testSpecific(map);
         }
@@ -75,7 +66,7 @@ namespace CommunityLib
         {
             base.onTurnEnd(map);
 
-            filters.UpdateCommandableUnitVisibility();
+            filters.onTurnEnd(map);
         }
 
         private void testRoutine(Map map)
