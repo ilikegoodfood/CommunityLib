@@ -88,13 +88,9 @@ namespace CommunityLib
 
         // Distances //
         public Dictionary<Location, Dictionary<Location, double>> distanceByLocationsFromLocation = new Dictionary<Location, Dictionary<Location, double>>();
-        public Dictionary<Location, Dictionary<Location, int>> stepsByLocationsFromLocation = new Dictionary<Location, Dictionary<Location, int>>();
-        public Dictionary<Location, Dictionary<int, IList>> locationsByStepsFromLocation = new Dictionary<Location, Dictionary<int, IList>>();
-        public Dictionary<Location, Dictionary<int, IList>> locationsByStepsExclusiveFromLocation = new Dictionary<Location, Dictionary<int, IList>>();
-        public Dictionary<Location, Dictionary<int, IList>> settlementsByStepsFromLocation = new Dictionary<Location, Dictionary<int, IList>>();
-        public Dictionary<Location, Dictionary<int, IList>> settlementsByStepsExclusiveFromLocation = new Dictionary<Location, Dictionary<int, IList>>();
-        public Dictionary<Location, Dictionary<int, IList>> unitsByStepsFromLocation = new Dictionary<Location, Dictionary<int, IList>>();
-        public Dictionary<Location, Dictionary<int, IList>> unitsByStepsExclusiveFromLocation = new Dictionary<Location, Dictionary<int, IList>>();
+        public Dictionary<Location, List<Location>[]> locationsByStepsExclusiveFromLocation = new Dictionary<Location, List<Location>[]>();
+        public Dictionary<Location, List<Settlement>[]> settlementsByStepsExclusiveFromLocation = new Dictionary<Location, List<Settlement>[]>();
+        public Dictionary<Location, List<Unit>[]> unitsByStepsExclusiveFromLocation = new Dictionary<Location, List<Unit>[]>();
 
         // Visibility
         public Dictionary<Unit, IList> visibleUnitsByUnit = new Dictionary<Unit, IList>();
@@ -194,9 +190,9 @@ namespace CommunityLib
             dicts.Add(settlementsWithoutSocialGroupByTypeExclusive);
 
             // Distances //
-            dicts.Add(settlementsByStepsFromLocation);
+            dicts.Add(distanceByLocationsFromLocation);
+            dicts.Add(locationsByStepsExclusiveFromLocation);
             dicts.Add(settlementsByStepsExclusiveFromLocation);
-            dicts.Add(unitsByStepsFromLocation);
             dicts.Add(unitsByStepsExclusiveFromLocation);
 
             // Visibility

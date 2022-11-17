@@ -34,33 +34,48 @@ namespace CommunityLib
                 filters = new Filters(cache, map);
             }
 
-            filters.UpdateLocationDistances();
+            cache.ClearCache();
+            filters.FilterSocialGroups();
+            filters.FilterLocations();
+            filters.FilterUnits();
+        }
+
+        public override void afterMapGenAfterHistorical(Map map)
+        {
+            base.afterMapGenAfterHistorical(map);
+
+            cache.ClearCache();
+            filters.FilterSocialGroups();
+            filters.FilterLocations();
+            filters.FilterUnits();
         }
 
         public override void onTurnStart(Map map)
         {
             base.onTurnStart(map);
 
-            //Initialize subclasses.
-            if (cache == null)
-            {
-                cache = new Cache();
-            }
-            else
-            {
-                cache.ClearCache();
-            }
-
-            if (filters == null)
-            {
-                filters = new Filters(cache, map);
-            }
-
             // Begin Filtering Process.
+            cache.ClearCache();
             filters.FilterSocialGroups();
-            filters.FilterUnits();
             filters.FilterLocations();
-            //testRoutine(map);
+            filters.FilterUnits();
+            // testRoutine(map);
+            // testSpecific(map);
+        }
+
+        private void testSpecific(Map map)
+        {
+            if (cache.settlementsByType.ContainsKey(typeof(SettlementHuman)))
+            {
+                List<SettlementHuman> humanSettlements = cache.settlementsByType[typeof(SettlementHuman)] as List<SettlementHuman>;
+            }
+        }
+
+        public override void onTurnEnd(Map map)
+        {
+            base.onTurnEnd(map);
+
+            filters.UpdateCommandableUnitVisibility();
         }
 
         private void testRoutine(Map map)
@@ -68,12 +83,12 @@ namespace CommunityLib
             Console.WriteLine("Starting test routine");
             string messageString = "This is a batch of tests for the cacher. It retrieved the following items at random:";
 
-            UA randCommandableAgent = null;
+            Unit randCommandableUnit = null;
             Unit randUnit = null;
 
             int rand;
             IList value;
-            if (cache.socialGroupsByType.TryGetValue(typeof(SocialGroup), out value))
+            if (cache.socialGroupsByType.TryGetValue(typeof(SocialGroup), out value) && value != null && value.Count > 0)
             {
                 SocialGroup randSG;
                 for (int i = 0; i < 3; i++)
@@ -90,7 +105,7 @@ namespace CommunityLib
                 Console.WriteLine("CommunityLib Cacher Test: ERROR : No Social Groups in Cache");
             }
 
-            if (cache.socialGroupsByTypeExclusive.TryGetValue(typeof(SG_Orc), out value))
+            if (cache.socialGroupsByTypeExclusive.TryGetValue(typeof(SG_Orc), out value) && value != null && value.Count > 0)
             {
                 rand = Eleven.random.Next(value.Count);
                 List<SG_Orc> orcSocieties = value as List<SG_Orc>;
@@ -103,35 +118,35 @@ namespace CommunityLib
                 Console.WriteLine("CommunityLib Cacher Test: ERROR : No Orc Social Groups in Cache");
             }
 
-            if (cache.socialGroupsByTypeExclusive.TryGetValue(typeof(HolyOrder), out value))
+            if (cache.socialGroupsByTypeExclusive.TryGetValue(typeof(HolyOrder), out value) && value != null && value.Count > 0)
             {
                 rand = Eleven.random.Next(value.Count);
                 List<HolyOrder> humanHolyOrders = value as List<HolyOrder>;
                 HolyOrder randHumanHolyOrder = humanHolyOrders[rand];
                 messageString += " Random Human Holy Order is " + randHumanHolyOrder.getName() + " with its capitol in " + randHumanHolyOrder.seat.settlement.getName() + ".";
-                Console.WriteLine("CommunityLib Cacher Test: Random Human Holy Order is " + randHumanHolyOrder.getName() + " with its capitol in " + randHumanHolyOrder.seat.settlement.getName() + ".");
+                Console.WriteLine("CommunityLib Cacher Test: Random Human Holy Order is " + randHumanHolyOrder.getName() + " with its capitol in Location " + randHumanHolyOrder.seat.settlement.getName() + ".");
             }
             else
             {
                 Console.WriteLine("CommunityLib Cacher Test: ERROR : No Human Holy Orders in Cache");
             }
 
-            if (cache.commandableUnitsByType.TryGetValue(typeof(UA), out value))
+            if (cache.commandableUnitsByType.TryGetValue(typeof(Unit), out value) && value != null && value.Count > 0)
             {
                 rand = Eleven.random.Next(value.Count);
-                List<UA> commandableAgents = value as List<UA>;
-                randCommandableAgent = commandableAgents[rand];
-                messageString += " Random commandable is " + randCommandableAgent.getName() + " of type " + randCommandableAgent.GetType().Name + " at location " + randCommandableAgent.location.getName() + ".";
-                Console.WriteLine("CommunityLib Cacher Test: Random commandable unit is " + randCommandableAgent.getName() + " of type " + randCommandableAgent.GetType().Name + " at location " + randCommandableAgent.location.getName() + ".");
-                string visMessageString = " " + randCommandableAgent.getName();
-                if (cache.unitVisibleToUnits[randCommandableAgent].Count > 0)
+                List<Unit> commandableAgents = value as List<Unit>;
+                randCommandableUnit = commandableAgents[rand];
+                messageString += " Random commandable Unit is " + randCommandableUnit.getName() + " of Type " + randCommandableUnit.GetType().Name + " at Location " + randCommandableUnit.location.getName() + ".";
+                Console.WriteLine("CommunityLib Cacher Test: Random commandable Unit is " + randCommandableUnit.getName() + " of Type " + randCommandableUnit.GetType().Name + " at Location " + randCommandableUnit.location.getName() + ".");
+                string visMessageString = " " + randCommandableUnit.getName();
+                if (cache.unitVisibleToUnits.ContainsKey(randCommandableUnit) && cache.unitVisibleToUnits[randCommandableUnit] != null && cache.unitVisibleToUnits[randCommandableUnit].Count > 0)
                 {
                     visMessageString += " is visible to: ";
-                    foreach (Unit u in cache.unitVisibleToUnits[randCommandableAgent])
+                    foreach (Unit u in cache.unitVisibleToUnits[randCommandableUnit])
                     {
                         visMessageString += u.getName() + ", ";
                     }
-                    visMessageString = visMessageString.Substring(visMessageString.Length - 2);
+                    visMessageString = visMessageString.Substring(0, visMessageString.Length - 2);
                     visMessageString += ".";
                 }
                 else
@@ -139,19 +154,19 @@ namespace CommunityLib
                     visMessageString += " is not visible to anyone.";
                 }
 
-                if (cache.visibleUnitsByUnit[randCommandableAgent].Count > 0)
+                if (cache.visibleUnitsByUnit.ContainsKey(randCommandableUnit) && cache.visibleUnitsByUnit[randCommandableUnit] != null && cache.visibleUnitsByUnit[randCommandableUnit].Count > 0)
                 {
-                    visMessageString += " and can see: ";
-                    foreach (Unit u in cache.visibleUnitsByUnit[randCommandableAgent])
+                    visMessageString += " It can can see: ";
+                    foreach (Unit u in cache.visibleUnitsByUnit[randCommandableUnit])
                     {
                         visMessageString += u.getName() + ", ";
                     }
-                    visMessageString = visMessageString.Substring(visMessageString.Length - 2);
+                    visMessageString = visMessageString.Substring(0, visMessageString.Length - 2);
                     visMessageString += ".";
                 }
                 else
                 {
-                    visMessageString += " and cannot see anyone.";
+                    visMessageString += " It cannot see anyone.";
                 }
 
                 messageString += visMessageString;
@@ -162,12 +177,12 @@ namespace CommunityLib
                 Console.WriteLine("CommunityLib Cacher Test: ERROR : No Commandable Units in Cache");
             }
 
-            if (cache.unitsByType.TryGetValue(typeof(Unit), out value))
+            if (cache.unitsByType.TryGetValue(typeof(Unit), out value) && value != null && value.Count > 0)
             {
                 rand = Eleven.random.Next(value.Count);
                 List<Unit> units = value as List<Unit>;
                 randUnit = units[rand];
-                while (randUnit == randCommandableAgent)
+                while (randUnit == randCommandableUnit)
                 {
                     rand = Eleven.random.Next(value.Count);
                     randUnit = units[rand];
@@ -176,16 +191,16 @@ namespace CommunityLib
                 messageString += " Random unit is " + randUnit.getName() + " of type " + randUnit.GetType().Name + ", belonging to " + randUnit.society.getName() + ".";
                 Console.WriteLine("CommunityLib Cacher Test: Random unit is " + randUnit.getName() + " of type " + randUnit.GetType().Name + ", belonging to " + randUnit.society.getName() + ".");
 
-                if (randCommandableAgent != null)
+                if (randCommandableUnit != null)
                 {
-                    double distance = cache.distanceByLocationsFromLocation[randCommandableAgent.location][randUnit.location];
+                    double distance = cache.distanceByLocationsFromLocation[randCommandableUnit.location][randUnit.location];
                     Console.WriteLine("Got Distance");
-                    int steps = cache.stepsByLocationsFromLocation[randCommandableAgent.location][randUnit.location];
+                    int steps = map.stepDistMap[randCommandableUnit.location.index][randUnit.location.index];
                     Console.WriteLine("Got Steps");
 
 
-                    messageString += " " + randCommandableAgent.getName() + " and " + randUnit.getName() + " are " + steps.ToString() + " steps appart, a distance of " + distance.ToString() + ".";
-                    Console.WriteLine("CommunityLib Cacher Test: " + randCommandableAgent.getName() + " and " + randUnit.getName() + " are " + steps.ToString() + " steps appart, a distance of " + distance.ToString() + ".");
+                    messageString += " " + randCommandableUnit.getName() + " and " + randUnit.getName() + " are " + steps.ToString() + " steps appart, a distance of " + distance.ToString() + ".";
+                    Console.WriteLine("CommunityLib Cacher Test: " + randCommandableUnit.getName() + " and " + randUnit.getName() + " are " + steps.ToString() + " steps appart, a distance of " + distance.ToString() + ".");
                 }
             }
             else
@@ -193,7 +208,7 @@ namespace CommunityLib
                 Console.WriteLine("CommunityLib Cacher Test: ERROR : No Units in Cache");
             }
 
-            if (randUnit != null && randCommandableAgent != null)
+            if (randUnit != null && randCommandableUnit != null)
             {
                 map.addUnifiedMessage(randUnit.location, randUnit, "Cache Testing", messageString, "CommunityLib Test");
                 Console.WriteLine("CommunityLib Cacher Test: Test routine completed successfully");
@@ -202,54 +217,6 @@ namespace CommunityLib
             {
                 Console.WriteLine("CommunityLib Cacher Test: Test routine failed. randUnit or randCommandableAgent was null.");
             }
-        }
-
-        public List<Location> getLocationsWithinDistance(Location source, double distance)
-        {
-            List<Location> result = new List<Location>();
-            Dictionary<Location, double> dict;
-            if (cache.distanceByLocationsFromLocation.TryGetValue(source, out dict))
-            {
-                foreach (KeyValuePair<Location, double> pair in dict)
-                {
-                    if (pair.Value <= distance)
-                    {
-                        result.Add(pair.Key);
-                    }
-                }
-            }
-
-            return result;
-        }
-
-        public List<Settlement> getSettlmentsWithinDistance(Location source, double distance)
-        {
-            List<Settlement> result = new List<Settlement>();
-            Dictionary<Location, double> dict;
-
-            double dist;
-
-            if (cache.distanceByLocationsFromLocation.TryGetValue(source, out dict))
-            {
-                foreach (Settlement set in cache.settlementsByType[typeof(Settlement)])
-                {
-                    dist = 0;
-                    if (dict.TryGetValue(set.location, out dist))
-                    {
-                        if (dist == 0)
-                        {
-                            continue;
-                        }
-
-                        if (dist <= distance)
-                        {
-                            result.Add(set);
-                        }
-                    }
-                }
-            }
-
-            return result;
         }
 
         public void updateLocationDistances()

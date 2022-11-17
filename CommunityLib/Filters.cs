@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using UnityEngine.Profiling;
 
 namespace CommunityLib
 {
@@ -17,6 +18,127 @@ namespace CommunityLib
         {
             this.cache = cache;
             this.map = map;
+        }
+
+        public List<Location> getLocationsWithinDistance(Location source, double distance)
+        {
+            List<Location> result = new List<Location>();
+            Dictionary<Location, double> dict;
+            if (cache.distanceByLocationsFromLocation.TryGetValue(source, out dict) && dict != null)
+            {
+                foreach (KeyValuePair<Location, double> pair in dict)
+                {
+                    if (pair.Value <= distance)
+                    {
+                        result.Add(pair.Key);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        public List<Location> getLocationsWithinSteps(Location source, int steps)
+        {
+            List<Location> result = new List<Location>();
+            List<Location>[] array;
+            if (cache.locationsByStepsExclusiveFromLocation.TryGetValue(source, out array) && array != null)
+            {
+                steps = Math.Min(steps, array.Length);
+                for (int i = 0; i <= steps; i++)
+                {
+                    if (array[i] != null && array[i].Count > 0)
+                    {
+                        result.AddRange(array[i]);
+                    }
+                }
+                return result;
+            }
+
+            return null;
+        }
+
+        public List<Settlement> getSettlementsWithinDistance(Location source, double distance)
+        {
+            List<Settlement> result = new List<Settlement>();
+            Dictionary<Location, double> dict;
+            if (cache.distanceByLocationsFromLocation.TryGetValue(source, out dict) && dict != null)
+            {
+                foreach (KeyValuePair<Location, double> pair in dict)
+                {
+                    if (pair.Value <= distance && pair.Key.settlement != null)
+                    {
+                        result.Add(pair.Key.settlement);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        public List<Settlement> getSettlementsWithinSteps(Location source, int steps)
+        {
+            List<Settlement> result = new List<Settlement>();
+            List<Settlement>[] array;
+            if (cache.settlementsByStepsExclusiveFromLocation.TryGetValue(source, out array) && array != null)
+            {
+                steps = Math.Min(steps, array.Length);
+                for (int i = 0; i <= steps; i++)
+                {
+                    if (array[i] != null && array[i].Count > 0)
+                    {
+                        result.AddRange(array[i]);
+                    }
+                }
+                return result;
+            }
+
+            return null;
+        }
+
+        public List<Unit> getUnitsWithinDistance(Location source, double distance)
+        {
+            List<Unit> result = new List<Unit>();
+            Dictionary<Location, double> dict;
+            if (cache.distanceByLocationsFromLocation.TryGetValue(source, out dict) && dict != null)
+            {
+                foreach (KeyValuePair<Location, double> pair in dict)
+                {
+                    if (pair.Value <= distance && pair.Key.units != null && pair.Key.units.Count > 0)
+                    {
+                        result.AddRange(pair.Key.units);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        public List<Unit> getUnitsWithinSteps(Location source, int steps)
+        {
+            List<Unit> result = new List<Unit>();
+            List<Unit>[] array;
+            if (cache.unitsByStepsExclusiveFromLocation.TryGetValue(source, out array) && array != null)
+            {
+                steps = Math.Min(steps, array.Length);
+                if (steps == 0)
+                {
+                    result.AddRange(source.units);
+                }
+                else
+                {
+                    for (int i = 0; i <= steps; i++)
+                    {
+                        if (array[i] != null && array[i].Count > 0)
+                        {
+                            result.AddRange(array[i]);
+                        }
+                    }
+                }
+                return result;
+            }
+
+            return null;
         }
 
         public IList CreateList(Type myType)
@@ -47,16 +169,22 @@ namespace CommunityLib
 
         public IList GetOrCreateKeyListPair(IDictionary dict, object key, Type t)
         {
-            if (dict.Contains(key))
+            IList value;
+            if (!dict.Contains(key))
             {
-                return dict[key] as IList;
+                value = CreateList(t);
+                dict.Add(key, value);
+            }
+            else if (dict[key] == null)
+            {
+                value = CreateList(t);
+                dict[key] = value;
             }
             else
             {
-                IList value = CreateList(t);
-                dict.Add(key, value);
-                return value;
+                value = dict[key] as IList;
             }
+            return value;
         }
 
         public IDictionary CreateSubDictionary(Type keyType)
@@ -76,7 +204,7 @@ namespace CommunityLib
 
         public bool TryCreateSubDictionary(IDictionary dict, Type key, Type keyType)
         {
-            if (!dict.Contains(key))
+            if (!dict.Contains(key) || dict[key] == null)
             {
                 dict.Add(key, CreateSubDictionary(keyType));
                 return true;
@@ -98,12 +226,13 @@ namespace CommunityLib
 
         public void FilterSocialGroups()
         {
+          //Console.WriteLine("CommunityLib: Starting Social Group Processing.");
             IDictionary dict = cache.socialGroupsByType;
             IDictionary dictE = cache.socialGroupsByTypeExclusive;
 
             foreach (SocialGroup sG in map.socialGroups)
             {
-                //Console.WriteLine("CommunityLib: Filtering social group " + sG.getName() + " of type: " + sG.GetType().Name);
+              //Console.WriteLine("CommunityLib: Filtering Social Group " + sG.getName() + " of Type: " + sG.GetType().Name + ".");
                 // Initialize universal variables
                 Type tSG = sG.GetType();
 
@@ -114,7 +243,7 @@ namespace CommunityLib
                 Type targetT = typeof(SocialGroup);
                 bool iterateSGT = true;
 
-                //Console.WriteLine("CommunityLib: Starting Social Group Type Loop");
+              //Console.WriteLine("CommunityLib: Starting social group type loop.");
                 while (iterateSGT)
                 {
                     CreateAndOrAddToKeyListPair(dict, tSG, tSG, sG);
@@ -122,22 +251,28 @@ namespace CommunityLib
                     if (tSG == targetT)
                     {
                         iterateSGT = false;
-                        //Console.WriteLine("CommunityLib: End Social Group Type Loop");
+                      //Console.WriteLine("CommunityLib: End social group type loop.");
                     }
                     else
                     {
                         tSG = tSG.BaseType;
-                        //Console.WriteLine("CommunityLib: Iterate type to " + tSG.Name);
+                      //Console.WriteLine("CommunityLib: Iterate Type to " + tSG.Name + ".");
                     }
                 }
-                //Console.WriteLine("CommunityLib: End Loop for Social Group " + sG.getName() + " of Type " + sG.GetType());
+              //Console.WriteLine("CommunityLib: End loop for Social Group " + sG.getName() + " of Type " + sG.GetType().Name + ".");
             }
-            //Console.WriteLine("CommunityLib: Completed Social Group Processing");
+          //Console.WriteLine("CommunityLib: Completed Social Group Processing.");
         }
 
         public void FilterUnits()
         {
-            //Console.WriteLine("CommunityLib: Starting Unit Processing.");
+          //Console.WriteLine("CommunityLib: Starting Unit Processing.");
+
+            if (map.units == null || map.units.Count == 0)
+            {
+              //Console.WriteLine("CommunityLib: No units found.");
+                return;
+            }
 
             // Initialize universal variables
             Type tU;
@@ -147,8 +282,9 @@ namespace CommunityLib
             double profile;
             int visibleSteps;
 
-            List<Unit> unitsThatSeeMe = new List<Unit>();
+            List<Unit> unitsThatCanSeeMe = new List<Unit>();
             IList unitsThatTheyCanSee = new List<Unit>();
+
 
             // Dictionaries being operated on at all level.
             IDictionary uByT = cache.unitsByType;
@@ -172,6 +308,11 @@ namespace CommunityLib
             IDictionary cUBySGTByTE = cache.commandableUnitsBySocialGroupTypeByTypeExclusive;
             IDictionary cUBySGTEByTE = cache.commandableUnitsBySocialGroupTypeExclusiveByTypeExclusive;
 
+            // Distance Dictionaries
+            Dictionary<Unit, Location> cUL = cache.commandableUnitLocations;
+            Dictionary<Unit, IList> uVToU = cache.unitVisibleToUnits;
+            Dictionary<Unit, IList> vUByU = cache.visibleUnitsByUnit;
+
             // Initialize loop-only variables
             bool iterateSGT;
             bool iterateUT;
@@ -181,12 +322,12 @@ namespace CommunityLib
 
             foreach (Unit u in map.units)
             {
-                //Console.WriteLine("CommunityLib: Filtering unit " + u.getName() + " of type: " + u.GetType().Name);
+              //Console.WriteLine("CommunityLib: Filtering unit " + u.getName() + " of type: " + u.GetType().Name + ".");
                 // Set universal variables
                 tU = u.GetType();
                 tSG = u.society.GetType();
                 commandable = u.isCommandable();
-                //Console.WriteLine("CommunityLib: Commandable = " + commandable.ToString());
+              //Console.WriteLine("CommunityLib: Commandable = " + commandable.ToString() + ".");
 
                 // Conduct one-off operations
                 CreateAndOrAddToKeyListPair(uByTE, tU, tU, u);
@@ -201,9 +342,13 @@ namespace CommunityLib
 
                 if (commandable)
                 {
-                    if (!cache.commandableUnitLocations.ContainsKey(u))
+                    if (!cUL.ContainsKey(u))
                     {
-                        cache.commandableUnitLocations.Add(u, u.location);
+                        cUL.Add(u, u.location);
+                    }
+                    else if (cUL[u] == null)
+                    {
+                        cUL[u] = u.location;
                     }
 
                     CreateAndOrAddToKeyListPair(cUByTE, tU, tU, u);
@@ -217,42 +362,51 @@ namespace CommunityLib
                     CreateAndOrAddToKeyListPair(cUBySGTEByTE[tSG] as IDictionary, tU, tU, u);
                 }
 
-                //Console.WriteLine("CommunityLib: Starting Visibility Processing");
+                //Console.WriteLine("CommunityLib: Starting Visibility Processing.");
                 // Visibility Processing
                 profile = u.profile;
-                visibleSteps = (int)Math.Floor(u.profile / 10);
-                unitsThatSeeMe.Clear();
-                //Console.WriteLine("CommunityLib: Gathering Units that can see " + u.getName() + ".");
-                foreach (Location location in cache.locationsByStepsFromLocation[u.location][visibleSteps])
+                visibleSteps = Math.Max((int)Math.Floor(u.profile / 10), 0);
+                //Console.WriteLine("CommunityLib: Gathering units that can see " + u.getName() + " at " + u.location.getName() + ", out to a distance of " + visibleSteps.ToString() + " steps.");
+                if (!uVToU.ContainsKey(u))
                 {
-                    if (location.units != null && location.units.Count() > 0)
+                    uVToU.Add(u, new List<Unit>());
+                }
+                else if (uVToU[u] == null)
+                {
+                    uVToU[u] = new List<Unit>();
+                }
+                uVToU[u] = getUnitsWithinSteps(u.location, visibleSteps);
+
+
+                unitsThatCanSeeMe = uVToU[u] as List<Unit>;
+                unitsThatCanSeeMe.Remove(u);
+
+                if (unitsThatCanSeeMe != null && unitsThatCanSeeMe.Count() > 0)
+                {
+
+
+                  //Console.WriteLine("CommunityLib: Updating caches for Units that can see " + u.getName() + ".");
+                    unitsThatTheyCanSee.Clear();
+                    foreach (Unit unitThatSeesMe in unitsThatCanSeeMe)
                     {
-                        unitsThatSeeMe.AddRange(location.units);
+                      //Console.WriteLine("CommunityLib: Updating cache for " + unitThatSeesMe.getName() + ".");
+                        if (!vUByU.TryGetValue(unitThatSeesMe, out unitsThatTheyCanSee))
+                        {
+                            vUByU.Add(unitThatSeesMe, new List<Unit>());
+                            unitsThatTheyCanSee = vUByU[unitThatSeesMe];
+                        }
+                        else if (unitsThatTheyCanSee == null)
+                        {
+                            unitsThatTheyCanSee = new List<Unit>();
+                            unitsThatTheyCanSee = vUByU[unitThatSeesMe];
+                        }
+                        unitsThatTheyCanSee.Add(u);
                     }
                 }
-                unitsThatSeeMe.Remove(u);
-                cache.unitVisibleToUnits.Add(u, unitsThatSeeMe);
+              //Console.WriteLine("CommunityLib: Completed Visibility Processing.");
 
-                //Console.WriteLine("CommunityLib: Updating caches for Units that can see " + u.getName() + ".");
-                unitsThatTheyCanSee.Clear();
-                foreach (Unit unitThatSeesMe in unitsThatSeeMe)
-                {
-                    if (unitThatSeesMe == u)
-                    {
-                        continue;
-                    }
-
-                    //Console.WriteLine("CommunityLib: Updating cache for " + unitThatSeesMe.getName() + ".");
-                    if (!cache.visibleUnitsByUnit.TryGetValue(unitThatSeesMe, out unitsThatTheyCanSee))
-                    {
-                        cache.visibleUnitsByUnit.Add(unitThatSeesMe, new List<Unit>());
-                        unitsThatTheyCanSee = cache.visibleUnitsByUnit[unitThatSeesMe];
-                    }
-                    unitsThatTheyCanSee.Add(u);
-                }
-
-                //Console.WriteLine("CommunityLib: Starting Social Group Type Loop");
-                //Console.WriteLine("ComminityLib: Filtering for Social Group " + u.society.name + " of type " + tSG.Name);
+              //Console.WriteLine("CommunityLib: Starting social group type loop.");
+              //Console.WriteLine("ComminityLib: Filtering for Social Group " + u.society.name + " of Type " + tSG.Name + ".");
                 // Set loop-only variables
                 iterateSGT = true;
                 excludeSGT = true;
@@ -281,7 +435,7 @@ namespace CommunityLib
                         CreateAndOrAddToKeyListPair(cUBySGTByTE[tSG] as IDictionary, tU, tU, u);
                     }
 
-                    //Console.WriteLine("CommunityLib: Starting Unit Type Loop");
+                  //Console.WriteLine("CommunityLib: Starting unit type loop.");
                     // Conduct Operations for all Types tU, from obj.GetType() to targetTU, inclusively
                     while (iterateUT)
                     {
@@ -304,7 +458,6 @@ namespace CommunityLib
                                 CreateAndOrAddToKeyListPair(cUByT, tU, tU, u);
                                 CreateAndOrAddToKeyListPair(cUBySGByT[u.society] as IDictionary, tU, tU, u);
                                 CreateAndOrAddToKeyListPair(cUBySGTEByT[tSG] as IDictionary, tU, tU, u);
-
                             }
                         }
 
@@ -312,39 +465,50 @@ namespace CommunityLib
                         {
                             iterateUT = false;
                             excludeSGT = false;
-                            //Console.WriteLine("CommunityLib: End Unit Type Loop");
+                          //Console.WriteLine("CommunityLib: End unit type loop.");
                         }
                         else
                         {
                             tU = tU.BaseType;
-                            //Console.WriteLine("CommunityLib: Iterate type to " + tU.Name);
+                          //Console.WriteLine("CommunityLib: Iterating Type to " + tU.Name + ".");
                         }
                     }
 
                     if (tSG == targetTSG)
                     {
                         iterateSGT = false;
-                        //Console.WriteLine("CommunityLib: End Social Group Type Loop");
+                      //Console.WriteLine("CommunityLib: End cocial group type Loop.");
                     }
                     else
                     {
                         tSG = tSG.BaseType;
-                        //Console.WriteLine("CommunityLib: Iterate type to " + tSG.Name);
+                      //Console.WriteLine("CommunityLib: Iterate type to " + tSG.Name + ".");
                     }
                 }
-                //Console.WriteLine("CommunityLib: End Loop for unit " + u.getName() + " of Type " + u.GetType());
+                //Console.WriteLine("CommunityLib: End Loop for unit " + u.getName() + " of Type " + u.GetType().Name + ".");
             }
             //Console.WriteLine("CommunityLib: Completed Unit Processing");
         }
 
         public void FilterLocations()
         {
+          //Console.WriteLine("CommunityLib: Starting Location Processing");
+            if (map.locations == null || map.locations.Count == 0)
+            {
+              //Console.WriteLine("CommunityLib: No locations found.");
+                return;
+            }
+
             // Initialize universal variables
             Settlement s;
 
             Type tL;
             Type tS;
             Type tSG;
+
+            double distance;
+            int steps;
+            List<Location>[] array;
 
             // Dictionaries being operated on at all level.
             // Location Dictionaries
@@ -379,6 +543,12 @@ namespace CommunityLib
             IDictionary sBySGTByTE = cache.settlementsBySocialGroupTypeByTypeExclusive;
             IDictionary sBySGTEByTE = cache.settlementsBySocialGroupTypeExclusiveByTypeExclusive;
 
+            // DIstance Dictionaries
+            Dictionary<Location, Dictionary<Location, double>> dByLfromL = cache.distanceByLocationsFromLocation;
+            Dictionary<Location, List<Location>[]> lBySEfromL = cache.locationsByStepsExclusiveFromLocation;
+            Dictionary<Location, List<Settlement>[]> sBySEfromL = cache.settlementsByStepsExclusiveFromLocation;
+            Dictionary<Location, List<Unit>[]> uBySEfromL = cache.unitsByStepsExclusiveFromLocation;
+
             // Initialize loop-only variables
             bool iterateSGT;
             bool iterateLT;
@@ -391,12 +561,86 @@ namespace CommunityLib
 
             foreach (Location l in map.locations)
             {
-                //Console.WriteLine("CommunityLib: Filtering location " + l.getName() + " of type: " + l.GetType().Name);
+              //Console.WriteLine("CommunityLib: Filtering Location " + l.getName() + " of Type " + l.GetType().Name + ".");
                 // Set universal variables
                 s = null;
                 tS = null;
                 tSG = null;
                 tL = l.GetType();
+
+              //Console.WriteLine("CommunityLib: Starting Distance Calculations for Location " + l.getName() + " of Type " + l.GetType().Name + ".");
+                distance = 0;
+                steps = 0;
+
+                foreach (Location loc2 in map.locations)
+                {
+                    distance = map.getDist(l, loc2);
+                    steps = map.getStepDist(l, loc2);
+
+                    if (!dByLfromL.ContainsKey(l))
+                    {
+                        dByLfromL.Add(l, new Dictionary<Location, double>());
+                    }
+                    else if (dByLfromL[l] == null)
+                    {
+                        dByLfromL[l] = new Dictionary<Location, double>();
+                    }
+                    dByLfromL[l].Add(loc2, distance);
+
+                    if (!lBySEfromL.TryGetValue(l, out array))
+                    {
+                        lBySEfromL.Add(l, new List<Location>[125]);
+                        array = lBySEfromL[l];
+                    }
+                    else if (array == null)
+                    {
+                        lBySEfromL[l] = new List<Location>[125];
+                        array = lBySEfromL[l];
+                    }
+                    steps = Math.Min(steps, lBySEfromL[l].Length);
+                    if (array[steps] == null)
+                    {
+                        array[steps] = new List<Location>();
+                    }
+                    array[steps].Add(loc2);
+
+                    s = loc2.settlement;
+                    if(l.settlement != null && s != null)
+                    {
+                        if (!sBySEfromL.ContainsKey(l))
+                        {
+                            sBySEfromL.Add(l, new List<Settlement>[125]);
+                        }
+                        else if (sBySEfromL[l] == null)
+                        {
+                            sBySEfromL[l] = new List<Settlement>[125];
+                        }
+                        if (sBySEfromL[l][steps] == null)
+                        {
+                            sBySEfromL[l][steps] = new List<Settlement>();
+                        }
+                        sBySEfromL[l][steps].Add(s);
+                    }
+
+                    List<Unit> units = loc2.units;
+                    if (units != null && units.Count > 0)
+                    {
+                        if (!uBySEfromL.ContainsKey(l))
+                        {
+                            uBySEfromL.Add(l, new List<Unit>[125]);
+                        }
+                        else if (uBySEfromL[l] == null)
+                        {
+                            uBySEfromL[l] = new List<Unit>[125];
+                        }
+                        if (uBySEfromL[l][steps] == null)
+                        {
+                            uBySEfromL[l][steps] = new List<Unit>();
+                        }
+                        uBySEfromL[l][steps].AddRange(units);
+                    }
+                }
+                //Console.WriteLine("CommunityLib: Distance calculations complete.");
 
                 CreateAndOrAddToKeyListPair(lByTE, tL, tL, l);
 
@@ -404,7 +648,7 @@ namespace CommunityLib
                 if (l.soc != null)
                 {
                     tSG = l.soc.GetType();
-                    //Console.WriteLine("CommunityLib: Location belongs to Social Group " + l.soc.name + " of Type " + tSG.Name);
+                    //Console.WriteLine("CommunityLib: Location belongs to Social Group " + l.soc.name + " of Type " + tSG.Name + ".");
 
                     CreateAndOrAddToKeyListPair(lBySG, l.soc, typeof(Location), l);
                     CreateAndOrAddToKeyListPair(lBySGTE, tSG, typeof(Location), l);
@@ -425,7 +669,7 @@ namespace CommunityLib
                 {
                     s = l.settlement;
                     tS = s.GetType();
-                    //Console.WriteLine("CommunityLib: Location has settlement " + s.name + " of Type " + tS.Name);
+                    //Console.WriteLine("CommunityLib: Location has settlement " + s.name + " of Type " + tS.Name + ".");
 
                     CreateAndOrAddToKeyListPair(sByTE, tS, tS, s);
 
@@ -440,9 +684,6 @@ namespace CommunityLib
                         TryCreateSubDictionary(sBySGTEByTE, tSG, typeof(Type));
                         CreateAndOrAddToKeyListPair(sBySGTEByTE[tSG] as IDictionary, tS, tS, s);
                     }
-
-                    cache.settlementsByStepsFromLocation.Add(l, cache.locationsByStepsFromLocation[l]);
-                    cache.settlementsByStepsExclusiveFromLocation.Add(l, cache.locationsByStepsExclusiveFromLocation[l]);
                 }
                 else if (tSG == null)
                 {
@@ -462,7 +703,7 @@ namespace CommunityLib
 
                 if (tSG != null)
                 {
-                    //Console.WriteLine("CommunityLib: Starting Scoial Group Type Loop");
+                    //Console.WriteLine("CommunityLib: Starting scoial group type loop.");
                     // Conduct Operations for all Types tSG, from obj.GetType() to targetTSG, inclusively
                     while (iterateSGT)
                     {
@@ -482,7 +723,7 @@ namespace CommunityLib
                         CreateAndOrAddToKeyListPair(lBySGT, tSG, typeof(Location), l);
                         CreateAndOrAddToKeyListPair(lBySGTByTE[tSG] as IDictionary, tSG, tL, l);
 
-                        //Console.WriteLine("CommunityLib: Starting Location Type Loop");
+                        //Console.WriteLine("CommunityLib: Starting location type loop.");
                         // Conduct Operations for all Types tL, from obj.GetType() to targetTL, inclusively
                         while (iterateLT)
                         {
@@ -504,12 +745,12 @@ namespace CommunityLib
                             {
                                 iterateLT = false;
                                 excludeSGTForL = false;
-                                //Console.WriteLine("CommunityLib: End Location Type Loop");
+                                //Console.WriteLine("CommunityLib: End location type loop");
                             }
                             else
                             {
                                 tL = tL.BaseType;
-                                //Console.WriteLine("CommunityLib: Iterate type to " + tL.Name);
+                                //Console.WriteLine("CommunityLib: Iterating Type to " + tL.Name  + ".");
                             }
                         }
 
@@ -523,7 +764,7 @@ namespace CommunityLib
                             CreateAndOrAddToKeyListPair(sBySGT, tSG, typeof(Settlement), s);
                             CreateAndOrAddToKeyListPair(sBySGTByTE[tSG] as IDictionary, tS, tS, s);
 
-                            //Console.WriteLine("CommunityLib: Starting Settlement Type Loop");
+                          //Console.WriteLine("CommunityLib: Starting settlement type loop.");
                             while (iterateST)
                             {
                                 CreateAndOrAddToKeyListPair(sBySGTByT[tSG] as IDictionary, tS, tS, s);
@@ -539,12 +780,12 @@ namespace CommunityLib
                                 {
                                     iterateST = false;
                                     excludeSGTForS = false;
-                                    //Console.WriteLine("CommunityLib: End Settlement Type Loop");
+                                  //Console.WriteLine("CommunityLib: End settlement type loop.");
                                 }
                                 else
                                 {
                                     tS = tS.BaseType;
-                                    //Console.WriteLine("CommunityLib: Iterate type to " + tS.Name);
+                                    //Console.WriteLine("CommunityLib: Iterating Type to " + tS.Name + ".");
                                 }
                             }
                         }
@@ -552,12 +793,12 @@ namespace CommunityLib
                         if (tSG == targetTSG)
                         {
                             iterateSGT = false;
-                            //Console.WriteLine("CommunityLib: End Social Group Type Loop");
+                            //Console.WriteLine("CommunityLib: End social group type loop.");
                         }
                         else
                         {
                             tSG = tSG.BaseType;
-                            //Console.WriteLine("CommunityLib: Iterate type to " + tSG.Name);
+                            //Console.WriteLine("CommunityLib: Iterating Type to " + tSG.Name + ".");
                         }
                     }
                 }
@@ -565,7 +806,7 @@ namespace CommunityLib
                 {
                     CreateAndOrAddToKeyListPair(lWoSGByTE, tL, tL, l);
 
-                    //Console.WriteLine("CommunityLib: Starting Location Type Loop");
+                    //Console.WriteLine("CommunityLib: Starting location type loop.");
                     while (iterateLT)
                     {
                         CreateAndOrAddToKeyListPair(lByT, tL, tL, l);
@@ -581,12 +822,12 @@ namespace CommunityLib
                         {
                             iterateLT = false;
                             excludeSGTForL = false;
-                            //Console.WriteLine("CommunityLib: End Location Type Loop");
+                            //Console.WriteLine("CommunityLib: End location type loop.");
                         }
                         else
                         {
                             tL = tL.BaseType;
-                            //Console.WriteLine("CommunityLib: Iterate type to " + tL.Name);
+                            //Console.WriteLine("CommunityLib: Iterating Type to " + tL.Name + ".");
                         }
                     }
 
@@ -594,7 +835,7 @@ namespace CommunityLib
                     {
                         CreateAndOrAddToKeyListPair(sWoSGByTE, tS, tS, s);
 
-                        //Console.WriteLine("CommunityLib: Starting Settlement Type Loop");
+                        //Console.WriteLine("CommunityLib: Starting settlement type loop.");
                         while (iterateST)
                         {
                             CreateAndOrAddToKeyListPair(sByT, tS, tS, s);
@@ -604,63 +845,138 @@ namespace CommunityLib
                             {
                                 iterateST = false;
                                 excludeSGTForS = false;
-                                //Console.WriteLine("CommunityLib: End Settlement Type Loop");
+                                //Console.WriteLine("CommunityLib: End settlement type loop.");
                             }
                             else
                             {
                                 tS = tS.BaseType;
-                                //Console.WriteLine("CommunityLib: Iterate type to " + tS.Name);
+                                //Console.WriteLine("CommunityLib: Iterating Type to " + tS.Name + ".");
                             }
                         }
                     }
                 }
-                //Console.WriteLine("CommunityLib: End Loop for location " + l.getName() + " of Type " + l.GetType());
+                //Console.WriteLine("CommunityLib: End Loop for location " + l.getName() + " of Type " + l.GetType().Name + ".");
             }
             //Console.WriteLine("CommunityLib: Completed Location Processing");
         }
 
         public void UpdateLocationDistances()
         {
+          //Console.WriteLine("CommunityLib: Starting Location Distance Update");
+            if (map.locations == null || map.locations.Count == 0)
+            {
+              //Console.WriteLine("CommunityLib: No locations found.");
+                return;
+            }
+
             // Clear location-distance caches
             Dictionary<Location, Dictionary<Location, double>> dByLfromL = cache.distanceByLocationsFromLocation;
-            Dictionary<Location, Dictionary<Location, int>> sByLfromL = cache.stepsByLocationsFromLocation;
-            Dictionary<Location, Dictionary<int, IList>> lBySfromL = cache.locationsByStepsFromLocation;
-            Dictionary<Location, Dictionary<int, IList>> lBySEfromL = cache.locationsByStepsExclusiveFromLocation;
+            Dictionary<Location, List<Location>[]> lBySEfromL = cache.locationsByStepsExclusiveFromLocation;
 
             dByLfromL.Clear();
-            lBySfromL.Clear();
             lBySEfromL.Clear();
 
             double distance;
             int steps;
-            foreach (Location loc in map.locations)
+            foreach (Location l in map.locations)
             {
                 foreach (Location loc2 in map.locations)
                 {
-                    distance = map.getDist(loc, loc2);
-                    steps = map.getStepDist(loc, loc2);
+                    distance = map.getDist(l, loc2);
+                    steps = map.getStepDist(l, loc2);
 
-                    if (!dByLfromL.ContainsKey(loc))
+                    if (!dByLfromL.ContainsKey(l))
                     {
-                        dByLfromL.Add(loc, new Dictionary<Location, double>());
+                        dByLfromL.Add(l, new Dictionary<Location, double>());
                     }
-                    if (!sByLfromL.ContainsKey(loc))
+                    else if (dByLfromL[l] == null)
                     {
-                        sByLfromL.Add(loc, new Dictionary<Location, int>());
+                        dByLfromL[l] = new Dictionary<Location, double>();
                     }
+                    dByLfromL[l].Add(loc2, distance);
 
-                    TryCreateSubDictionary(lBySEfromL, loc, typeof(int));
-                    TryCreateSubDictionary(lBySfromL, loc, typeof(int));
-
-                    dByLfromL[loc].Add(loc2, distance);
-                    sByLfromL[loc].Add(loc2, steps);
-
-                    CreateAndOrAddToKeyListPair(lBySEfromL[loc], steps, typeof(Location), loc2);
-
-                    while (steps <= 50)
+                    if (!lBySEfromL.ContainsKey(l))
                     {
-                        CreateAndOrAddToKeyListPair(lBySfromL[loc], steps, typeof(Location), loc2);
-                        steps++;
+                        lBySEfromL.Add(l, new List<Location>[125]);
+                    }
+                    else if (lBySEfromL[l] == null)
+                    {
+                        lBySEfromL[l] = new List<Location>[125];
+                    }
+                    if (lBySEfromL[l][steps] == null)
+                    {
+                        lBySEfromL[l][steps] = new List<Location>();
+                    }
+                    lBySEfromL[l][steps].Add(loc2);
+                }
+            }
+        }
+
+        public void UpdateCommandableUnitVisibility()
+        {
+            //Console.WriteLine("CommunityLib: Processing End-of-Turn visibility update for commandable units.");
+            if (!cache.commandableUnitsByType.ContainsKey(typeof(Unit)) || cache.commandableUnitsByType[typeof(Unit)].Count == 0)
+            {
+                //Console.WriteLine("CommunityLib: No commandable units found.");
+                return;
+            }
+
+            List<Unit> cUs = cache.commandableUnitsByType[typeof(Unit)] as List<Unit>;
+            Dictionary<Unit, Location> cUL = cache.commandableUnitLocations;
+
+            Dictionary<Unit, IList> vUToU = cache.unitVisibleToUnits;
+            Dictionary<Unit, IList> vUByU = cache.visibleUnitsByUnit;
+
+            double profile;
+            int visibleSteps;
+            List<Unit> unitsThatCanSeeMe = new List<Unit>();
+            IList unitsThatTheyCanSee = new List<Unit>();
+
+            foreach (Unit cU in cUs)
+            {
+                unitsThatCanSeeMe.Clear();
+
+                //Console.WriteLine("CommunityLib: Removing old vision data");
+                if (cU.location == cUL[cU])
+                {
+                    continue;
+                }
+
+                if (vUToU.ContainsKey(cU) && vUToU[cU] != null)
+                {
+                    foreach (Unit unitThatSeesMe in vUToU[cU])
+                    {
+                        vUByU[unitThatSeesMe].Remove(cU);
+                    }
+                    vUToU[cU].Clear();
+                }
+
+                //Console.WriteLine("CommunityLib: Starting Visibility Processing");
+                // Visibility Processing
+                profile = cU.profile;
+                visibleSteps = Math.Max((int)Math.Floor(cU.profile / 10), 0);
+                //Console.WriteLine("CommunityLib: Gathering Units that can see " + cU.getName() + " at " + cU.location.getName() + ", out to a distance of " + visibleSteps.ToString() + " steps.");
+                unitsThatCanSeeMe = getUnitsWithinSteps(cU.location, visibleSteps);
+                unitsThatCanSeeMe.Remove(cU);
+
+                if (unitsThatCanSeeMe != null && unitsThatCanSeeMe.Count() > 0)
+                {
+                    //Console.WriteLine("CommunityLib: Updating caches for Units that can see " + cU.getName() + ".");
+                    unitsThatTheyCanSee.Clear();
+                    foreach (Unit unitThatSeesMe in unitsThatCanSeeMe)
+                    {
+                        //Console.WriteLine("CommunityLib: Updating cache for " + unitThatSeesMe.getName() + ".");
+                        if (!cache.visibleUnitsByUnit.TryGetValue(unitThatSeesMe, out unitsThatTheyCanSee))
+                        {
+                            cache.visibleUnitsByUnit.Add(unitThatSeesMe, new List<Unit>());
+                            unitsThatTheyCanSee = cache.visibleUnitsByUnit[unitThatSeesMe];
+                        }
+                        else if (unitsThatTheyCanSee == null)
+                        {
+                            cache.visibleUnitsByUnit[unitThatSeesMe] = new List<Unit>();
+                            unitsThatTheyCanSee = cache.visibleUnitsByUnit[unitThatSeesMe];
+                        }
+                        unitsThatTheyCanSee.Add(cU);
                     }
                 }
             }
