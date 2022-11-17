@@ -31,7 +31,7 @@ public class exampleMod : Assets.Code.Modding.ModKernel
         // Always check to see if a key is present before getting it's value.
         // The version of Unity's C# framework that is packaged with the game does not implement IDictionary.TryGetValue(key), thus this 'if contains key get value' structure is neccesary.
         List<UAE_Warlord> warlords;
-        if (CommunityLib.ModCore.cache.commandableUnitsBySocialGroupByType.Contains(exampleOrcSocialGroup) && CommunityLib.ModCore.cache.commandableUnitsBySocialGroupByType[exampleOrcSocialGroup].Contains(typeof(UAE_Warlord)))
+        if (CommunityLib.ModCore.cache.commandableUnitsBySocialGroupByType.ContainsKey(exampleOrcSocialGroup) && CommunityLib.ModCore.cache.commandableUnitsBySocialGroupByType[exampleOrcSocialGroup].Contains(typeof(UAE_Warlord)))
         {
             // Always cast the returned list to the expected type. If you use the wrong types here, you will generate runtime errors that will get past the compiler.
             warlords = CommunityLib.ModCore.cache.commandableUnitsBySocialGroupByType[exampleOrcSocialGroup][typeof(UAE_Warlord)] as List<UAE_Warlord>;
@@ -48,7 +48,7 @@ public class exampleMod : Assets.Code.Modding.ModKernel
     public void exampleMethodExclusive()
     {
         List<HolyOrder> holyOrders;
-        if (CommunityLib.ModCore.cache.socialGroupsByType.Contains(typeof(HolyOrder)))
+        if (CommunityLib.ModCore.cache.socialGroupsByType.ContainsKey(typeof(HolyOrder)))
         {
             holyOrders = CommunityLib.ModCore.cache.socialGroupsByType[typeof(HolyOrder)] as List<HolyOrder>;
             // The list value socialGroupsByType[typeof(HolyOrder)] includes everything that is of type HolyOrder or any of its subTypes. In the unmodded game, this will include human holy orders, witch's holy orders, and orphanim's holy orders.
@@ -60,7 +60,7 @@ public class exampleMod : Assets.Code.Modding.ModKernel
         }
         
         List<HolyOrder> humanHolyOrders;
-        if (CommunityLib.ModCore.cache.socialGroupsByTypeExclusive.Contains(typeof(HolyOrder)))
+        if (CommunityLib.ModCore.cache.socialGroupsByTypeExclusive.ContainsKey(typeof(HolyOrder)))
         {
             // The list value socialGroupsByTypeExclusive[typeof(HolyOrder)] includes everything that is of exactly type HolyOrder, not include any of it's subTypes. In the unmodded game, this will only contain human holy orders.
             holyOrders = CommunityLib.ModCore.cache.socialGroupsByTypeExclusive[typeof(HolyOrder)] as List<HolyOrder>;
