@@ -741,7 +741,6 @@ namespace CommunityLib
                         tL = l.GetType();
                         if (s != null)
                         {
-                            iterateST = true;
                             tS = s.GetType();
                         }
 
@@ -800,7 +799,7 @@ namespace CommunityLib
 
                                 if (excludeSGTForS)
                                 {
-                                    CreateAndOrAddToKeyListPair(sByT, tS, typeof(Settlement), s);
+                                    CreateAndOrAddToKeyListPair(sByT, tS, tS, s);
                                     CreateAndOrAddToKeyListPair(sBySGByT[l.soc] as IDictionary, tS, tS, s);
                                     CreateAndOrAddToKeyListPair(sBySGTEByT[tSG] as IDictionary, tS, tS, s);
                                 }

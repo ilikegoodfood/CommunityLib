@@ -59,6 +59,15 @@ namespace CommunityLib
             if (cache.settlementsByType.ContainsKey(typeof(SettlementHuman)))
             {
                 List<SettlementHuman> humanSettlements = cache.settlementsByType[typeof(SettlementHuman)] as List<SettlementHuman>;
+                SettlementHuman humanSettlement = null;
+                if (humanSettlements != null && humanSettlements.Count > 0)
+                {
+                    humanSettlement = humanSettlements[Eleven.random.Next(humanSettlements.Count)];
+                }
+                if (humanSettlement != null)
+                {
+                    map.addUnifiedMessage(humanSettlement.location, humanSettlement.location, "Cache Testing", "Item Found: " + humanSettlement.getName(), "CommunityLib Test");
+                }
             }
         }
 
