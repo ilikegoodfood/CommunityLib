@@ -14,6 +14,7 @@ namespace CommunityLib
     {
         public Cache cache;
         private Filters filters;
+        private UAENOverrideAI overrideAI;
 
         public override void afterMapGenBeforeHistorical(Map map)
         {
@@ -32,6 +33,11 @@ namespace CommunityLib
             if (filters == null)
             {
                 filters = new Filters(cache, map);
+            }
+
+            if (overrideAI == null)
+            {
+                overrideAI = new UAENOverrideAI(cache, map);
             }
 
             filters.afterMapGenBeforeHistorical(map);
@@ -54,6 +60,25 @@ namespace CommunityLib
             // testSpecific(map);
         }
 
+        public override void onTurnEnd(Map map)
+        {
+            base.onTurnEnd(map);
+
+            filters.onTurnEnd(map);
+        }
+
+        public override void onAgentAIDecision(UA uA)
+        {
+            base.onAgentAIDecision(uA);
+
+            //Console.WriteLine("CommunityLib: Running onAgentAIDecision");
+            if (uA is UAEN_OrcUpstart && overrideAI.customChallenges_OrcUpstart.Count > 0)
+            {
+                //Console.WriteLine("CommunityLib: AIDecision made by OrcUpstart and custom challenge available.");
+                overrideAI.OrcUpstartOverrideAI(uA);
+            }
+        }
+
         private void testSpecific(Map map)
         {
             if (cache.settlementsByType.ContainsKey(typeof(SettlementHuman)))
@@ -71,16 +96,9 @@ namespace CommunityLib
             }
         }
 
-        public override void onTurnEnd(Map map)
-        {
-            base.onTurnEnd(map);
-
-            filters.onTurnEnd(map);
-        }
-
         private void testRoutine(Map map)
         {
-            Console.WriteLine("Starting test routine");
+            Console.WriteLine("CommunityLib Caher Test: Starting test routine");
             string messageString = "This is a batch of tests for the cacher. It retrieved the following items at random:";
 
             Unit randCommandableUnit = null;
@@ -224,9 +242,19 @@ namespace CommunityLib
             filters.UpdateLocationDistances();
         }
 
+        public void UpdateCommandableUnitVisibility()
+        {
+            filters.UpdateCommandableUnitVisibility();
+        }
+
         public Cache GetCache()
         {
             return cache;
+        }
+
+        public UAENOverrideAI GetUAENOverrideAI()
+        {
+            return overrideAI;
         }
     }
 }

@@ -51,6 +51,7 @@
   <ItemGroup>
     <Compile Include="Cache.cs" />
     <Compile Include="Filters.cs" />
+    <Compile Include="UAENOverrideAI.cs" />
     <None Include="IDictionaryExtension.cs" />
     <Compile Include="ModCore.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
