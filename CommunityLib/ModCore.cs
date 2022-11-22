@@ -18,8 +18,6 @@ namespace CommunityLib
 
         public override void afterMapGenBeforeHistorical(Map map)
         {
-            base.afterMapGenBeforeHistorical(map);
-
             //Initialize subclasses.
             if (cache == null)
             {
@@ -45,15 +43,11 @@ namespace CommunityLib
 
         public override void afterMapGenAfterHistorical(Map map)
         {
-            base.afterMapGenAfterHistorical(map);
-
             filters.afterMapGenAfterHistorical(map);
         }
 
         public override void onTurnStart(Map map)
         {
-            base.onTurnStart(map);
-
             filters.onTurnStart(map);
 
             // testRoutine(map);
@@ -62,15 +56,11 @@ namespace CommunityLib
 
         public override void onTurnEnd(Map map)
         {
-            base.onTurnEnd(map);
-
             filters.onTurnEnd(map);
         }
 
         public override void onAgentAIDecision(UA uA)
         {
-            base.onAgentAIDecision(uA);
-
             //Console.WriteLine("CommunityLib: Running onAgentAIDecision");
             switch (uA)
             {
