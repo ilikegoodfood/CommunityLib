@@ -4,6 +4,7 @@ A community library that contains tools for the modding of Shadows of Forbidden 
 ## Features
 It currently contains the follwoing features:
 
+### Cacher
 The cacher is a collection of iterators that run once per turn, in the `onTurnStart` hook. They iterate over the locations, social groups and units in the game and sort them into a wide variety of 1D and 2D Dictionaries and Lists.
 
 This data can be accessed by any mod that is depndant on the CommunityLib, allowing them to greatly reduce the amount of iteration they need to do on a mod-by-mod basis.
