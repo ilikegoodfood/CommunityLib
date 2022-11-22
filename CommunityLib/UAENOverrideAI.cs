@@ -10,6 +10,8 @@ namespace CommunityLib
 {
     public class UAENOverrideAI
     {
+        public bool overrideAI_OrcUpstart = true;
+
         public List<Type> customChallenges_OrcUpstart = new List<Type>();
 
         private Map map;
@@ -22,7 +24,7 @@ namespace CommunityLib
             this.map = map;
         }
 
-        public void OrcUpstartOverrideAI(UA uA)
+        public void OverrideAI_OrcUpstart(UA uA)
         {
             //Console.WriteLine("CommunityLib: Running OrcUpstartOverrideAI.");
             List<Set_OrcCamp> orcCamps = null;

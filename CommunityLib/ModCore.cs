@@ -72,10 +72,16 @@ namespace CommunityLib
             base.onAgentAIDecision(uA);
 
             //Console.WriteLine("CommunityLib: Running onAgentAIDecision");
-            if (uA is UAEN_OrcUpstart && overrideAI.customChallenges_OrcUpstart.Count > 0)
+            switch (uA)
             {
-                //Console.WriteLine("CommunityLib: AIDecision made by OrcUpstart and custom challenge available.");
-                overrideAI.OrcUpstartOverrideAI(uA);
+                case UAEN_OrcUpstart _:
+                    if (overrideAI.overrideAI_OrcUpstart && overrideAI.customChallenges_OrcUpstart.Count > 0)
+                    {
+                        overrideAI.OverrideAI_OrcUpstart(uA);
+                    }
+                    break;
+                default:
+                    break;
             }
         }
 
