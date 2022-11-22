@@ -20,7 +20,7 @@ The cacher is a collection of iterators that run once per turn, in the `onTurnSt
 This data can be accessed by any mod that is depndant on the CommunityLib, allowing them to greatly reduce the amount of iteration they need to do on a mod-by-mod basis.
 
 ### UAEN Override AI (Game Version 0.12 and later)
-The UAEN Override AI is a set of clones of the base game's hardcoded AI for the UAEN subtypes (Unit Agent Evil Neutral). These AI, unlike the base game's AI, are accompanie by a custom challenge type list, which mods that are dependant on the CommunityLib can access, read from and write to. By adding a challenge type to this list, the AI will consider it among the base game's options when making decisions.
+The UAEN Override AI is a set of clones of the base game's hardcoded AI for the UAEN subtypes (Unit Agent Evil Neutral). These AI, unlike the base game's AI, are accompanied by a custom challenge type list, which mods that are dependant on the CommunityLib can access, read from and write to. By adding a challenge type to this list, the AI will consider it among the base game's options when making decisions.
 
 The override AI will only run for each type of UAEN that there are custom challenge types for.
 
