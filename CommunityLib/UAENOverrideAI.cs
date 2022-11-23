@@ -120,14 +120,17 @@ namespace CommunityLib
 
                 if (call.strength > 100.0)
                 {
-                    double num = 0.0;
-                    Location location = null;
                     List<Settlement> targetSettlements = new List<Settlement>();
+                    List<Settlement> settlements = null;
                     for (int i = 0; i < 125; i++)
                     {
-                        List<Settlement> settlements = cache.settlementsByStepsExclusiveFromLocation[vampire.location][i];
 
-                        if (settlements.Count == 0)
+                        if (cache.settlementsByStepsExclusiveFromLocation.ContainsKey(vampire.location) && cache.settlementsByStepsExclusiveFromLocation[vampire.location] != null && cache.settlementsByStepsExclusiveFromLocation[vampire.location][i] != null)
+                        {
+                            settlements = cache.settlementsByStepsExclusiveFromLocation[vampire.location][i];
+                        }
+
+                        if (settlements != null && settlements.Count == 0)
                         {
                             continue;
                         }
@@ -146,7 +149,7 @@ namespace CommunityLib
 
                                 if (targetSettlements.Count > 0)
                                 {
-                                    location = targetSettlements[Eleven.random.Next(targetSettlements.Count)].location;
+                                    Location location = targetSettlements[Eleven.random.Next(targetSettlements.Count)].location;
                                     vampire.task = new Task_GoToLocation(location);
                                     return;
                                 }
