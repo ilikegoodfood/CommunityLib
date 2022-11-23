@@ -9,6 +9,8 @@ You should only have CommunityLib enabled if you have a mod enabled that is depe
 
 *[See the project wiki for more details.](https://github.com/ilikegoodfood/CommunityLib/wiki)*
 
+**This mod must be loaded before, higher in the load order, any mod that is dependant on it. It is recommended to place this mod directly under Core.**
+
 **NOTE:** If in a game and wishing to start a new game, please quit to desktop and relaunch the game before doing so. Some users have found that mods do not function properly if this step is not taken.
 
 ## Features
@@ -23,5 +25,3 @@ This data can be accessed by any mod that is depndant on the CommunityLib, allow
 The UAEN Override AI is a set of clones of the base game's hardcoded AI for the UAEN subtypes (Unit Agent Evil Neutral). These AI, unlike the base game's AI, are accompanied by a custom challenge type list, which mods that are dependant on the CommunityLib can access, read from and write to. By adding a challenge type to this list, the AI will consider it among the base game's options when making decisions.
 
 The override AI will only run for each type of UAEN that there are custom challenge types for.
-
-This mod must be loaded before, higher in the load order, any mod that is dependant on it. It is recommended to place this mod directly under Core.
