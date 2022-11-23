@@ -28,11 +28,6 @@ namespace CommunityLib
             FilterUnits();
         }
 
-        public void onTurnEnd(Map map)
-        {
-            UpdateCommandableUnitVisibility();
-        }
-
         public void afterMapGenBeforeHistorical(Map map)
         {
             cache.ClearCache();

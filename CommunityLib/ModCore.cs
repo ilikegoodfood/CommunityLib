@@ -46,6 +46,31 @@ namespace CommunityLib
             filters.afterMapGenAfterHistorical(map);
         }
 
+        public override void afterLoading(Map map)
+        {
+            //Initialize subclasses.
+            if (cache == null)
+            {
+                cache = new Cache();
+            }
+            else
+            {
+                cache.ClearCache();
+            }
+
+            if (filters == null)
+            {
+                filters = new Filters(cache, map);
+            }
+
+            if (overrideAI == null)
+            {
+                overrideAI = new UAENOverrideAI(cache, map);
+            }
+
+            filters.afterMapGenBeforeHistorical(map);
+        }
+
         public override void onTurnStart(Map map)
         {
             filters.onTurnStart(map);
@@ -56,7 +81,7 @@ namespace CommunityLib
 
         public override void onTurnEnd(Map map)
         {
-            filters.onTurnEnd(map);
+            UpdateCommandableUnitVisibility();
         }
 
         public override void onAgentAIDecision(UA uA)
@@ -64,10 +89,16 @@ namespace CommunityLib
             //Console.WriteLine("CommunityLib: Running onAgentAIDecision");
             switch (uA)
             {
-                case UAEN_OrcUpstart _:
+                case UAEN_OrcUpstart upstart:
                     if (overrideAI.overrideAI_OrcUpstart && overrideAI.customChallenges_OrcUpstart.Count > 0)
                     {
-                        overrideAI.OverrideAI_OrcUpstart(uA);
+                        overrideAI.OverrideAI_OrcUpstart(upstart);
+                    }
+                    break;
+                case UAEN_Vampire vampire:
+                    if (overrideAI.overrideAI_Vampire && (overrideAI.customChallenges_Vampire.Count > 0 || overrideAI.customChallenges_Vampire_Death.Count > 0))
+                    {
+                        overrideAI.OverrideAI_Vampire(vampire);
                     }
                     break;
                 default:
