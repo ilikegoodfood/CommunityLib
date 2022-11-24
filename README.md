@@ -3,7 +3,7 @@ CommunityLib is a community library that contains tools for the modding of Shado
 
 These tools aim to make dependant mods more performant, easier to develop, and to allow for a greater degree of interoperability.
 
-This Library will significantly increase the time it takes to generate a new game, but should be unnoticeable during play. Performance is likely to decrees on simple mods, but increase for larger mod lists of dependant mods, or for very complex dependant mods.
+This Library will significantly increase the time it takes to generate a new game, but should be unnoticeable during play. Performance is likely to decrease on simple mods, but increase for larger mod lists of dependant mods, or for very complex dependant mods.
 
 You should only have CommunityLib enabled if you have a mod enabled that is dependant on it, or you are developing a mod that is dependant on it.
 
