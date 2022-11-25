@@ -12,7 +12,7 @@ namespace CommunityLib
 {
     public class ModCore : Assets.Code.Modding.ModKernel
     {
-        public Cache cache;
+        private Cache cache;
         private Filters filters;
         private UAENOverrideAI overrideAI;
 
@@ -89,6 +89,18 @@ namespace CommunityLib
             //Console.WriteLine("CommunityLib: Running onAgentAIDecision");
             switch (uA)
             {
+                case UAEN_DeepOne deepOne:
+                    if (overrideAI.overrideAI_DeepOne && overrideAI.deepOneCultChance < 1.0 && overrideAI.customChallenges_DeepOne.Count > 0)
+                    {
+                        overrideAI.OverrideAI_DeepOne(deepOne);
+                    }
+                    break;
+                case UAEN_Ghast ghast:
+                    if (overrideAI.overrideAI_Ghast && overrideAI.ghastMoveChance < 1.0 && overrideAI.customChallenges_Ghast.Count > 0)
+                    {
+                        overrideAI.OverrideAI_Ghast(ghast);
+                    }
+                    break;
                 case UAEN_OrcUpstart upstart:
                     if (overrideAI.overrideAI_OrcUpstart && overrideAI.customChallenges_OrcUpstart.Count > 0)
                     {

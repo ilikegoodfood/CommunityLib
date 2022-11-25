@@ -55,6 +55,10 @@ namespace CommunityLib
         public Dictionary<Type, Dictionary<Type, IList>> locationsBySocialGroupTypeByTypeExclusive = new Dictionary<Type, Dictionary<Type, IList>>();
         public Dictionary<Type, Dictionary<Type, IList>> locationsBySocialGroupTypeExclusiveByTypeExclusive = new Dictionary<Type, Dictionary<Type, IList>>();
 
+        // Specific Locations
+        public List<Location> coastalLocations = new List<Location>();
+        public List<Location> oceanLocations = new List<Location>();
+
         // Negative Filters - Social Groups
         public Dictionary<Type, IList> locationsWithoutSocialGroupByType = new Dictionary<Type, IList>();
         public Dictionary<Type, IList> locationsWithoutSocialGroupByTypeExclusive = new Dictionary<Type, IList>();
@@ -161,6 +165,9 @@ namespace CommunityLib
             dicts.Add(locationsBySocialGroupTypeExclusiveByType);
             dicts.Add(locationsBySocialGroupTypeByTypeExclusive);
             dicts.Add(locationsBySocialGroupTypeExclusiveByTypeExclusive);
+            // Specific Locations
+            lists.Add(coastalLocations);
+            lists.Add(oceanLocations);
             // Negative Filters - Social Groups
             dicts.Add(locationsWithoutSocialGroupByType);
             dicts.Add(locationsWithoutSocialGroupByTypeExclusive);

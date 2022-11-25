@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using UnityEngine.Profiling;
+using System.CodeDom;
 
 namespace CommunityLib
 {
@@ -667,6 +668,16 @@ namespace CommunityLib
                 //Console.WriteLine("CommunityLib: Distance calculations complete.");
 
                 CreateAndOrAddToKeyListPair(lByTE, tL, tL, l);
+
+                // Branch for Ocean Locations
+                if (l.isOcean)
+                {
+                    cache.oceanLocations.Add(l);
+                }
+                if (l.isCoastal)
+                {
+                    cache.coastalLocations.Add(l);
+                }
 
                 // Branch for Social Groups
                 if (l.soc != null)
