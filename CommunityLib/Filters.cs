@@ -2,11 +2,7 @@
 using System.Collections;
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 using System.Linq;
-using UnityEngine.Profiling;
-using System.CodeDom;
-using System.Reflection.Emit;
 
 namespace CommunityLib
 {
@@ -1751,6 +1747,121 @@ namespace CommunityLib
                                                 array[level] = new List<Set_City>();
                                             }
                                             array[level].Add(city);
+
+                                            if (l.isOcean)
+                                            {
+                                                if (oCityByL[level] == null)
+                                                {
+                                                    oCityByL[level] = new List<Set_City>();
+                                                }
+                                                oCityByL[level].Add(city);
+
+                                                if (!oCityBySGByL.Contains(sG))
+                                                {
+                                                    oCityBySGByL.Add(sG, new List<Set_City>[6]);
+                                                }
+                                                else if (oCityBySGByL[sG] == null)
+                                                {
+                                                    oCityBySGByL[sG] = new List<Set_City>[6];
+                                                }
+                                                array = oCityBySGByL[sG] as List<Set_City>[];
+                                                if (array[level] == null)
+                                                {
+                                                    array[level] = new List<Set_City>();
+                                                }
+                                                array[level].Add(city);
+
+                                                if (!oCityBySGTEByL.Contains(tSG))
+                                                {
+                                                    oCityBySGTEByL.Add(tSG, new List<Set_City>[6]);
+                                                }
+                                                else if (oCityBySGTEByL[tSG] == null)
+                                                {
+                                                    oCityBySGTEByL[tSG] = new List<Set_City>[6];
+                                                }
+                                                array = oCityBySGTEByL[tSG] as List<Set_City>[];
+                                                if (array[level] == null)
+                                                {
+                                                    array[level] = new List<Set_City>();
+                                                }
+                                                array[level].Add(city);
+                                            }
+                                            else
+                                            {
+                                                if (tCityByL[level] == null)
+                                                {
+                                                    tCityByL[level] = new List<Set_City>();
+                                                }
+                                                tCityByL[level].Add(city);
+
+                                                if (!tCityBySGByL.Contains(sG))
+                                                {
+                                                    tCityBySGByL.Add(sG, new List<Set_City>[6]);
+                                                }
+                                                else if (tCityBySGByL[sG] == null)
+                                                {
+                                                    tCityBySGByL[sG] = new List<Set_City>[6];
+                                                }
+                                                array = tCityBySGByL[sG] as List<Set_City>[];
+                                                if (array[level] == null)
+                                                {
+                                                    array[level] = new List<Set_City>();
+                                                }
+                                                array[level].Add(city);
+
+                                                if (!tCityBySGTEByL.Contains(tSG))
+                                                {
+                                                    tCityBySGTEByL.Add(tSG, new List<Set_City>[6]);
+                                                }
+                                                else if (tCityBySGTEByL[tSG] == null)
+                                                {
+                                                    tCityBySGTEByL[tSG] = new List<Set_City>[6];
+                                                }
+                                                array = tCityBySGTEByL[tSG] as List<Set_City>[];
+                                                if (array[level] == null)
+                                                {
+                                                    array[level] = new List<Set_City>();
+                                                }
+                                                array[level].Add(city);
+                                                if (l.isCoastal)
+                                                {
+                                                    if (cCityByL[level] == null)
+                                                    {
+                                                        cCityByL[level] = new List<Set_City>();
+                                                    }
+                                                    cCityByL[level].Add(city);
+
+                                                    if (!cCityBySGByL.Contains(sG))
+                                                    {
+                                                        cCityBySGByL.Add(sG, new List<Set_City>[6]);
+                                                    }
+                                                    else if (cCityBySGByL[sG] == null)
+                                                    {
+                                                        cCityBySGByL[sG] = new List<Set_City>[6];
+                                                    }
+                                                    array = cCityBySGByL[sG] as List<Set_City>[];
+                                                    if (array[level] == null)
+                                                    {
+                                                        array[level] = new List<Set_City>();
+                                                    }
+                                                    array[level].Add(city);
+
+                                                    if (!cCityBySGTEByL.Contains(tSG))
+                                                    {
+                                                        cCityBySGTEByL.Add(tSG, new List<Set_City>[6]);
+                                                    }
+                                                    else if (cCityBySGTEByL[tSG] == null)
+                                                    {
+                                                        cCityBySGTEByL[tSG] = new List<Set_City>[6];
+                                                    }
+                                                    array = cCityBySGTEByL[tSG] as List<Set_City>[];
+                                                    if (array[level] == null)
+                                                    {
+                                                        array[level] = new List<Set_City>();
+                                                    }
+                                                    array[level].Add(city);
+                                                }
+                                            }
                                         }
 
                                         // Fire once each iteration of social group type loop.
@@ -1771,6 +1882,58 @@ namespace CommunityLib
                                                 array[level] = new List<Set_City>();
                                             }
                                             array[level].Add(city);
+
+                                            if (l.isOcean)
+                                            {
+                                                if (!oCityBySGTByL.Contains(tSG))
+                                                {
+                                                    oCityBySGTByL.Add(tSG, new List<Set_City>[6]);
+                                                }
+                                                else if (oCityBySGTByL[tSG] == null)
+                                                {
+                                                    oCityBySGTByL[tSG] = new List<Set_City>[6];
+                                                }
+                                                array = oCityBySGTByL[tSG] as List<Set_City>[];
+                                                if (array[level] == null)
+                                                {
+                                                    array[level] = new List<Set_City>();
+                                                }
+                                                array[level].Add(city);
+                                            }
+                                            else
+                                            {
+                                                if (!tCityBySGTByL.Contains(tSG))
+                                                {
+                                                    tCityBySGTByL.Add(tSG, new List<Set_City>[6]);
+                                                }
+                                                else if (tCityBySGTByL[tSG] == null)
+                                                {
+                                                    tCityBySGTByL[tSG] = new List<Set_City>[6];
+                                                }
+                                                array = tCityBySGTByL[tSG] as List<Set_City>[];
+                                                if (array[level] == null)
+                                                {
+                                                    array[level] = new List<Set_City>();
+                                                }
+                                                array[level].Add(city);
+                                                if (l.isCoastal)
+                                                {
+                                                    if (!cCityBySGTByL.Contains(tSG))
+                                                    {
+                                                        cCityBySGTByL.Add(tSG, new List<Set_City>[6]);
+                                                    }
+                                                    else if (cCityBySGTByL[tSG] == null)
+                                                    {
+                                                        cCityBySGTByL[tSG] = new List<Set_City>[6];
+                                                    }
+                                                    array = cCityBySGTByL[tSG] as List<Set_City>[];
+                                                    if (array[level] == null)
+                                                    {
+                                                        array[level] = new List<Set_City>();
+                                                    }
+                                                    array[level].Add(city);
+                                                }
+                                            }
                                         }
                                     }
                                     else if (tS == typeof(Set_MinorHuman))
@@ -1815,6 +1978,122 @@ namespace CommunityLib
                                                 array[level] = new List<Set_MinorHuman>();
                                             }
                                             array[level].Add(mHuman);
+
+                                            if (l.isOcean)
+                                            {
+                                                if (oMinorHumanByL[level] == null)
+                                                {
+                                                    oMinorHumanByL[level] = new List<Set_MinorHuman>();
+                                                }
+                                                oMinorHumanByL[level].Add(mHuman);
+
+                                                if (!oMinorHumanBySGByL.Contains(sG))
+                                                {
+                                                    oMinorHumanBySGByL.Add(sG, new List<Set_MinorHuman>[6]);
+                                                }
+                                                else if (oMinorHumanBySGByL[sG] == null)
+                                                {
+                                                    oMinorHumanBySGByL[sG] = new List<Set_MinorHuman>[6];
+                                                }
+                                                array = oMinorHumanBySGByL[sG] as List<Set_MinorHuman>[];
+                                                if (array[level] == null)
+                                                {
+                                                    array[level] = new List<Set_MinorHuman>();
+                                                }
+                                                array[level].Add(mHuman);
+
+                                                if (!oMinorHumanBySGTEByL.Contains(tSG))
+                                                {
+                                                    oMinorHumanBySGTEByL.Add(tSG, new List<Set_MinorHuman>[6]);
+                                                }
+                                                else if (oMinorHumanBySGTEByL[tSG] == null)
+                                                {
+                                                    oMinorHumanBySGTEByL[tSG] = new List<Set_MinorHuman>[6];
+                                                }
+                                                array = oMinorHumanBySGTEByL[tSG] as List<Set_MinorHuman>[];
+                                                if (array[level] == null)
+                                                {
+                                                    array[level] = new List<Set_MinorHuman>();
+                                                }
+                                                array[level].Add(mHuman);
+                                            }
+                                            else
+                                            {
+                                                if (tMinorHumanByL[level] == null)
+                                                {
+                                                    tMinorHumanByL[level] = new List<Set_MinorHuman>();
+                                                }
+                                                tMinorHumanByL[level].Add(mHuman);
+
+                                                if (!tMinorHumanBySGByL.Contains(sG))
+                                                {
+                                                    tMinorHumanBySGByL.Add(sG, new List<Set_MinorHuman>[6]);
+                                                }
+                                                else if (tMinorHumanBySGByL[sG] == null)
+                                                {
+                                                    tMinorHumanBySGByL[sG] = new List<Set_MinorHuman>[6];
+                                                }
+                                                array = tMinorHumanBySGByL[sG] as List<Set_MinorHuman>[];
+                                                if (array[level] == null)
+                                                {
+                                                    array[level] = new List<Set_MinorHuman>();
+                                                }
+                                                array[level].Add(mHuman);
+
+                                                if (!tMinorHumanBySGTEByL.Contains(tSG))
+                                                {
+                                                    tMinorHumanBySGTEByL.Add(tSG, new List<Set_MinorHuman>[6]);
+                                                }
+                                                else if (tMinorHumanBySGTEByL[tSG] == null)
+                                                {
+                                                    tMinorHumanBySGTEByL[tSG] = new List<Set_MinorHuman>[6];
+                                                }
+                                                array = tMinorHumanBySGTEByL[tSG] as List<Set_MinorHuman>[];
+                                                if (array[level] == null)
+                                                {
+                                                    array[level] = new List<Set_MinorHuman>();
+                                                }
+                                                array[level].Add(mHuman);
+
+                                                if (l.isCoastal)
+                                                {
+                                                    if (cMinorHumanByL[level] == null)
+                                                    {
+                                                        cMinorHumanByL[level] = new List<Set_MinorHuman>();
+                                                    }
+                                                    cMinorHumanByL[level].Add(mHuman);
+
+                                                    if (!cMinorHumanBySGByL.Contains(sG))
+                                                    {
+                                                        cMinorHumanBySGByL.Add(sG, new List<Set_MinorHuman>[6]);
+                                                    }
+                                                    else if (cMinorHumanBySGByL[sG] == null)
+                                                    {
+                                                        cMinorHumanBySGByL[sG] = new List<Set_MinorHuman>[6];
+                                                    }
+                                                    array = cMinorHumanBySGByL[sG] as List<Set_MinorHuman>[];
+                                                    if (array[level] == null)
+                                                    {
+                                                        array[level] = new List<Set_MinorHuman>();
+                                                    }
+                                                    array[level].Add(mHuman);
+
+                                                    if (!cMinorHumanBySGTEByL.Contains(tSG))
+                                                    {
+                                                        cMinorHumanBySGTEByL.Add(tSG, new List<Set_MinorHuman>[6]);
+                                                    }
+                                                    else if (cMinorHumanBySGTEByL[tSG] == null)
+                                                    {
+                                                        cMinorHumanBySGTEByL[tSG] = new List<Set_MinorHuman>[6];
+                                                    }
+                                                    array = cMinorHumanBySGTEByL[tSG] as List<Set_MinorHuman>[];
+                                                    if (array[level] == null)
+                                                    {
+                                                        array[level] = new List<Set_MinorHuman>();
+                                                    }
+                                                    array[level].Add(mHuman);
+                                                }
+                                            }
                                         }
 
                                         // Fire once each iteration of social group type loop.
@@ -1835,11 +2114,291 @@ namespace CommunityLib
                                                 array[level] = new List<Set_MinorHuman>();
                                             }
                                             array[level].Add(mHuman);
+
+                                            if (l.isOcean)
+                                            {
+                                                if (!oMinorHumanBySGTByL.Contains(tSG))
+                                                {
+                                                    oMinorHumanBySGTByL.Add(tSG, new List<Set_MinorHuman>[6]);
+                                                }
+                                                else if (oMinorHumanBySGTByL[tSG] == null)
+                                                {
+                                                    oMinorHumanBySGTByL[tSG] = new List<Set_MinorHuman>[6];
+                                                }
+                                                array = oMinorHumanBySGTByL[sG] as List<Set_MinorHuman>[];
+                                                if (array[level] == null)
+                                                {
+                                                    array[level] = new List<Set_MinorHuman>();
+                                                }
+                                                array[level].Add(mHuman);
+                                            }
+                                            else
+                                            {
+                                                if (!tMinorHumanBySGTByL.Contains(tSG))
+                                                {
+                                                    tMinorHumanBySGTByL.Add(tSG, new List<Set_MinorHuman>[6]);
+                                                }
+                                                else if (tMinorHumanBySGTByL[tSG] == null)
+                                                {
+                                                    tMinorHumanBySGTByL[tSG] = new List<Set_MinorHuman>[6];
+                                                }
+                                                array = tMinorHumanBySGTByL[sG] as List<Set_MinorHuman>[];
+                                                if (array[level] == null)
+                                                {
+                                                    array[level] = new List<Set_MinorHuman>();
+                                                }
+                                                array[level].Add(mHuman);
+
+                                                if (l.isCoastal)
+                                                {
+                                                    if (!cMinorHumanBySGTByL.Contains(tSG))
+                                                    {
+                                                        cMinorHumanBySGTByL.Add(tSG, new List<Set_MinorHuman>[6]);
+                                                    }
+                                                    else if (cMinorHumanBySGTByL[tSG] == null)
+                                                    {
+                                                        cMinorHumanBySGTByL[tSG] = new List<Set_MinorHuman>[6];
+                                                    }
+                                                    array = cMinorHumanBySGTByL[sG] as List<Set_MinorHuman>[];
+                                                    if (array[level] == null)
+                                                    {
+                                                        array[level] = new List<Set_MinorHuman>();
+                                                    }
+                                                    array[level].Add(mHuman);
+                                                }
+                                            }
                                         }
                                     }
                                     else if (tS == typeof(Set_OrcCamp))
                                     {
-                                        int specialism = (s as Set_OrcCamp).specialism;
+                                        Set_OrcCamp orcCamp = (s as Set_OrcCamp);
+                                        int specialism = orcCamp.specialism;
+
+                                        if (isFirstSTIteration)
+                                        {
+                                            if (orcCampByS[specialism] == null)
+                                            {
+                                                orcCampByS[specialism] = new List<Set_OrcCamp>();
+                                            }
+                                            orcCampByS[specialism].Add(orcCamp);
+
+                                            if (!orcCampBySGByS.Contains(sG))
+                                            {
+                                                orcCampBySGByS.Add(sG, new List<Set_OrcCamp>[6]);
+                                            }
+                                            else if (orcCampBySGByS[sG] == null)
+                                            {
+                                                orcCampBySGByS[sG] = new List<Set_OrcCamp>[6];
+                                            }
+                                            List<Set_OrcCamp>[] array = orcCampBySGByS[sG] as List<Set_OrcCamp>[];
+                                            if (array[specialism] == null)
+                                            {
+                                                array[specialism] = new List<Set_OrcCamp>();
+                                            }
+                                            array[specialism].Add(orcCamp);
+
+                                            if (!orcCampBySGTEByS.Contains(tSG))
+                                            {
+                                                orcCampBySGTEByS.Add(tSG, new List<Set_OrcCamp>[6]);
+                                            }
+                                            else if (orcCampBySGTEByS[tSG] == null)
+                                            {
+                                                orcCampBySGTEByS[tSG] = new List<Set_OrcCamp>[6];
+                                            }
+                                            array = orcCampBySGTEByS[tSG] as List<Set_OrcCamp>[];
+                                            if (array[specialism] == null)
+                                            {
+                                                array[specialism] = new List<Set_OrcCamp>();
+                                            }
+                                            array[specialism].Add(orcCamp);
+
+                                            if (l.isOcean)
+                                            {
+                                                if (oOrcCampByS[specialism] == null)
+                                                {
+                                                    oOrcCampByS[specialism] = new List<Set_OrcCamp>();
+                                                }
+                                                oOrcCampByS[specialism].Add(orcCamp);
+
+                                                if (!oOrcCampBySGByS.Contains(sG))
+                                                {
+                                                    oOrcCampBySGByS.Add(sG, new List<Set_OrcCamp>[6]);
+                                                }
+                                                else if (oOrcCampBySGByS[sG] == null)
+                                                {
+                                                    oOrcCampBySGByS[sG] = new List<Set_OrcCamp>[6];
+                                                }
+                                                array = oOrcCampBySGByS[sG] as List<Set_OrcCamp>[];
+                                                if (array[specialism] == null)
+                                                {
+                                                    array[specialism] = new List<Set_OrcCamp>();
+                                                }
+                                                array[specialism].Add(orcCamp);
+
+                                                if (!oOrcCampBySGTEByS.Contains(tSG))
+                                                {
+                                                    oOrcCampBySGTEByS.Add(tSG, new List<Set_OrcCamp>[6]);
+                                                }
+                                                else if (oOrcCampBySGTEByS[tSG] == null)
+                                                {
+                                                    oOrcCampBySGTEByS[tSG] = new List<Set_OrcCamp>[6];
+                                                }
+                                                array = oOrcCampBySGTEByS[tSG] as List<Set_OrcCamp>[];
+                                                if (array[specialism] == null)
+                                                {
+                                                    array[specialism] = new List<Set_OrcCamp>();
+                                                }
+                                                array[specialism].Add(orcCamp);
+                                            }
+                                            else
+                                            {
+                                                if (tOrcCampByS[specialism] == null)
+                                                {
+                                                    tOrcCampByS[specialism] = new List<Set_OrcCamp>();
+                                                }
+                                                tOrcCampByS[specialism].Add(orcCamp);
+
+                                                if (!tOrcCampBySGByS.Contains(sG))
+                                                {
+                                                    tOrcCampBySGByS.Add(sG, new List<Set_OrcCamp>[6]);
+                                                }
+                                                else if (tOrcCampBySGByS[sG] == null)
+                                                {
+                                                    tOrcCampBySGByS[sG] = new List<Set_OrcCamp>[6];
+                                                }
+                                                array = tOrcCampBySGByS[sG] as List<Set_OrcCamp>[];
+                                                if (array[specialism] == null)
+                                                {
+                                                    array[specialism] = new List<Set_OrcCamp>();
+                                                }
+                                                array[specialism].Add(orcCamp);
+
+                                                if (!tOrcCampBySGTEByS.Contains(tSG))
+                                                {
+                                                    tOrcCampBySGTEByS.Add(tSG, new List<Set_OrcCamp>[6]);
+                                                }
+                                                else if (tOrcCampBySGTEByS[tSG] == null)
+                                                {
+                                                    tOrcCampBySGTEByS[tSG] = new List<Set_OrcCamp>[6];
+                                                }
+                                                array = tOrcCampBySGTEByS[tSG] as List<Set_OrcCamp>[];
+                                                if (array[specialism] == null)
+                                                {
+                                                    array[specialism] = new List<Set_OrcCamp>();
+                                                }
+                                                array[specialism].Add(orcCamp);
+                                                if (l.isCoastal)
+                                                {
+                                                    if (cOrcCampByS[specialism] == null)
+                                                    {
+                                                        cOrcCampByS[specialism] = new List<Set_OrcCamp>();
+                                                    }
+                                                    cOrcCampByS[specialism].Add(orcCamp);
+
+                                                    if (!cOrcCampBySGByS.Contains(sG))
+                                                    {
+                                                        cOrcCampBySGByS.Add(sG, new List<Set_OrcCamp>[6]);
+                                                    }
+                                                    else if (cOrcCampBySGByS[sG] == null)
+                                                    {
+                                                        cOrcCampBySGByS[sG] = new List<Set_OrcCamp>[6];
+                                                    }
+                                                    array = cOrcCampBySGByS[sG] as List<Set_OrcCamp>[];
+                                                    if (array[specialism] == null)
+                                                    {
+                                                        array[specialism] = new List<Set_OrcCamp>();
+                                                    }
+                                                    array[specialism].Add(orcCamp);
+
+                                                    if (!cOrcCampBySGTEByS.Contains(tSG))
+                                                    {
+                                                        cOrcCampBySGTEByS.Add(tSG, new List<Set_OrcCamp>[6]);
+                                                    }
+                                                    else if (cOrcCampBySGTEByS[tSG] == null)
+                                                    {
+                                                        cOrcCampBySGTEByS[tSG] = new List<Set_OrcCamp>[6];
+                                                    }
+                                                    array = cOrcCampBySGTEByS[tSG] as List<Set_OrcCamp>[];
+                                                    if (array[specialism] == null)
+                                                    {
+                                                        array[specialism] = new List<Set_OrcCamp>();
+                                                    }
+                                                    array[specialism].Add(orcCamp);
+                                                }
+                                            }
+                                        }
+
+                                        // Fire once each iteration of social group type loop.
+                                        // Iterates social group type.
+                                        if (isInitialLTIteration && isInitialSTIteration)
+                                        {
+                                            if (!orcCampBySGTByS.Contains(tSG))
+                                            {
+                                                orcCampBySGTByS.Add(tSG, new List<Set_OrcCamp>[6]);
+                                            }
+                                            else if (orcCampBySGTByS[tSG] == null)
+                                            {
+                                                orcCampBySGTByS[tSG] = new List<Set_OrcCamp>[6];
+                                            }
+                                            List<Set_OrcCamp>[] array = orcCampBySGTByS[sG] as List<Set_OrcCamp>[];
+                                            if (array[specialism] == null)
+                                            {
+                                                array[specialism] = new List<Set_OrcCamp>();
+                                            }
+                                            array[specialism].Add(orcCamp);
+
+                                            if (l.isOcean)
+                                            {
+                                                if (!oOrcCampBySGTByS.Contains(tSG))
+                                                {
+                                                    oOrcCampBySGTByS.Add(tSG, new List<Set_OrcCamp>[6]);
+                                                }
+                                                else if (oOrcCampBySGTByS[tSG] == null)
+                                                {
+                                                    oOrcCampBySGTByS[tSG] = new List<Set_OrcCamp>[6];
+                                                }
+                                                array = oOrcCampBySGTByS[sG] as List<Set_OrcCamp>[];
+                                                if (array[specialism] == null)
+                                                {
+                                                    array[specialism] = new List<Set_OrcCamp>();
+                                                }
+                                                array[specialism].Add(orcCamp);
+                                            }
+                                            else
+                                            {
+                                                if (!tOrcCampBySGTByS.Contains(tSG))
+                                                {
+                                                    tOrcCampBySGTByS.Add(tSG, new List<Set_OrcCamp>[6]);
+                                                }
+                                                else if (tOrcCampBySGTByS[tSG] == null)
+                                                {
+                                                    tOrcCampBySGTByS[tSG] = new List<Set_OrcCamp>[6];
+                                                }
+                                                array = tOrcCampBySGTByS[sG] as List<Set_OrcCamp>[];
+                                                if (array[specialism] == null)
+                                                {
+                                                    array[specialism] = new List<Set_OrcCamp>();
+                                                }
+                                                array[specialism].Add(orcCamp);
+                                                if (l.isCoastal)
+                                                {
+                                                    if (!cOrcCampBySGTByS.Contains(tSG))
+                                                    {
+                                                        cOrcCampBySGTByS.Add(tSG, new List<Set_OrcCamp>[6]);
+                                                    }
+                                                    else if (cOrcCampBySGTByS[tSG] == null)
+                                                    {
+                                                        cOrcCampBySGTByS[tSG] = new List<Set_OrcCamp>[6];
+                                                    }
+                                                    array = cOrcCampBySGTByS[sG] as List<Set_OrcCamp>[];
+                                                    if (array[specialism] == null)
+                                                    {
+                                                        array[specialism] = new List<Set_OrcCamp>();
+                                                    }
+                                                    array[specialism].Add(orcCamp);
+                                                }
+                                            }
+                                        }
                                     }
 
                                     // Subsettlements with Social Group
@@ -3036,6 +3595,199 @@ namespace CommunityLib
                                     }
                                 }
 
+                                if (tS == typeof(Set_City))
+                                {
+                                    Set_City city = s as Set_City;
+                                    int level = city.getLevel();
+
+                                    if (isFirstSTIteration)
+                                    {
+                                        if (cityByL[level] == null)
+                                        {
+                                            cityByL[level] = new List<Set_City>();
+                                        }
+                                        cityByL[level].Add(city);
+
+                                        if (cityWoSGByL[level] == null)
+                                        {
+                                            cityWoSGByL[level] = new List<Set_City>();
+                                        }
+                                        cityWoSGByL[level].Add(city);
+
+                                        if (l.isOcean)
+                                        {
+                                            if (oCityByL[level] == null)
+                                            {
+                                                oCityByL[level] = new List<Set_City>();
+                                            }
+                                            oCityByL[level].Add(city);
+
+                                            if (oCityWoSGByL[level] == null)
+                                            {
+                                                oCityWoSGByL[level] = new List<Set_City>();
+                                            }
+                                            oCityWoSGByL[level].Add(city);
+                                        }
+                                        else
+                                        {
+                                            if (tCityByL[level] == null)
+                                            {
+                                                tCityByL[level] = new List<Set_City>();
+                                            }
+                                            tCityByL[level].Add(city);
+
+                                            if (tCityWoSGByL[level] == null)
+                                            {
+                                                tCityWoSGByL[level] = new List<Set_City>();
+                                            }
+                                            tCityWoSGByL[level].Add(city);
+
+                                            if (l.isCoastal)
+                                            {
+                                                if (cCityByL[level] == null)
+                                                {
+                                                    cCityByL[level] = new List<Set_City>();
+                                                }
+                                                cCityByL[level].Add(city);
+
+                                                if (cCityWoSGByL[level] == null)
+                                                {
+                                                    cCityWoSGByL[level] = new List<Set_City>();
+                                                }
+                                                cCityWoSGByL[level].Add(city);
+                                            }
+                                        }
+                                    }
+                                }
+                                else if (tS == typeof(Set_MinorHuman))
+                                {
+                                    Set_MinorHuman mHuman = (s as Set_MinorHuman);
+                                    int level = mHuman.getLevel();
+
+                                    if (isFirstSTIteration)
+                                    {
+                                        if (minorHumanByL[level] == null)
+                                        {
+                                            minorHumanByL[level] = new List<Set_MinorHuman>();
+                                        }
+                                        minorHumanByL[level].Add(mHuman);
+
+                                        if (minorHumanWoSGByL[level] == null)
+                                        {
+                                            minorHumanWoSGByL[level] = new List<Set_MinorHuman>();
+                                        }
+                                        minorHumanWoSGByL[level].Add(mHuman);
+
+                                        if (l.isOcean)
+                                        {
+                                            if (oMinorHumanByL[level] == null)
+                                            {
+                                                oMinorHumanByL[level] = new List<Set_MinorHuman>();
+                                            }
+                                            oMinorHumanByL[level].Add(mHuman);
+
+                                            if (oMinorHumanWoSGByL[level] == null)
+                                            {
+                                                oMinorHumanWoSGByL[level] = new List<Set_MinorHuman>();
+                                            }
+                                            oMinorHumanWoSGByL[level].Add(mHuman);
+                                        }
+                                        else
+                                        {
+                                            if (tMinorHumanByL[level] == null)
+                                            {
+                                                tMinorHumanByL[level] = new List<Set_MinorHuman>();
+                                            }
+                                            tMinorHumanByL[level].Add(mHuman);
+
+                                            if (tMinorHumanWoSGByL[level] == null)
+                                            {
+                                                tMinorHumanWoSGByL[level] = new List<Set_MinorHuman>();
+                                            }
+                                            tMinorHumanWoSGByL[level].Add(mHuman);
+
+                                            if (l.isCoastal)
+                                            {
+                                                if (cMinorHumanByL[level] == null)
+                                                {
+                                                    cMinorHumanByL[level] = new List<Set_MinorHuman>();
+                                                }
+                                                cMinorHumanByL[level].Add(mHuman);
+
+                                                if (cMinorHumanWoSGByL[level] == null)
+                                                {
+                                                    cMinorHumanWoSGByL[level] = new List<Set_MinorHuman>();
+                                                }
+                                                cMinorHumanWoSGByL[level].Add(mHuman);
+                                            }
+                                        }
+                                    }
+                                }
+                                else if (tS == typeof(Set_OrcCamp))
+                                {
+                                    Set_OrcCamp orcCamp = (s as Set_OrcCamp);
+                                    int specialism = orcCamp.specialism;
+
+                                    if (isFirstSTIteration)
+                                    {
+                                        if (orcCampByS[specialism] == null)
+                                        {
+                                            orcCampByS[specialism] = new List<Set_OrcCamp>();
+                                        }
+                                        orcCampByS[specialism].Add(orcCamp);
+
+                                        if (orcCampWoSGByS[specialism] == null)
+                                        {
+                                            orcCampWoSGByS[specialism] = new List<Set_OrcCamp>();
+                                        }
+                                        orcCampWoSGByS[specialism].Add(orcCamp);
+
+                                        if (l.isOcean)
+                                        {
+                                            if (oOrcCampByS[specialism] == null)
+                                            {
+                                                oOrcCampByS[specialism] = new List<Set_OrcCamp>();
+                                            }
+                                            oOrcCampByS[specialism].Add(orcCamp);
+
+                                            if (oOrcCampWoSGByS[specialism] == null)
+                                            {
+                                                oOrcCampWoSGByS[specialism] = new List<Set_OrcCamp>();
+                                            }
+                                            oOrcCampWoSGByS[specialism].Add(orcCamp);
+                                        }
+                                        else
+                                        {
+                                            if (tOrcCampByS[specialism] == null)
+                                            {
+                                                tOrcCampByS[specialism] = new List<Set_OrcCamp>();
+                                            }
+                                            tOrcCampByS[specialism].Add(orcCamp);
+
+                                            if (tOrcCampWoSGByS[specialism] == null)
+                                            {
+                                                tOrcCampWoSGByS[specialism] = new List<Set_OrcCamp>();
+                                            }
+                                            tOrcCampWoSGByS[specialism].Add(orcCamp);
+
+                                            if (l.isCoastal)
+                                            {
+                                                if (cOrcCampByS[specialism] == null)
+                                                {
+                                                    cOrcCampByS[specialism] = new List<Set_OrcCamp>();
+                                                }
+                                                cOrcCampByS[specialism].Add(orcCamp);
+
+                                                if (cOrcCampWoSGByS[specialism] == null)
+                                                {
+                                                    cOrcCampWoSGByS[specialism] = new List<Set_OrcCamp>();
+                                                }
+                                                cOrcCampWoSGByS[specialism].Add(orcCamp);
+                                            }
+                                        }
+                                    }
+                                }
+
                                 // Subsettlements without Social Group
                                 if (s.subs != null && s.subs.Count > 0)
                                 {
@@ -3718,7 +4470,7 @@ namespace CommunityLib
                                                     CreateAndOrAddToKeyListPair(cPByLTEByT[tL] as IDictionary, tP, tP, p);
                                                     CreateAndOrAddToKeyListPair(cPWoSGByT, tP, tP, p);
                                                     CreateAndOrAddToKeyListPair(cPWoSByT, tP, tP, p);
-                                                    CreateAndOrAddToKeyListPair(tPWoSG_SByT, tP, tP, p);
+                                                    CreateAndOrAddToKeyListPair(cPWoSG_SByT, tP, tP, p);
                                                 }
                                             }
                                         }

@@ -14,6 +14,7 @@ unitsBySocialGroupTypeExclusiveByType
 unitsBySocialGroupTypeByTypeExclusive
 unitsBySocialGroupTypeExclusiveByTypeExclusive
 unitsByLocation
+
 // Commandable Units
 commandableUnitsByType
 commandableUnitsByTypeExclusive
@@ -50,6 +51,7 @@ locationsWithoutSettlementBySocialGroupTypeExclusive
 // Location - Without Social Groups and Settlements
 locationsWithoutSocialGroupOrSettlementByType
 locationsWithoutSocialGroupOrSettlementByTypeExclusive
+
 // Settlements
 settlements
 settlementsByType
@@ -72,6 +74,24 @@ settlementsBySocialGroupTypeExclusiveByTypeExclusive
 // Settlements - Without Social Groups
 settlementsWithoutSocialGroupByType
 settlementsWithoutSocialGroupByTypeExclusive
+
+// Specific Settlements
+public List<Set_City>[] cityByLevel
+cityBySocialGroupByLevel
+cityBySocialGroupTypeByLevel
+cityBySocialGroupTypeExclusiveByLevel
+public List<Set_City>[] cityWithoutSocialGroupByLevel
+public List<Set_MinorHuman>[] minorHumanByLevel
+minorHumanBySocialGroupByLevel
+minorHumanBySocialGroupTypeByLevel
+minorHumanBySocialGroupTypeExclusiveByLevel
+public List<Set_MinorHuman>[] minorHumanWithoutSocialGroupByLevel
+public List<Set_OrcCamp>[] orcCampBySpecialism
+orcCampBySocialGroupBySpecialism
+orcCampBySocialGroupTypeBySpecialism
+orcCampBySocialGroupTypeExclusiveBySpecialism
+public List<Set_OrcCamp>[] orcCampWithoutSocialGroupBySpecialism
+
 // Subsettlements
 subsettlements
 subsettlementsByType
@@ -100,6 +120,7 @@ subsettlementsBySocialGroupTypeExclusiveByTypeExclusive
 // Subsettlements - Without Social Groups
 subsettlementsWithoutSocialGroupByType
 subsettlementsWithoutSocialGroupByTypeExclusive
+
 // Properties
 properties
 propertiesByType
@@ -160,9 +181,10 @@ coastalLocationsWithoutSettlementByTypeExclusive
 coastalLocationsWithoutSettlementBySocialGroup
 coastalLocationsWithoutSettlementBySocialGroupType
 coastalLocationsWithoutSettlementBySocialGroupTypeExclusive
-// Location - Without Social Groups and Settlements
+// Locations - Without Social Groups and Settlements
 coastalLocationsWithoutSocialGroupOrSettlementByType
 coastalLocationsWithoutSocialGroupOrSettlementByTypeExclusive
+
 // Coastal Settlements
 coastalSettlements
 coastalSettlementsByType
@@ -185,6 +207,24 @@ coastalSettlementsBySocialGroupTypeExclusiveByTypeExclusive
 // Settlements - Without Social Groups
 coastalSettlementsWithoutSocialGroupByType
 coastalSettlementsWithoutSocialGroupByTypeExclusive
+
+// Specific Settlements
+public List<Set_City>[] coastalCityByLevel
+coastalCityBySocialGroupByLevel
+coastalCityBySocialGroupTypeByLevel
+coastalCityBySocialGroupTypeExclusiveByLevel
+public List<Set_City>[] coastalCityWithoutSocialGroupByLevel
+public List<Set_MinorHuman>[] coastalMinorHumanByLevel
+coastalMinorHumanBySocialGroupByLevel
+coastalMinorHumanBySocialGroupTypeByLevel
+coastalMinorHumanBySocialGroupTypeExclusiveByLevel
+public List<Set_MinorHuman>[] coastalMinorHumanWithoutSocialGroupByLevel
+public List<Set_OrcCamp>[] coastalOrcCampBySpecialism
+coastalOrcCampBySocialGroupBySpecialism
+coastalOrcCampBySocialGroupTypeBySpecialism
+coastalOrcCampBySocialGroupTypeExclusiveBySpecialism
+public List<Set_OrcCamp>[] coastalOrcCampWithoutSocialGroupBySpecialism
+
 // Coastal Subsettlements
 coastalSubsettlements
 coastalSubsettlementsByType
@@ -201,7 +241,7 @@ coastalSubsettlementsBySettlementTypeByType
 coastalSubsettlementsBySettlementTypeExclusiveByType
 coastalSubsettlementsBySettlementTypeByTypeExclusive
 coastalSubsettlementsBySettlementTypeExclusiveByTypeExclusive
-// Subsettlements - With Social Groups
+// Subsettlements - With Social Group
 coastalSubsettlementsBySocialGroup
 coastalSubsettlementsBySocialGroupType
 coastalSubsettlementsBySocialGroupTypeExclusive
@@ -213,6 +253,7 @@ coastalSubsettlementsBySocialGroupTypeExclusiveByTypeExclusive
 // Subsettlements - Without Social Groups
 coastalSubsettlementsWithoutSocialGroupByType
 coastalSubsettlementsWithoutSocialGroupByTypeExclusive
+
 // Coastal Properties
 coastalProperties
 coastalPropertiesByType
@@ -247,7 +288,7 @@ coastalPropertiesWithoutSettlementByTypeExclusive
 coastalPropertiesWithoutSettlementBySocialGroup
 coastalPropertiesWithoutSettlementBySocialGroupType
 coastalPropertiesWithoutSettlementBySocialGroupTypeExclusive
-// Propertes - Without Social Groups and Settlements
+//Properties - Without Social Groups and Settlements
 coastalPropertiesWithoutSocialGroupOrSettlementByType
 coastalPropertiesWithoutSocialGroupOrSettlementByTypeExclusive
 
@@ -276,6 +317,7 @@ oceanLocationsWithoutSettlementBySocialGroupTypeExclusive
 // Location - Without Social Groups and Settlements
 oceanLocationsWithoutSocialGroupOrSettlementByType
 oceanLocationsWithoutSocialGroupOrSettlementByTypeExclusive
+
 // Ocean Settlements
 oceanSettlements
 oceanSettlementsByType
@@ -298,6 +340,24 @@ oceanSettlementsBySocialGroupTypeExclusiveByTypeExclusive
 // Settlements - Without Social Groups
 oceanSettlementsWithoutSocialGroupByType
 oceanSettlementsWithoutSocialGroupByTypeExclusive
+
+// Specific Settlements
+public List<Set_City>[] oceanCityByLevel
+oceanCityBySocialGroupByLevel
+oceanCityBySocialGroupTypeByLevel
+oceanCityBySocialGroupTypeExclusiveByLevel
+public List<Set_City>[] oceanCityWithoutSocialGroupByLevel
+public List<Set_MinorHuman>[] oceanMinorHumanByLevel
+oceanMinorHumanBySocialGroupByLevel
+oceanMinorHumanBySocialGroupTypeByLevel
+oceanMinorHumanBySocialGroupTypeExclusiveByLevel
+public List<Set_MinorHuman>[] oceanMinorHumanWithoutSocialGroupByLevel
+public List<Set_OrcCamp>[] oceanOrcCampBySpecialism
+oceanOrcCampBySocialGroupBySpecialism
+oceanOrcCampBySocialGroupTypeBySpecialism
+oceanOrcCampBySocialGroupTypeExclusiveBySpecialism
+public List<Set_OrcCamp>[] oceanOrcCampWithoutSocialGroupBySpecialism
+
 // Ocean Subsettlements
 oceanSubsettlements
 oceanSubsettlementsByType
@@ -326,6 +386,7 @@ oceanSubsettlementsBySocialGroupTypeExclusiveByTypeExclusive
 // Subsettlements - Without Social Groups
 oceanSubsettlementsWithoutSocialGroupByType
 oceanSubsettlementsWithoutSocialGroupByTypeExclusive
+
 // Ocean Properties
 oceanProperties
 oceanPropertiesByType
@@ -364,7 +425,7 @@ oceanPropertiesWithoutSettlementBySocialGroupTypeExclusive
 oceanPropertiesWithoutSocialGroupOrSettlementByType
 oceanPropertiesWithoutSocialGroupOrSettlementByTypeExclusive
 
-// Terrestrial Locations //
+// Terrestial Location //
 terrestrialLocations
 terrestrialLocationsByType
 terrestrialLocationsByTypeExclusive
@@ -389,6 +450,7 @@ terrestrialLocationsWithoutSettlementBySocialGroupTypeExclusive
 // Location - Without Social Groups and Settlements
 terrestrialLocationsWithoutSocialGroupOrSettlementByType
 terrestrialLocationsWithoutSocialGroupOrSettlementByTypeExclusive
+
 // Terrestrial Settlements
 terrestrialSettlements
 terrestrialSettlementsByType
@@ -411,6 +473,24 @@ terrestrialSettlementsBySocialGroupTypeExclusiveByTypeExclusive
 // Settlements - Without Social Groups
 terrestrialSettlementsWithoutSocialGroupByType
 terrestrialSettlementsWithoutSocialGroupByTypeExclusive
+
+// Specific Settlements
+public List<Set_City>[] terrestrialCityByLevel
+terrestrialCityBySocialGroupByLevel
+terrestrialCityBySocialGroupTypeByLevel
+terrestrialCityBySocialGroupTypeExclusiveByLevel
+public List<Set_City>[] terrestrialCityWithoutSocialGroupByLevel
+public List<Set_MinorHuman>[] terrestrialMinorHumanByLevel
+terrestrialMinorHumanBySocialGroupByLevel
+terrestrialMinorHumanBySocialGroupTypeByLevel
+terrestrialMinorHumanBySocialGroupTypeExclusiveByLevel
+public List<Set_MinorHuman>[] terrestrialMinorHumanWithoutSocialGroupByLevel
+public List<Set_OrcCamp>[] terrestrialOrcCampBySpecialism
+terrestrialOrcCampBySocialGroupBySpecialism
+terrestrialOrcCampBySocialGroupTypeBySpecialism
+terrestrialOrcCampBySocialGroupTypeExclusiveBySpecialism
+public List<Set_OrcCamp>[] terrestrialOrcCampWithoutSocialGroupBySpecialism
+
 // Terrestrial Subsettlements
 terrestrialSubsettlements
 terrestrialSubsettlementsByType
@@ -439,6 +519,7 @@ terrestrialSubsettlementsBySocialGroupTypeExclusiveByTypeExclusive
 // Subsettlements - Without Social Groups
 terrestrialSubsettlementsWithoutSocialGroupByType
 terrestrialSubsettlementsWithoutSocialGroupByTypeExclusive
+
 // Terrestrial Properties
 terrestrialProperties
 terrestrialPropertiesByType
