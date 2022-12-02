@@ -865,13 +865,13 @@ namespace CommunityLib
                 isFirstSsTIteration = true;
                 isFirstPTIteration = true;
 
-                Console.WriteLine("CommunityLib: Starting loops for Location " + l.name + " of Type " + l.GetType().Name + ".");
+                //Console.WriteLine("CommunityLib: Starting loops for Location " + l.name + " of Type " + l.GetType().Name + ".");
                 if (sG != null)
                 {
                     iterateSGT = true;
                     isFirstSGTIteration = true;
 
-                    Console.WriteLine("CommunityLib: Starting scoial group type loop.");
+                    //Console.WriteLine("CommunityLib: Starting scoial group type loop.");
                     while (iterateSGT)
                     {
                         //Console.WriteLine("CommunityLib: Location belongs to Social Group " + sG.name + " of Type " + tSG.Name + ".");
@@ -879,7 +879,7 @@ namespace CommunityLib
                         iterateLT = true;
                         isInitialLTIteration = true;
 
-                        Console.WriteLine("CommunityLib: Starting location type loop.");
+                        //Console.WriteLine("CommunityLib: Starting location type loop.");
                         while (iterateLT)
                         {
                             //Console.WriteLine("CommunityLib: Location is of Type " + tL.Name + ".");
@@ -887,7 +887,7 @@ namespace CommunityLib
                             // Very first instace. Fires once.
                             if (isFirstLTIteration)
                             {
-                                Console.WriteLine("CommunityLib: Is first iteration of location type loop.");
+                                //Console.WriteLine("CommunityLib: Is first iteration of location type loop.");
                                 CreateAndOrAddToKeyListPair(lByTE, tL, tL, l);
                                 CreateAndOrAddToKeyListPair(lBySG, sG, typeof(Location), l);
                                 CreateAndOrAddToKeyListPair(lBySGTE, tSG, typeof(Location), l);
@@ -941,7 +941,7 @@ namespace CommunityLib
                             // First instance of loop. Fires once per iterator.
                             if (isInitialLTIteration)
                             {
-                                Console.WriteLine("CommunityLib: Is initial iteration of location type loop.");
+                                //Console.WriteLine("CommunityLib: Is initial iteration of location type loop.");
                                 CreateAndOrAddToKeyListPair(lBySGT, tSG, typeof(Location), l);
 
                                 TryCreateSubDictionary(lBySGTByT, tSG, typeof(Type));
@@ -981,7 +981,7 @@ namespace CommunityLib
                             // Iterates location type.
                             if (isFirstSGTIteration)
                             {
-                                Console.WriteLine("CommunityLib: Is first iteration of social group type loop.");
+                                //Console.WriteLine("CommunityLib: Is first iteration of social group type loop.");
                                 CreateAndOrAddToKeyListPair(lByT, tL, tL, l);
                                 CreateAndOrAddToKeyListPair(lBySGByT[sG] as IDictionary, tL, tL, l);
                                 CreateAndOrAddToKeyListPair(lBySGTEByT[tSG] as IDictionary, tL, tL, l);
@@ -1027,7 +1027,7 @@ namespace CommunityLib
                                 iterateST = true;
                                 isInitialSTIteration = true;
 
-                                Console.WriteLine("CommunityLib: Starting settlement type loop.");
+                                //Console.WriteLine("CommunityLib: Starting settlement type loop.");
                                 while (iterateST)
                                 {
                                     //Console.WriteLine("CommunityLib: Settlement " + s.name + " is of Type " + tS.Name + ".");
@@ -1267,12 +1267,13 @@ namespace CommunityLib
                                     //Console.WriteLine("CommunityLib: Performing specific settlement tests.");
                                     if (tS == typeof(Set_City))
                                     {
-                                        Console.WriteLine("CommunityLib: Sorting 'Set_City' by level.");
+                                        //Console.WriteLine("CommunityLib: Sorting 'Set_City' by level.");
                                         Set_City city = s as Set_City;
                                         int level = city.getLevel();
 
                                         if (isFirstSTIteration)
                                         {
+                                            //Console.WriteLine("CommunityLib: Is first iteration of settlement type loop.");
                                             if (cityByL[level] == null)
                                             {
                                                 cityByL[level] = new List<Set_City>();
@@ -1311,6 +1312,7 @@ namespace CommunityLib
 
                                             if (l.isOcean)
                                             {
+                                                //Console.WriteLine("CommunityLib: Is ocean.");
                                                 if (oCityByL[level] == null)
                                                 {
                                                     oCityByL[level] = new List<Set_City>();
@@ -1349,6 +1351,7 @@ namespace CommunityLib
                                             }
                                             else
                                             {
+                                                //Console.WriteLine("CommunityLib: Is terrestrial.");
                                                 if (tCityByL[level] == null)
                                                 {
                                                     tCityByL[level] = new List<Set_City>();
@@ -1386,6 +1389,7 @@ namespace CommunityLib
                                                 array[level].Add(city);
                                                 if (l.isCoastal)
                                                 {
+                                                    //Console.WriteLine("CommunityLib: Is coastal.");
                                                     if (cCityByL[level] == null)
                                                     {
                                                         cCityByL[level] = new List<Set_City>();
@@ -1429,6 +1433,7 @@ namespace CommunityLib
                                         // Iterates social group type.
                                         if (isInitialLTIteration && isInitialSTIteration)
                                         {
+                                            //Console.WriteLine("CommunityLib: Iterating social group type " + tSG.Name + ".");
                                             if (!cityBySGTByL.Contains(tSG))
                                             {
                                                 cityBySGTByL.Add(tSG, new List<Set_City>[6]);
@@ -1446,6 +1451,7 @@ namespace CommunityLib
 
                                             if (l.isOcean)
                                             {
+                                                //Console.WriteLine("CommunityLib: Is ocean.");
                                                 if (!oCityBySGTByL.Contains(tSG))
                                                 {
                                                     oCityBySGTByL.Add(tSG, new List<Set_City>[6]);
@@ -1463,6 +1469,7 @@ namespace CommunityLib
                                             }
                                             else
                                             {
+                                                //Console.WriteLine("CommunityLib: Is terrestrial.");
                                                 if (!tCityBySGTByL.Contains(tSG))
                                                 {
                                                     tCityBySGTByL.Add(tSG, new List<Set_City>[6]);
@@ -1477,8 +1484,10 @@ namespace CommunityLib
                                                     array[level] = new List<Set_City>();
                                                 }
                                                 array[level].Add(city);
+
                                                 if (l.isCoastal)
                                                 {
+                                                    //Console.WriteLine("CommunityLib: Is coastal.");
                                                     if (!cCityBySGTByL.Contains(tSG))
                                                     {
                                                         cCityBySGTByL.Add(tSG, new List<Set_City>[6]);
@@ -1499,12 +1508,13 @@ namespace CommunityLib
                                     }
                                     else if (tS == typeof(Set_MinorHuman))
                                     {
-                                        Console.WriteLine("CommunityLib: Sorting 'Set_MinorHuman' by level.");
+                                        //Console.WriteLine("CommunityLib: Sorting 'Set_MinorHuman' by level.");
                                         Set_MinorHuman mHuman = (s as Set_MinorHuman);
                                         int level = mHuman.getLevel();
 
                                         if (isFirstSTIteration)
                                         {
+                                            //Console.WriteLine("CommunityLib: Is first iteration of settlement type loop.");
                                             if (minorHumanByL[level] == null)
                                             {
                                                 minorHumanByL[level] = new List<Set_MinorHuman>();
@@ -1543,6 +1553,7 @@ namespace CommunityLib
 
                                             if (l.isOcean)
                                             {
+                                                //Console.WriteLine("CommunityLib: Is ocean.");
                                                 if (oMinorHumanByL[level] == null)
                                                 {
                                                     oMinorHumanByL[level] = new List<Set_MinorHuman>();
@@ -1581,6 +1592,7 @@ namespace CommunityLib
                                             }
                                             else
                                             {
+                                                //Console.WriteLine("CommunityLib: Is terrestrial.");
                                                 if (tMinorHumanByL[level] == null)
                                                 {
                                                     tMinorHumanByL[level] = new List<Set_MinorHuman>();
@@ -1619,6 +1631,7 @@ namespace CommunityLib
 
                                                 if (l.isCoastal)
                                                 {
+                                                    //Console.WriteLine("CommunityLib: Is coastal.");
                                                     if (cMinorHumanByL[level] == null)
                                                     {
                                                         cMinorHumanByL[level] = new List<Set_MinorHuman>();
@@ -1662,6 +1675,7 @@ namespace CommunityLib
                                         // Iterates social group type.
                                         if (isInitialLTIteration && isInitialSTIteration)
                                         {
+                                            //Console.WriteLine("CommunityLib: Iterating social group type to " + tSG.Name + ".");
                                             if (!minorHumanBySGTByL.Contains(tSG))
                                             {
                                                 minorHumanBySGTByL.Add(tSG, new List<Set_MinorHuman>[6]);
@@ -1670,7 +1684,7 @@ namespace CommunityLib
                                             {
                                                 minorHumanBySGTByL[tSG] = new List<Set_MinorHuman>[6];
                                             }
-                                            List<Set_MinorHuman>[] array = minorHumanBySGTByL[sG] as List<Set_MinorHuman>[];
+                                            List<Set_MinorHuman>[] array = minorHumanBySGTByL[tSG] as List<Set_MinorHuman>[];
                                             if (array[level] == null)
                                             {
                                                 array[level] = new List<Set_MinorHuman>();
@@ -1679,6 +1693,7 @@ namespace CommunityLib
 
                                             if (l.isOcean)
                                             {
+                                                //Console.WriteLine("CommunityLib: Is ocean.");
                                                 if (!oMinorHumanBySGTByL.Contains(tSG))
                                                 {
                                                     oMinorHumanBySGTByL.Add(tSG, new List<Set_MinorHuman>[6]);
@@ -1696,6 +1711,7 @@ namespace CommunityLib
                                             }
                                             else
                                             {
+                                                //Console.WriteLine("CommunityLib: Is terrestrial.");
                                                 if (!tMinorHumanBySGTByL.Contains(tSG))
                                                 {
                                                     tMinorHumanBySGTByL.Add(tSG, new List<Set_MinorHuman>[6]);
@@ -1704,7 +1720,7 @@ namespace CommunityLib
                                                 {
                                                     tMinorHumanBySGTByL[tSG] = new List<Set_MinorHuman>[6];
                                                 }
-                                                array = tMinorHumanBySGTByL[sG] as List<Set_MinorHuman>[];
+                                                array = tMinorHumanBySGTByL[tSG] as List<Set_MinorHuman>[];
                                                 if (array[level] == null)
                                                 {
                                                     array[level] = new List<Set_MinorHuman>();
@@ -1713,6 +1729,7 @@ namespace CommunityLib
 
                                                 if (l.isCoastal)
                                                 {
+                                                    //Console.WriteLine("CommunityLib: Is coastal.");
                                                     if (!cMinorHumanBySGTByL.Contains(tSG))
                                                     {
                                                         cMinorHumanBySGTByL.Add(tSG, new List<Set_MinorHuman>[6]);
@@ -1721,7 +1738,7 @@ namespace CommunityLib
                                                     {
                                                         cMinorHumanBySGTByL[tSG] = new List<Set_MinorHuman>[6];
                                                     }
-                                                    array = cMinorHumanBySGTByL[sG] as List<Set_MinorHuman>[];
+                                                    array = cMinorHumanBySGTByL[tSG] as List<Set_MinorHuman>[];
                                                     if (array[level] == null)
                                                     {
                                                         array[level] = new List<Set_MinorHuman>();
@@ -1733,12 +1750,13 @@ namespace CommunityLib
                                     }
                                     else if (tS == typeof(Set_OrcCamp))
                                     {
-                                        Console.WriteLine("CommunityLib: Sorting 'Set_OrcCamp' by specialism.");
+                                        //Console.WriteLine("CommunityLib: Sorting 'Set_OrcCamp' by specialism.");
                                         Set_OrcCamp orcCamp = (s as Set_OrcCamp);
                                         int specialism = orcCamp.specialism;
 
                                         if (isFirstSTIteration)
                                         {
+                                            //Console.WriteLine("CommunityLib: Is first iteration of settlement type.");
                                             if (orcCampByS[specialism] == null)
                                             {
                                                 orcCampByS[specialism] = new List<Set_OrcCamp>();
@@ -1777,6 +1795,7 @@ namespace CommunityLib
 
                                             if (l.isOcean)
                                             {
+                                                //Console.WriteLine("CommunityLib: Is ocean.");
                                                 if (oOrcCampByS[specialism] == null)
                                                 {
                                                     oOrcCampByS[specialism] = new List<Set_OrcCamp>();
@@ -1815,6 +1834,7 @@ namespace CommunityLib
                                             }
                                             else
                                             {
+                                                //Console.WriteLine("CommunityLib: Is terrestrial.");
                                                 if (tOrcCampByS[specialism] == null)
                                                 {
                                                     tOrcCampByS[specialism] = new List<Set_OrcCamp>();
@@ -1852,6 +1872,7 @@ namespace CommunityLib
                                                 array[specialism].Add(orcCamp);
                                                 if (l.isCoastal)
                                                 {
+                                                    //Console.WriteLine("CommunityLib: Is coastal.");
                                                     if (cOrcCampByS[specialism] == null)
                                                     {
                                                         cOrcCampByS[specialism] = new List<Set_OrcCamp>();
@@ -1895,6 +1916,7 @@ namespace CommunityLib
                                         // Iterates social group type.
                                         if (isInitialLTIteration && isInitialSTIteration)
                                         {
+                                            //Console.WriteLine("CommunityLib: Iterating social group type to " + tSG.Name + ".");
                                             if (!orcCampBySGTByS.Contains(tSG))
                                             {
                                                 orcCampBySGTByS.Add(tSG, new List<Set_OrcCamp>[6]);
@@ -1903,7 +1925,7 @@ namespace CommunityLib
                                             {
                                                 orcCampBySGTByS[tSG] = new List<Set_OrcCamp>[6];
                                             }
-                                            List<Set_OrcCamp>[] array = orcCampBySGTByS[sG] as List<Set_OrcCamp>[];
+                                            List<Set_OrcCamp>[] array = orcCampBySGTByS[tSG] as List<Set_OrcCamp>[];
                                             if (array[specialism] == null)
                                             {
                                                 array[specialism] = new List<Set_OrcCamp>();
@@ -1912,6 +1934,7 @@ namespace CommunityLib
 
                                             if (l.isOcean)
                                             {
+                                                //Console.WriteLine("CommunityLib: Is ocean.");
                                                 if (!oOrcCampBySGTByS.Contains(tSG))
                                                 {
                                                     oOrcCampBySGTByS.Add(tSG, new List<Set_OrcCamp>[6]);
@@ -1920,7 +1943,7 @@ namespace CommunityLib
                                                 {
                                                     oOrcCampBySGTByS[tSG] = new List<Set_OrcCamp>[6];
                                                 }
-                                                array = oOrcCampBySGTByS[sG] as List<Set_OrcCamp>[];
+                                                array = oOrcCampBySGTByS[tSG] as List<Set_OrcCamp>[];
                                                 if (array[specialism] == null)
                                                 {
                                                     array[specialism] = new List<Set_OrcCamp>();
@@ -1929,6 +1952,7 @@ namespace CommunityLib
                                             }
                                             else
                                             {
+                                                //Console.WriteLine("CommunityLib: Is terrestrial.");
                                                 if (!tOrcCampBySGTByS.Contains(tSG))
                                                 {
                                                     tOrcCampBySGTByS.Add(tSG, new List<Set_OrcCamp>[6]);
@@ -1937,14 +1961,16 @@ namespace CommunityLib
                                                 {
                                                     tOrcCampBySGTByS[tSG] = new List<Set_OrcCamp>[6];
                                                 }
-                                                array = tOrcCampBySGTByS[sG] as List<Set_OrcCamp>[];
+                                                array = tOrcCampBySGTByS[tSG] as List<Set_OrcCamp>[];
                                                 if (array[specialism] == null)
                                                 {
                                                     array[specialism] = new List<Set_OrcCamp>();
                                                 }
                                                 array[specialism].Add(orcCamp);
+
                                                 if (l.isCoastal)
                                                 {
+                                                    //Console.WriteLine("CommunityLib: Is coastal.");
                                                     if (!cOrcCampBySGTByS.Contains(tSG))
                                                     {
                                                         cOrcCampBySGTByS.Add(tSG, new List<Set_OrcCamp>[6]);
@@ -1953,7 +1979,7 @@ namespace CommunityLib
                                                     {
                                                         cOrcCampBySGTByS[tSG] = new List<Set_OrcCamp>[6];
                                                     }
-                                                    array = cOrcCampBySGTByS[sG] as List<Set_OrcCamp>[];
+                                                    array = cOrcCampBySGTByS[tSG] as List<Set_OrcCamp>[];
                                                     if (array[specialism] == null)
                                                     {
                                                         array[specialism] = new List<Set_OrcCamp>();
@@ -1967,12 +1993,14 @@ namespace CommunityLib
                                     // Subsettlements with Social Group
                                     if (s.subs != null && s.subs.Count > 0)
                                     {
-                                        Console.WriteLine("CommunityLib: Starting Subsettlement Loop");
+                                        //Console.WriteLine("CommunityLib: Starting Subsettlement Loop");
                                         foreach (Subsettlement sub in s.subs)
                                         {
                                             tSub = sub.GetType();
                                             iterateSsT = true;
                                             isInitialSsTIteration = true;
+
+                                            //Console.WriteLine("CommunityLib: Starting subsettlement loop for Subsettlement " + sub.getName() + " of type " + tSub.Name + ".");
 
                                             while (iterateSsT)
                                             {
@@ -1982,12 +2010,13 @@ namespace CommunityLib
                                                 // Iterates nothing.
                                                 if (isFirstSsTIteration)
                                                 {
+                                                    //Console.WriteLine("CommunityLib: Is first iteration of subsettlement type.");
                                                     subsettlements.Add(sub);
                                                     CreateAndOrAddToKeyListPair(ssByTE, tSub, tSub, sub);
                                                     CreateAndOrAddToKeyListPair(ssByLTE, tL, typeof(Subsettlement), sub);
                                                     CreateAndOrAddToKeyListPair(ssBySTE, tS, typeof(Subsettlement), sub);
                                                     CreateAndOrAddToKeyListPair(ssBySG, sG, typeof(Subsettlement), sub);
-                                                    CreateAndOrAddToKeyListPair(ssBySGTE, tSG, typeof(Settlement), sub);
+                                                    CreateAndOrAddToKeyListPair(ssBySGTE, tSG, typeof(Subsettlement), sub);
 
                                                     TryCreateSubDictionary(ssByLTEByT, tL, typeof(Type));
                                                     TryCreateSubDictionary(ssByLTEByTE, tL, typeof(Type));
@@ -2002,12 +2031,13 @@ namespace CommunityLib
                                                     CreateAndOrAddToKeyListPair(ssBySGTEByTE[tSG] as IDictionary, tSub, tSub, sub);
                                                     if (l.isOcean)
                                                     {
+                                                        //Console.WriteLine("CommunityLib: Is ocean.");
                                                         oceanSubsettlements.Add(sub);
                                                         CreateAndOrAddToKeyListPair(oSsByTE, tSub, tSub, sub);
                                                         CreateAndOrAddToKeyListPair(oSsByLTE, tL, typeof(Subsettlement), sub);
                                                         CreateAndOrAddToKeyListPair(oSsBySTE, tS, typeof(Subsettlement), sub);
                                                         CreateAndOrAddToKeyListPair(oSsBySG, sG, typeof(Subsettlement), sub);
-                                                        CreateAndOrAddToKeyListPair(oSsBySGTE, tSG, typeof(Settlement), sub);
+                                                        CreateAndOrAddToKeyListPair(oSsBySGTE, tSG, typeof(Subsettlement), sub);
 
                                                         TryCreateSubDictionary(oSsByLTEByT, tL, typeof(Type));
                                                         TryCreateSubDictionary(oSsByLTEByTE, tL, typeof(Type));
@@ -2023,12 +2053,13 @@ namespace CommunityLib
                                                     }
                                                     else
                                                     {
+                                                        //Console.WriteLine("CommunityLib: Is terrestrial.");
                                                         terrestrialSubsettlements.Add(sub);
                                                         CreateAndOrAddToKeyListPair(tSsByTE, tSub, tSub, sub);
                                                         CreateAndOrAddToKeyListPair(tSsByLTE, tL, typeof(Subsettlement), sub);
                                                         CreateAndOrAddToKeyListPair(tSsBySTE, tS, typeof(Subsettlement), sub);
                                                         CreateAndOrAddToKeyListPair(tSsBySG, sG, typeof(Subsettlement), sub);
-                                                        CreateAndOrAddToKeyListPair(tSsBySGTE, tSG, typeof(Settlement), sub);
+                                                        CreateAndOrAddToKeyListPair(tSsBySGTE, tSG, typeof(Subsettlement), sub);
 
                                                         TryCreateSubDictionary(tSsByLTEByT, tL, typeof(Type));
                                                         TryCreateSubDictionary(tSsByLTEByTE, tL, typeof(Type));
@@ -2043,12 +2074,13 @@ namespace CommunityLib
                                                         CreateAndOrAddToKeyListPair(tSsBySGTEByTE[tSG] as IDictionary, tSub, tSub, sub);
                                                         if (l.isCoastal)
                                                         {
+                                                            //Console.WriteLine("CommunityLib: Is coastal.");
                                                             coastalSubsettlements.Add(sub);
                                                             CreateAndOrAddToKeyListPair(cSsByTE, tSub, tSub, sub);
                                                             CreateAndOrAddToKeyListPair(cSsByLTE, tL, typeof(Subsettlement), sub);
                                                             CreateAndOrAddToKeyListPair(cSsBySTE, tS, typeof(Subsettlement), sub);
                                                             CreateAndOrAddToKeyListPair(cSsBySG, sG, typeof(Subsettlement), sub);
-                                                            CreateAndOrAddToKeyListPair(cSsBySGTE, tSG, typeof(Settlement), sub);
+                                                            CreateAndOrAddToKeyListPair(cSsBySGTE, tSG, typeof(Subsettlement), sub);
 
                                                             TryCreateSubDictionary(cSsByLTEByT, tL, typeof(Type));
                                                             TryCreateSubDictionary(cSsByLTEByTE, tL, typeof(Type));
@@ -2069,6 +2101,7 @@ namespace CommunityLib
                                                 // Iterates social group type.
                                                 if (isInitialLTIteration && isInitialSTIteration && isInitialSsTIteration)
                                                 {
+                                                    //Console.WriteLine("CommunityLib: Iterating social group type.");
                                                     CreateAndOrAddToKeyListPair(ssBySGT, tSG, typeof(Subsettlement), sub);
 
                                                     TryCreateSubDictionary(ssBySGTByT, tSG, typeof(Type));
@@ -2077,6 +2110,7 @@ namespace CommunityLib
                                                     CreateAndOrAddToKeyListPair(ssBySGTByTE[tSG] as IDictionary, tSub, tSub, sub);
                                                     if (l.isOcean)
                                                     {
+                                                        //Console.WriteLine("CommunityLib: Is ocean.");
                                                         CreateAndOrAddToKeyListPair(oSsBySGT, tSG, typeof(Subsettlement), sub);
 
                                                         TryCreateSubDictionary(oSsBySGTByT, tSG, typeof(Type));
@@ -2086,6 +2120,7 @@ namespace CommunityLib
                                                     }
                                                     else
                                                     {
+                                                        //Console.WriteLine("CommunityLib: Is terrestrial.");
                                                         CreateAndOrAddToKeyListPair(tSsBySGT, tSG, typeof(Subsettlement), sub);
 
                                                         TryCreateSubDictionary(tSsBySGTByT, tSG, typeof(Type));
@@ -2094,6 +2129,7 @@ namespace CommunityLib
                                                         CreateAndOrAddToKeyListPair(tSsBySGTByTE[tSG] as IDictionary, tSub, tSub, sub);
                                                         if (l.isCoastal)
                                                         {
+                                                            //Console.WriteLine("CommunityLib: Is coastal.");
                                                             CreateAndOrAddToKeyListPair(cSsBySGT, tSG, typeof(Subsettlement), sub);
 
                                                             TryCreateSubDictionary(cSsBySGTByT, tSG, typeof(Type));
@@ -2108,6 +2144,7 @@ namespace CommunityLib
                                                 // Iterates location type.
                                                 if (isFirstSGTIteration && isInitialSTIteration && isInitialSsTIteration)
                                                 {
+                                                    //Console.WriteLine("CommunityLib: Iterating location type.");
                                                     CreateAndOrAddToKeyListPair(ssByLT, tL, typeof(Subsettlement), sub);
 
                                                     TryCreateSubDictionary(ssByLTByT, tL, typeof(Type));
@@ -2116,6 +2153,7 @@ namespace CommunityLib
                                                     CreateAndOrAddToKeyListPair(ssByLTByTE[tL] as IDictionary, tSub, tSub, sub);
                                                     if (l.isOcean)
                                                     {
+                                                        //Console.WriteLine("CommunityLib: Is ocean.");
                                                         CreateAndOrAddToKeyListPair(oSsByLT, tL, typeof(Subsettlement), sub);
 
                                                         TryCreateSubDictionary(oSsByLTByT, tL, typeof(Type));
@@ -2125,6 +2163,7 @@ namespace CommunityLib
                                                     }
                                                     else
                                                     {
+                                                        //Console.WriteLine("CommunityLib: Is terrestrial.");
                                                         CreateAndOrAddToKeyListPair(tSsByLT, tL, typeof(Subsettlement), sub);
 
                                                         TryCreateSubDictionary(tSsByLTByT, tL, typeof(Type));
@@ -2133,6 +2172,7 @@ namespace CommunityLib
                                                         CreateAndOrAddToKeyListPair(tSsByLTByTE[tL] as IDictionary, tSub, tSub, sub);
                                                         if (l.isCoastal)
                                                         {
+                                                            //Console.WriteLine("CommunityLib: Is coastal.");
                                                             CreateAndOrAddToKeyListPair(cSsByLT, tL, typeof(Subsettlement), sub);
 
                                                             TryCreateSubDictionary(cSsByLTByT, tL, typeof(Type));
@@ -2147,6 +2187,7 @@ namespace CommunityLib
                                                 // Iterates settlement type.
                                                 if (isFirstSGTIteration && isFirstLTIteration && isInitialSsTIteration)
                                                 {
+                                                    //Console.WriteLine("CommunityLib: Iterating settlement type.");
                                                     CreateAndOrAddToKeyListPair(ssByST, tS, typeof(Subsettlement), sub);
 
                                                     TryCreateSubDictionary(ssBySTByT, tS, typeof(Type));
@@ -2155,6 +2196,7 @@ namespace CommunityLib
                                                     CreateAndOrAddToKeyListPair(ssBySTByTE[tS] as IDictionary, tSub, tSub, sub);
                                                     if (l.isOcean)
                                                     {
+                                                        //Console.WriteLine("CommunityLib: Is ocean.");
                                                         CreateAndOrAddToKeyListPair(oSsByST, tS, typeof(Subsettlement), sub);
 
                                                         TryCreateSubDictionary(oSsBySTByT, tS, typeof(Type));
@@ -2164,6 +2206,7 @@ namespace CommunityLib
                                                     }
                                                     else
                                                     {
+                                                        //Console.WriteLine("CommunityLib: Is terrestrial.");
                                                         CreateAndOrAddToKeyListPair(tSsByST, tS, typeof(Subsettlement), sub);
 
                                                         TryCreateSubDictionary(tSsBySTByT, tS, typeof(Type));
@@ -2172,6 +2215,7 @@ namespace CommunityLib
                                                         CreateAndOrAddToKeyListPair(tSsBySTByTE[tS] as IDictionary, tSub, tSub, sub);
                                                         if (l.isCoastal)
                                                         {
+                                                            //Console.WriteLine("CommunityLib: Is coastal.");
                                                             CreateAndOrAddToKeyListPair(cSsByST, tS, typeof(Subsettlement), sub);
 
                                                             TryCreateSubDictionary(cSsBySTByT, tS, typeof(Type));
@@ -2186,6 +2230,7 @@ namespace CommunityLib
                                                 // Iterates subsettlement type.
                                                 if (isFirstSGTIteration && isFirstLTIteration && isFirstSTIteration)
                                                 {
+                                                    //Console.WriteLine("CommunityLib: Iterating subsettlement type.");
                                                     CreateAndOrAddToKeyListPair(ssByT, tSub, tSub, sub);
                                                     CreateAndOrAddToKeyListPair(ssByLTEByT[tL] as IDictionary, tSub, tSub, sub);
                                                     CreateAndOrAddToKeyListPair(ssBySTEByT[tS] as IDictionary, tSub, tSub, sub);
@@ -2193,6 +2238,7 @@ namespace CommunityLib
                                                     CreateAndOrAddToKeyListPair(ssBySGTEByT[tSG] as IDictionary, tSub, tSub, sub);
                                                     if (l.isOcean)
                                                     {
+                                                        //Console.WriteLine("CommunityLib: Is ocean.");
                                                         CreateAndOrAddToKeyListPair(oSsByT, tSub, tSub, sub);
                                                         CreateAndOrAddToKeyListPair(oSsByLTEByT[tL] as IDictionary, tSub, tSub, sub);
                                                         CreateAndOrAddToKeyListPair(oSsBySTEByT[tS] as IDictionary, tSub, tSub, sub);
@@ -2201,6 +2247,7 @@ namespace CommunityLib
                                                     }
                                                     else
                                                     {
+                                                        //Console.WriteLine("CommunityLib: Is terrestrial.");
                                                         CreateAndOrAddToKeyListPair(tSsByT, tSub, tSub, sub);
                                                         CreateAndOrAddToKeyListPair(tSsByLTEByT[tL] as IDictionary, tSub, tSub, sub);
                                                         CreateAndOrAddToKeyListPair(tSsBySTEByT[tS] as IDictionary, tSub, tSub, sub);
@@ -2208,6 +2255,7 @@ namespace CommunityLib
                                                         CreateAndOrAddToKeyListPair(tSsBySGTEByT[tSG] as IDictionary, tSub, tSub, sub);
                                                         if (l.isCoastal)
                                                         {
+                                                            //Console.WriteLine("CommunityLib: Is coastal.");
                                                             CreateAndOrAddToKeyListPair(cSsByT, tSub, tSub, sub);
                                                             CreateAndOrAddToKeyListPair(cSsByLTEByT[tL] as IDictionary, tSub, tSub, sub);
                                                             CreateAndOrAddToKeyListPair(cSsBySTEByT[tS] as IDictionary, tSub, tSub, sub);
@@ -2221,16 +2269,20 @@ namespace CommunityLib
                                                 // Iterates social group type and subsettlement type.
                                                 if (isInitialLTIteration && isInitialSTIteration)
                                                 {
+                                                    //Console.WriteLine("CommunityLib: Iterating social group type and subsettlement type.");
                                                     CreateAndOrAddToKeyListPair(ssBySGTByT[tSG] as IDictionary, tSub, tSub, sub);
                                                     if (l.isOcean)
                                                     {
+                                                        //Console.WriteLine("CommunityLib: Is ocean.");
                                                         CreateAndOrAddToKeyListPair(oSsBySGTByT[tSG] as IDictionary, tSub, tSub, sub);
                                                     }
                                                     else
                                                     {
+                                                        //Console.WriteLine("CommunityLib: Is terrestrial.");
                                                         CreateAndOrAddToKeyListPair(tSsBySGTByT[tSG] as IDictionary, tSub, tSub, sub);
                                                         if (l.isCoastal)
                                                         {
+                                                            //Console.WriteLine("CommunityLib: Is coastal.");
                                                             CreateAndOrAddToKeyListPair(cSsBySGTByT[tSG] as IDictionary, tSub, tSub, sub);
                                                         }
                                                     }
@@ -2240,16 +2292,20 @@ namespace CommunityLib
                                                 // Iterates location type and subsettlement type.
                                                 if (isFirstSGTIteration && isInitialSTIteration)
                                                 {
+                                                    //Console.WriteLine("CommunityLib: Iterating location type and subsettlement type.");
                                                     CreateAndOrAddToKeyListPair(ssByLTByT[tL] as IDictionary, tSub, tSub, sub);
                                                     if (l.isOcean)
                                                     {
+                                                        //Console.WriteLine("CommunityLib: Is ocean.");
                                                         CreateAndOrAddToKeyListPair(oSsByLTByT[tL] as IDictionary, tSub, tSub, sub);
                                                     }
                                                     else
                                                     {
+                                                        //Console.WriteLine("CommunityLib: Is terrestrial.");
                                                         CreateAndOrAddToKeyListPair(tSsByLTByT[tL] as IDictionary, tSub, tSub, sub);
                                                         if (l.isCoastal)
                                                         {
+                                                            //Console.WriteLine("CommunityLib: Is coastal.");
                                                             CreateAndOrAddToKeyListPair(cSsByLTByT[tL] as IDictionary, tSub, tSub, sub);
                                                         }
                                                     }
@@ -2259,17 +2315,21 @@ namespace CommunityLib
                                                 // Iterates settlement type and subsettlement type.
                                                 if (isFirstSGTIteration && isFirstLTIteration)
                                                 {
-                                                    CreateAndOrAddToKeyListPair(ssBySTByT[tS] as IDictionary, tS, tSub, sub);
+                                                    //Console.WriteLine("CommunityLib: Iterating settlement type and subsettlement type.");
+                                                    CreateAndOrAddToKeyListPair(ssBySTByT[tS] as IDictionary, tSub, tSub, sub);
                                                     if (l.isOcean)
                                                     {
-                                                        CreateAndOrAddToKeyListPair(oSsBySTByT[tS] as IDictionary, tS, tSub, sub);
+                                                        //Console.WriteLine("CommunityLib: Is ocean.");
+                                                        CreateAndOrAddToKeyListPair(oSsBySTByT[tS] as IDictionary, tSub, tSub, sub);
                                                     }
                                                     else
                                                     {
-                                                        CreateAndOrAddToKeyListPair(tSsBySTByT[tS] as IDictionary, tS, tSub, sub);
+                                                        //Console.WriteLine("CommunityLib: Is terrestrial.");
+                                                        CreateAndOrAddToKeyListPair(tSsBySTByT[tS] as IDictionary, tSub, tSub, sub);
                                                         if (l.isCoastal)
                                                         {
-                                                            CreateAndOrAddToKeyListPair(cSsBySTByT[tS] as IDictionary, tS, tSub, sub);
+                                                            //Console.WriteLine("CommunityLib: Is coastal.");
+                                                            CreateAndOrAddToKeyListPair(cSsBySTByT[tS] as IDictionary, tSub, tSub, sub);
                                                         }
                                                     }
                                                 }
@@ -2277,13 +2337,13 @@ namespace CommunityLib
                                                 if (tSub == targetTSub)
                                                 {
                                                     iterateSsT = false;
-                                                    //Console.WriteLine("CommunityLib: End property type loop.");
+                                                    //Console.WriteLine("CommunityLib: End subsettlement type loop.");
                                                 }
                                                 else
                                                 {
                                                     isInitialSsTIteration = false;
                                                     tSub = tSub.BaseType;
-                                                    //Console.WriteLine("CommunityLib: Iterating Type to " + tP.Name + ".");
+                                                    //Console.WriteLine("CommunityLib: Iterating Type to " + tSub.Name + ".");
                                                 }
                                             }
                                         }
@@ -2292,12 +2352,14 @@ namespace CommunityLib
                                     // Properties with Social Group and Settlement
                                     if (l.properties != null && l.properties.Count > 0)
                                     {
-                                        Console.WriteLine("CommunityLib: Starting Properties Loop");
+                                        //Console.WriteLine("CommunityLib: Starting Properties Loop");
                                         foreach (Property p in l.properties)
                                         {
                                             tP = p.GetType();
                                             iteratePT = true;
                                             isInitialPTIteration = true;
+
+                                            //Console.WriteLine("CommunityLib: Starting property loop for Property " + p.getName() + " of type " + tP.Name + ".");
 
                                             while (iteratePT)
                                             {
@@ -2602,38 +2664,38 @@ namespace CommunityLib
                                                 if (tP == targetTP)
                                                 {
                                                     iteratePT = false;
-                                                    Console.WriteLine("CommunityLib: End property type loop.");
+                                                    //Console.WriteLine("CommunityLib: End property type loop.");
                                                 }
                                                 else
                                                 {
                                                     isInitialPTIteration = false;
                                                     tP = tP.BaseType;
-                                                    Console.WriteLine("CommunityLib: Iterating Type to " + tP.Name + ".");
+                                                    //Console.WriteLine("CommunityLib: Iterating Type to " + tP.Name + ".");
                                                 }
                                             }
                                         }
                                     }
-                                }
 
-                                if (tS == targetTS)
-                                {
-                                    iterateST = false;
-                                    Console.WriteLine("CommunityLib: End settlement type loop.");
-                                }
-                                else
-                                {
-                                    isFirstSTIteration = false;
-                                    isInitialSTIteration = false;
-                                    tS = tS.BaseType;
-                                    Console.WriteLine("CommunityLib: Iterating Type to " + tS.Name + ".");
+                                    if (tS == targetTS)
+                                    {
+                                        iterateST = false;
+                                        //Console.WriteLine("CommunityLib: End settlement type loop.");
+                                    }
+                                    else
+                                    {
+                                        isFirstSTIteration = false;
+                                        isInitialSTIteration = false;
+                                        tS = tS.BaseType;
+                                        //Console.WriteLine("CommunityLib: Iterating Type to " + tS.Name + ".");
+                                    }
                                 }
                             }
                             else
                             {
-                                Console.WriteLine("CommunityLib: Location does not have settlement.");
+                                //Console.WriteLine("CommunityLib: Location does not have settlement.");
                                 if (isFirstLTIteration)
                                 {
-                                    Console.WriteLine("CommunityLib: Is first iteration of location type loop.");
+                                    //Console.WriteLine("CommunityLib: Is first iteration of location type loop.");
                                     CreateAndOrAddToKeyListPair(lWoSByTE, tL, tL, l);
                                     CreateAndOrAddToKeyListPair(lWoSBySG, sG, typeof(Location), l);
                                     CreateAndOrAddToKeyListPair(lWoSBySGTE, tSG, typeof(Location), l);
@@ -2660,7 +2722,7 @@ namespace CommunityLib
                                 // Iterates social group type.
                                 if (isInitialLTIteration)
                                 {
-                                    Console.WriteLine("CommunityLib: Is initial iteration of location type loop.");
+                                    //Console.WriteLine("CommunityLib: Is initial iteration of location type loop.");
                                     CreateAndOrAddToKeyListPair(lWoSBySGT, tSG, typeof(Location), l);
                                     if (l.isOcean)
                                     {
@@ -2679,7 +2741,7 @@ namespace CommunityLib
                                 // Iterates Location Type
                                 if (isFirstSGTIteration)
                                 {
-                                    Console.WriteLine("CommunityLib: Is first iteration of social group type loop.");
+                                    //Console.WriteLine("CommunityLib: Is first iteration of social group type loop.");
                                     CreateAndOrAddToKeyListPair(lWoSByT, tL, tL, l);
                                     if (l.isOcean)
                                     {
@@ -2698,12 +2760,14 @@ namespace CommunityLib
                                 // Properties without Settlement
                                 if (l.properties != null && l.properties.Count > 0)
                                 {
-                                    Console.WriteLine("CommunityLib: Starting Properties Loop");
+                                    //Console.WriteLine("CommunityLib: Starting Properties Loop");
                                     foreach (Property p in l.properties)
                                     {
                                         tP = p.GetType();
                                         iteratePT = true;
                                         isInitialPTIteration = true;
+
+                                        //Console.WriteLine("CommunityLib: Starting property loop for Property " + p.getName() + " of type " + tP.Name + ".");
 
                                         while (iteratePT)
                                         {
@@ -2950,13 +3014,13 @@ namespace CommunityLib
                                             if (tP == targetTP)
                                             {
                                                 iteratePT = false;
-                                                Console.WriteLine("CommunityLib: End property type loop.");
+                                                //Console.WriteLine("CommunityLib: End property type loop.");
                                             }
                                             else
                                             {
                                                 isInitialPTIteration = false;
                                                 tP = tP.BaseType;
-                                                Console.WriteLine("CommunityLib: Iterating Type to " + tP.Name + ".");
+                                                //Console.WriteLine("CommunityLib: Iterating Type to " + tP.Name + ".");
                                             }
                                         }
                                     }
@@ -2966,27 +3030,27 @@ namespace CommunityLib
                             if (tL == targetTL)
                             {
                                 iterateLT = false;
-                                Console.WriteLine("CommunityLib: End location type loop.");
+                                //Console.WriteLine("CommunityLib: End location type loop.");
                             }
                             else
                             {
                                 isFirstLTIteration = false;
                                 isInitialLTIteration = false;
                                 tL = tL.BaseType;
-                                Console.WriteLine("CommunityLib: Iterating Type to " + tL.Name + ".");
+                                //Console.WriteLine("CommunityLib: Iterating Type to " + tL.Name + ".");
                             }
                         }
 
                         if (tSG == targetTSG)
                         {
                             iterateSGT = false;
-                            Console.WriteLine("CommunityLib: End social group type loop.");
+                            //Console.WriteLine("CommunityLib: End social group type loop.");
                         }
                         else
                         {
                             isFirstSGTIteration = false;
                             tSG = tSG.BaseType;
-                            Console.WriteLine("CommunityLib: Iterating Type to " + tSG.Name + ".");
+                            //Console.WriteLine("CommunityLib: Iterating Type to " + tSG.Name + ".");
                         }
                     }
                 }
@@ -2994,7 +3058,7 @@ namespace CommunityLib
                 {
                     iterateLT = true;
 
-                    Console.WriteLine("CommunityLib: Starting location type loop.");
+                    //Console.WriteLine("CommunityLib: Starting location type loop.");
                     while (iterateLT)
                     {
                         //Console.WriteLine("CommunityLib: Location is of Type " + tL.Name + ".");
@@ -3047,7 +3111,7 @@ namespace CommunityLib
                             iterateST = true;
                             isInitialSTIteration = true;
 
-                            Console.WriteLine("CommunityLib: Starting settlement type loop.");
+                            //Console.WriteLine("CommunityLib: Starting settlement type loop.");
                             while (iterateST)
                             {
                                 //Console.WriteLine("CommunityLib: Settlement " + s.name + " is of Type " + tS.Name + ".");
@@ -3182,7 +3246,7 @@ namespace CommunityLib
 
                                 if (tS == typeof(Set_City))
                                 {
-                                    Console.WriteLine("CommunityLib: Sorting 'Set_City' by level.");
+                                    //Console.WriteLine("CommunityLib: Sorting 'Set_City' by level.");
                                     Set_City city = s as Set_City;
                                     int level = city.getLevel();
 
@@ -3247,7 +3311,7 @@ namespace CommunityLib
                                 }
                                 else if (tS == typeof(Set_MinorHuman))
                                 {
-                                    Console.WriteLine("CommunityLib: Sorting 'Set_MinorHuman' by level.");
+                                    //Console.WriteLine("CommunityLib: Sorting 'Set_MinorHuman' by level.");
                                     Set_MinorHuman mHuman = (s as Set_MinorHuman);
                                     int level = mHuman.getLevel();
 
@@ -3312,7 +3376,7 @@ namespace CommunityLib
                                 }
                                 else if (tS == typeof(Set_OrcCamp))
                                 {
-                                    Console.WriteLine("CommunityLib: Sorting 'Set_OrcCamp' by specialism.");
+                                    //Console.WriteLine("CommunityLib: Sorting 'Set_OrcCamp' by specialism.");
                                     Set_OrcCamp orcCamp = (s as Set_OrcCamp);
                                     int specialism = orcCamp.specialism;
 
@@ -3379,7 +3443,7 @@ namespace CommunityLib
                                 // Subsettlements without Social Group
                                 if (s.subs != null && s.subs.Count > 0)
                                 {
-                                    Console.WriteLine("CommunityLib: Starting Subsettlement Loop");
+                                    //Console.WriteLine("CommunityLib: Starting Subsettlement Loop");
                                     foreach (Subsettlement sub in s.subs)
                                     {
                                         tSub = sub.GetType();
@@ -3589,17 +3653,17 @@ namespace CommunityLib
                                             // Iterates settlement type and subsettlement type.
                                             if (isFirstLTIteration)
                                             {
-                                                CreateAndOrAddToKeyListPair(ssBySTByT[tS] as IDictionary, tS, tSub, sub);
+                                                CreateAndOrAddToKeyListPair(ssBySTByT[tS] as IDictionary, tSub, tSub, sub);
                                                 if (l.isOcean)
                                                 {
-                                                    CreateAndOrAddToKeyListPair(oSsBySTByT[tS] as IDictionary, tS, tSub, sub);
+                                                    CreateAndOrAddToKeyListPair(oSsBySTByT[tS] as IDictionary, tSub, tSub, sub);
                                                 }
                                                 else
                                                 {
-                                                    CreateAndOrAddToKeyListPair(tSsBySTByT[tS] as IDictionary, tS, tSub, sub);
+                                                    CreateAndOrAddToKeyListPair(tSsBySTByT[tS] as IDictionary, tSub, tSub, sub);
                                                     if (l.isCoastal)
                                                     {
-                                                        CreateAndOrAddToKeyListPair(cSsBySTByT[tS] as IDictionary, tS, tSub, sub);
+                                                        CreateAndOrAddToKeyListPair(cSsBySTByT[tS] as IDictionary, tSub, tSub, sub);
                                                     }
                                                 }
                                             }
@@ -3607,13 +3671,13 @@ namespace CommunityLib
                                             if (tSub == targetTSub)
                                             {
                                                 iterateSsT = false;
-                                                Console.WriteLine("CommunityLib: End subsettlement type loop.");
+                                                //Console.WriteLine("CommunityLib: End subsettlement type loop.");
                                             }
                                             else
                                             {
                                                 isInitialSsTIteration = false;
                                                 tSub = tSub.BaseType;
-                                                Console.WriteLine("CommunityLib: Iterating Type to " + tSub.Name + ".");
+                                                //Console.WriteLine("CommunityLib: Iterating Type to " + tSub.Name + ".");
                                             }
                                         }
                                     }
@@ -3622,12 +3686,14 @@ namespace CommunityLib
                                 // Properties without SocialGroup
                                 if (l.properties != null && l.properties.Count > 0)
                                 {
-                                    Console.WriteLine("CommunityLib: Starting Properties Loop");
+                                    //Console.WriteLine("CommunityLib: Starting Properties Loop");
                                     foreach (Property p in l.properties)
                                     {
                                         tP = p.GetType();
                                         iteratePT = true;
                                         isInitialPTIteration = true;
+
+                                        //Console.WriteLine("CommunityLib: Starting property loop for Property " + p.getName() + " of type " + tP.Name + ".");
 
                                         while (iteratePT)
                                         {
@@ -3850,13 +3916,13 @@ namespace CommunityLib
                                             if (tP == targetTP)
                                             {
                                                 iteratePT = false;
-                                                Console.WriteLine("CommunityLib: End property type loop.");
+                                                //Console.WriteLine("CommunityLib: End property type loop.");
                                             }
                                             else
                                             {
                                                 isInitialPTIteration = false;
                                                 tP = tP.BaseType;
-                                                Console.WriteLine("CommunityLib: Iterating Type to " + tP.Name + ".");
+                                                //Console.WriteLine("CommunityLib: Iterating Type to " + tP.Name + ".");
                                             }
                                         }
                                     }
@@ -3865,14 +3931,14 @@ namespace CommunityLib
                                 if (tS == targetTS)
                                 {
                                     iterateST = false;
-                                    Console.WriteLine("CommunityLib: End settlement type loop.");
+                                    //Console.WriteLine("CommunityLib: End settlement type loop.");
                                 }
                                 else
                                 {
                                     isFirstSTIteration = false;
                                     isInitialSTIteration = false;
                                     tS = tS.BaseType;
-                                    Console.WriteLine("CommunityLib: Iterating Type to " + tS.Name + ".");
+                                    //Console.WriteLine("CommunityLib: Iterating Type to " + tS.Name + ".");
                                 }
                             }
                         }
@@ -3922,12 +3988,14 @@ namespace CommunityLib
                             // Properties without SocialGroup and Settlement
                             if (l.properties != null && l.properties.Count > 0)
                             {
-                                Console.WriteLine("CommunityLib: Starting Properties Loop");
+                                //Console.WriteLine("CommunityLib: Starting Properties Loop");
                                 foreach (Property p in l.properties)
                                 {
                                     tP = p.GetType();
                                     iteratePT = true;
                                     isInitialPTIteration = true;
+
+                                    //Console.WriteLine("CommunityLib: Starting property loop for Property " + p.getName() + " of type " + tP.Name + ".");
 
                                     while (iteratePT)
                                     {
@@ -4086,13 +4154,13 @@ namespace CommunityLib
                                         if (tP == targetTP)
                                         {
                                             iteratePT = false;
-                                            Console.WriteLine("CommunityLib: End property type loop.");
+                                            //Console.WriteLine("CommunityLib: End property type loop.");
                                         }
                                         else
                                         {
                                             isInitialPTIteration = false;
                                             tP = tP.BaseType;
-                                            Console.WriteLine("CommunityLib: Iterating Type to " + tP.Name + ".");
+                                            //Console.WriteLine("CommunityLib: Iterating Type to " + tP.Name + ".");
                                         }
                                     }
                                 }
@@ -4102,13 +4170,13 @@ namespace CommunityLib
                         if (tL == targetTL)
                         {
                             iterateLT = false;
-                            Console.WriteLine("CommunityLib: End location type loop.");
+                            //Console.WriteLine("CommunityLib: End location type loop.");
                         }
                         else
                         {
                             isFirstLTIteration = false;
                             tL = tL.BaseType;
-                            Console.WriteLine("CommunityLib: Iterating Type to " + tL.Name + ".");
+                            //Console.WriteLine("CommunityLib: Iterating Type to " + tL.Name + ".");
                         }
                     }
                 }

@@ -93,19 +93,19 @@ namespace CommunityLib
 
         // Specific Settlements
         public List<Set_City>[] cityByLevel = new List<Set_City>[6];
-        public Dictionary<SocialGroup, Set_City[]> cityBySocialGroupByLevel = new Dictionary<SocialGroup, Set_City[]>();
-        public Dictionary<Type, Set_City[]> cityBySocialGroupTypeByLevel = new Dictionary<Type, Set_City[]>();
-        public Dictionary<Type, Set_City[]> cityBySocialGroupTypeExclusiveByLevel = new Dictionary<Type, Set_City[]>();
+        public Dictionary<SocialGroup, List<Set_City>[]> cityBySocialGroupByLevel = new Dictionary<SocialGroup, List<Set_City>[]>();
+        public Dictionary<Type, List<Set_City>[]> cityBySocialGroupTypeByLevel = new Dictionary<Type, List<Set_City>[]>();
+        public Dictionary<Type, List<Set_City>[]> cityBySocialGroupTypeExclusiveByLevel = new Dictionary<Type, List<Set_City>[]>();
         public List<Set_City>[] cityWithoutSocialGroupByLevel = new List<Set_City>[6];
         public List<Set_MinorHuman>[] minorHumanByLevel = new List<Set_MinorHuman>[6];
-        public Dictionary<SocialGroup, Set_MinorHuman[]> minorHumanBySocialGroupByLevel = new Dictionary<SocialGroup, Set_MinorHuman[]>();
-        public Dictionary<Type, Set_MinorHuman[]> minorHumanBySocialGroupTypeByLevel = new Dictionary<Type, Set_MinorHuman[]>();
-        public Dictionary<Type, Set_MinorHuman[]> minorHumanBySocialGroupTypeExclusiveByLevel = new Dictionary<Type, Set_MinorHuman[]>();
+        public Dictionary<SocialGroup, List<Set_MinorHuman>[]> minorHumanBySocialGroupByLevel = new Dictionary<SocialGroup, List<Set_MinorHuman>[]>();
+        public Dictionary<Type, List<Set_MinorHuman>[]> minorHumanBySocialGroupTypeByLevel = new Dictionary<Type, List<Set_MinorHuman>[]>();
+        public Dictionary<Type, List<Set_MinorHuman>[]> minorHumanBySocialGroupTypeExclusiveByLevel = new Dictionary<Type, List<Set_MinorHuman>[]>();
         public List<Set_MinorHuman>[] minorHumanWithoutSocialGroupByLevel = new List<Set_MinorHuman>[6];
         public List<Set_OrcCamp>[] orcCampBySpecialism = new List<Set_OrcCamp>[6];
-        public Dictionary<SocialGroup, Set_OrcCamp[]> orcCampBySocialGroupBySpecialism = new Dictionary<SocialGroup, Set_OrcCamp[]>();
-        public Dictionary<Type, Set_OrcCamp[]> orcCampBySocialGroupTypeBySpecialism = new Dictionary<Type, Set_OrcCamp[]>();
-        public Dictionary<Type, Set_OrcCamp[]> orcCampBySocialGroupTypeExclusiveBySpecialism = new Dictionary<Type, Set_OrcCamp[]>();
+        public Dictionary<SocialGroup, List<Set_OrcCamp>[]> orcCampBySocialGroupBySpecialism = new Dictionary<SocialGroup, List<Set_OrcCamp>[]>();
+        public Dictionary<Type, List<Set_OrcCamp>[]> orcCampBySocialGroupTypeBySpecialism = new Dictionary<Type, List<Set_OrcCamp>[]>();
+        public Dictionary<Type, List<Set_OrcCamp>[]> orcCampBySocialGroupTypeExclusiveBySpecialism = new Dictionary<Type, List<Set_OrcCamp>[]>();
         public List<Set_OrcCamp>[] orcCampWithoutSocialGroupBySpecialism = new List<Set_OrcCamp>[6];
 
         // Subsettlements
@@ -226,19 +226,19 @@ namespace CommunityLib
 
         // Specific Settlements
         public List<Set_City>[] coastalCityByLevel = new List<Set_City>[6];
-        public Dictionary<SocialGroup, Set_City[]> coastalCityBySocialGroupByLevel = new Dictionary<SocialGroup, Set_City[]>();
-        public Dictionary<Type, Set_City[]> coastalCityBySocialGroupTypeByLevel = new Dictionary<Type, Set_City[]>();
-        public Dictionary<Type, Set_City[]> coastalCityBySocialGroupTypeExclusiveByLevel = new Dictionary<Type, Set_City[]>();
+        public Dictionary<SocialGroup, List<Set_City>[]> coastalCityBySocialGroupByLevel = new Dictionary<SocialGroup, List<Set_City>[]>();
+        public Dictionary<Type, List<Set_City>[]> coastalCityBySocialGroupTypeByLevel = new Dictionary<Type, List<Set_City>[]>();
+        public Dictionary<Type, List<Set_City>[]> coastalCityBySocialGroupTypeExclusiveByLevel = new Dictionary<Type, List<Set_City>[]>();
         public List<Set_City>[] coastalCityWithoutSocialGroupByLevel = new List<Set_City>[6];
         public List<Set_MinorHuman>[] coastalMinorHumanByLevel = new List<Set_MinorHuman>[6];
-        public Dictionary<SocialGroup, Set_MinorHuman[]> coastalMinorHumanBySocialGroupByLevel = new Dictionary<SocialGroup, Set_MinorHuman[]>();
-        public Dictionary<Type, Set_MinorHuman[]> coastalMinorHumanBySocialGroupTypeByLevel = new Dictionary<Type, Set_MinorHuman[]>();
-        public Dictionary<Type, Set_MinorHuman[]> coastalMinorHumanBySocialGroupTypeExclusiveByLevel = new Dictionary<Type, Set_MinorHuman[]>();
+        public Dictionary<SocialGroup, List<Set_MinorHuman>[]> coastalMinorHumanBySocialGroupByLevel = new Dictionary<SocialGroup, List<Set_MinorHuman>[]>();
+        public Dictionary<Type, List<Set_MinorHuman>[]> coastalMinorHumanBySocialGroupTypeByLevel = new Dictionary<Type, List<Set_MinorHuman>[]>();
+        public Dictionary<Type, List<Set_MinorHuman>[]> coastalMinorHumanBySocialGroupTypeExclusiveByLevel = new Dictionary<Type, List<Set_MinorHuman>[]>();
         public List<Set_MinorHuman>[] coastalMinorHumanWithoutSocialGroupByLevel = new List<Set_MinorHuman>[6];
         public List<Set_OrcCamp>[] coastalOrcCampBySpecialism = new List<Set_OrcCamp>[6];
-        public Dictionary<SocialGroup, Set_OrcCamp[]> coastalOrcCampBySocialGroupBySpecialism = new Dictionary<SocialGroup, Set_OrcCamp[]>();
-        public Dictionary<Type, Set_OrcCamp[]> coastalOrcCampBySocialGroupTypeBySpecialism = new Dictionary<Type, Set_OrcCamp[]>();
-        public Dictionary<Type, Set_OrcCamp[]> coastalOrcCampBySocialGroupTypeExclusiveBySpecialism = new Dictionary<Type, Set_OrcCamp[]>();
+        public Dictionary<SocialGroup, List<Set_OrcCamp>[]> coastalOrcCampBySocialGroupBySpecialism = new Dictionary<SocialGroup, List<Set_OrcCamp>[]>();
+        public Dictionary<Type, List<Set_OrcCamp>[]> coastalOrcCampBySocialGroupTypeBySpecialism = new Dictionary<Type, List<Set_OrcCamp>[]>();
+        public Dictionary<Type, List<Set_OrcCamp>[]> coastalOrcCampBySocialGroupTypeExclusiveBySpecialism = new Dictionary<Type, List<Set_OrcCamp>[]>();
         public List<Set_OrcCamp>[] coastalOrcCampWithoutSocialGroupBySpecialism = new List<Set_OrcCamp>[6];
 
         // Coastal Subsettlements
@@ -359,19 +359,19 @@ namespace CommunityLib
 
         // Specific Settlements
         public List<Set_City>[] oceanCityByLevel = new List<Set_City>[6];
-        public Dictionary<SocialGroup, Set_City[]> oceanCityBySocialGroupByLevel = new Dictionary<SocialGroup, Set_City[]>();
-        public Dictionary<Type, Set_City[]> oceanCityBySocialGroupTypeByLevel = new Dictionary<Type, Set_City[]>();
-        public Dictionary<Type, Set_City[]> oceanCityBySocialGroupTypeExclusiveByLevel = new Dictionary<Type, Set_City[]>();
+        public Dictionary<SocialGroup, List<Set_City>[]> oceanCityBySocialGroupByLevel = new Dictionary<SocialGroup, List<Set_City>[]>();
+        public Dictionary<Type, List<Set_City>[]> oceanCityBySocialGroupTypeByLevel = new Dictionary<Type, List<Set_City>[]>();
+        public Dictionary<Type, List<Set_City>[]> oceanCityBySocialGroupTypeExclusiveByLevel = new Dictionary<Type, List<Set_City>[]>();
         public List<Set_City>[] oceanCityWithoutSocialGroupByLevel = new List<Set_City>[6];
         public List<Set_MinorHuman>[] oceanMinorHumanByLevel = new List<Set_MinorHuman>[6];
-        public Dictionary<SocialGroup, Set_MinorHuman[]> oceanMinorHumanBySocialGroupByLevel = new Dictionary<SocialGroup, Set_MinorHuman[]>();
-        public Dictionary<Type, Set_MinorHuman[]> oceanMinorHumanBySocialGroupTypeByLevel = new Dictionary<Type, Set_MinorHuman[]>();
-        public Dictionary<Type, Set_MinorHuman[]> oceanMinorHumanBySocialGroupTypeExclusiveByLevel = new Dictionary<Type, Set_MinorHuman[]>();
+        public Dictionary<SocialGroup, List<Set_MinorHuman>[]> oceanMinorHumanBySocialGroupByLevel = new Dictionary<SocialGroup, List<Set_MinorHuman>[]>();
+        public Dictionary<Type, List<Set_MinorHuman>[]> oceanMinorHumanBySocialGroupTypeByLevel = new Dictionary<Type, List<Set_MinorHuman>[]>();
+        public Dictionary<Type, List<Set_MinorHuman>[]> oceanMinorHumanBySocialGroupTypeExclusiveByLevel = new Dictionary<Type, List<Set_MinorHuman>[]>();
         public List<Set_MinorHuman>[] oceanMinorHumanWithoutSocialGroupByLevel = new List<Set_MinorHuman>[6];
         public List<Set_OrcCamp>[] oceanOrcCampBySpecialism = new List<Set_OrcCamp>[6];
-        public Dictionary<SocialGroup, Set_OrcCamp[]> oceanOrcCampBySocialGroupBySpecialism = new Dictionary<SocialGroup, Set_OrcCamp[]>();
-        public Dictionary<Type, Set_OrcCamp[]> oceanOrcCampBySocialGroupTypeBySpecialism = new Dictionary<Type, Set_OrcCamp[]>();
-        public Dictionary<Type, Set_OrcCamp[]> oceanOrcCampBySocialGroupTypeExclusiveBySpecialism = new Dictionary<Type, Set_OrcCamp[]>();
+        public Dictionary<SocialGroup, List<Set_OrcCamp>[]> oceanOrcCampBySocialGroupBySpecialism = new Dictionary<SocialGroup, List<Set_OrcCamp>[]>();
+        public Dictionary<Type, List<Set_OrcCamp>[]> oceanOrcCampBySocialGroupTypeBySpecialism = new Dictionary<Type, List<Set_OrcCamp>[]>();
+        public Dictionary<Type, List<Set_OrcCamp>[]> oceanOrcCampBySocialGroupTypeExclusiveBySpecialism = new Dictionary<Type, List<Set_OrcCamp>[]>();
         public List<Set_OrcCamp>[] oceanOrcCampWithoutSocialGroupBySpecialism = new List<Set_OrcCamp>[6];
 
         // Ocean Subsettlements
@@ -492,19 +492,19 @@ namespace CommunityLib
 
         // Specific Settlements
         public List<Set_City>[] terrestrialCityByLevel = new List<Set_City>[6];
-        public Dictionary<SocialGroup, Set_City[]> terrestrialCityBySocialGroupByLevel = new Dictionary<SocialGroup, Set_City[]>();
-        public Dictionary<Type, Set_City[]> terrestrialCityBySocialGroupTypeByLevel = new Dictionary<Type, Set_City[]>();
-        public Dictionary<Type, Set_City[]> terrestrialCityBySocialGroupTypeExclusiveByLevel = new Dictionary<Type, Set_City[]>();
+        public Dictionary<SocialGroup, List<Set_City>[]> terrestrialCityBySocialGroupByLevel = new Dictionary<SocialGroup, List<Set_City>[]>();
+        public Dictionary<Type, List<Set_City>[]> terrestrialCityBySocialGroupTypeByLevel = new Dictionary<Type, List<Set_City>[]>();
+        public Dictionary<Type, List<Set_City>[]> terrestrialCityBySocialGroupTypeExclusiveByLevel = new Dictionary<Type, List<Set_City>[]>();
         public List<Set_City>[] terrestrialCityWithoutSocialGroupByLevel = new List<Set_City>[6];
         public List<Set_MinorHuman>[] terrestrialMinorHumanByLevel = new List<Set_MinorHuman>[6];
-        public Dictionary<SocialGroup, Set_MinorHuman[]> terrestrialMinorHumanBySocialGroupByLevel = new Dictionary<SocialGroup, Set_MinorHuman[]>();
-        public Dictionary<Type, Set_MinorHuman[]> terrestrialMinorHumanBySocialGroupTypeByLevel = new Dictionary<Type, Set_MinorHuman[]>();
-        public Dictionary<Type, Set_MinorHuman[]> terrestrialMinorHumanBySocialGroupTypeExclusiveByLevel = new Dictionary<Type, Set_MinorHuman[]>();
+        public Dictionary<SocialGroup, List<Set_MinorHuman>[]> terrestrialMinorHumanBySocialGroupByLevel = new Dictionary<SocialGroup, List<Set_MinorHuman>[]>();
+        public Dictionary<Type, List<Set_MinorHuman>[]> terrestrialMinorHumanBySocialGroupTypeByLevel = new Dictionary<Type, List<Set_MinorHuman>[]>();
+        public Dictionary<Type, List<Set_MinorHuman>[]> terrestrialMinorHumanBySocialGroupTypeExclusiveByLevel = new Dictionary<Type, List<Set_MinorHuman>[]>();
         public List<Set_MinorHuman>[] terrestrialMinorHumanWithoutSocialGroupByLevel = new List<Set_MinorHuman>[6];
         public List<Set_OrcCamp>[] terrestrialOrcCampBySpecialism = new List<Set_OrcCamp>[6];
-        public Dictionary<SocialGroup, Set_OrcCamp[]> terrestrialOrcCampBySocialGroupBySpecialism = new Dictionary<SocialGroup, Set_OrcCamp[]>();
-        public Dictionary<Type, Set_OrcCamp[]> terrestrialOrcCampBySocialGroupTypeBySpecialism = new Dictionary<Type, Set_OrcCamp[]>();
-        public Dictionary<Type, Set_OrcCamp[]> terrestrialOrcCampBySocialGroupTypeExclusiveBySpecialism = new Dictionary<Type, Set_OrcCamp[]>();
+        public Dictionary<SocialGroup, List<Set_OrcCamp>[]> terrestrialOrcCampBySocialGroupBySpecialism = new Dictionary<SocialGroup, List<Set_OrcCamp>[]>();
+        public Dictionary<Type, List<Set_OrcCamp>[]> terrestrialOrcCampBySocialGroupTypeBySpecialism = new Dictionary<Type, List<Set_OrcCamp>[]>();
+        public Dictionary<Type, List<Set_OrcCamp>[]> terrestrialOrcCampBySocialGroupTypeExclusiveBySpecialism = new Dictionary<Type, List<Set_OrcCamp>[]>();
         public List<Set_OrcCamp>[] terrestrialOrcCampWithoutSocialGroupBySpecialism = new List<Set_OrcCamp>[6];
 
         // Terrestrial Subsettlements
