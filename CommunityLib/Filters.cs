@@ -59,9 +59,14 @@ namespace CommunityLib
                         result.Add(pair.Key);
                     }
                 }
+
+                if (result.Count > 0)
+                {
+                    return result;
+                }
             }
 
-            return result;
+            return null;
         }
 
         public List<Location> getLocationsWithinSteps(Location source, int steps)
@@ -78,7 +83,11 @@ namespace CommunityLib
                         result.AddRange(array[i]);
                     }
                 }
-                return result;
+
+                if (result.Count > 0)
+                {
+                    return result;
+                }
             }
 
             return null;
@@ -97,9 +106,14 @@ namespace CommunityLib
                         result.Add(pair.Key.settlement);
                     }
                 }
+
+                if (result.Count > 0)
+                {
+                    return result;
+                }
             }
 
-            return result;
+            return null;
         }
 
         public List<Settlement> getSettlementsWithinSteps(Location source, int steps)
@@ -116,7 +130,11 @@ namespace CommunityLib
                         result.AddRange(array[i]);
                     }
                 }
-                return result;
+
+                if (result.Count > 0)
+                {
+                    return result;
+                }
             }
 
             return null;
@@ -135,9 +153,14 @@ namespace CommunityLib
                         result.AddRange(pair.Key.units);
                     }
                 }
+
+                if (result.Count > 0)
+                {
+                    return result;
+                }
             }
 
-            return result;
+            return null;
         }
 
         public List<Unit> getUnitsWithinSteps(Location source, int steps)
@@ -161,7 +184,57 @@ namespace CommunityLib
                         }
                     }
                 }
+
+                if (result.Count > 0)
+                {
+                    return result;
+                }
+            }
+
+            return null;
+        }
+
+        public List<Set_OrcCamp> getSpecialisedOrcCamps()
+        {
+            List<Set_OrcCamp> result = new List<Set_OrcCamp>();
+
+            for (int i = 1; i < cache.orcCampBySpecialism.Length; i++)
+            {
+                List<Set_OrcCamp> camps = cache.orcCampBySpecialism[i];
+
+                if (camps != null && camps.Count > 0)
+                {
+                    result.AddRange(camps);
+                }
+            }
+
+            if (result.Count > 0)
+            {
                 return result;
+            }
+            return null;
+        }
+
+        public List<Set_OrcCamp> getSpecialisedOrcCampsBySocialGroup(SocialGroup sG)
+        {
+            List<Set_OrcCamp> result = new List<Set_OrcCamp>();
+
+            List<Set_OrcCamp>[] array;
+            if (cache.orcCampBySocialGroupBySpecialism.TryGetValue(sG, out array) && array != null)
+            {
+                for (int i = 1; i < array.Length; i++)
+                {
+                    List<Set_OrcCamp> camps = array[i];
+                    if (camps != null && camps.Count > 0)
+                    {
+                        result.AddRange(camps);
+                    }
+                }
+
+                if (result.Count > 0)
+                {
+                    return result;
+                }
             }
 
             return null;
