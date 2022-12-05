@@ -55,13 +55,18 @@ namespace CommunityLib
                 }
 
                 Location nearestOceanLocation = null;
-                int steps = -1;
-                foreach (Location oceanLocation in cache.oceanLocations)
+                List<Location>[] array;
+                if (cache.oceanLocationsByStepsExclusiveFromLocation.TryGetValue(deepOne.location, out array) && array != null)
                 {
-                    if (nearestOceanLocation == null || map.getStepDist(oceanLocation, deepOne.location) < steps)
+                    List<Location> nearbyOceanLocations;
+                    for (int i = 1; i < array.Length; i++)
                     {
-                        steps = map.getStepDist(oceanLocation, deepOne.location);
-                        nearestOceanLocation = oceanLocation;
+                        nearbyOceanLocations = array[i];
+                        if (nearbyOceanLocations != null && nearbyOceanLocations.Count > 0)
+                        {
+                            nearestOceanLocation = nearbyOceanLocations[Eleven.random.Next(nearbyOceanLocations.Count)];
+                            break;
+                        }
                     }
                 }
 
