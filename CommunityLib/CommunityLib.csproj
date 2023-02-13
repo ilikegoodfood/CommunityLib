@@ -31,6 +31,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="0Harmony, Version=2.2.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Lib.Harmony.2.2.2\lib\net472\0Harmony.dll</HintPath>
+    </Reference>
     <Reference Include="Assembly-CSharp">
       <HintPath>..\..\..\Game DLLs\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
@@ -47,13 +50,22 @@
       <HintPath>..\..\..\Game DLLs\UnityEngine.CoreModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>..\..\..\Game DLLs\UnityEngine.UI.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Cache.cs" />
     <Compile Include="DataTests.cs" />
     <Compile Include="Filters.cs" />
+    <None Include="packages.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Storage %28NotCompiled%29.cs" />
     <Compile Include="FiltersLocations.cs" />
+    <Compile Include="HarmonyPatches.cs" />
+    <Compile Include="Hooks.cs" />
     <Compile Include="UAENOverrideAI.cs" />
     <Compile Include="ModCore.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

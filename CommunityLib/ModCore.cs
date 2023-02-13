@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Schema;
 using Assets.Code;
+using Assets.Code.Modding;
 using UnityEngine.Diagnostics;
 
 namespace CommunityLib
@@ -16,6 +17,8 @@ namespace CommunityLib
 
         private Filters filters;
 
+        private List<Hooks> registeredHooks = new List<Hooks>();
+
         private UAENOverrideAI overrideAI;
 
         private DataTests dataTests;
@@ -23,6 +26,17 @@ namespace CommunityLib
         private bool runGeneralDataTests = false;
 
         private bool runSpecificDataTests = false;
+
+        private bool patched = false;
+
+        public override void onModsInitiallyLoaded()
+        {
+            if (!patched)
+            {
+                patched = true;
+                HarmonyPatches.PatchingInit(this);
+            }
+        }
 
         public override void afterMapGenBeforeHistorical(Map map)
         {
@@ -138,24 +152,57 @@ namespace CommunityLib
             }
         }
 
+        /// <summary>
+        /// Forces an update of the internal location distance and steps maps, based off te game's data. This should only be called if and when a location or connection on the map is changed.
+        /// </summary>
         public void updateLocationDistances()
         {
             filters.UpdateLocationDistances();
         }
 
+        /// <summary>
+        /// Forces an update of the visibility of commandable units. This only updates the units that can see the commandable units, not the units that the commandable units can see.
+        /// This should only be called if excecuting an effect on units that can see the commandable units during the player turn, such as a taunt challenge or power.
+        /// </summary>
         public void UpdateCommandableUnitVisibility()
         {
             filters.UpdateCommandableUnitVisibility();
         }
 
+        /// <summary>
+        /// Returns the instance of the Community Library Cache class.
+        /// </summary>
+        /// <returns></returns>
         public Cache GetCache()
         {
             return cache;
         }
 
+        /// <summary>
+        /// <para></para>Returns the instance of the UAENOverrideAI class.
+        /// <para>A reference to this class is required to add a challenge to a UAENOverrideAI's challenge list, to read the challenge list, or to disable one or more of the Community Library's UAENOverrideAIs.</para>
+        /// </summary>
+        /// <returns></returns>
         public UAENOverrideAI GetUAENOverrideAI()
         {
             return overrideAI;
+        }
+
+        /// <summary>
+        /// Registers an instance of the Hooks class to the Community Library. Only registered instances will be called by the hooks included in the Comunity Library.
+        /// </summary>
+        /// <param name="hook"></param>
+        public void RegisterHooks(Hooks hook)
+        {
+            if (hook != null && !registeredHooks.Contains(hook))
+            {
+                registeredHooks.Add(hook);
+            }
+        }
+
+        internal List<Hooks> GetRegisteredHooks()
+        {
+            return registeredHooks;
         }
     }
 }
