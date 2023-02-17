@@ -680,7 +680,7 @@ namespace CommunityLib
                         }
                     }
 
-                    if (targetIndex < 0)
+                    if (targetIndex < 1)
                     {
                         yield return instructionList[i];
                     }
