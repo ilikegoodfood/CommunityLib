@@ -144,6 +144,28 @@ namespace CommunityLib
         }
 
         /// <summary>
+        /// This hook fires when a religion is viewed in the religion screen. It recieves the holy order (order), and the list of reason messages (msgs) that is used to compile the output.
+        /// <para>The list of reason message can contain both 'ReasonMsg' and 'CommunityLib.ReasonMsgMax'. If you want to display a singular value, as with 'Income', use a 'reasonMsg'. If you wish to dipslay a value out of a maximum value, as with 'Gold for Acolytes', use a 'CommunityLib.ReasonMsgMax'.</para>
+        /// <para>The message is displayed in the left hand panel of the budget screen, and the value and/or max value is displayed in the value column, in the same line as the message.</para>
+        /// </summary>
+        /// <param name="order"></param>
+        /// <param name="msgs"></param>
+        public virtual void onPopupHolyOrder_DisplayBudget(HolyOrder order, List<ReasonMsg> msgs)
+        {
+            return;
+        }
+
+        /// <summary>
+        /// This hook fires when a relgiion is viewed in the religion screen. It recieves the holy order (order), and the list of reason messages (msgs) that is used to compile the output.
+        /// </summary>
+        /// <param name="order"></param>
+        /// <param name="msgs"></param>
+        public virtual void onPopupHolyOrder_DisplayStats(HolyOrder order, List<ReasonMsg> msgs)
+        {
+            return;
+        }
+
+        /// <summary>
         /// This hook fires when a religion is viewed in the religion screen. It recieves the holy order (order), the string (s) that will be dsiplayed, and the amount of influence that was gained by the player that turn (infGain). It returns a string, which is, after all instances of this hook have been run, then diplayed in the HolyOrder screen.
         /// <para>If any other mods have already mdofiied the string prior to yours, those changes will already be present in the argument s.</para>
         /// </summary>
@@ -167,16 +189,6 @@ namespace CommunityLib
         public virtual string onPopupHolyOrder_DisplayInfluenceHuman(HolyOrder order, string s, int infGain)
         {
             return s;
-        }
-
-        public virtual void onPopupHolyOrder_InfluenceElderStats(HolyOrder order, List<ReasonMsg> reasonMsgs)
-        {
-            return;
-        }
-
-        public virtual void onPopupHolyOrder_InfluenceHumanStats(HolyOrder order, List<ReasonMsg> reasonMsgs)
-        {
-            return;
         }
     }
 }

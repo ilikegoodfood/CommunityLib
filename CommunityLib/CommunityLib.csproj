@@ -56,16 +56,17 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ArmyBattleData.cs" />
     <Compile Include="Cache.cs" />
     <Compile Include="DataTests.cs" />
     <Compile Include="Filters.cs" />
-    <None Include="packages.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <None Include="packages.config" />
     <None Include="Storage %28NotCompiled%29.cs" />
     <Compile Include="FiltersLocations.cs" />
     <Compile Include="HarmonyPatches.cs" />
     <Compile Include="Hooks.cs" />
+    <Compile Include="ReasonMsgMax.cs" />
+    <Compile Include="Task_GoToPerformChallengeAtLocation.cs" />
     <Compile Include="UAENOverrideAI.cs" />
     <Compile Include="ModCore.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

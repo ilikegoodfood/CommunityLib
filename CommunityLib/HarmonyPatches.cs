@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace CommunityLib
@@ -17,23 +18,9 @@ namespace CommunityLib
 
         private static bool patched = false;
 
-        public struct ArmyBattleData
-        {
-            public List<UM> attackers;
-            public List<UA> attComs;
-            public List<UM> defenders;
-            public List<UA> defComs;
-
-            public void Clear()
-            {
-                attackers.Clear();
-                attComs.Clear();
-                defenders.Clear();
-                defComs.Clear();
-            }
-        }
-
         public static ArmyBattleData armyBattleData_StartOfCycle;
+
+        public static Text budgetLabels = null;
 
         /// <summary>
         /// Initialises variables in this class that are required to perform patches, then executes harmony patches.
@@ -329,16 +316,18 @@ namespace CommunityLib
 
         private static void BattleArmy_cycle_TranspilerBody_onArmyBattleVictory(BattleArmy battle)
         {
+            ArmyBattleData data = HarmonyPatches.armyBattleData_StartOfCycle;
+            Tuple<List<UM>, List<UA>> victors;
             List<UM> victorUnits = new List<UM>();
             List<UA> victorComs = new List<UA>();
             List<UM> defeatedUnits = new List<UM>();
             List<UA> defeatedComs= new List<UA>();
-            ArmyBattleData data = HarmonyPatches.armyBattleData_StartOfCycle;
 
             if (battle.attackers.Count == 0 && battle.defenders.Count > 0)
             {
-                victorUnits.AddRange(battle.defenders);
-                victorComs.AddRange(battle.defComs);
+                victors = armyBattleData_StartOfCycle.GetDefenders();
+                victorUnits = victors.Item1;
+                victorComs = victors.Item2;
 
                 foreach (UM u in data.attackers)
                 {
@@ -357,8 +346,9 @@ namespace CommunityLib
             }
             else if (battle.defenders.Count == 0 && battle.attackers.Count > 0)
             {
-                victorUnits.AddRange(battle.attackers);
-                victorComs.AddRange(battle.attComs);
+                victors = armyBattleData_StartOfCycle.GetAttackers();
+                victorUnits = victors.Item1;
+                victorComs = victors.Item2;
 
                 foreach (UM u in data.defenders)
                 {
@@ -565,174 +555,285 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
+            MethodInfo MI_TranspilerBody_ProcessIncome = AccessTools.Method(typeof(HarmonyPatches), nameof(PopupHolyOrder_setTo_TranspilerBody_ProcessIncome));
+            MethodInfo MI_TranspilerBody_DisplayBudget = AccessTools.Method(typeof(HarmonyPatches), nameof(PopupHolyOrder_setTo_TranspilerBody_DisplayBudget));
+            MethodInfo MI_TranspilerBody_ComputeInfluenceDark = AccessTools.Method(typeof(HarmonyPatches), nameof(PopupHolyOrder_setTo_TranspilerBody_ComputeInfluenceDark));
+            MethodInfo MI_TranspilerBody_ComputeInfluenceHuman = AccessTools.Method(typeof(HarmonyPatches), nameof(PopupHolyOrder_setTo_TranspilerBody_ComputeInfluenceHuman));
+            MethodInfo MI_TranspilerBody_DisplayStats = AccessTools.Method(typeof(HarmonyPatches), nameof(PopUpHolyOrder_setTo_TranspilerBody_DisplayStats));
             MethodInfo MI_TranspilerBody_DisplayInfluenceElder = AccessTools.Method(typeof(HarmonyPatches), nameof(PopupHolyOrder_setTo_TranspilerBody_DisplayInfluenceElder));
             MethodInfo MI_TranspilerBody_DisplayInfluenceHuman = AccessTools.Method(typeof(HarmonyPatches), nameof(PopupHolyOrder_setTo_TranspilerBody_DisplayInfluenceHuman));
-            MethodInfo MI_TranspilerBody_InfluenceStats = AccessTools.Method(typeof(HarmonyPatches), nameof(PopupHolyOrder_setTo_TranspilerBody_InfluenceStats));
 
             // Influence Dark and Influence Good Summaries
+            FieldInfo FI_PopupHolyOrder_BudgetIncome = AccessTools.Field(typeof(PopupHolyOrder), nameof(PopupHolyOrder.budgetIncome));
+            FieldInfo FI_PopupHolyOrder_stats = AccessTools.Field(typeof(PopupHolyOrder), nameof(PopupHolyOrder.stats));
             FieldInfo FI_PopupHolyOrder_influenceDark = AccessTools.Field(typeof(PopupHolyOrder), nameof(PopupHolyOrder.influenceDark));
             FieldInfo FI_PopupHolyOrder_influenceDarkp0 = AccessTools.Field(typeof(PopupHolyOrder), nameof(PopupHolyOrder.influenceDarkp0));
             FieldInfo FI_PopupHolyOrder_influenceGood = AccessTools.Field(typeof(PopupHolyOrder), nameof(PopupHolyOrder.influenceGood));
             FieldInfo FI_PopupHolyOrder_influenceGoodp0 = AccessTools.Field(typeof(PopupHolyOrder), nameof(PopupHolyOrder.influenceGoodp0));
-            // Influence Dark and Influence Good Stats
-            FieldInfo FI_PopupHolyOrder_influenceDarkStats = AccessTools.Field(typeof(PopupHolyOrder), nameof(PopupHolyOrder.influenceDarkStats));
-            FieldInfo FI_PopupHolyOrder_influenceGoodStats = AccessTools.Field(typeof(PopupHolyOrder), nameof(PopupHolyOrder.influenceGoodStats));
 
-
-            (int, int)[] rangesDisplayInf = new (int, int)[5];
-
-            int findIndex = -1;
-
-            // For loop to gather all target indexes and ranges
-            for (int i = 0; i < instructionList.Count; i++)
-            {
-                if (findIndex == -1 && instructionList[i].opcode == OpCodes.Ldfld)
-                {
-                    switch (instructionList[i].operand)
-                    {
-                        case FieldInfo fi when fi == FI_PopupHolyOrder_influenceDark:
-                            rangesDisplayInf[0] = (i, 0);
-                            findIndex = 0;
-                            Console.WriteLine("CommunityLib: Found transpiler target " + findIndex + " at Index " + i);
-                            break;
-                        case FieldInfo fi when fi == FI_PopupHolyOrder_influenceGood:
-                            rangesDisplayInf[1] = (i, 0);
-                            findIndex = 1;
-                            Console.WriteLine("CommunityLib: Found transpiler target " + findIndex + " at Index " + i);
-                            break;
-                        case FieldInfo fi when fi == FI_PopupHolyOrder_influenceDarkp0:
-                            rangesDisplayInf[2] = (i, 0);
-                            findIndex = 2;
-                            Console.WriteLine("CommunityLib: Found transpiler target " + findIndex + " at Index " + i);
-                            break;
-                        case FieldInfo fi when fi == FI_PopupHolyOrder_influenceGoodp0:
-                            rangesDisplayInf[3] = (i, 0);
-                            findIndex = 3;
-                            Console.WriteLine("CommunityLib: Found transpiler target " + findIndex + " at Index " + i);
-                            break;
-                        case FieldInfo fi when fi == FI_PopupHolyOrder_influenceDarkStats:
-                            rangesDisplayInf[4] = (i, 0);
-                            findIndex = 4;
-                            Console.WriteLine("CommunityLib: Found transpiler target " + findIndex + " at Index " + i);
-                            break;
-                        default:
-                            break;
-                    }
-                }
-
-                if (findIndex != -1)
-                {
-                    if (findIndex < 4)
-                    {
-                        if (instructionList[i].opcode == OpCodes.Call && instructionList[i - 1].opcode == OpCodes.Stelem_Ref && instructionList[i + 1].opcode == OpCodes.Callvirt)
-                        {
-                            rangesDisplayInf[findIndex] = (rangesDisplayInf[findIndex].Item1, i);
-                            Console.WriteLine("CommunityLib: Found transpiler range " + findIndex + " end at Index " + i);
-                            findIndex = -1;
-                        }
-                    }
-                    else if (findIndex == 4)
-                    {
-                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i+1].opcode == OpCodes.Ldfld && instructionList[i + 2].opcode == OpCodes.Ldfld)
-                        {
-                            rangesDisplayInf[findIndex] = (rangesDisplayInf[findIndex].Item1, i);
-                            Console.WriteLine("CommunityLib: Found transpiler range " + findIndex + " end at Index " + i);
-                            findIndex = -1;
-                        }
-                    }
-                }
-            }
-
-            // Modify code at each target index and range in reverse order.
-            /*if (rangesDisplayInf[4].Item1 != 0 && rangesDisplayInf[4].Item2 != 0)
-            {
-                // This section causes an Invalid IL in wrapper error when run. Targeting is correct.
-                Console.WriteLine("CommunityLib: Modifying instructionList for transpiler target 4");
-                instructionList.RemoveRange(rangesDisplayInf[4].Item1, rangesDisplayInf[4].Item2 - rangesDisplayInf[4].Item1);
-
-                List<CodeInstruction> newInstructions = new List<CodeInstruction> {
-                    new CodeInstruction(OpCodes.Ldarg_1),
-                    new CodeInstruction(OpCodes.Ldloc_3),
-                    new CodeInstruction(OpCodes.Ldloc_2),
-                    new CodeInstruction(OpCodes.Call, MI_TranspilerBody_InfluenceStats)
-                };
-
-                instructionList.InsertRange(rangesDisplayInf[4].Item1, newInstructions);
-            }*/
-
-            if (rangesDisplayInf[3].Item1 != 0 && rangesDisplayInf[3].Item2 != 0)
-            {
-                Console.WriteLine("CommunityLib: Modifying instructionList for transpiler target 3");
-                instructionList.RemoveRange(rangesDisplayInf[3].Item1, 1 + rangesDisplayInf[3].Item2 - rangesDisplayInf[3].Item1);
-
-                List<CodeInstruction> newInstructions = new List<CodeInstruction> {
-                    new CodeInstruction(OpCodes.Ldarg_0),
-                    new CodeInstruction(OpCodes.Ldfld, FI_PopupHolyOrder_influenceGoodp0),
-                    new CodeInstruction(OpCodes.Ldarg_1),
-                    new CodeInstruction(OpCodes.Ldloc_S, 5),
-                    new CodeInstruction(OpCodes.Call, MI_TranspilerBody_DisplayInfluenceHuman)
-                };
-
-                instructionList.InsertRange(rangesDisplayInf[3].Item1, newInstructions);
-            }
-
-            if (rangesDisplayInf[2].Item1 != 0 && rangesDisplayInf[2].Item2 != 0)
-            {
-                Console.WriteLine("CommunityLib: Modifying instructionList for transpiler target 2");
-                instructionList.RemoveRange(rangesDisplayInf[2].Item1, 1 + rangesDisplayInf[2].Item2 - rangesDisplayInf[2].Item1);
-
-                List<CodeInstruction> newInstructions = new List<CodeInstruction> {
-                    new CodeInstruction(OpCodes.Ldarg_0),
-                    new CodeInstruction(OpCodes.Ldfld, FI_PopupHolyOrder_influenceDarkp0),
-                    new CodeInstruction(OpCodes.Ldarg_1),
-                    new CodeInstruction(OpCodes.Ldloc_S, 4),
-                    new CodeInstruction(OpCodes.Call, MI_TranspilerBody_DisplayInfluenceElder)
-                };
-
-                instructionList.InsertRange(rangesDisplayInf[2].Item1, newInstructions);
-            }
-
-            if (rangesDisplayInf[1].Item1 != 0 && rangesDisplayInf[1].Item2 != 0)
-            {
-                Console.WriteLine("CommunityLib: Modifying instructionList for transpiler target 1");
-                instructionList.RemoveRange(rangesDisplayInf[1].Item1, 1 + rangesDisplayInf[1].Item2 - rangesDisplayInf[1].Item1);
-
-                List<CodeInstruction> newInstructions = new List<CodeInstruction> {
-                    new CodeInstruction(OpCodes.Ldarg_0),
-                    new CodeInstruction(OpCodes.Ldfld, FI_PopupHolyOrder_influenceGood),
-                    new CodeInstruction(OpCodes.Ldarg_1),
-                    new CodeInstruction(OpCodes.Ldloc_S, 5),
-                    new CodeInstruction(OpCodes.Call, MI_TranspilerBody_DisplayInfluenceHuman)
-                };
-
-                instructionList.InsertRange(rangesDisplayInf[1].Item1, newInstructions);
-            }
-
-            if (rangesDisplayInf[0].Item1 != 0 && rangesDisplayInf[0].Item2 != 0)
-            {
-                Console.WriteLine("CommunityLib: Modifying instructionList for transpiler target 0");
-                instructionList.RemoveRange(rangesDisplayInf[0].Item1, 1 + rangesDisplayInf[0].Item2 - rangesDisplayInf[0].Item1);
-
-                List<CodeInstruction> newInstructions = new List<CodeInstruction> {
-                    new CodeInstruction(OpCodes.Ldarg_0),
-                    new CodeInstruction(OpCodes.Ldfld, FI_PopupHolyOrder_influenceDark),
-                    new CodeInstruction(OpCodes.Ldarg_1),
-                    new CodeInstruction(OpCodes.Ldloc_S, 4),
-                    new CodeInstruction(OpCodes.Call, MI_TranspilerBody_DisplayInfluenceElder)
-                };
-
-                instructionList.InsertRange(rangesDisplayInf[0].Item1, newInstructions);
-            }
+            int targetIndex = -5;
 
             for (int i = 0; i < instructionList.Count; i++)
             {
-                yield return instructionList[i];
+                if (targetIndex != 0)
+                {
+                    if (targetIndex == -5 && instructionList[i].opcode == OpCodes.Callvirt && instructionList[i - 1].opcode == OpCodes.Ldloc_1 && instructionList[i - 2].opcode == OpCodes.Ldarg_1)
+                    {
+                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_ProcessIncome);
+                        yield return new CodeInstruction(OpCodes.Ldarg_0);
+                        yield return new CodeInstruction(OpCodes.Ldarg_1);
+                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_DisplayBudget);
+                        targetIndex = 1;
+                        i++;
+                    }
+
+                    if (targetIndex == -4 && instructionList[i].opcode == OpCodes.Callvirt && instructionList[i - 1].opcode == OpCodes.Ldloc_3)
+                    {
+                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_ComputeInfluenceDark);
+                        targetIndex++;
+                        i++;
+                    }
+
+                    if (targetIndex == -3 && instructionList[i].opcode == OpCodes.Callvirt && instructionList[i - 1].opcode == OpCodes.Ldloc_2)
+                    {
+                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_ComputeInfluenceHuman);
+                        targetIndex++;
+                        i++;
+                    }
+
+                    if (targetIndex == -2 && instructionList[i].opcode == OpCodes.Ldc_I4_6 && instructionList[i-1].opcode == OpCodes.Ldfld && (instructionList[i-1].operand as FieldInfo) == FI_PopupHolyOrder_stats)
+                    {
+                        yield return new CodeInstruction(OpCodes.Ldarg_1);
+                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_DisplayStats);
+                        targetIndex = 2;
+                    }
+
+                    if (targetIndex == -1 && instructionList[i].opcode == OpCodes.Ldfld)
+                    {
+                        switch (instructionList[i].operand)
+                        {
+                            case FieldInfo fi when fi == FI_PopupHolyOrder_influenceDark:
+                                //Console.WriteLine("CommunityLib: Found start of target " + targetIndex + " at line " + i + ".");
+                                yield return new CodeInstruction(OpCodes.Ldfld, FI_PopupHolyOrder_influenceDark);
+                                yield return new CodeInstruction(OpCodes.Ldarg_1);
+                                yield return new CodeInstruction(OpCodes.Ldloc_S, 4);
+                                yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_DisplayInfluenceElder);
+                                targetIndex = 3;
+                                break;
+                            case FieldInfo fi when fi == FI_PopupHolyOrder_influenceGood:
+                                //Console.WriteLine("CommunityLib: Found start of target " + targetIndex + " at line " + i + ".");
+                                yield return new CodeInstruction(OpCodes.Ldfld, FI_PopupHolyOrder_influenceGood);
+                                yield return new CodeInstruction(OpCodes.Ldarg_1);
+                                yield return new CodeInstruction(OpCodes.Ldloc_S, 5);
+                                yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_DisplayInfluenceHuman);
+                                targetIndex = 4;
+                                break;
+                            case FieldInfo fi when fi == FI_PopupHolyOrder_influenceDarkp0:
+                                //Console.WriteLine("CommunityLib: Found start of target " + targetIndex + " at line " + i + ".");
+                                yield return new CodeInstruction(OpCodes.Ldfld, FI_PopupHolyOrder_influenceDarkp0);
+                                yield return new CodeInstruction(OpCodes.Ldarg_1);
+                                yield return new CodeInstruction(OpCodes.Ldloc_S, 4);
+                                yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_DisplayInfluenceElder);
+                                targetIndex = 5;
+                                break;
+                            case FieldInfo fi when fi == FI_PopupHolyOrder_influenceGoodp0:
+                                //Console.WriteLine("CommunityLib: Found start of target " + targetIndex + " at line " + i + ".");
+                                yield return new CodeInstruction(OpCodes.Ldfld, FI_PopupHolyOrder_influenceGoodp0);
+                                yield return new CodeInstruction(OpCodes.Ldarg_1);
+                                yield return new CodeInstruction(OpCodes.Ldloc_S, 5);
+                                yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_DisplayInfluenceHuman);
+                                targetIndex = 6;
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+
+                    if (targetIndex > 0)
+                    {
+                        if (targetIndex == 1)
+                        {
+                            if (instructionList[i].opcode == OpCodes.Ldfld && (instructionList[i].operand as FieldInfo) == FI_PopupHolyOrder_BudgetIncome)
+                            {
+                                i -= 3;
+                                targetIndex = -4;
+                            }
+                        }
+                        else if (targetIndex == 2)
+                        {
+                            if (instructionList[i].opcode == OpCodes.Callvirt)
+                            {
+                                targetIndex = -1;
+                            }
+                        }
+                        else if (instructionList[i].opcode == OpCodes.Callvirt && instructionList[i - 1].opcode == OpCodes.Call && instructionList[i - 2].opcode == OpCodes.Stelem_Ref)
+                        {
+                            //Console.WriteLine("CommunityLib: Found end of target " + targetIndex + " at line " + i + ".");
+                            if (targetIndex == 6)
+                            {
+                                targetIndex = 0;
+                            }
+                            else
+                            {
+                                targetIndex = -1;
+                            }
+                        }
+                    }
+
+                    if (targetIndex < 0)
+                    {
+                        yield return instructionList[i];
+                    }
+                }
+                else
+                {
+                    yield return instructionList[i];
+                }
             }
+        }
+
+        private static int PopupHolyOrder_setTo_TranspilerBody_ProcessIncome(HolyOrder order, List<ReasonMsg> msgs)
+        {
+            if (AccessTools.DeclaredMethod(order.GetType(), "processIncome", new Type[] { typeof(List<ReasonMsg>) }) != null)
+            {
+                return (int)AccessTools.DeclaredMethod(order.GetType(), "processIncome", new Type[] { typeof(List<ReasonMsg>) }).Invoke(order, new object[] { msgs });
+            }
+
+            return order.processIncome(msgs);
+        }
+
+        private static string PopupHolyOrder_setTo_TranspilerBody_DisplayBudget(int income, PopupHolyOrder popupOrder, HolyOrder order)
+        {
+            string result = "";
+
+            List<ReasonMsg> msgs = new List<ReasonMsg>() {
+                new ReasonMsg("Income", income),
+                new ReasonMsgMax("Gold for Acolytes", order.cashForAcolytes, order.costAcolyte),
+                new ReasonMsgMax("Gold for Conversion", order.cashForPreaching, order.costPreach),
+                new ReasonMsgMax("Gold for Temples", order.cashForTemples, order.costTemple)
+            };
+
+            foreach (Hooks hook in mod.GetRegisteredHooks())
+            {
+                hook?.onPopupHolyOrder_DisplayBudget(order, msgs);
+            }
+
+            Text text;
+            Component[] comps = popupOrder.pages[popupOrder.currentPage].gameObject.GetComponentsInChildren(typeof(Text), false);
+
+            foreach (Component comp in comps)
+            {
+                text = comp as Text;
+
+                if (text != null && text.text.Contains("Income:"))
+                {
+                    budgetLabels = text;
+                    break;
+                }
+            }
+
+            if (budgetLabels != null)
+            {
+                budgetLabels.text = "";
+            }
+            foreach (ReasonMsg msg in msgs)
+            {
+                ReasonMsgMax msgMax = msg as ReasonMsgMax;
+                if (msgMax != null)
+                {
+                    result = string.Concat(new string[]
+                    {
+                        result,
+                        msgMax.value.ToString(),
+                        "/",
+                        msgMax.max.ToString(),
+                        "\n"
+                    });
+                }
+                else
+                {
+                    result = string.Concat(new string[]
+                    {
+                        result,
+                        msg.value.ToString(),
+                        "\n"
+                    });
+                }
+
+                if (budgetLabels != null)
+                {
+                    budgetLabels.text = string.Concat(new string[] {
+                        budgetLabels.text,
+                        msg.msg,
+                        ":",
+                        "\n"
+                    });
+                }
+            }
+
+            return result;
+        }
+
+        private static int PopupHolyOrder_setTo_TranspilerBody_ComputeInfluenceDark(HolyOrder order,  List<ReasonMsg> msgs)
+        {
+            if (AccessTools.DeclaredMethod(order.GetType(), "computeInfluenceDark", new Type[] { typeof(List<ReasonMsg>) }) != null)
+            {
+                return (int)AccessTools.DeclaredMethod(order.GetType(), "computeInfluenceDark", new Type[] { typeof(List<ReasonMsg>) }).Invoke(order, new object[] { msgs });
+            }
+
+            return order.computeInfluenceDark(msgs);
+        }
+
+        private static int PopupHolyOrder_setTo_TranspilerBody_ComputeInfluenceHuman(HolyOrder order,  List<ReasonMsg> msgs)
+        {
+            if (AccessTools.DeclaredMethod(order.GetType(), "computeInfluenceHuman", new Type[] { typeof(List<ReasonMsg>) }) != null)
+            {
+                return (int)AccessTools.DeclaredMethod(order.GetType(), "computeInfluenceHuman", new Type[] { typeof(List<ReasonMsg>) }).Invoke(order, new object[] { msgs });
+            }
+
+            return order.computeInfluenceDark(msgs);
+        }
+
+        private static string PopUpHolyOrder_setTo_TranspilerBody_DisplayStats(HolyOrder order)
+        {
+            string result = "";
+
+            List<ReasonMsg> msgs = new List<ReasonMsg>() {
+                new ReasonMsg("Acolytes", order.nAcolytes),
+                new ReasonMsg("Worshippers", order.nWorshippers),
+                new ReasonMsg("of which Rulers", order.nWorshippingRulers)
+            };
+
+            foreach (Hooks hook in mod.GetRegisteredHooks())
+            {
+                hook?.onPopupHolyOrder_DisplayStats(order, msgs);
+            }
+
+            foreach (ReasonMsg msg in msgs)
+            {
+                result = string.Concat(new string[] {
+                    result,
+                    msg.msg,
+                    ": ",
+                    msg.value.ToString(),
+                    "\n"
+                });
+            }
+
+            return result;
         }
 
         private static string PopupHolyOrder_setTo_TranspilerBody_DisplayInfluenceElder(HolyOrder order, int infGain)
         {
-            string s = "Elder Influence: " + order.influenceElder + "/" + order.influenceElderReq + " (+" + infGain + "/turn)";
+            string s = string.Concat(new string[] {
+                "Elder Influence: ",
+                order.influenceElder.ToString(),
+                "/",
+                order.influenceElderReq.ToString(),
+                " (+",
+                infGain.ToString(),
+                "/turn)"
+            });
 
             foreach (Hooks hook in mod.GetRegisteredHooks())
             {
@@ -744,7 +845,15 @@ namespace CommunityLib
 
         private static string PopupHolyOrder_setTo_TranspilerBody_DisplayInfluenceHuman(HolyOrder order, int infGain)
         {
-            string s = "Human Influence: " + order.influenceHuman + "/" + order.influenceHumanReq + " (+" + infGain + "/turn)";
+            string s = string.Concat(new string[] {
+                "Human Influence: ",
+                order.influenceHuman.ToString(),
+                "/",
+                order.influenceHumanReq.ToString(),
+                " (+",
+                infGain.ToString(),
+                "/turn)"
+            });
 
             foreach (Hooks hook in mod.GetRegisteredHooks())
             {
@@ -752,38 +861,6 @@ namespace CommunityLib
             }
 
             return s;
-        }
-
-        private static void PopupHolyOrder_setTo_TranspilerBody_InfluenceStats(PopupHolyOrder orderPop, HolyOrder order, List<ReasonMsg> reasonMsgsElder, List<ReasonMsg> reasonMsgsHuman)
-        {
-            Console.WriteLine("CommunityLib :: Influence stats are as follows; Dark: " + orderPop.influenceDarkStats + ", Good: " + orderPop.influenceGoodStats + ".");
-
-            orderPop.influenceDarkStats.text = "";
-            orderPop.influenceGoodStats.text = "";
-
-            foreach (Hooks hook in mod.GetRegisteredHooks())
-            {
-                hook.onPopupHolyOrder_InfluenceElderStats(order, reasonMsgsElder);
-                hook.onPopupHolyOrder_InfluenceHumanStats(order, reasonMsgsHuman);
-            }
-
-            foreach (ReasonMsg reasonMsg in reasonMsgsElder)
-            {
-                if (orderPop.influenceDarkStats.text.Length > 0)
-                {
-                    orderPop.influenceDarkStats.text += "\\n";
-                }
-                orderPop.influenceDarkStats.text += reasonMsg.msg + ": +" + (int)reasonMsg.value;
-            }
-
-            foreach (ReasonMsg reasonMsg in reasonMsgsHuman)
-            {
-                if (orderPop.influenceGoodStats.text.Length > 0)
-                {
-                    orderPop.influenceGoodStats.text += "\\n";
-                }
-                orderPop.influenceGoodStats.text += reasonMsg.msg + ": +" + (int)reasonMsg.value;
-            }
         }
 
         private static void Template_TranspilerBody()
