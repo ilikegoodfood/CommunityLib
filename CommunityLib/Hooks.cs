@@ -17,7 +17,7 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when a unit is instructed to die. It recieves the Unit (u), a string representation of the cause (v), and a the person, if applicable, that casued their death (killer).
+        /// This hook fires when a unit is instructed to die. It recieves the Unit (u), a string representation of the cause (v), and the person, if applicable, that casued their death (killer).
         /// If this hook returns true, the rest of the death proccess will not happen. If you wish to keep the unit alive and prevent this check being performed multiple times per turn, make sure that their health is greater than 0, or their cause of death has been removed. The process which initially instructed the unit to die will still continue, so if you wish to keep the unit alive, make to sure to account for, and act in response to, the method of its death.
         /// <para>All instances of this hook will run whenever a unit is instructed to die, even those after one which has returned true.</para>
         /// </summary>
@@ -31,7 +31,7 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when a unit is instructed to die, but after the interceptUnitDeath hook. It recieves the Unit (u), a string representation of the cause (v), and a the person, if applicable, that casued their death (killer).
+        /// This hook fires when a unit is instructed to die, but after the interceptUnitDeath hook. It recieves the Unit (u), a string representation of the cause (v), and the person, if applicable, that casued their death (killer).
         /// </summary>
         /// <param name="u"></param>
         /// <param name="v"></param>
@@ -189,6 +189,17 @@ namespace CommunityLib
         public virtual string onPopupHolyOrder_DisplayInfluenceHuman(HolyOrder order, string s, int infGain)
         {
             return s;
+        }
+
+        /// <summary>
+        /// This hook fires when a settlement is destroyed. It recieves the settlement (set), a string representation of the cause (v), and the object, if applicable, that casued its destruction (killer).
+        /// </summary>
+        /// <param name="set"></param>
+        /// <param name="v"></param>
+        /// <param name="killer"></param>
+        public virtual void OnSettlementFallIntoRuin_StartOfProcess(Settlement set, string v, object killer = null)
+        {
+            return;
         }
     }
 }

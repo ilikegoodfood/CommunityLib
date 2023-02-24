@@ -863,6 +863,14 @@ namespace CommunityLib
             return s;
         }
 
+        private static void Settlement_FallIntoRuin_Prefix(Settlement __instance, string v, object killer)
+        {
+            foreach (Hooks hook in mod.GetRegisteredHooks())
+            {
+                hook?.OnSettlementFallIntoRuin_StartOfProcess(__instance, v, killer);
+            }
+        }
+
         private static void Template_TranspilerBody()
         {
             foreach(Hooks hook in mod.GetRegisteredHooks())
