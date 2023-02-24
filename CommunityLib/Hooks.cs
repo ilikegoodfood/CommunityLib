@@ -197,7 +197,7 @@ namespace CommunityLib
         /// <param name="set"></param>
         /// <param name="v"></param>
         /// <param name="killer"></param>
-        public virtual void OnSettlementFallIntoRuin_StartOfProcess(Settlement set, string v, object killer = null)
+        public virtual void onSettlementFallIntoRuin_StartOfProcess(Settlement set, string v, object killer = null)
         {
             return;
         }

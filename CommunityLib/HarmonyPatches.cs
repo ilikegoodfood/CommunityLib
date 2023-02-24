@@ -867,7 +867,7 @@ namespace CommunityLib
         {
             foreach (Hooks hook in mod.GetRegisteredHooks())
             {
-                hook?.OnSettlementFallIntoRuin_StartOfProcess(__instance, v, killer);
+                hook?.onSettlementFallIntoRuin_StartOfProcess(__instance, v, killer);
             }
         }
 
