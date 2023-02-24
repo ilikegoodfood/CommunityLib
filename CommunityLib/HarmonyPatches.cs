@@ -51,6 +51,8 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(UM_HumanArmy), nameof(UM_HumanArmy.turnTickInner)), transpiler: new HarmonyMethod(patchType, nameof(UM_HumanArmy_turnTickInner_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Ch_SkirmishAttacking), nameof(Ch_SkirmishAttacking.skirmishDanger)), transpiler: new HarmonyMethod(patchType, nameof(Ch_SkirmishAttacking_skirmishDanger_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Ch_SkirmishDefending), nameof(Ch_SkirmishDefending.skirmishDanger)), transpiler: new HarmonyMethod(patchType, nameof(Ch_SkirmishDefending_skirmishDanger_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Mg_Volcano), nameof(Mg_Volcano.complete), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Mg_Volcano_Complete_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(God_Snake), nameof(God_Snake.awaken)), transpiler: new HarmonyMethod(patchType, nameof(God_Snake_Awaken_Transpiler)));
             // Unit death hooks
             harmony.Patch(original: AccessTools.Method(typeof(Unit), nameof(Unit.die)), transpiler: new HarmonyMethod(patchType, nameof(Unit_die_Transpiler)));
             // Army Battle hooks
@@ -58,6 +60,8 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), nameof(BattleArmy.unitMovesFromLocation)), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_unitMovesFromLocation_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), nameof(BattleArmy.computeAdvantage)), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_computeAdvantage_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), "allocateDamage", new Type[] { typeof(List<UM>), typeof(int[]) }), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_allocateDamage_Transpiler)));
+            // Settlement destruction hooks
+            harmony.Patch(original: AccessTools.Method(typeof(Settlement), nameof(Settlement.fallIntoRuin), new Type[] { typeof(string), typeof(object) }), transpiler: new HarmonyMethod(patchType, nameof(Settlement_FallIntoRuin_Transpiler)));
             // Religion UI Screen modification
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bPrev)), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bNext)), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
@@ -135,13 +139,82 @@ namespace CommunityLib
             }
         }
 
+
+        private static IEnumerable<CodeInstruction> Mg_Volcano_Complete_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Mg_Volcano_Complete_TranspilerBody));
+
+            int targetCount = -2;
+
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetCount < 0)
+                {
+                    if (instructionList[i].opcode == OpCodes.Ldnull && instructionList[i - 1].opcode == OpCodes.Ldstr && instructionList[i + 1].opcode == OpCodes.Callvirt)
+                    {
+                        if (targetCount == -2)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_TranspilerBody);
+                            targetCount++;
+                            i++;
+                        }
+                        else if (targetCount == -1)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_TranspilerBody);
+                            targetCount++;
+                            i++;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+        }
+
+        private static Person Mg_Volcano_Complete_TranspilerBody(UA uA)
+        {
+            return uA.person;
+        }
+
+        private static IEnumerable<CodeInstruction> God_Snake_Awaken_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            int targetCount = 0;
+            bool found = false;
+
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (!found)
+                {
+                    if (instructionList[i].opcode == OpCodes.Ldnull && instructionList[i - 1].opcode == OpCodes.Ldstr && instructionList[i + 1].opcode == OpCodes.Callvirt)
+                    {
+                        targetCount++;
+
+                        if (targetCount == 2)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            found = true;
+                            i++;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+        }
+
         // Unit death hooks
         private static IEnumerable<CodeInstruction> Unit_die_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_TranspilerBody_InterceptUnitDeath = AccessTools.Method(typeof(HarmonyPatches), nameof(Unit_die_TranspilerBody_InterceptUnitDeath), new Type[] { typeof(Unit), typeof(string), typeof(Person) });
-            MethodInfo MI_TranspilerBody_StartOfProcess = AccessTools.Method(typeof(HarmonyPatches), nameof(Unit_die_TranspilerBody_StartOfProcess), new Type[] { typeof(Unit), typeof(string), typeof(Person) });
+            MethodInfo MI_TranspilerBody_InterceptUnitDeath = AccessTools.Method(patchType, nameof(Unit_die_TranspilerBody_InterceptUnitDeath), new Type[] { typeof(Unit), typeof(string), typeof(Person) });
+            MethodInfo MI_TranspilerBody_StartOfProcess = AccessTools.Method(patchType, nameof(Unit_die_TranspilerBody_StartOfProcess), new Type[] { typeof(Unit), typeof(string), typeof(Person) });
 
             Label retLabel = instructionList[instructionList.Count - 1].labels[0];
 
@@ -201,13 +274,13 @@ namespace CommunityLib
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
             // Transpiler Bodies for Data management.
-            MethodInfo MI_TranspilerBody_GatherData = AccessTools.Method(typeof(HarmonyPatches), nameof(BattleArmy_cycle_TranspilerBody_GatherData), new Type[] { typeof(BattleArmy) });
+            MethodInfo MI_TranspilerBody_GatherData = AccessTools.Method(patchType, nameof(BattleArmy_cycle_TranspilerBody_GatherData), new Type[] { typeof(BattleArmy) });
 
             // Transpiler Bodies for Hooks
-            MethodInfo MI_TranspilerBody_InterceptCycle = AccessTools.Method(typeof(HarmonyPatches), nameof(BattleArmy_cycle_TranspilerBody_InterceptCycle), new Type[] { typeof(BattleArmy) });
-            MethodInfo MI_TranspilerBody_StartOfProcess = AccessTools.Method(typeof(HarmonyPatches), nameof(BattleArmy_cycle_TranspilerBody_StartOfProcess), new Type[] { typeof(BattleArmy) });
-            MethodInfo MI_TranspilerBody_EndOfProcess = AccessTools.Method(typeof(HarmonyPatches), nameof(BattleArmy_cycle_TranspilerBody_EndOfProcess), new Type[] { typeof(BattleArmy) });
-            MethodInfo MI_TranspilerBody_Victory = AccessTools.Method(typeof(HarmonyPatches), nameof(BattleArmy_cycle_TranspilerBody_onArmyBattleVictory), new Type[] { typeof(BattleArmy) });
+            MethodInfo MI_TranspilerBody_InterceptCycle = AccessTools.Method(patchType, nameof(BattleArmy_cycle_TranspilerBody_InterceptCycle), new Type[] { typeof(BattleArmy) });
+            MethodInfo MI_TranspilerBody_StartOfProcess = AccessTools.Method(patchType, nameof(BattleArmy_cycle_TranspilerBody_StartOfProcess), new Type[] { typeof(BattleArmy) });
+            MethodInfo MI_TranspilerBody_EndOfProcess = AccessTools.Method(patchType, nameof(BattleArmy_cycle_TranspilerBody_EndOfProcess), new Type[] { typeof(BattleArmy) });
+            MethodInfo MI_TranspilerBody_Victory = AccessTools.Method(patchType, nameof(BattleArmy_cycle_TranspilerBody_onArmyBattleVictory), new Type[] { typeof(BattleArmy) });
 
             FieldInfo FI_BattleArmy_Done = AccessTools.Field(typeof(BattleArmy), nameof(BattleArmy.done));
 
@@ -378,8 +451,8 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_TranspilerBody_onArmyBattleRetreatOrFlee = AccessTools.Method(typeof(HarmonyPatches), nameof(BattleArmy_unitMovesFromLocation_TranspilerBody_OnAmryBattleRetreatOrFlee), new Type[] { typeof(BattleArmy), typeof(Unit) });
-            MethodInfo MI_TransplilerBody_onArmyBattleTerminated = AccessTools.Method(typeof(HarmonyPatches), nameof(BattleArmy_unitMovesFromLocation_TranspilerBody_onArmyBattleTerminated), new Type[] { typeof(BattleArmy), typeof(UM) });
+            MethodInfo MI_TranspilerBody_onArmyBattleRetreatOrFlee = AccessTools.Method(patchType, nameof(BattleArmy_unitMovesFromLocation_TranspilerBody_OnAmryBattleRetreatOrFlee), new Type[] { typeof(BattleArmy), typeof(Unit) });
+            MethodInfo MI_TransplilerBody_onArmyBattleTerminated = AccessTools.Method(patchType, nameof(BattleArmy_unitMovesFromLocation_TranspilerBody_onArmyBattleTerminated), new Type[] { typeof(BattleArmy), typeof(UM) });
             MethodInfo MI_BattleArmy_endBattle = AccessTools.Method(typeof(BattleArmy), nameof(BattleArmy.endBattle), new Type[] { });
 
             List<int> targetIndexesA = new List<int>();
@@ -447,7 +520,7 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_TranspilerBody = AccessTools.Method(typeof(HarmonyPatches), nameof(BattleArmy_computeAdvantage_TranspilerBody), new Type[] { typeof(BattleArmy), typeof(double) });
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(BattleArmy_computeAdvantage_TranspilerBody), new Type[] { typeof(BattleArmy), typeof(double) });
 
             bool hook = false;
 
@@ -478,8 +551,8 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_TranspilerBody_allocateDamage = AccessTools.Method(typeof(HarmonyPatches), nameof(BattleArmy_allocateDamage_TranspilerBody_allocateDamage), new Type[] { typeof(BattleArmy), typeof(List<UM>), typeof(int[]) });
-            MethodInfo MI_TranspilerBody_receivesDamage = AccessTools.Method(typeof(HarmonyPatches), nameof(BattleArmy_allocateDamage_TranspilerBody_receivesDamage), new Type[] { typeof(BattleArmy), typeof(List<UM>), typeof(int[]), typeof(int) });
+            MethodInfo MI_TranspilerBody_allocateDamage = AccessTools.Method(patchType, nameof(BattleArmy_allocateDamage_TranspilerBody_allocateDamage), new Type[] { typeof(BattleArmy), typeof(List<UM>), typeof(int[]) });
+            MethodInfo MI_TranspilerBody_receivesDamage = AccessTools.Method(patchType, nameof(BattleArmy_allocateDamage_TranspilerBody_receivesDamage), new Type[] { typeof(BattleArmy), typeof(List<UM>), typeof(int[]), typeof(int) });
 
             bool hookOnUnitDamage = false;
 
@@ -524,6 +597,74 @@ namespace CommunityLib
             }
         }
 
+        // Settlement Hooks
+        private static IEnumerable<CodeInstruction> Settlement_FallIntoRuin_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody_Intercept = AccessTools.Method(patchType, nameof(Settlement_FallIntoRuin_TranspilerBody_Intercept));
+            MethodInfo MI_TranspilerBody_End = AccessTools.Method(patchType, nameof(Settlement_FallIntoRuin_TranspilerBody_End));
+
+            int targetIndex = -2;
+
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex == -2 && instructionList[i].opcode == OpCodes.Ldarg_0)
+                {
+                    yield return new CodeInstruction(OpCodes.Ldarg_0);
+                    yield return new CodeInstruction(OpCodes.Ldarg_1);
+                    yield return new CodeInstruction(OpCodes.Ldarg_2);
+                    yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Intercept);
+                    yield return new CodeInstruction(OpCodes.Brtrue_S, instructionList[instructionList.Count-1].labels[0]);
+                    targetIndex++;
+                }
+                else if (targetIndex == -1 && instructionList[i].opcode == OpCodes.Ret)
+                {
+                    yield return new CodeInstruction(OpCodes.Ldarg_0);
+                    yield return new CodeInstruction(OpCodes.Ldarg_1);
+                    yield return new CodeInstruction(OpCodes.Ldarg_2);
+                    yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_End);
+                }
+
+                yield return instructionList[i];
+            }
+        }
+
+        private static bool Settlement_FallIntoRuin_TranspilerBody_Intercept(Settlement __instance, string v, object killer)
+        {
+            bool result = false;
+
+            foreach (Hooks hook in mod.GetRegisteredHooks())
+            {
+                bool retValue = hook?.interceptSettlementFallIntoRuin(__instance, v, killer) ?? false;
+
+                if (retValue)
+                {
+                    result = true;
+                }
+            }
+
+            if (result)
+            {
+                return result;
+            }
+
+            foreach (Hooks hook in mod.GetRegisteredHooks())
+            {
+                hook?.onSettlementFallIntoRuin_StartOfProcess(__instance, v, killer);
+            }
+
+            return result;
+        }
+
+        private static void Settlement_FallIntoRuin_TranspilerBody_End(Settlement __instance, string v, object killer)
+        {
+            foreach (Hooks hook in mod.GetRegisteredHooks())
+            {
+                hook?.onSettlementFallIntoRuin_EndOfProcess(__instance, v, killer);
+            }
+        }
+
         // Religion UI Screen modification
         private static IEnumerable<CodeInstruction> PopupHolyOrder_bPrevNext_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
@@ -555,13 +696,13 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_TranspilerBody_ProcessIncome = AccessTools.Method(typeof(HarmonyPatches), nameof(PopupHolyOrder_setTo_TranspilerBody_ProcessIncome));
-            MethodInfo MI_TranspilerBody_DisplayBudget = AccessTools.Method(typeof(HarmonyPatches), nameof(PopupHolyOrder_setTo_TranspilerBody_DisplayBudget));
-            MethodInfo MI_TranspilerBody_ComputeInfluenceDark = AccessTools.Method(typeof(HarmonyPatches), nameof(PopupHolyOrder_setTo_TranspilerBody_ComputeInfluenceDark));
-            MethodInfo MI_TranspilerBody_ComputeInfluenceHuman = AccessTools.Method(typeof(HarmonyPatches), nameof(PopupHolyOrder_setTo_TranspilerBody_ComputeInfluenceHuman));
-            MethodInfo MI_TranspilerBody_DisplayStats = AccessTools.Method(typeof(HarmonyPatches), nameof(PopUpHolyOrder_setTo_TranspilerBody_DisplayStats));
-            MethodInfo MI_TranspilerBody_DisplayInfluenceElder = AccessTools.Method(typeof(HarmonyPatches), nameof(PopupHolyOrder_setTo_TranspilerBody_DisplayInfluenceElder));
-            MethodInfo MI_TranspilerBody_DisplayInfluenceHuman = AccessTools.Method(typeof(HarmonyPatches), nameof(PopupHolyOrder_setTo_TranspilerBody_DisplayInfluenceHuman));
+            MethodInfo MI_TranspilerBody_ProcessIncome = AccessTools.Method(patchType, nameof(PopupHolyOrder_setTo_TranspilerBody_ProcessIncome));
+            MethodInfo MI_TranspilerBody_DisplayBudget = AccessTools.Method(patchType, nameof(PopupHolyOrder_setTo_TranspilerBody_DisplayBudget));
+            MethodInfo MI_TranspilerBody_ComputeInfluenceDark = AccessTools.Method(patchType, nameof(PopupHolyOrder_setTo_TranspilerBody_ComputeInfluenceDark));
+            MethodInfo MI_TranspilerBody_ComputeInfluenceHuman = AccessTools.Method(patchType, nameof(PopupHolyOrder_setTo_TranspilerBody_ComputeInfluenceHuman));
+            MethodInfo MI_TranspilerBody_DisplayStats = AccessTools.Method(patchType, nameof(PopUpHolyOrder_setTo_TranspilerBody_DisplayStats));
+            MethodInfo MI_TranspilerBody_DisplayInfluenceElder = AccessTools.Method(patchType, nameof(PopupHolyOrder_setTo_TranspilerBody_DisplayInfluenceElder));
+            MethodInfo MI_TranspilerBody_DisplayInfluenceHuman = AccessTools.Method(patchType, nameof(PopupHolyOrder_setTo_TranspilerBody_DisplayInfluenceHuman));
 
             // Influence Dark and Influence Good Summaries
             FieldInfo FI_PopupHolyOrder_BudgetIncome = AccessTools.Field(typeof(PopupHolyOrder), nameof(PopupHolyOrder.budgetIncome));
@@ -861,14 +1002,6 @@ namespace CommunityLib
             }
 
             return s;
-        }
-
-        private static void Settlement_FallIntoRuin_Prefix(Settlement __instance, string v, object killer)
-        {
-            foreach (Hooks hook in mod.GetRegisteredHooks())
-            {
-                hook?.onSettlementFallIntoRuin_StartOfProcess(__instance, v, killer);
-            }
         }
 
         private static void Template_TranspilerBody()

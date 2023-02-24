@@ -1,13 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Schema;
 using Assets.Code;
-using Assets.Code.Modding;
-using UnityEngine.Diagnostics;
 
 namespace CommunityLib
 {
