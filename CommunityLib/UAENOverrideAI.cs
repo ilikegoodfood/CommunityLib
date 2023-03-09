@@ -212,15 +212,14 @@ namespace CommunityLib
 
         private void populateOrcUpstart()
         {
-            AIChallenge challenge = new AIChallenge(typeof(Ch_OrcRaiding), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.RequiresOwnSociety, AIChallenge.ChallengeTags.PreferOwnSociety });
+            AIChallenge challenge = new AIChallenge(typeof(Ch_OrcRaiding), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.BaseValid, AIChallenge.ChallengeTags.BaseValidFor, AIChallenge.ChallengeTags.BaseUtility, AIChallenge.ChallengeTags.RequiresOwnSociety, AIChallenge.ChallengeTags.PreferOwnSociety });
             aiChallenges_OrcUpstart.Add(challenge);
 
             AIChallenge challenge1 = new AIChallenge(typeof(Ch_RecruitMinion), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.RequiresOwnSociety, AIChallenge.ChallengeTags.PreferOwnSociety, AIChallenge.ChallengeTags.RecruitsMinion });
             challenge1.delegates_Valid.Add(delegate_Valid_Ch_RecruitMinion);
             aiChallenges_OrcUpstart.Add(challenge1);
 
-            AIChallenge challenge2 = new AIChallenge(typeof(Ch_Rest_InOrcCamp), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.RequiresOwnSociety, AIChallenge.ChallengeTags.PreferOwnSociety, AIChallenge.ChallengeTags.HealOrc });
-            aiChallenges_OrcUpstart.Add(challenge2);
+            aiChallenges_OrcUpstart.Add(new AIChallenge(typeof(Ch_Rest_InOrcCamp), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.RequiresOwnSociety, AIChallenge.ChallengeTags.PreferOwnSociety, AIChallenge.ChallengeTags.HealOrc }));
         }
 
         private bool delegate_Valid_Ch_RecruitMinion(Challenge challenge, Location location)
@@ -245,7 +244,7 @@ namespace CommunityLib
             challenge1.delegates_Utility.Add(delegate_Utility_Mg_DeathsShadow);
             aiChallenges_Vampire.Add(challenge1);
 
-            aiChallenges_Vampire.Add(new AIChallenge(typeof(Ch_WellOfShadows), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.PushesShadow, AIChallenge.ChallengeTags.RequiresSociety, AIChallenge.ChallengeTags.PreferLocal }));
+            aiChallenges_Vampire.Add(new AIChallenge(typeof(Ch_WellOfShadows), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.BaseValid, AIChallenge.ChallengeTags.PushesShadow, AIChallenge.ChallengeTags.RequiresSociety, AIChallenge.ChallengeTags.PreferLocal }));
             aiChallenges_Vampire.Add(new AIChallenge(typeof(Ch_Rest), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.HealGood, AIChallenge.ChallengeTags.PreferLocal }));
             aiChallenges_Vampire.Add(new AIChallenge(typeof(Ch_Rest_InOrcCamp), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.HealOrc, AIChallenge.ChallengeTags.PreferLocal }));
         }

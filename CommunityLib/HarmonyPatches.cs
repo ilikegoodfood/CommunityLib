@@ -44,7 +44,7 @@ namespace CommunityLib
 
         private static void Patching()
         {
-            Harmony.DEBUG = true;
+            Harmony.DEBUG = false;
             Harmony harmony = new Harmony("ILikeGoodFood.SOFG.CommunityLib");
 
             if (Harmony.HasAnyPatches(harmony.Id))
@@ -72,6 +72,10 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bNext)), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
             // Religion UI Screen Hooks
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.setTo), new Type[] { typeof(HolyOrder), typeof(int) }), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_setTo_Transpiler)));
+            // AI Setup
+            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getAttackUtility)), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)), postfix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getBodyguardUtility)), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)), postfix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getDisruptUtility)), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)), postfix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Postfix)));
         }
 
         // Assign Killer to Miscellaneous causes of death
@@ -1007,6 +1011,42 @@ namespace CommunityLib
             }
 
             return s;
+        }
+
+        private static bool UAEN_UnitInteraction_Prefix(UA __instance)
+        {
+            switch (__instance)
+            {
+                case UAEN_DeepOne _:
+                    return false;
+                case UAEN_Ghast _:
+                    return false;
+                case UAEN_OrcUpstart _:
+                    return false;
+                case UAEN_Vampire _:
+                    return false;
+                default:
+                    break;
+            }
+            return true;
+        }
+
+        private static double UAEN_UnitInteraction_Postfix(double result, UA __instance)
+        {
+            switch (__instance)
+            {
+                case UAEN_DeepOne _:
+                    return double.MinValue;
+                case UAEN_Ghast _:
+                    return double.MinValue;
+                case UAEN_OrcUpstart _:
+                    return double.MinValue;
+                case UAEN_Vampire _:
+                    return double.MinValue;
+                default:
+                    break;
+            }
+            return result;
         }
 
         private static void Template_TranspilerBody()

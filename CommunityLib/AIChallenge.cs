@@ -1,4 +1,5 @@
 ﻿using Assets.Code;
+using FullSerializer;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +12,9 @@ namespace CommunityLib
         public enum ChallengeTags
         {
             None,
+            BaseValid,
+            BaseValidFor,
+            BaseUtility,
             Forbidden,
             RequiresDeath,
             RequiresShadow,
@@ -174,6 +178,9 @@ namespace CommunityLib
                 location = challenge.location;
             }
 
+            // Test Message
+            Console.WriteLine("CommunityLib: AgentAI checking validity for challenge " + challenge.getName() + " at " + location.getName() + " for " + ua.getName() + " of social group " + ua.society.getName());
+
             Location[] pathTo = ua.location.map.getPathTo(ua.location, location, ua, safeMove);
             if (pathTo == null || pathTo.Length < 2)
             {
@@ -207,6 +214,8 @@ namespace CommunityLib
                 }
             }
 
+            // Test Message
+            Console.WriteLine("CommunityLib: Challenge Valid");
             return true;
         }
 
@@ -216,6 +225,18 @@ namespace CommunityLib
             {
                 switch (tag)
                 {
+                    case ChallengeTags.BaseValid:
+                        if (!challenge.valid())
+                        {
+                            return false;
+                        }
+                        break;
+                    case ChallengeTags.BaseValidFor:
+                        if (!challenge.validFor(ua))
+                        {
+                            return false;
+                        }
+                        break;
                     case ChallengeTags.Forbidden:
                         return false;
                     case ChallengeTags.RequiresDeath:
@@ -285,7 +306,7 @@ namespace CommunityLib
                                 continue;
                             }
                             ward = loc.properties.OfType<Pr_Ward>().FirstOrDefault();
-                            double charge = ward?.charge / 100 ?? 0.0;
+                            double charge = (ward?.charge ?? 0.0) / 100;
                             deltaShadow += Math.Max((location.getShadow() - loc.getShadow()) * (1 - charge), 0.0);
                         }
                         if (deltaShadow < 0.05)
@@ -345,10 +366,12 @@ namespace CommunityLib
                         {
                             if (ua.getStatCommandLimit() < recruitMinion.exemplar.getCommandCost())
                             {
+                                // Console.WriteLine("CommunityLib: Insufficient command to recruit minion");
                                 return false;
                             }
                             if (ua.person?.gold < recruitMinion.exemplar.getGoldCost())
                             {
+                                // Console.WriteLine("CommunityLib: Insufficient gold to recruit minion");
                                 return false;
                             }
                         }
@@ -405,19 +428,20 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.RequiresOwnSociety:
-                        if (ua.society == null || ua.location.soc == null || ua.society != ua.location.soc)
+                        if (ua.society == null ||  ua.society != location.soc)
                         {
+                            // Console.WriteLine("CommunityLib: Society " + location.soc?.getName() ?? "NULL" + " is not own society.");
                             return false;
                         }
                         break;
                     case ChallengeTags.ForbidOwnSociety:
-                        if (ua.society != null && ua.location.soc != null && ua.society == ua.location.soc)
+                        if (ua.society != null && ua.society == location.soc)
                         {
                             return false;
                         }
                         break;
                     case ChallengeTags.ForbidWar:
-                        if (!(ua.society != null && ua.location.soc != null && ua.society == ua.location.soc))
+                        if ((ua.society == null || ua.society != location.soc))
                         {
                             if (location.soc != null && ua.society.relations.ContainsKey(location.soc) && ua.society.relations[location.soc].state == DipRel.dipState.war)
                             {
@@ -426,9 +450,9 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.ForbidPeace:
-                        if (ua.society != null && ua.location.soc != null && ua.society == ua.location.soc)
+                        if (ua.society != null && ua.society == location.soc)
                         {
-                            return false;
+                            break;
                         }
                         else if (location.soc != null && ua.society.relations.ContainsKey(location.soc) && ua.society.relations[location.soc].state != DipRel.dipState.war)
                         {
@@ -451,6 +475,13 @@ namespace CommunityLib
 
         public double checkChallengeUtility(Challenge challenge, UA ua, List<ReasonMsg> reasonMsgs = null, Location location = null)
         {
+            // Reome after testing.
+            if (reasonMsgs == null)
+            {
+                reasonMsgs = new List<ReasonMsg>();
+            }
+            //
+
             double result = 0.0;
 
             if (challenge.GetType() != challengeType)
@@ -495,6 +526,14 @@ namespace CommunityLib
                 }
             }
 
+            // Test Message
+            Console.WriteLine("CommunityLib: AgentAI getting Utility for challenge " + challenge.getName() + " at " + location.getName() + " on behalf of " + ua.getName() + " of social group " + ua.society.getName());
+            foreach (ReasonMsg reasonMsg in reasonMsgs)
+            {
+                Console.WriteLine(reasonMsg.msg + ": " + reasonMsg.value);
+            }
+            Console.WriteLine("CommunityLib: Final Utility: " + result);
+
             return result;
         }
 
@@ -505,6 +544,9 @@ namespace CommunityLib
             {
                 switch (tag)
                 {
+                    case ChallengeTags.BaseUtility:
+                        result += challenge.getUtility(ua, reasonMsgs);
+                        break;
                     case ChallengeTags.Forbidden:
                         double val = -10000.0;
                         reasonMsgs.Add(new ReasonMsg("Forbidden", val));
@@ -606,7 +648,7 @@ namespace CommunityLib
                                     continue;
                                 }
                                 Pr_Ward ward = loc.properties.OfType<Pr_Ward>().FirstOrDefault();
-                                double charge = ward?.charge / 100 ?? 0.0;
+                                double charge = (ward?.charge ?? 0.0) / 100;
                                 double diff = location.getShadow() - loc.getShadow();
                                 deltaShadow += Math.Max(diff * (1 - charge), 0.0);
                             }
@@ -904,13 +946,12 @@ namespace CommunityLib
                             if (minion != null)
                             {
                                 minionMaxHP += minion.getMaxHP();
-                                minionHP = minion.hp;
+                                minionHP += minion.hp;
                             }
                         }
-                        val = minionHP;
                         if (minionMaxHP > 0.0)
                         {
-                            val /= minionMaxHP;
+                            val = minionHP / minionMaxHP;
                             val = (1 - val) * ua.map.param.utility_UA_heal;
                             reasonMsgs?.Add(new ReasonMsg("Minion HP Loses", val));
                             result += val;
@@ -946,13 +987,12 @@ namespace CommunityLib
                                 }
 
                                 minionMaxHP += minion.getMaxHP();
-                                minionHP = minion.hp;
+                                minionHP += minion.hp;
                             }
                         }
-                        val = minionHP;
                         if (minionMaxHP > 0.0)
                         {
-                            val /= minionMaxHP;
+                            val = minionHP / minionMaxHP;
                             val = (1 - val) * ua.map.param.utility_UA_heal;
                             reasonMsgs?.Add(new ReasonMsg("Minion HP Loses", val));
                             result += val;
@@ -988,13 +1028,12 @@ namespace CommunityLib
                                 }
 
                                 minionMaxHP += minion.getMaxHP();
-                                minionHP = minion.hp;
+                                minionHP += minion.hp;
                             }
                         }
-                        val = minionHP;
                         if (minionMaxHP > 0.0)
                         {
-                            val /= minionMaxHP;
+                            val = minionHP / minionMaxHP;
                             val = (1 - val) * ua.map.param.utility_UA_heal;
                             reasonMsgs?.Add(new ReasonMsg("Minion HP Loses", val));
                             result += val;
@@ -1030,13 +1069,12 @@ namespace CommunityLib
                                 }
 
                                 minionMaxHP += minion.getMaxHP();
-                                minionHP = minion.hp;
+                                minionHP += minion.hp;
                             }
                         }
-                        val = minionHP;
                         if (minionMaxHP > 0.0)
                         {
-                            val /= minionMaxHP;
+                            val = minionHP / minionMaxHP;
                             val = (1 - val) * ua.map.param.utility_UA_heal;
                             reasonMsgs?.Add(new ReasonMsg("Minion HP Loses", val));
                             result += val;
@@ -1079,7 +1117,7 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.RequiresOwnSociety:
-                        if (ua.society == null || ua.location.soc == null || !(ua.society == ua.location.soc))
+                        if (ua.society != null && ua.society != location.soc)
                         {
                             val = -1000.0;
                             reasonMsgs?.Add(new ReasonMsg("Requires Own Society", val));
@@ -1087,7 +1125,7 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.ForbidOwnSociety:
-                        if (ua.society != null && ua.location.soc != null && ua.society == ua.location.soc)
+                        if (ua.society != null && ua.society == location.soc)
                         {
                             val = -1000.0;
                             reasonMsgs?.Add(new ReasonMsg("Requires society that is not own society", val));
@@ -1095,7 +1133,7 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.PreferOwnSociety:
-                        if (ua.society != null && location.soc != null && ua.society == location.soc)
+                        if (ua.society != null && ua.society == location.soc)
                         {
                             val = 10;
                             reasonMsgs?.Add(new ReasonMsg("Own Society", val));
@@ -1103,7 +1141,7 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.AvoidOwnSociety:
-                            if (ua.society != null && location.soc != null && ua.society == location.soc)
+                            if (ua.society != null && ua.society == location.soc)
                             {
                                 val = -10;
                                 reasonMsgs?.Add(new ReasonMsg("Own Society", val));
@@ -1113,7 +1151,7 @@ namespace CommunityLib
                     case ChallengeTags.PreferPositiveRelations:
                         if (ua.society != null && location.soc != null)
                         {
-                            if (ua.society != location.soc)
+                            if (ua.society != null && ua.society != location.soc)
                             {
                                 if (location.soc != null && ua.society.relations.ContainsKey(location.soc))
                                 {
@@ -1131,7 +1169,7 @@ namespace CommunityLib
                     case ChallengeTags.AvoidPositiveRelations:
                         if (ua.society != null && location.soc != null)
                         {
-                            if (ua.society != location.soc)
+                            if (ua.society != null && ua.society != location.soc)
                             {
                                 if (location.soc != null && ua.society.relations.ContainsKey(location.soc))
                                 {
@@ -1149,7 +1187,7 @@ namespace CommunityLib
                     case ChallengeTags.PreferNegativeRelations:
                         if (ua.society != null && location.soc != null)
                         {
-                            if (ua.society != location.soc)
+                            if (ua.society != null && ua.society != location.soc)
                             {
                                 if (location.soc != null && ua.society.relations.ContainsKey(location.soc))
                                 {
@@ -1170,7 +1208,7 @@ namespace CommunityLib
                     case ChallengeTags.AvoidNegativeRelations:
                         if (ua.society != null && location.soc != null)
                         {
-                            if (ua.society != location.soc)
+                            if (ua.society != null && ua.society != location.soc)
                             {
                                 if (location.soc != null && ua.society.relations.ContainsKey(location.soc))
                                 {
@@ -1189,9 +1227,9 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.ForbidWar:
-                        if (!(ua.society != null && ua.location.soc != null && ua.society == ua.location.soc))
+                        if (ua.society != null && ua.location.soc != null && ua.society != location.soc)
                         {
-                            if (location.soc != null && ua.society.relations.ContainsKey(location.soc) && ua.society.relations[location.soc].state == DipRel.dipState.war)
+                            if (ua.society.relations.ContainsKey(location.soc) && ua.society.relations[location.soc].state == DipRel.dipState.war)
                             {
                                 val = -1000.0;
                                 reasonMsgs?.Add(new ReasonMsg("Is At War", val));
@@ -1200,9 +1238,9 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.ForbidPeace:
-                        if (!(ua.society != null && ua.location.soc != null && ua.society == ua.location.soc))
+                        if (ua.society != null && location.soc != null && ua.society != location.soc)
                         {
-                            if (location.soc != null && ua.society.relations.ContainsKey(location.soc) && ua.society.relations[location.soc].state != DipRel.dipState.war)
+                            if (ua.society.relations.ContainsKey(location.soc) && ua.society.relations[location.soc].state != DipRel.dipState.war)
                             {
                                 val = -1000.0;
                                 reasonMsgs?.Add(new ReasonMsg("Is Not At War", val));
@@ -1211,7 +1249,7 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.PreferLocal:
-                        int dist = ua.map.getStepDist(ua.location, challenge.location);
+                        int dist = ua.map.getStepDist(ua.location, location);
                         if (dist == 0)
                         {
                             val = 20;

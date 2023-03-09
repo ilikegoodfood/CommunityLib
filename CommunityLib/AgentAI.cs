@@ -495,6 +495,7 @@ namespace CommunityLib
                         targetDisrupt = targetDisrupts[Eleven.random.Next(targetDisrupts.Count)];
                     }
 
+                    Console.WriteLine("CommunityLib: " + ua.getName() + " move disrupt " + targetDisrupt.getName());
                     if (ua.person.isWatched())
                     {
                         map.addUnifiedMessage(ua, targetDisrupt, ua.person.getName() + " moving to disrupt", ua.getName() + " is moving to disrupt " + targetDisrupt.getName() + ", which will slow their challenge progress", UnifiedMessage.messageType.MOVING_TO_DISRUPT);
@@ -511,6 +512,7 @@ namespace CommunityLib
                         targetGuard = targetGuards[Eleven.random.Next(targetGuards.Count)];
                     }
 
+                    Console.WriteLine("CommunityLib: " + ua.getName() + " guard " + targetGuard.getName());
                     if (ua.person.isWatched())
                     {
                         map.addUnifiedMessage(ua, targetGuard, ua.person.getName() + " moving to guard", ua.getName() + " is moving to protect " + targetGuard.getName() + " from any attackers", UnifiedMessage.messageType.MOVING_TO_GUARD);
@@ -530,6 +532,7 @@ namespace CommunityLib
                         targetLocation = targetLocations[index];
                     }
 
+                    Console.WriteLine("CommunityLib: " + ua.getName() + " perform challenge " + targetChallenge.getName() + " at " + targetLocation.getName());
                     if (ua.person.isWatched() || targetLocation.isWatched)
                     {
                         map.addUnifiedMessage(ua, null, "Beginning Quest", ua.getName() + " is beginning quest " + targetChallenge.getName() + " at location " + targetLocation.getName(true), UnifiedMessage.messageType.BEGINNING_QUEST);
@@ -575,7 +578,10 @@ namespace CommunityLib
                 uaRituals.AddRange(ua.rituals);
                 foreach (Item item in ua.person.items)
                 {
-                    uaRituals.AddRange(item.challenges);
+                    if (item != null)
+                    {
+                        uaRituals.AddRange(item.challenges);
+                    }
                 }
 
                 foreach (Challenge challenge in uaRituals)
@@ -603,14 +609,11 @@ namespace CommunityLib
                         {
                             if (!(challenge.isGoodTernary() == 1 && (ua is UAE || ua.corrupted)))
                             {
-                                if (!challenge.allowMultipleUsers() && challenge.claimedBy == null)
+                                if (challenge.allowMultipleUsers() || challenge.claimedBy == null)
                                 {
-                                    if (challenge.valid() && challenge.validFor(ua))
+                                    if (aiChallenges[challenge.GetType()].checkChallengeIsValid(challenge, ua, location))
                                     {
-                                        if (aiChallenges[challenge.GetType()].checkChallengeIsValid(challenge, ua, location))
-                                        {
-                                            challenges.Add(challenge);
-                                        }
+                                        challenges.Add(challenge);
                                     }
                                 }
                             }
@@ -624,7 +627,7 @@ namespace CommunityLib
                     {
                         if (!(ritual.isGoodTernary() == 1 && (ua is UAE || ua.corrupted)))
                         {
-                            AIChallenge aiChallenge = aiChallenges[ritual.GetType()];
+                            AIChallenge aiChallenge = aiRituals[ritual.GetType()];
                             if (aiChallenge.checkChallengeIsValid(ritual, ua, location))
                             {
                                 if (!ritualData.ContainsKey(location))
