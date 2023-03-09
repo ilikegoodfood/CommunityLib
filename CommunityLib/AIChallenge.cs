@@ -12,8 +12,8 @@ namespace CommunityLib
         {
             None,
             Forbidden,
-            NeedsDeath,
-            NeedsShadow,
+            RequiresDeath,
+            RequiresShadow,
             Enshadows,
             PushesShadow,
             RemovesShadow,
@@ -41,14 +41,13 @@ namespace CommunityLib
             AvoidNegativeRelations,
             ForbidWar,
             ForbidPeace,
-            PreferLocal
+            PreferLocal,
+            Aquaphibious
         }
 
         public Type challengeType;
 
         public List<ChallengeTags> tags;
-
-        public bool ignoreDistance;
 
         public bool safeMove;
 
@@ -56,16 +55,16 @@ namespace CommunityLib
 
         public double profile;
 
-        public Func<Challenge, UA, Location, double> delegate_Profile;
+        public List<Func<Challenge, UA, Location, double>> delegates_Profile;
 
-        public Func<Challenge, Location, bool> delegate_Valid;
+        public List<Func<Challenge, Location, bool>> delegates_Valid;
 
-        public Func<Challenge, UA, Location, bool> delegate_ValidFor;
+        public List<Func<Challenge, UA, Location, bool>> delegates_ValidFor;
 
-        public Func<Challenge, UA, Location, List<ReasonMsg>, double> delegate_Utility;
+        public List<Func<Challenge, UA, Location, List<ReasonMsg>, double>> delegates_Utility;
 
         /// <summary>
-        /// A simplified constructor for challnges that have no custom valid, validFor, or utility logic.
+        /// The constructor for AIChallnges. Delegates must be assigned after initialization.
         /// </summary>
         /// <param name="challengeType"></param>
         /// <param name="tags"></param>
@@ -73,7 +72,7 @@ namespace CommunityLib
         /// <param name="safeMove"></param>
         /// <param name="ignoreDistance"></param>
         /// <exception cref="ArgumentException"></exception>
-        public AIChallenge(Type challengeType, double profile, List<ChallengeTags> tags = null, bool safeMove = false, bool ignoreDistance = false)
+        public AIChallenge(Type challengeType, double profile, List<ChallengeTags> tags = null, bool safeMove = false)
         {
             if (!challengeType.IsSubclassOf(typeof(Challenge)))
             {
@@ -81,56 +80,21 @@ namespace CommunityLib
             }
 
             this.challengeType = challengeType;
-            this.ignoreDistance = ignoreDistance;
-            this.safeMove = safeMove;
             this.profile = profile;
-            delegate_Profile = null;
-            delegate_Valid = null;
-            delegate_ValidFor = null;
-            delegate_Utility = null;
-
-            isRitual = challengeType.IsSubclassOf(typeof(Ritual));
-            if (tags == null)
-            {
-                this.tags = new List<ChallengeTags> { ChallengeTags.None};
-            }
-        }
-
-        /// <summary>
-        /// The full constructor that allows delegates for custom valid, validFor and utility logic, in addition to the optional tags, safeMove and ignoreDistance features.
-        /// </summary>
-        /// <param name="challengeType"></param>
-        /// <param name="tags"></param>
-        /// <param name="profile"></param>
-        /// <param name="delegate_Profile"></param>
-        /// <param name="delegate_Valid"></param>
-        /// <param name="delegate_ValidFor"></param>
-        /// <param name="delegate_Utility"></param>
-        /// <param name="safeMove"></param>
-        /// <param name="ignoreDistance"></param>
-        /// <exception cref="ArgumentException"></exception>
-        public AIChallenge(Type challengeType, double profile, List<ChallengeTags> tags = null, Func<Challenge, UA, Location, double> delegate_Profile = null, Func<Challenge, Location, bool> delegate_Valid = null, Func<Challenge, UA, Location, bool> delegate_ValidFor = null, Func<Challenge, UA, Location, List<ReasonMsg>, double> delegate_Utility = null, bool safeMove = false, bool ignoreDistance = false)
-        {
-            if (!challengeType.IsSubclassOf(typeof(Challenge)))
-            {
-                throw new ArgumentException("challengeType is not subclass of Challenge", "challengeType");
-            }
-
-            this.challengeType = challengeType;
-            this.ignoreDistance = ignoreDistance;
             this.safeMove = safeMove;
-            this.profile = profile;
-            this.delegate_Profile = delegate_Profile;
-            this.delegate_Valid = delegate_Valid;
-            this.delegate_ValidFor = delegate_ValidFor;
-            this.delegate_Utility = delegate_Utility;
-
-            isRitual = challengeType.IsSubclassOf(typeof(Ritual));
 
             if (tags == null)
             {
-                this.tags = new List<ChallengeTags> { ChallengeTags.None };
+                tags = new List<ChallengeTags>();
             }
+            this.tags = tags;
+
+            delegates_Profile = new List<Func<Challenge, UA, Location, double>>();
+            delegates_Valid = new List<Func<Challenge, Location, bool>>();
+            delegates_ValidFor = new List<Func<Challenge, UA, Location, bool>>();
+            delegates_Utility = new List<Func<Challenge, UA, Location, List<ReasonMsg>, double>>();
+
+            isRitual = challengeType.IsSubclassOf(typeof(Ritual));
         }
 
         public double checkChallengeProfile(Challenge challenge, UA ua, Location location = null)
@@ -152,9 +116,12 @@ namespace CommunityLib
                 location = challenge.location;
             }
 
-            if (delegate_Profile != null)
+            if (delegates_Profile != null)
             {
-                return profile + delegate_Profile(challenge, ua, location);
+                foreach (Func<Challenge, UA, Location, double> delegate_Profile in delegates_Profile)
+                {
+                    profile += delegate_Profile(challenge, ua, location);
+                }
             }
 
             return profile;
@@ -218,19 +185,25 @@ namespace CommunityLib
                 return false;
             }
 
-            if (delegate_Valid != null)
+            if (delegates_Valid != null)
             {
-                if(!delegate_Valid(challenge, location))
+                foreach (Func<Challenge, Location, bool> delegate_Valid in delegates_Valid)
                 {
-                    return false;
+                    if (!delegate_Valid(challenge, location))
+                    {
+                        return false;
+                    }
                 }
             }
 
-            if (delegate_ValidFor != null)
+            if (delegates_ValidFor != null)
             {
-                if (!delegate_ValidFor(challenge, ua, location))
+                foreach (Func<Challenge, UA, Location, bool> delegate_ValidFor in delegates_ValidFor)
                 {
-                    return false;
+                    if (!delegate_ValidFor(challenge, ua, location))
+                    {
+                        return false;
+                    }
                 }
             }
 
@@ -245,21 +218,21 @@ namespace CommunityLib
                 {
                     case ChallengeTags.Forbidden:
                         return false;
-                    case ChallengeTags.NeedsDeath:
+                    case ChallengeTags.RequiresDeath:
                         Pr_Death death = location.properties.OfType<Pr_Death>().FirstOrDefault();
                         if (death == null || death.charge <= 0.0)
                         {
                             return false;
                         }
                         break;
-                    case ChallengeTags.NeedsShadow:
+                    case ChallengeTags.RequiresShadow:
                         if (location.getShadow() < 0.05)
                         {
                             return false;
                         }
                         break;
                     case ChallengeTags.Enshadows:
-                        if (location.getShadow() == 1.0)
+                        if (location.getShadow() >= 1.0)
                         {
                             return false;
                         }
@@ -462,6 +435,12 @@ namespace CommunityLib
                             return false;
                         }
                         break;
+                    case ChallengeTags.Aquaphibious:
+                        if (!location.isOcean && !location.isCoastal)
+                        {
+                            return false;
+                        }
+                        break;
                     default:
                         break;
                 }
@@ -508,9 +487,12 @@ namespace CommunityLib
 
             result += utilityTags(challenge, ua, location, reasonMsgs);
 
-            if (delegate_Utility != null)
+            if (delegates_Utility != null)
             {
-                result += delegate_Utility(challenge, ua, location, reasonMsgs);
+                foreach (Func<Challenge, UA, Location, List<ReasonMsg>, double> delegate_Utility in delegates_Utility)
+                {
+                    result += delegate_Utility(challenge, ua, location, reasonMsgs);
+                }
             }
 
             return result;
@@ -528,7 +510,7 @@ namespace CommunityLib
                         reasonMsgs.Add(new ReasonMsg("Forbidden", val));
                         result += val;
                         break;
-                    case ChallengeTags.NeedsDeath:
+                    case ChallengeTags.RequiresDeath:
                         Pr_Death death = location.properties.OfType<Pr_Death>().FirstOrDefault();
                         val = -1000;
                         if (death == null || death.charge <= 0.0)
@@ -543,7 +525,7 @@ namespace CommunityLib
                             result += val;
                         }
                         break;
-                    case ChallengeTags.NeedsShadow:
+                    case ChallengeTags.RequiresShadow:
                         if (location.getShadow() < 0.05)
                         {
                             val = -1000;
@@ -991,16 +973,16 @@ namespace CommunityLib
                         {
                             if (minion != null)
                             {
-                                bool isOrc = false;
+                                bool isUndead = false;
                                 foreach (int tag3 in minion.getTags())
                                 {
-                                    if (tag3 == Tags.ORC)
+                                    if (tag3 == Tags.UNDEAD)
                                     {
-                                        isOrc = true;
+                                        isUndead = true;
                                         break;
                                     }
                                 }
-                                if (!isOrc)
+                                if (isUndead)
                                 {
                                     continue;
                                 }
@@ -1206,7 +1188,6 @@ namespace CommunityLib
                             }
                         }
                         break;
-                        break;
                     case ChallengeTags.ForbidWar:
                         if (!(ua.society != null && ua.location.soc != null && ua.society == ua.location.soc))
                         {
@@ -1275,6 +1256,11 @@ namespace CommunityLib
             }
 
             return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return challengeType.GetHashCode();
         }
     }
 }

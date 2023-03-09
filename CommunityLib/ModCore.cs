@@ -7,6 +7,8 @@ namespace CommunityLib
 {
     public class ModCore : Assets.Code.Modding.ModKernel
     {
+        public static ModCore modCore;
+
         private Cache cache;
 
         private Filters filters;
@@ -14,6 +16,8 @@ namespace CommunityLib
         private List<Hooks> registeredHooks = new List<Hooks>();
 
         private AgentAI agentAI;
+
+        private Hooks hooks;
 
         private UAENOverrideAI overrideAI;
 
@@ -32,6 +36,8 @@ namespace CommunityLib
                 patched = true;
                 HarmonyPatches.PatchingInit(this);
             }
+
+            modCore = this;
         }
 
         public override void afterMapGenBeforeHistorical(Map map)
@@ -56,9 +62,15 @@ namespace CommunityLib
                 agentAI = new AgentAI(this, map);
             }
 
+            if (hooks == null)
+            {
+                hooks = new HooksInternal(map);
+                RegisterHooks(hooks);
+            }
+
             if (overrideAI == null)
             {
-                overrideAI = new UAENOverrideAI(cache, map);
+                overrideAI = new UAENOverrideAI(this, map);
             }
 
             if (runGeneralDataTests || runSpecificDataTests)
@@ -91,9 +103,15 @@ namespace CommunityLib
                 agentAI = new AgentAI(this, map);
             }
 
+            if (hooks == null)
+            {
+                hooks = new HooksInternal(map);
+                RegisterHooks(hooks);
+            }
+
             if (overrideAI == null)
             {
-                overrideAI = new UAENOverrideAI(cache, map);
+                overrideAI = new UAENOverrideAI(this, map);
             }
 
             if (runGeneralDataTests || runSpecificDataTests)
@@ -130,28 +148,16 @@ namespace CommunityLib
             switch (uA)
             {
                 case UAEN_DeepOne deepOne:
-                    if (overrideAI.enableOverrideAI[typeof(UAEN_DeepOne)] && overrideAI.deepOneCultChance < 1.0 && overrideAI.UAENChallenges[typeof(UAEN_DeepOne)].Count > 0)
-                    {
-                        overrideAI.OverrideAI_DeepOne(deepOne);
-                    }
+                    agentAI.onTurnTickAI(deepOne);
                     break;
                 case UAEN_Ghast ghast:
-                    if (overrideAI.enableOverrideAI[typeof(UAEN_Ghast)] && overrideAI.ghastMoveChance < 1.0 && overrideAI.UAENChallenges[typeof(UAEN_Ghast)].Count > 0)
-                    {
-                        overrideAI.OverrideAI_Ghast(ghast);
-                    }
+                    agentAI.onTurnTickAI(ghast);
                     break;
                 case UAEN_OrcUpstart upstart:
-                    if (overrideAI.enableOverrideAI[typeof(UAEN_OrcUpstart)] && overrideAI.UAENChallenges[typeof(UAEN_OrcUpstart)].Count > 0)
-                    {
-                        overrideAI.OverrideAI_OrcUpstart(upstart);
-                    }
+                    agentAI.onTurnTickAI(upstart);
                     break;
                 case UAEN_Vampire vampire:
-                    if (overrideAI.enableOverrideAI[typeof(UAEN_Vampire)] && (overrideAI.UAENChallenges[typeof(UAEN_Vampire)].Count > 0))
-                    {
-                        overrideAI.OverrideAI_Vampire(vampire);
-                    }
+                    agentAI.onTurnTickAI(vampire);
                     break;
                 default:
                     break;

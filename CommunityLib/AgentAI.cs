@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Assets.Code;
+using System.Linq;
 
 namespace CommunityLib
 {
@@ -120,7 +121,7 @@ namespace CommunityLib
         /// <param name="t"></param>
         /// <param name="newAIChallenges"></param>
         /// <returns></returns>
-        public bool AddChallngesToAgentType(Type t, List<AIChallenge> newAIChallenges)
+        public bool AddChallengesToAgentType(Type t, List<AIChallenge> newAIChallenges)
         {
             bool result = TryGetAgentType(t, out List<AIChallenge> aiChallenges);
 
@@ -145,7 +146,7 @@ namespace CommunityLib
         /// <param name="t"></param>
         /// <param name="newAIChallenges"></param>
         /// <returns></returns>
-        public bool AddChallngesToAgentType(Type t, AIChallenge[] newAIChallenges)
+        public bool AddChallengesToAgentType(Type t, AIChallenge[] newAIChallenges)
         {
             bool result = TryGetAgentType(t, out List<AIChallenge> aiChallenges);
 
@@ -162,6 +163,84 @@ namespace CommunityLib
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Checks if agent type t has been registered and, if it has, returns the instance of AIChallenge where 'AIChallenge.challengeType' is challenge type c. If the agent type t has not been registered or no AIChallenge has been asigned to it with challengeType c, it returns null.
+        /// </summary>
+        /// <param name="t"></param>
+        /// <param name="c"></param>
+        /// <returns></returns>
+        public AIChallenge GetAIChallengeFromAgentType(Type t, Type c)
+        {
+            bool result = TryGetAgentType(t, out List<AIChallenge> aiChallenges);
+
+            if (result)
+            {
+                foreach (AIChallenge aiChallenge in aiChallenges)
+                {
+                    if (aiChallenge.challengeType == c)
+                    {
+                        return aiChallenge;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// IMPORTANT! Add the 'ChallengeTags.Forbidden' tag to the AIChallenge's tags instead of using this function. Removing an AIChallenge added by another mod is irreperable, and will prevent their agent from performing the challnge indefinately.
+        /// <para>Checks if an agent type t has an AIChallnge assigned to it, and removes it if it has. It returns true if it has removed the AIChallenge</para>
+        /// <para>If you remove an AIChallenge that was registered by another mod, you may not be bale to re-add it if needed at a later time. Adding the 'ChallengeTags.Forbidden' to the AIChallenge's tags will prevent the agent AI from performing the challenge.</para>
+        /// </summary>
+        /// <param name="t"></param>
+        /// <param name="aiChallenge"></param>
+        /// <returns></returns>
+        public bool RemoveChallengeFromAgentType(Type t, AIChallenge aiChallenge)
+        {
+            if (aiChallenge == null)
+            {
+                return false;
+            }
+
+            bool result = TryGetAgentType(t, out List<AIChallenge> aiChallenges);
+
+            if (result)
+            {
+                return aiChallenges.Remove(aiChallenge);
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// IMPORTANT! Add the 'ChallengeTags.Forbidden' tag to the AIChallenge's tags instead of using this function. Removing an AIChallenge added by another mod is irreperable, and will prevent their agent from performing the challnge indefinately.
+        /// <para>Checks if an agent type t has an AIChallenge assigned to it where 'AIChallenge.challengeType' is challenge type c, and removes it if it has. It returns true if it has removed the AIChallenge.</para>
+        /// <para>If you remove an AIChallenge that was registered by another mod, you may not be bale to re-add it if needed at a later time. Adding the 'ChallengeTags.Forbidden' to the AIChallenge's tags will prevent the agent AI from performing the challenge.</para>
+        /// </summary>
+        /// <param name="t"></param>
+        /// <param name="aiChallenge"></param>
+        /// <returns></returns>
+        public bool RemoveChallengeFromAgentType(Type t, Type c)
+        {
+            if (c == null || !c.IsSubclassOf(typeof(Challenge)))
+            {
+                return false;
+            }
+
+            bool result = TryGetAgentType(t, out List<AIChallenge> aiChallenges);
+
+            if (result)
+            {
+                AIChallenge challenge = GetAIChallengeFromAgentType(t, c);
+                if (challenge != null)
+                {
+                    return aiChallenges.Remove(challenge);
+                }
+            }
+
+            return false;
         }
 
         public void onTurnTickAI(UA ua, bool respectChallengeVisibility = false, bool respectUnitVisibility = false, bool respectDanger = true, bool valueTimeCost = false)
@@ -197,25 +276,42 @@ namespace CommunityLib
                 }
             }
 
+            bool result = false;
+            foreach (Hooks hook in mod.GetRegisteredHooks())
+            {
+                bool retValue = hook.interceptAgentAI(ua, aiChallengesFiltered.Values.ToList(), aiRituals.Values.ToList(), respectChallengeVisibility, respectUnitVisibility, respectDanger, valueTimeCost);
+                if (retValue)
+                {
+                    result = true;
+                }
+            }
+            if (result)
+            {
+                return;
+            }
+
             if (ua.isCommandable() && map.automatic)
             {
                 map.overmind.autoAI.UAAI(ua);
             }
             else
             {
-                double utility = 0.0;
+                List<Challenge> challenges = null;
+                Dictionary<Location, List<Challenge>> ritualData = null;
+
+                double utility = -double.MaxValue;
                 double utility2;
-                Challenge targetChallenge = null;
-                Unit targetUnit = null;
-                Unit targetGuard = null;
-                UA targetDisrupt = null;
-                Location targetLocation = null;
+                List<Challenge> targetChallenges = new List<Challenge>();
+                List<Unit> targetUnits = new List<Unit>();
+                List<Unit> targetGuards = new List<Unit>();
+                List<UA> targetDisrupts = new List<UA>();
+                List<Location> targetLocations = new List<Location>();
                 AIChallenge aiChallenge;
 
                 if (aiChallenges.Count > 0)
                 {
                     // Process aiChallenges
-                    getAllValidChallengesAndRituals(ua, aiChallengesFiltered, aiRituals, out List<Challenge> challenges, out Dictionary<Location, List<Challenge>> ritualData);
+                    getAllValidChallengesAndRituals(ua, aiChallengesFiltered, aiRituals, out challenges, out ritualData);
 
                     foreach (Challenge challenge in challenges)
                     {
@@ -230,11 +326,18 @@ namespace CommunityLib
 
                         utility2 = getChallengeUtility(challenge, aiChallenge, ua, challenge.location, respectDanger, valueTimeCost);
 
-                        if (utility2 > utility)
+                        if (targetChallenges.Count == 0 || utility2 > utility)
                         {
                             utility = utility2;
-                            targetChallenge = challenge;
-                            targetLocation = challenge.location;
+                            targetChallenges.Clear();
+                            targetChallenges.Add(challenge);
+                            targetLocations.Clear();
+                            targetLocations.Add(challenge.location);
+                        }
+                        else if (utility2 == utility)
+                        {
+                            targetChallenges.Add(challenge);
+                            targetLocations.Add(challenge.location);
                         }
                     }
 
@@ -256,8 +359,15 @@ namespace CommunityLib
                             if (utility2 > utility)
                             {
                                 utility = utility2;
-                                targetChallenge = ritual;
-                                targetLocation = pair.Key;
+                                targetChallenges.Clear();
+                                targetChallenges.Add(ritual);
+                                targetLocations.Clear();
+                                targetLocations.Add(pair.Key);
+                            }
+                            else if (utility2 == utility)
+                            {
+                                targetChallenges.Add(ritual);
+                                targetLocations.Add(pair.Key);
                             }
                         }
                     }
@@ -291,14 +401,19 @@ namespace CommunityLib
                             {
                                 utility2 = ua.getAttackUtility(agent, null, true);
 
-                                if (targetUnit == null || utility2 > utility)
+                                if (utility2 > utility)
                                 {
                                     utility = utility2;
-                                    targetChallenge = null;
-                                    targetUnit = agent;
-                                    targetGuard = null;
-                                    targetDisrupt = null;
-                                    targetLocation = null;
+                                    targetChallenges.Clear();
+                                    targetUnits.Clear();
+                                    targetUnits.Add(unit);
+                                    targetLocations.Clear();
+                                }
+                                else if (utility2 == utility)
+                                {
+                                    targetChallenges.Clear();
+                                    targetUnits.Add(unit);
+                                    targetLocations.Clear();
                                 }
                             }
 
@@ -308,14 +423,22 @@ namespace CommunityLib
                                 {
                                     utility2 = ua.getBodyguardUtility(unit, null);
 
-                                    if (targetUnit == null || utility2 > utility)
+                                    if (utility2 > utility)
                                     {
                                         utility = utility2;
-                                        targetChallenge = null;
-                                        targetUnit = null;
-                                        targetGuard = agent;
-                                        targetDisrupt = null;
-                                        targetLocation = null;
+                                        targetChallenges.Clear();
+                                        targetUnits.Clear();
+                                        targetGuards.Clear();
+                                        targetGuards.Add(unit);
+                                        targetLocations.Clear();
+                                    }
+                                    else if (utility2 == utility)
+                                    {
+                                        targetChallenges.Clear();
+                                        targetUnits.Clear();
+                                        targetGuards.Add(unit);
+                                        targetLocations.Clear();
+
                                     }
                                 }
                             }
@@ -324,22 +447,37 @@ namespace CommunityLib
                             {
                                 utility2 = ua.getDisruptUtility(unit, null);
 
-                                if (targetUnit == null || utility2 > utility)
+                                if (utility2 > utility)
                                 {
                                     utility = utility2;
-                                    targetChallenge = null;
-                                    targetUnit = null;
-                                    targetGuard = null;
-                                    targetDisrupt = agent;
-                                    targetLocation = null;
+                                    targetLocations.Clear();
+                                    targetLocations.Clear();
+                                    targetLocations.Clear();
+                                    targetDisrupts.Clear();
+                                    targetDisrupts.Add(agent);
+                                    targetLocations.Clear();
+                                }
+                                else if (utility2 == utility)
+                                {
+                                    targetLocations.Clear();
+                                    targetLocations.Clear();
+                                    targetLocations.Clear();
+                                    targetDisrupts.Add(agent);
+                                    targetLocations.Clear();
                                 }
                             }
                         }
                     }
                 }
 
-                if (targetUnit != null)
+                if (targetUnits.Count > 0)
                 {
+                    Unit targetUnit = targetUnits[0];
+                    if (targetUnits.Count > 1)
+                    {
+                        targetUnit = targetUnits[Eleven.random.Next(targetUnits.Count)];
+                    }
+
                     UA agent = targetUnit as UA;
                     if (agent != null && (ua.person.isWatched() || ua.isCommandable()))
                     {
@@ -349,8 +487,14 @@ namespace CommunityLib
                     ua.getAttackUtility(targetUnit, task.reasonsMessages, true);
                     ua.task = task;
                 }
-                else if (targetDisrupt != null)
+                else if (targetDisrupts.Count > 0)
                 {
+                    UA targetDisrupt = targetDisrupts[0];
+                    if (targetDisrupts.Count > 1)
+                    {
+                        targetDisrupt = targetDisrupts[Eleven.random.Next(targetDisrupts.Count)];
+                    }
+
                     if (ua.person.isWatched())
                     {
                         map.addUnifiedMessage(ua, targetDisrupt, ua.person.getName() + " moving to disrupt", ua.getName() + " is moving to disrupt " + targetDisrupt.getName() + ", which will slow their challenge progress", UnifiedMessage.messageType.MOVING_TO_DISRUPT);
@@ -359,8 +503,14 @@ namespace CommunityLib
                     ua.getDisruptUtility(targetDisrupt, task.reasons);
                     ua.task = task;
                 }
-                else if (targetGuard != null)
+                else if (targetGuards.Count > 0)
                 {
+                    Unit targetGuard = targetGuards[0];
+                    if (targetUnits.Count > 1)
+                    {
+                        targetGuard = targetGuards[Eleven.random.Next(targetGuards.Count)];
+                    }
+
                     if (ua.person.isWatched())
                     {
                         map.addUnifiedMessage(ua, targetGuard, ua.person.getName() + " moving to guard", ua.getName() + " is moving to protect " + targetGuard.getName() + " from any attackers", UnifiedMessage.messageType.MOVING_TO_GUARD);
@@ -368,8 +518,18 @@ namespace CommunityLib
                     Task_Bodyguard task = new Task_Bodyguard(ua, targetGuard);
                     ua.task = task;
                 }
-                else if (targetChallenge != null && targetLocation != null)
+                else if (targetChallenges.Count > 0 && targetChallenges.Count == targetLocations.Count)
                 {
+                    Challenge targetChallenge = targetChallenges[0];
+                    Location targetLocation = targetLocations[0];
+
+                    if (targetChallenges.Count > 1)
+                    {
+                        int index = Eleven.random.Next(targetChallenges.Count);
+                        targetChallenge = targetChallenges[index];
+                        targetLocation = targetLocations[index];
+                    }
+
                     if (ua.person.isWatched() || targetLocation.isWatched)
                     {
                         map.addUnifiedMessage(ua, null, "Beginning Quest", ua.getName() + " is beginning quest " + targetChallenge.getName() + " at location " + targetLocation.getName(true), UnifiedMessage.messageType.BEGINNING_QUEST);
@@ -388,7 +548,13 @@ namespace CommunityLib
 
                     ua.task = new Task_GoToPerformChallengeAtLocation(targetChallenge, targetLocation, safeMove);
                 }
+
+                foreach (Hooks hook in mod.GetRegisteredHooks())
+                {
+                    hook.onAgentAI_EndOfProcess(ua, challenges, ritualData, respectChallengeVisibility, respectUnitVisibility, respectDanger, valueTimeCost);
+                }
             }
+
             if (ua.task == null && ua.location.index != ua.homeLocation)
             {
                 ua.task = new Task_GoToLocation(map.locations[ua.homeLocation]);

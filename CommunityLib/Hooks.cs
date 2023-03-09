@@ -226,5 +226,38 @@ namespace CommunityLib
         {
             return;
         }
+
+        /// <summary>
+        /// This hook fires when the Community Library's Agent AI beings processing an agent. It recieves the agent (ua), a list of AIChalleges, excluding rituals, (aiChallenges), a list of AIChallenges that are rituals (aiRituals), and the behavoiur control booleans.
+        /// If this hook returns true, the rest of the AI process will not happen.
+        /// <para>All instances of this hook will run whenever an AgentAI runs, even those after one which has returned true.</para>
+        /// </summary>
+        /// <param name="ua"></param>
+        /// <param name="aiChallenges"></param>
+        /// <param name="aiRituals"></param>
+        /// <param name="respectChallengeVisibility"></param>
+        /// <param name="respectUnitVisibility"></param>
+        /// <param name="respectDanger"></param>
+        /// <param name="valueTimeCost"></param>
+        /// <returns></returns>
+        public virtual bool interceptAgentAI(UA ua, List<AIChallenge> aiChallenges, List<AIChallenge> aiRituals, bool respectChallengeVisibility = false, bool respectUnitVisibility = false, bool respectDanger = true, bool valueTimeCost = false)
+        {
+            return false;
+        }
+
+        /// <summary>
+        /// This hook fires when the Community Library's Agent AI has finished processing an agent. It recieves the agent (ua), a list of all valid challeges, excluding rituals, (challenges), a dictionary of all locations where one or more rituals is valid, and the rituals (ritualData), and the behavoiur control booleans.
+        /// </summary>
+        /// <param name="ua"></param>
+        /// <param name="aiChallenges"></param>
+        /// <param name="aiRituals"></param>
+        /// <param name="respectChallengeVisibility"></param>
+        /// <param name="respectUnitVisibility"></param>
+        /// <param name="respectDanger"></param>
+        /// <param name="valueTimeCost"></param>
+        public virtual void onAgentAI_EndOfProcess(UA ua, List<Challenge> challenges, Dictionary<Location, List<Challenge>> ritualData, bool respectChallengeVisibility = false, bool respectUnitVisibility = false, bool respectDanger = true, bool valueTimeCost = false)
+        {
+            return;
+        }
     }
 }
