@@ -1266,5 +1266,15 @@ namespace CommunityLib
 
             return false;
         }
+
+        public bool Equals(AIChallenge other)
+        {
+            if (other?.challengeType == challengeType)
+            {
+                return true;
+            }
+
+            return false;
+        }
     }
 }

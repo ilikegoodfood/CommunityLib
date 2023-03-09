@@ -22,7 +22,8 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// Registers an agent type t to be controlled by the AgentAI and enables it. Returns false if the agent type t is not a subtype of UA, or it has already been registered and populated with challenges.
+        /// Registers an agent type t to be controlled by the AgentAI. Returns false if the agent type t is not a subtype of UA, or it has already been registered.
+        /// <para>NOTE: Registering the AI does not run it. You still need to call 'AgentAI.turnTickAI' from the agent type's 'onTurnTickAI', or in the 'onAgentAIDecision' hook in your ModKernel if overriding an existing built-in Agent AI. This is neccesary both to ensure that the AI is called appropriately, and so that you can control the paramters for the 'AgentAI.turnTickAI' function.</para>
         /// </summary>
         /// <param name="t"></param>
         /// <returns></returns>
@@ -38,9 +39,6 @@ namespace CommunityLib
                 if (ai[t] == null)
                 {
                     ai[t] = new List<AIChallenge>();
-                }
-                if (ai[t].Count == 0)
-                {
                     return true;
                 }
             }
@@ -166,30 +164,36 @@ namespace CommunityLib
             return result;
         }
 
-        public void onTurnTickAI(UA ua, List<AIChallenge> aiChallenges, bool respectChallengeVisibility = false, bool respectUnitVisibility = false, bool respectDanger = true, bool valueTimeCost = false)
+        public void onTurnTickAI(UA ua, bool respectChallengeVisibility = false, bool respectUnitVisibility = false, bool respectDanger = true, bool valueTimeCost = false)
         {
             if (ua == null)
             {
                 return;
             }
 
-            if (aiChallenges == null || aiChallenges.Count == 0)
+            List<AIChallenge> aiChallenges;
+            bool gotAgentType = TryGetAgentType(ua.GetType(), out aiChallenges);
+
+            if (!gotAgentType || aiChallenges == null)
             {
                 return;
             }
 
-            // Seperates aiChallnges between challenges and rituals.
+            // Seperates aiChallenges between challenges and rituals.
             Dictionary<Type, AIChallenge> aiChallengesFiltered = new Dictionary<Type, AIChallenge>();
             Dictionary<Type, AIChallenge> aiRituals = new Dictionary<Type, AIChallenge>();
-            foreach (AIChallenge aiChallenge in aiChallenges)
+            if (aiChallenges.Count > 0)
             {
-                if (aiChallenge.isRitual)
+                foreach (AIChallenge aiChallenge in aiChallenges)
                 {
-                    aiRituals.Add(aiChallenge.challengeType, aiChallenge);
-                }
-                else
-                {
-                    aiChallengesFiltered.Add(aiChallenge.challengeType, aiChallenge);
+                    if (aiChallenge.isRitual)
+                    {
+                        aiRituals.Add(aiChallenge.challengeType, aiChallenge);
+                    }
+                    else
+                    {
+                        aiChallengesFiltered.Add(aiChallenge.challengeType, aiChallenge);
+                    }
                 }
             }
 
@@ -199,8 +203,6 @@ namespace CommunityLib
             }
             else
             {
-                getAllValidChallengesAndRituals(ua, aiChallengesFiltered, aiRituals, out List<Challenge> challenges, out Dictionary<Location, List<Challenge>> ritualData);
-
                 double utility = 0.0;
                 double utility2;
                 Challenge targetChallenge = null;
@@ -210,47 +212,53 @@ namespace CommunityLib
                 Location targetLocation = null;
                 AIChallenge aiChallenge;
 
-                foreach (Challenge challenge in challenges)
+                if (aiChallenges.Count > 0)
                 {
-                    aiChallenge = aiChallengesFiltered[challenge.GetType()];
-                    if (respectChallengeVisibility)
-                    {
-                        if (!aiChallenge.checkChallengeVisibility(challenge, ua, challenge.location))
-                        {
-                            continue;
-                        }
-                    }
+                    // Process aiChallenges
+                    getAllValidChallengesAndRituals(ua, aiChallengesFiltered, aiRituals, out List<Challenge> challenges, out Dictionary<Location, List<Challenge>> ritualData);
 
-                    utility2 = getChallengeUtility(challenge, aiChallenge, ua, challenge.location, respectDanger, valueTimeCost);
-
-                    if (utility2 > utility)
+                    foreach (Challenge challenge in challenges)
                     {
-                        utility = utility2;
-                        targetChallenge = challenge;
-                        targetLocation = challenge.location;
-                    }
-                }
-
-                foreach (KeyValuePair<Location, List<Challenge>> pair in ritualData)
-                {
-                    foreach (Challenge ritual in pair.Value)
-                    {
-                        aiChallenge = aiRituals[ritual.GetType()];
+                        aiChallenge = aiChallengesFiltered[challenge.GetType()];
                         if (respectChallengeVisibility)
                         {
-                            if (!aiChallenge.checkChallengeVisibility(ritual, ua, pair.Key))
+                            if (!aiChallenge.checkChallengeVisibility(challenge, ua, challenge.location))
                             {
                                 continue;
                             }
                         }
 
-                        utility2 = getChallengeUtility(ritual, aiChallenge, ua, pair.Key, respectDanger, valueTimeCost);
+                        utility2 = getChallengeUtility(challenge, aiChallenge, ua, challenge.location, respectDanger, valueTimeCost);
 
                         if (utility2 > utility)
                         {
                             utility = utility2;
-                            targetChallenge = ritual;
-                            targetLocation = pair.Key;
+                            targetChallenge = challenge;
+                            targetLocation = challenge.location;
+                        }
+                    }
+
+                    foreach (KeyValuePair<Location, List<Challenge>> pair in ritualData)
+                    {
+                        foreach (Challenge ritual in pair.Value)
+                        {
+                            aiChallenge = aiRituals[ritual.GetType()];
+                            if (respectChallengeVisibility)
+                            {
+                                if (!aiChallenge.checkChallengeVisibility(ritual, ua, pair.Key))
+                                {
+                                    continue;
+                                }
+                            }
+
+                            utility2 = getChallengeUtility(ritual, aiChallenge, ua, pair.Key, respectDanger, valueTimeCost);
+
+                            if (utility2 > utility)
+                            {
+                                utility = utility2;
+                                targetChallenge = ritual;
+                                targetLocation = pair.Key;
+                            }
                         }
                     }
                 }
