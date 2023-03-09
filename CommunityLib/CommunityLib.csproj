@@ -56,10 +56,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AIChallenge.cs" />
     <Compile Include="ArmyBattleData.cs" />
     <Compile Include="Cache.cs" />
     <Compile Include="DataTests.cs" />
     <Compile Include="Filters.cs" />
+    <Compile Include="AgentAI.cs" />
     <None Include="packages.config" />
     <None Include="Storage %28NotCompiled%29.cs" />
     <Compile Include="FiltersLocations.cs" />

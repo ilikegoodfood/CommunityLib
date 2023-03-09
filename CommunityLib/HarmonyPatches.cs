@@ -47,6 +47,11 @@ namespace CommunityLib
             Harmony.DEBUG = true;
             Harmony harmony = new Harmony("ILikeGoodFood.SOFG.CommunityLib");
 
+            if (Harmony.HasAnyPatches(harmony.Id))
+            {
+                return;
+            }
+
             // Assign Killer to Miscellaneous causes of death
             harmony.Patch(original: AccessTools.Method(typeof(UM_HumanArmy), nameof(UM_HumanArmy.turnTickInner)), transpiler: new HarmonyMethod(patchType, nameof(UM_HumanArmy_turnTickInner_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Ch_SkirmishAttacking), nameof(Ch_SkirmishAttacking.skirmishDanger)), transpiler: new HarmonyMethod(patchType, nameof(Ch_SkirmishAttacking_skirmishDanger_Transpiler)));
@@ -444,7 +449,7 @@ namespace CommunityLib
                 hook?.onArmyBattleVictory(battle, victorUnits, victorComs, defeatedUnits, defeatedComs);
             }
 
-            HarmonyPatches.armyBattleData_StartOfCycle.Clear();
+            armyBattleData_StartOfCycle.Clear();
         }
 
         private static IEnumerable<CodeInstruction> BattleArmy_unitMovesFromLocation_Transpiler(IEnumerable<CodeInstruction> codeInstructions)

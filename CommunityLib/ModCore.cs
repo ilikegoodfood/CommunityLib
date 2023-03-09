@@ -13,6 +13,8 @@ namespace CommunityLib
 
         private List<Hooks> registeredHooks = new List<Hooks>();
 
+        private AgentAI agentAI;
+
         private UAENOverrideAI overrideAI;
 
         private DataTests dataTests;
@@ -49,6 +51,11 @@ namespace CommunityLib
                 filters = new Filters(cache, map);
             }
 
+            if (agentAI == null)
+            {
+                agentAI = new AgentAI(this, map);
+            }
+
             if (overrideAI == null)
             {
                 overrideAI = new UAENOverrideAI(cache, map);
@@ -60,11 +67,6 @@ namespace CommunityLib
             }
 
             filters.afterMapGenBeforeHistorical(map);
-        }
-
-        public override void afterMapGenAfterHistorical(Map map)
-        {
-            filters.afterMapGenAfterHistorical(map);
         }
 
         public override void afterLoading(Map map)
@@ -84,6 +86,11 @@ namespace CommunityLib
                 filters = new Filters(cache, map);
             }
 
+            if (agentAI == null)
+            {
+                agentAI = new AgentAI(this, map);
+            }
+
             if (overrideAI == null)
             {
                 overrideAI = new UAENOverrideAI(cache, map);
@@ -95,6 +102,11 @@ namespace CommunityLib
             }
 
             filters.afterMapGenBeforeHistorical(map);
+        }
+
+        public override void afterMapGenAfterHistorical(Map map)
+        {
+            filters.afterMapGenAfterHistorical(map);
         }
 
         public override void onTurnStart(Map map)
@@ -118,25 +130,25 @@ namespace CommunityLib
             switch (uA)
             {
                 case UAEN_DeepOne deepOne:
-                    if (overrideAI.overrideAI_DeepOne && overrideAI.deepOneCultChance < 1.0 && overrideAI.customChallenges_DeepOne.Count > 0)
+                    if (overrideAI.enableOverrideAI[typeof(UAEN_DeepOne)] && overrideAI.deepOneCultChance < 1.0 && overrideAI.UAENChallenges[typeof(UAEN_DeepOne)].Count > 0)
                     {
                         overrideAI.OverrideAI_DeepOne(deepOne);
                     }
                     break;
                 case UAEN_Ghast ghast:
-                    if (overrideAI.overrideAI_Ghast && overrideAI.ghastMoveChance < 1.0 && overrideAI.customChallenges_Ghast.Count > 0)
+                    if (overrideAI.enableOverrideAI[typeof(UAEN_Ghast)] && overrideAI.ghastMoveChance < 1.0 && overrideAI.UAENChallenges[typeof(UAEN_Ghast)].Count > 0)
                     {
                         overrideAI.OverrideAI_Ghast(ghast);
                     }
                     break;
                 case UAEN_OrcUpstart upstart:
-                    if (overrideAI.overrideAI_OrcUpstart && overrideAI.customChallenges_OrcUpstart.Count > 0)
+                    if (overrideAI.enableOverrideAI[typeof(UAEN_OrcUpstart)] && overrideAI.UAENChallenges[typeof(UAEN_OrcUpstart)].Count > 0)
                     {
                         overrideAI.OverrideAI_OrcUpstart(upstart);
                     }
                     break;
                 case UAEN_Vampire vampire:
-                    if (overrideAI.overrideAI_Vampire && (overrideAI.customChallenges_Vampire.Count > 0 || overrideAI.customChallenges_Vampire_Death.Count > 0))
+                    if (overrideAI.enableOverrideAI[typeof(UAEN_Vampire)] && (overrideAI.UAENChallenges[typeof(UAEN_Vampire)].Count > 0))
                     {
                         overrideAI.OverrideAI_Vampire(vampire);
                     }
@@ -172,14 +184,9 @@ namespace CommunityLib
             return cache;
         }
 
-        /// <summary>
-        /// <para></para>Returns the instance of the UAENOverrideAI class.
-        /// <para>A reference to this class is required to add a challenge to a UAENOverrideAI's challenge list, to read the challenge list, or to disable one or more of the Community Library's UAENOverrideAIs.</para>
-        /// </summary>
-        /// <returns></returns>
-        public UAENOverrideAI GetUAENOverrideAI()
+        public AgentAI GetAgentAI()
         {
-            return overrideAI;
+            return agentAI;
         }
 
         /// <summary>
