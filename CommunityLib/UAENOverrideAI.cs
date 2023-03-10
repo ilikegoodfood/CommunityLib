@@ -235,7 +235,7 @@ namespace CommunityLib
                 {
                     Pr_Devastation devastation = loc.properties.OfType<Pr_Devastation>().FirstOrDefault();
                     double charge = devastation?.charge ?? 0.0;
-                    potentialDevastation += Math.Max( 0.0, 250 - charge) / 5;
+                    potentialDevastation += Math.Max(250 - charge, 0.0) / 5;
                     if (potentialDevastation > 0)
                     {
                         neighbourCount++;
@@ -245,7 +245,7 @@ namespace CommunityLib
 
             if (neighbourCount > 0)
             {
-                result /= neighbourCount;
+                result = potentialDevastation / neighbourCount;
             }
 
             reasonMsgs?.Add(new ReasonMsg("Potential Devastation", result));

@@ -259,22 +259,9 @@ namespace CommunityLib
             }
 
             // Seperates aiChallenges between challenges and rituals.
-            Dictionary<Type, AIChallenge> aiChallengesFiltered = new Dictionary<Type, AIChallenge>();
-            Dictionary<Type, AIChallenge> aiRituals = new Dictionary<Type, AIChallenge>();
-            if (aiChallenges.Count > 0)
-            {
-                foreach (AIChallenge aiChallenge in aiChallenges)
-                {
-                    if (aiChallenge.isRitual)
-                    {
-                        aiRituals.Add(aiChallenge.challengeType, aiChallenge);
-                    }
-                    else
-                    {
-                        aiChallengesFiltered.Add(aiChallenge.challengeType, aiChallenge);
-                    }
-                }
-            }
+            Dictionary<Type, AIChallenge> aiChallengesFiltered;
+            Dictionary<Type, AIChallenge> aiRituals;
+            filterAIChallengeAndRituals(aiChallenges, out aiChallengesFiltered, out aiRituals);
 
             bool result = false;
             foreach (Hooks hook in mod.GetRegisteredHooks())
@@ -618,6 +605,26 @@ namespace CommunityLib
             }
         }
 
+        public void filterAIChallengeAndRituals(List<AIChallenge> aiChallenges, out Dictionary<Type, AIChallenge> aiChallengesFiltered, out Dictionary<Type, AIChallenge> aiRituals)
+        {
+            aiChallengesFiltered = new Dictionary<Type, AIChallenge>();
+            aiRituals = new Dictionary<Type, AIChallenge>();
+            if (aiChallenges.Count > 0)
+            {
+                foreach (AIChallenge aiChallenge in aiChallenges)
+                {
+                    if (aiChallenge.isRitual)
+                    {
+                        aiRituals.Add(aiChallenge.challengeType, aiChallenge);
+                    }
+                    else
+                    {
+                        aiChallengesFiltered.Add(aiChallenge.challengeType, aiChallenge);
+                    }
+                }
+            }
+        }
+
         public void getAllValidChallengesAndRituals(UA ua, Dictionary<Type, AIChallenge> aiChallenges, Dictionary<Type, AIChallenge> aiRituals, out List<Challenge> challenges, out Dictionary<Location, List<Challenge>> ritualData)
         {
             challenges = new List<Challenge>();
@@ -663,7 +670,7 @@ namespace CommunityLib
                         {
                             if (!(challenge.isGoodTernary() == 1 && (ua is UAE || ua.corrupted)))
                             {
-                                if (challenge.allowMultipleUsers() || challenge.claimedBy == null)
+                                if (challenge.allowMultipleUsers() || challenge.claimedBy == null || challenge.claimedBy == ua)
                                 {
                                     if (aiChallenges[challenge.GetType()].checkChallengeIsValid(challenge, ua, location))
                                     {

@@ -228,12 +228,14 @@ namespace CommunityLib
                     case ChallengeTags.BaseValid:
                         if (!challenge.valid())
                         {
+                            // Console.WriteLine("Not Base Valid");
                             return false;
                         }
                         break;
                     case ChallengeTags.BaseValidFor:
                         if (!challenge.validFor(ua))
                         {
+                            // Console.WriteLine("Not Base ValidFor " + ua.getName());
                             return false;
                         }
                         break;
@@ -475,6 +477,13 @@ namespace CommunityLib
 
         public double checkChallengeUtility(Challenge challenge, UA ua, List<ReasonMsg> reasonMsgs = null, Location location = null)
         {
+            // Reome after testing.
+            /*if (reasonMsgs == null)
+            {
+                reasonMsgs = new List<ReasonMsg>();
+            }*/
+            //
+
             double result = 0.0;
 
             if (challenge.GetType() != challengeType)
