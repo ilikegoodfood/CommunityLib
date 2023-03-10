@@ -259,5 +259,16 @@ namespace CommunityLib
         {
             return;
         }
+
+        /// <summary>
+        /// This hook fires when an agent gets the valid list of traits that they can choose from when levelling up, but before they have chosen one. It receives the agent (ua), the list of traits (availableTraits) and whether it is getting the starting traits for specific agent types (isStartingTraits)
+        /// </summary>
+        /// <param name="ua"></param>
+        /// <param name="availableTraits"></param>
+        /// <param name="startingTraits"></param>
+        public virtual void onAgentLevelup_GetTraits(UA ua, List<Trait> availableTraits, bool startingTraits)
+        {
+            return;
+        }
     }
 }

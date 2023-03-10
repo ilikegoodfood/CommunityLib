@@ -52,12 +52,15 @@ namespace CommunityLib
                 return;
             }
 
+            // FIXES //
             // Assign Killer to Miscellaneous causes of death
             harmony.Patch(original: AccessTools.Method(typeof(UM_HumanArmy), nameof(UM_HumanArmy.turnTickInner)), transpiler: new HarmonyMethod(patchType, nameof(UM_HumanArmy_turnTickInner_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Ch_SkirmishAttacking), nameof(Ch_SkirmishAttacking.skirmishDanger)), transpiler: new HarmonyMethod(patchType, nameof(Ch_SkirmishAttacking_skirmishDanger_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Ch_SkirmishDefending), nameof(Ch_SkirmishDefending.skirmishDanger)), transpiler: new HarmonyMethod(patchType, nameof(Ch_SkirmishDefending_skirmishDanger_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Mg_Volcano), nameof(Mg_Volcano.complete), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Mg_Volcano_Complete_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(God_Snake), nameof(God_Snake.awaken)), transpiler: new HarmonyMethod(patchType, nameof(God_Snake_Awaken_Transpiler)));
+
+            // HOOKS //
             // Unit death hooks
             harmony.Patch(original: AccessTools.Method(typeof(Unit), nameof(Unit.die)), transpiler: new HarmonyMethod(patchType, nameof(Unit_die_Transpiler)));
             // Army Battle hooks
@@ -72,10 +75,20 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bNext)), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
             // Religion UI Screen Hooks
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.setTo), new Type[] { typeof(HolyOrder), typeof(int) }), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_setTo_Transpiler)));
-            // AI Setup
-            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getAttackUtility)), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)), postfix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Postfix)));
-            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getBodyguardUtility)), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)), postfix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Postfix)));
-            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getDisruptUtility)), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)), postfix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Postfix)));
+            // LevelUp Traits Hook
+            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getStartingTraits)), postfix: new HarmonyMethod(patchType, nameof(UA_getStartingTraits_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(Trait), nameof(Trait.getAvailableTraits), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Trait_getAvailableTraits_Postfix)));
+
+            // UAEN OVERRIDE AI //
+            // Negate unit interactions.
+            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getAttackUtility)), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix))); // , postfix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Postfix))
+            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getBodyguardUtility)), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getDisruptUtility)), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)));
+            // CH_Rest_InOrcCamp
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_Rest_InOrcCamp), nameof(Ch_Rest_InOrcCamp.complete), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Ch_Rest_InOrcCamp_complete_Postfix)));
+
+            // Template Patch
+            // harmony.Patch(original: AccessTools.Method(typeof(), nameof(), new Type[] { typeof() }), postfix: new HarmonyMethod(patchType, nameof()));
         }
 
         // Assign Killer to Miscellaneous causes of death
@@ -1013,17 +1026,48 @@ namespace CommunityLib
             return s;
         }
 
-        private static bool UAEN_UnitInteraction_Prefix(UA __instance)
+        private static List<Trait> UA_getStartingTraits_Postfix(List<Trait> traits, UA __instance)
+        {
+            foreach (Hooks hook in mod.GetRegisteredHooks())
+            {
+                hook?.onAgentLevelup_GetTraits(__instance, traits, true);
+            }
+
+            return traits;
+        }
+
+        private static List<Trait> Trait_getAvailableTraits_Postfix(List<Trait> traits, UA ua)
+        {
+            if (ua == null)
+            {
+                return traits;
+            }
+
+            if (!ua.hasStartingTraits() || ua.hasAssignedStartingTraits)
+            {
+                foreach (Hooks hook in mod.GetRegisteredHooks())
+                {
+                    hook?.onAgentLevelup_GetTraits(ua, traits, false);
+                }
+            }
+            return traits;
+        }
+
+        private static bool UAEN_UnitInteraction_Prefix(UA __instance, ref double __result)
         {
             switch (__instance)
             {
                 case UAEN_DeepOne _:
+                    __result = double.MinValue;
                     return false;
                 case UAEN_Ghast _:
+                    __result = double.MinValue;
                     return false;
                 case UAEN_OrcUpstart _:
+                    __result = double.MinValue;
                     return false;
                 case UAEN_Vampire _:
+                    __result = double.MinValue;
                     return false;
                 default:
                     break;
@@ -1031,7 +1075,7 @@ namespace CommunityLib
             return true;
         }
 
-        private static double UAEN_UnitInteraction_Postfix(double result, UA __instance)
+        /*private static double UAEN_UnitInteraction_Postfix(double result, UA __instance)
         {
             switch (__instance)
             {
@@ -1047,6 +1091,11 @@ namespace CommunityLib
                     break;
             }
             return result;
+        }*/
+
+        private static void Ch_Rest_InOrcCamp_complete_Postfix(UA u)
+        {
+            u.challengesSinceRest = 0;
         }
 
         private static void Template_TranspilerBody()

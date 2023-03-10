@@ -179,7 +179,7 @@ namespace CommunityLib
             }
 
             // Test Message
-            Console.WriteLine("CommunityLib: AgentAI checking validity for challenge " + challenge.getName() + " at " + location.getName() + " for " + ua.getName() + " of social group " + ua.society.getName());
+            // Console.WriteLine("CommunityLib: AgentAI checking validity for challenge " + challenge.getName() + " at " + location.getName() + " for " + ua.getName() + " of social group " + ua.society.getName());
 
             Location[] pathTo = ua.location.map.getPathTo(ua.location, location, ua, safeMove);
             if (pathTo == null || pathTo.Length < 2)
@@ -215,7 +215,7 @@ namespace CommunityLib
             }
 
             // Test Message
-            Console.WriteLine("CommunityLib: Challenge Valid");
+            Console.WriteLine("CommunityLib: " + challenge.getName() + " at " + location.getName() + " is valid for " + ua.getName() + " of social group " + ua.society.getName());
             return true;
         }
 
@@ -475,13 +475,6 @@ namespace CommunityLib
 
         public double checkChallengeUtility(Challenge challenge, UA ua, List<ReasonMsg> reasonMsgs = null, Location location = null)
         {
-            // Reome after testing.
-            if (reasonMsgs == null)
-            {
-                reasonMsgs = new List<ReasonMsg>();
-            }
-            //
-
             double result = 0.0;
 
             if (challenge.GetType() != challengeType)
@@ -527,13 +520,16 @@ namespace CommunityLib
             }
 
             // Test Message
-            Console.WriteLine("CommunityLib: AgentAI getting Utility for challenge " + challenge.getName() + " at " + location.getName() + " on behalf of " + ua.getName() + " of social group " + ua.society.getName());
-            foreach (ReasonMsg reasonMsg in reasonMsgs)
+            /*Console.WriteLine("CommunityLib: AgentAI getting Utility for challenge " + challenge.getName() + " at " + location.getName() + " on behalf of " + ua.getName() + " of social group " + ua.society.getName());
+            if (reasonMsgs != null)
             {
-                Console.WriteLine(reasonMsg.msg + ": " + reasonMsg.value);
-            }
-            Console.WriteLine("CommunityLib: Final Utility: " + result);
-
+                foreach (ReasonMsg reasonMsg in reasonMsgs)
+                {
+                    Console.WriteLine(reasonMsg.msg + ": " + reasonMsg.value);
+                }
+                Console.WriteLine("CommunityLib: Final Utility: " + result);
+            }*/
+            
             return result;
         }
 
@@ -549,7 +545,7 @@ namespace CommunityLib
                         break;
                     case ChallengeTags.Forbidden:
                         double val = -10000.0;
-                        reasonMsgs.Add(new ReasonMsg("Forbidden", val));
+                        reasonMsgs?.Add(new ReasonMsg("Forbidden", val));
                         result += val;
                         break;
                     case ChallengeTags.RequiresDeath:
@@ -557,13 +553,13 @@ namespace CommunityLib
                         val = -1000;
                         if (death == null || death.charge <= 0.0)
                         {
-                            reasonMsgs.Add(new ReasonMsg("Requires Death", val));
+                            reasonMsgs?.Add(new ReasonMsg("Requires Death", val));
                             result += val;
                         }
                         else
                         {
                             val = death.charge;
-                            reasonMsgs.Add(new ReasonMsg("Death", val));
+                            reasonMsgs?.Add(new ReasonMsg("Death", val));
                             result += val;
                         }
                         break;
@@ -571,7 +567,7 @@ namespace CommunityLib
                         if (location.getShadow() < 0.05)
                         {
                             val = -1000;
-                            reasonMsgs.Add(new ReasonMsg("Requires Shadow", val));
+                            reasonMsgs?.Add(new ReasonMsg("Requires Shadow", val));
                             result += val;
                         }
                         break;
@@ -579,7 +575,7 @@ namespace CommunityLib
                         val = -1000;
                         if (location.getShadow() == 1.0)
                         {
-                            reasonMsgs.Add(new ReasonMsg("Location Already Ensahdowed", val));
+                            reasonMsgs?.Add(new ReasonMsg("Location Already Ensahdowed", val));
                             result += val;
                         }
                         Settlement settlement = location.settlement;
@@ -587,14 +583,14 @@ namespace CommunityLib
                         {
                             if (settlement.shadowPolicy == Settlement.shadowResponse.DENY)
                             {
-                                reasonMsgs.Add(new ReasonMsg("Settlement cannot be enshadowed", val));
+                                reasonMsgs?.Add(new ReasonMsg("Settlement cannot be enshadowed", val));
                                 result += val;
                             }
 
                             SettlementHuman settlementHuman = settlement as SettlementHuman;
                             if (settlementHuman?.ophanimTakeOver ?? false)
                             {
-                                reasonMsgs.Add(new ReasonMsg("Perfected settlements cannot be enshadowed", val));
+                                reasonMsgs?.Add(new ReasonMsg("Perfected settlements cannot be enshadowed", val));
                                 result += val;
                             }
                         }
@@ -603,25 +599,25 @@ namespace CommunityLib
                         {
                             if (challenge.map.opt_allianceState == 1)
                             {
-                                reasonMsgs.Add(new ReasonMsg("Alliance cannot be enshadowed", val));
+                                reasonMsgs?.Add(new ReasonMsg("Alliance cannot be enshadowed", val));
                                 result += val;
                             }
                             else if (challenge.map.opt_allianceState == 2)
                             {
                                 val = -20;
-                                reasonMsgs.Add(new ReasonMsg("Alliance can purge shadow", val));
+                                reasonMsgs?.Add(new ReasonMsg("Alliance can purge shadow", val));
                                 result += val;
                             }
                         }
                         val = (1 - location.getShadow()) * 100;
-                        reasonMsgs.Add(new ReasonMsg("Purity", val));
+                        reasonMsgs?.Add(new ReasonMsg("Purity", val));
                         result += val;
                         break;
                     case ChallengeTags.PushesShadow:
                         val = -1000;
                         if (location.getShadow() < 0.05)
                         {
-                            reasonMsgs.Add(new ReasonMsg("Requires Shadow", val));
+                            reasonMsgs?.Add(new ReasonMsg("Requires Shadow", val));
                             result += val;
                         }
                         else
@@ -654,13 +650,13 @@ namespace CommunityLib
                             }
                             if (deltaShadow < 0.05)
                             {
-                                reasonMsgs.Add(new ReasonMsg("Potential Shadow Spread", val));
+                                reasonMsgs?.Add(new ReasonMsg("Potential Shadow Spread", val));
                                 result += val;
                             }
                             else
                             {
                                 val = deltaShadow * 100;
-                                reasonMsgs.Add(new ReasonMsg("Potential Shadow Spread", val));
+                                reasonMsgs?.Add(new ReasonMsg("Potential Shadow Spread", val));
                                 result += val;
                             }
                         }
@@ -669,7 +665,7 @@ namespace CommunityLib
                         val = -1000;
                         if (location.getShadow() < 0.05)
                         {
-                            reasonMsgs.Add(new ReasonMsg("Requires Shadow", val));
+                            reasonMsgs?.Add(new ReasonMsg("Requires Shadow", val));
                             result += val;
                         }
                         else
@@ -680,14 +676,14 @@ namespace CommunityLib
                             {
                                 if (settlement.shadowPolicy == Settlement.shadowResponse.DENY && well == null)
                                 {
-                                    reasonMsgs.Add(new ReasonMsg("Settlement cannot be enshadowed", val));
+                                    reasonMsgs?.Add(new ReasonMsg("Settlement cannot be enshadowed", val));
                                     result += val;
                                     break;
                                 }
                                 else if (settlement.shadowPolicy == Settlement.shadowResponse.RECEIVE_ONLY && well == null)
                                 {
                                     val = -20;
-                                    reasonMsgs.Add(new ReasonMsg("Settlement cannot spread shadow", val));
+                                    reasonMsgs?.Add(new ReasonMsg("Settlement cannot spread shadow", val));
                                     result += val;
                                     break;
                                 }
@@ -724,12 +720,12 @@ namespace CommunityLib
                             }
 
                             val = deltaShadow * 100;
-                            reasonMsgs.Add(new ReasonMsg("Threat of Shadow Spread", val));
+                            reasonMsgs?.Add(new ReasonMsg("Threat of Shadow Spread", val));
                             result += val;
 
                             if ( well?.charge >= 0.05)
                             {
-                                reasonMsgs.Add(new ReasonMsg("Well of Shadows", well.charge));
+                                reasonMsgs?.Add(new ReasonMsg("Well of Shadows", well.charge));
                                 result += well.charge;
                             }
                         }
@@ -738,7 +734,7 @@ namespace CommunityLib
                         val = -1000;
                         if (location.getShadow() >= 1.0)
                         {
-                            reasonMsgs.Add(new ReasonMsg("Location Already Enshadowed", val));
+                            reasonMsgs?.Add(new ReasonMsg("Location Already Enshadowed", val));
                             result += val;
                         }
                         else
@@ -747,7 +743,7 @@ namespace CommunityLib
                             val = (ward?.charge ?? -1.0) * -1;
                             if (val < 0.0)
                             {
-                                reasonMsgs.Add(new ReasonMsg("Ward Strength", val));
+                                reasonMsgs?.Add(new ReasonMsg("Ward Strength", val));
                                 result += val;
                             }
 
@@ -758,14 +754,14 @@ namespace CommunityLib
                                 if (settlement.shadowPolicy == Settlement.shadowResponse.DENY && well == null)
                                 {
                                     val = -1000;
-                                    reasonMsgs.Add(new ReasonMsg("Settlement cannot be enshadowed", val));
+                                    reasonMsgs?.Add(new ReasonMsg("Settlement cannot be enshadowed", val));
                                     result += val;
                                     break;
                                 }
                                 else if (settlement.shadowPolicy == Settlement.shadowResponse.RECEIVE_ONLY && well == null)
                                 {
                                     val = -20;
-                                    reasonMsgs.Add(new ReasonMsg("Settlement cannot spread shadow", val));
+                                    reasonMsgs?.Add(new ReasonMsg("Settlement cannot spread shadow", val));
                                     result += val;
                                     break;
                                 }
@@ -799,7 +795,7 @@ namespace CommunityLib
                                     Pr_WellOfShadows well2 = loc.properties.OfType<Pr_WellOfShadows>().FirstOrDefault();
                                     if (well2 != null)
                                     {
-                                        reasonMsgs.Add(new ReasonMsg("Neighbouring Well of Shadows", diff));
+                                        reasonMsgs?.Add(new ReasonMsg("Neighbouring Well of Shadows", diff));
                                         diff *= 2;
                                     }
                                 }
@@ -808,12 +804,12 @@ namespace CommunityLib
                             }
 
                             val = deltaShadow * 100;
-                            reasonMsgs.Add(new ReasonMsg("Potential Shadow Spread", val));
+                            reasonMsgs?.Add(new ReasonMsg("Potential Shadow Spread", val));
                             result += val;
 
                             if (deltaShadow2 >= 0.05 && well?.charge >= 0.05)
                             {
-                                reasonMsgs.Add(new ReasonMsg("Well of Shadows", well.charge));
+                                reasonMsgs?.Add(new ReasonMsg("Well of Shadows", well.charge));
                                 result += well.charge;
                             }
                         }
@@ -937,7 +933,7 @@ namespace CommunityLib
                             val /= ua.maxHp;
                         }
                         val = (1 - val) * ua.map.param.utility_UA_heal;
-                        reasonMsgs.Add(new ReasonMsg("HP Losses", val));
+                        reasonMsgs?.Add(new ReasonMsg("HP Losses", val));
                         result += val;
                         double minionMaxHP = 0.0;
                         double minionHP = 0.0;
@@ -964,7 +960,7 @@ namespace CommunityLib
                             val /= ua.maxHp;
                         }
                         val = (1 - val) * ua.map.param.utility_UA_heal;
-                        reasonMsgs.Add(new ReasonMsg("HP Losses", val));
+                        reasonMsgs?.Add(new ReasonMsg("HP Losses", val));
                         result += val;
                         minionMaxHP = 0.0;
                         minionHP = 0.0;
@@ -1005,7 +1001,7 @@ namespace CommunityLib
                             val /= ua.maxHp;
                         }
                         val = (1 - val) * ua.map.param.utility_UA_heal;
-                        reasonMsgs.Add(new ReasonMsg("HP Losses", val));
+                        reasonMsgs?.Add(new ReasonMsg("HP Losses", val));
                         result += val;
                         minionMaxHP = 0.0;
                         minionHP = 0.0;
@@ -1046,7 +1042,7 @@ namespace CommunityLib
                             val /= ua.maxHp;
                         }
                         val = (1 - val) * ua.map.param.utility_UA_heal;
-                        reasonMsgs.Add(new ReasonMsg("HP Losses", val));
+                        reasonMsgs?.Add(new ReasonMsg("HP Losses", val));
                         result += val;
                         minionMaxHP = 0.0;
                         minionHP = 0.0;
@@ -1096,7 +1092,7 @@ namespace CommunityLib
                         if (location.hex.purity > 0.25)
                         {
                             val = -75.0;
-                            reasonMsgs.Add(new ReasonMsg("Shouldn't Leave Shadow", val));
+                            reasonMsgs?.Add(new ReasonMsg("Shouldn't Leave Shadow", val));
                             result += val;
                         }
                         break;
@@ -1258,7 +1254,7 @@ namespace CommunityLib
                         {
                             val = dist * -10;
                         }
-                        reasonMsgs.Add(new ReasonMsg("Distance", val));
+                        reasonMsgs?.Add(new ReasonMsg("Distance", val));
                         result += val;
                         break;
                     default:

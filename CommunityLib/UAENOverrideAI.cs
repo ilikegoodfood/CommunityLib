@@ -212,14 +212,45 @@ namespace CommunityLib
 
         private void populateOrcUpstart()
         {
-            AIChallenge challenge = new AIChallenge(typeof(Ch_OrcRaiding), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.BaseValid, AIChallenge.ChallengeTags.BaseValidFor, AIChallenge.ChallengeTags.BaseUtility, AIChallenge.ChallengeTags.RequiresOwnSociety, AIChallenge.ChallengeTags.PreferOwnSociety });
+            AIChallenge challenge = new AIChallenge(typeof(Ch_OrcRaiding), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.BaseValid, AIChallenge.ChallengeTags.BaseValidFor, AIChallenge.ChallengeTags.RequiresOwnSociety });
+            challenge.delegates_Utility.Add(delegate_Utility_Ch_OrcRaiding);
             aiChallenges_OrcUpstart.Add(challenge);
 
-            AIChallenge challenge1 = new AIChallenge(typeof(Ch_RecruitMinion), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.RequiresOwnSociety, AIChallenge.ChallengeTags.PreferOwnSociety, AIChallenge.ChallengeTags.RecruitsMinion });
+            AIChallenge challenge1 = new AIChallenge(typeof(Ch_RecruitMinion), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.RequiresOwnSociety, AIChallenge.ChallengeTags.RecruitsMinion });
             challenge1.delegates_Valid.Add(delegate_Valid_Ch_RecruitMinion);
             aiChallenges_OrcUpstart.Add(challenge1);
 
-            aiChallenges_OrcUpstart.Add(new AIChallenge(typeof(Ch_Rest_InOrcCamp), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.RequiresOwnSociety, AIChallenge.ChallengeTags.PreferOwnSociety, AIChallenge.ChallengeTags.HealOrc }));
+            aiChallenges_OrcUpstart.Add(new AIChallenge(typeof(Ch_Rest_InOrcCamp), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.RequiresOwnSociety, AIChallenge.ChallengeTags.HealOrc, AIChallenge.ChallengeTags.Rest }));
+        }
+
+        private double delegate_Utility_Ch_OrcRaiding(Challenge challenge, UA ua, Location location, List<ReasonMsg> reasonMsgs)
+        {
+            double result = 0.0;
+
+            double potentialDevastation = 0.0;
+            int neighbourCount = 0;
+            foreach (Location loc in location.getNeighbours())
+            {
+                if (loc.settlement is SettlementHuman && (ua.society == null || ua.society != loc.soc))
+                {
+                    Pr_Devastation devastation = loc.properties.OfType<Pr_Devastation>().FirstOrDefault();
+                    double charge = devastation?.charge ?? 0.0;
+                    potentialDevastation += Math.Max( 0.0, 250 - charge) / 5;
+                    if (potentialDevastation > 0)
+                    {
+                        neighbourCount++;
+                    }
+                }
+            }
+
+            if (neighbourCount > 0)
+            {
+                result /= neighbourCount;
+            }
+
+            reasonMsgs?.Add(new ReasonMsg("Potential Devastation", result));
+
+            return result;
         }
 
         private bool delegate_Valid_Ch_RecruitMinion(Challenge challenge, Location location)
