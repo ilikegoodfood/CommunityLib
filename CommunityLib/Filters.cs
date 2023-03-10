@@ -419,6 +419,10 @@ namespace CommunityLib
 
             foreach (Unit u in map.units)
             {
+                if (u.isDead)
+                {
+                    continue;
+                }
               //Console.WriteLine("CommunityLib: Filtering unit " + u.getName() + " of type: " + u.GetType().Name + ".");
                 // Set universal variables
                 tU = u.GetType();

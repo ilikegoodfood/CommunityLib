@@ -395,7 +395,7 @@ namespace CommunityLib
                     foreach (Unit unit in units)
                     {
                         UA agent = unit as UA;
-                        if (agent != null)
+                        if (agent != null && !agent.isDead)
                         {
                             if (!(agent.task is Task_InHiding))
                             {

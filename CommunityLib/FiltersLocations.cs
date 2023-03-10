@@ -849,7 +849,13 @@ namespace CommunityLib
                         {
                             uBySEfromL[l][steps] = new List<Unit>();
                         }
-                        uBySEfromL[l][steps].AddRange(units);
+                        foreach (Unit unit in units)
+                        {
+                            if (!unit.isDead)
+                            {
+                                uBySEfromL[l][steps].Add(unit);
+                            }
+                        }
                     }
                 }
                 //Console.WriteLine("CommunityLib: Distance calculations complete.");
