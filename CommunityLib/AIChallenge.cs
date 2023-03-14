@@ -18,6 +18,7 @@ namespace CommunityLib
             Forbidden,
             RequiresDeath,
             RequiresShadow,
+            RequiresInfiltrated,
             Enshadows,
             PushesShadow,
             RemovesShadow,
@@ -46,6 +47,7 @@ namespace CommunityLib
             ForbidWar,
             ForbidPeace,
             PreferLocal,
+            PreferLocalRandomized,
             Aquaphibious
         }
 
@@ -161,8 +163,12 @@ namespace CommunityLib
 
         public bool checkChallengeIsValid(Challenge challenge, UA ua, Location location = null)
         {
+            // Test Message
+            Console.WriteLine("CommunityLib: Checking validity of " + challenge.getName() + " at " + location.getName() + " for " + ua.getName() + " of social group " + ua.society.getName());
+
             if (challenge.GetType() != challengeType)
             {
+                Console.WriteLine("ERROR:: Challenge is not of Type " + challengeType);
                 return false;
             }
 
@@ -170,6 +176,7 @@ namespace CommunityLib
             {
                 if (location == null)
                 {
+                    Console.WriteLine("ERROR:: Challenge is ritual and location is null");
                     return false;
                 }
             }
@@ -178,11 +185,15 @@ namespace CommunityLib
                 location = challenge.location;
             }
 
-            // Test Message
-            // Console.WriteLine("CommunityLib: AgentAI checking validity for challenge " + challenge.getName() + " at " + location.getName() + " for " + ua.getName() + " of social group " + ua.society.getName());
-
-            Location[] pathTo = ua.location.map.getPathTo(ua.location, location, ua, safeMove);
-            if (pathTo == null || pathTo.Length < 2)
+            if (location != ua.location)
+            {
+                Location[] pathTo = ua.location.map.getPathTo(ua.location, location, ua, safeMove);
+                if (pathTo == null || pathTo.Length < 2)
+                {
+                    return false;
+                }
+            }
+            else if (safeMove && (location.soc?.hostileTo(ua) ?? false))
             {
                 return false;
             }
@@ -215,7 +226,8 @@ namespace CommunityLib
             }
 
             // Test Message
-            Console.WriteLine("CommunityLib: " + challenge.getName() + " at " + location.getName() + " is valid for " + ua.getName() + " of social group " + ua.society.getName());
+            Console.WriteLine("CommunityLib: Valid");
+            //Console.WriteLine("CommunityLib: " + challenge.getName() + " at " + location.getName() + " is valid for " + ua.getName() + " of social group " + ua.society.getName());
             return true;
         }
 
@@ -250,6 +262,12 @@ namespace CommunityLib
                         break;
                     case ChallengeTags.RequiresShadow:
                         if (location.getShadow() < 0.05)
+                        {
+                            return false;
+                        }
+                        break;
+                    case ChallengeTags.RequiresInfiltrated:
+                        if (location.settlement?.infiltration < 1.0)
                         {
                             return false;
                         }
@@ -290,14 +308,25 @@ namespace CommunityLib
                         foreach (Location loc in neighbouringLocations)
                         {
                             settlement = loc.settlement;
-                            if (settlement!= null)
+                            if (settlement == null && challenge is Ch_WellOfShadows)
                             {
-                                if (settlement.shadowPolicy == Settlement.shadowResponse.DENY)
+                                continue;
+                            }
+                            else
+                            {
+                                if(settlement.shadowPolicy == Settlement.shadowResponse.DENY)
                                 {
                                     continue;
                                 }
                                 SettlementHuman settlementHuman = settlement as SettlementHuman;
-                                if (settlementHuman?.ophanimTakeOver ?? false)
+                                if (settlementHuman == null)
+                                {
+                                    if (challenge is Ch_WellOfShadows)
+                                    {
+                                        continue;
+                                    }
+                                }
+                                else if (settlementHuman.ophanimTakeOver)
                                 {
                                     continue;
                                 }
@@ -417,6 +446,15 @@ namespace CommunityLib
                             return false;
                         }
                         break;
+                    case ChallengeTags.HealGood:
+                        foreach (int tagIndex in ua.getPositiveTags())
+                        {
+                            if (tagIndex == Tags.UNDEAD || tagIndex == Tags.ORC)
+                            {
+                                return false;
+                            }
+                        }
+                        break;
                     case ChallengeTags.RequiresSociety:
                         if (ua.location.soc == null)
                         {
@@ -478,10 +516,10 @@ namespace CommunityLib
         public double checkChallengeUtility(Challenge challenge, UA ua, List<ReasonMsg> reasonMsgs = null, Location location = null)
         {
             // Reome after testing.
-            /*if (reasonMsgs == null)
+            if (reasonMsgs == null)
             {
                 reasonMsgs = new List<ReasonMsg>();
-            }*/
+            }
             //
 
             double result = 0.0;
@@ -505,17 +543,27 @@ namespace CommunityLib
                 location = challenge.location;
             }
 
-            Location[] pathTo = ua.location.map.getPathTo(ua.location, location, ua, safeMove);
-            if (pathTo == null || pathTo.Length < 2)
+            if (location != ua.location)
             {
-                if (safeMove)
+                Location[] pathTo = ua.location.map.getPathTo(ua.location, location, ua, safeMove);
+                if (pathTo == null || pathTo.Length < 2)
                 {
-                    reasonMsgs?.Add(new ReasonMsg("Army Blocking Me", -125.0));
+                    if (safeMove)
+                    {
+                        reasonMsgs?.Add(new ReasonMsg("Army Blocking Me", -125.0));
+                        result -= 125;
+                    }
+                    else
+                    {
+                        reasonMsgs?.Add(new ReasonMsg("ERROR: Cannot find path to challenge", -10000.0));
+                        result -= 10000.0;
+                    }
                 }
-                else
-                {
-                    reasonMsgs?.Add(new ReasonMsg("ERROR: Cannot find path to challenge", -10000.0));
-                }
+            }
+            else if (safeMove && location.soc != null && location.soc.hostileTo(ua))
+            {
+                reasonMsgs?.Add(new ReasonMsg("Army Blocking Me", -125.0));
+                result -= 125;
             }
 
             result += utilityTags(challenge, ua, location, reasonMsgs);
@@ -529,15 +577,15 @@ namespace CommunityLib
             }
 
             // Test Message
-            /*Console.WriteLine("CommunityLib: AgentAI getting Utility for challenge " + challenge.getName() + " at " + location.getName() + " on behalf of " + ua.getName() + " of social group " + ua.society.getName());
+            Console.WriteLine("CommunityLib: AgentAI getting Utility for challenge " + challenge.getName() + " at " + location.getName() + " on behalf of " + ua.getName() + " of social group " + ua.society.getName());
             if (reasonMsgs != null)
             {
                 foreach (ReasonMsg reasonMsg in reasonMsgs)
                 {
                     Console.WriteLine(reasonMsg.msg + ": " + reasonMsg.value);
                 }
-                Console.WriteLine("CommunityLib: Final Utility: " + result);
-            }*/
+                Console.WriteLine("Utility: " + result);
+            }
             
             return result;
         }
@@ -635,14 +683,25 @@ namespace CommunityLib
                             foreach (Location loc in location.getNeighbours())
                             {
                                 settlement = loc.settlement;
-                                if (settlement != null)
+                                if (settlement == null && challenge is Ch_WellOfShadows)
+                                {
+                                    continue;
+                                }
+                                else
                                 {
                                     if (settlement.shadowPolicy == Settlement.shadowResponse.DENY)
                                     {
                                         continue;
                                     }
                                     SettlementHuman settlementHuman = settlement as SettlementHuman;
-                                    if (settlementHuman?.ophanimTakeOver ?? false)
+                                    if (settlementHuman == null)
+                                    {
+                                        if (challenge is Ch_WellOfShadows)
+                                        {
+                                            continue;
+                                        }
+                                    }
+                                    else if (settlementHuman.ophanimTakeOver)
                                     {
                                         continue;
                                     }
@@ -824,7 +883,6 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.RecruitsMinion:
-                        val = 0.0;
                         Ch_RecruitMinion recruitMinion = challenge as Ch_RecruitMinion;
                         Ch_RecruitOgre recruitOgre = challenge as Ch_RecruitOgre;
                         if (recruitMinion != null)
@@ -844,11 +902,11 @@ namespace CommunityLib
                                     {
                                         double dismissalCost = -recruitMinion.getMinionUtility(ua, ua.minions[i]);
                                         reasonMsgs?.Add(new ReasonMsg("Would have to dismiss " + ua.minions[i].getName(), dismissalCost));
-                                        val += dismissalCost;
+                                        result += dismissalCost;
                                     }
                                 }
                             }
-                            val += recruitMinion.getMinionUtility(ua, recruitMinion.exemplar);
+                            val = recruitMinion.getMinionUtility(ua, recruitMinion.exemplar);
                             reasonMsgs?.Add(new ReasonMsg("Would gain " + recruitMinion.exemplar.getName(), val));
                             result += val;
                         }
@@ -867,13 +925,13 @@ namespace CommunityLib
                                 {
                                     if (ua.minions[i] != null)
                                     {
-                                        double dismissalCost = -(ua.minions[i].getCommandCost() * ua.map.param.utility_UA_recruitPerPoint) + recruitOgre.getPersonaUtilityTowardsMinion(ua, ua.minions[i]);
+                                        double dismissalCost = -(ua.minions[i].getCommandCost() * ua.map.param.utility_UA_recruitPerPoint + recruitOgre.getPersonaUtilityTowardsMinion(ua, ua.minions[i]));
                                         reasonMsgs?.Add(new ReasonMsg("Would have to dismiss " + ua.minions[i].getName(), dismissalCost));
-                                        val += dismissalCost;
+                                        result += dismissalCost;
                                     }
                                 }
                             }
-                            val+= (recruitOgre.exemplar.getCommandCost() * ua.map.param.utility_UA_recruitPerPoint) + recruitOgre.getPersonaUtilityTowardsMinion(ua, recruitOgre.exemplar);
+                            val = (recruitOgre.exemplar.getCommandCost() * ua.map.param.utility_UA_recruitPerPoint) + recruitOgre.getPersonaUtilityTowardsMinion(ua, recruitOgre.exemplar);
                             reasonMsgs?.Add(new ReasonMsg("Would gain " + recruitMinion.exemplar.getName(), val));
                             result += val;
                         }
@@ -1254,7 +1312,7 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.PreferLocal:
-                        int dist = ua.map.getStepDist(ua.location, location);
+                        double dist = ua.map.getStepDist(ua.location, location);
                         if (dist == 0)
                         {
                             val = 20;
@@ -1263,6 +1321,13 @@ namespace CommunityLib
                         {
                             val = dist * -10;
                         }
+                        reasonMsgs?.Add(new ReasonMsg("Distance", val));
+                        result += val;
+                        break;
+                    case ChallengeTags.PreferLocalRandomized:
+                        dist = ua.map.getStepDist(ua.location, location);
+                        dist -= 1 + Eleven.random.Next(2) + Eleven.random.Next(2);
+                        val = dist * -10;
                         reasonMsgs?.Add(new ReasonMsg("Distance", val));
                         result += val;
                         break;

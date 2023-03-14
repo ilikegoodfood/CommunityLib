@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using static Assets.Code.Unit;
 
 namespace CommunityLib
 {
@@ -94,7 +93,7 @@ namespace CommunityLib
         private double delegate_Utility_Rt_DeepOneReproduce(Challenge challenge, UA ua, Location location, List<ReasonMsg> reasonMsgs)
         {
             double result = 100.0;
-            reasonMsgs.Add(new ReasonMsg("Base", result));
+            reasonMsgs?.Add(new ReasonMsg("Base", result));
 
             return result;
         }
@@ -142,7 +141,7 @@ namespace CommunityLib
             Pr_DeepOneCult cult = (challenge as Ch_ConcealDeepOnes)?.deepOnes;
             if (cult?.profile > 25.0)
             {
-                result = (cult.menace) * 5;
+                result = (cult.profile) * 5;
                 reasonMsgs?.Add(new ReasonMsg("Potential Profile Reduction", result));
             }
 
@@ -265,19 +264,23 @@ namespace CommunityLib
 
         private void populateVampire()
         {
-            AIChallenge challenge = new AIChallenge(typeof(Rt_Feed), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.PreferLocal });
+            AIChallenge challenge = new AIChallenge(typeof(Rt_Feed), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.PreferLocalRandomized });
             challenge.delegates_ValidFor.Add(delegate_ValidFor_Rt_Feed);
             challenge.delegates_Utility.Add(delegate_Utility_Rt_Feed);
             aiChallenges_Vampire.Add(challenge);
 
-            AIChallenge challenge1 = new AIChallenge(typeof(Mg_DeathsShadow), 0.0, null);
+            AIChallenge challenge1 = new AIChallenge(typeof(Mg_DeathsShadow), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.PreferLocalRandomized });
             challenge1.delegates_ValidFor.Add(delegate_ValidFor_Mg_DeathsShadow);
             challenge1.delegates_Utility.Add(delegate_Utility_Mg_DeathsShadow);
             aiChallenges_Vampire.Add(challenge1);
 
-            aiChallenges_Vampire.Add(new AIChallenge(typeof(Ch_WellOfShadows), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.BaseValid, AIChallenge.ChallengeTags.PushesShadow, AIChallenge.ChallengeTags.RequiresSociety, AIChallenge.ChallengeTags.PreferLocal }));
-            aiChallenges_Vampire.Add(new AIChallenge(typeof(Ch_Rest), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.HealGood, AIChallenge.ChallengeTags.PreferLocal }));
-            aiChallenges_Vampire.Add(new AIChallenge(typeof(Ch_Rest_InOrcCamp), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.HealOrc, AIChallenge.ChallengeTags.PreferLocal }));
+            AIChallenge Challenge2 = new AIChallenge(typeof(Ch_Desecrate), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.BaseValid, AIChallenge.ChallengeTags.BaseValidFor, AIChallenge.ChallengeTags.RequiresInfiltrated, AIChallenge.ChallengeTags.PreferLocalRandomized });
+            Challenge2.delegates_Utility.Add(delegate_Utility_Ch_Desecrate);
+            aiChallenges_Vampire.Add(Challenge2);
+
+            aiChallenges_Vampire.Add(new AIChallenge(typeof(Ch_Enshadow), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.Enshadows, AIChallenge.ChallengeTags.RequiresInfiltrated, AIChallenge.ChallengeTags.PreferLocalRandomized }));
+            aiChallenges_Vampire.Add(new AIChallenge(typeof(Ch_WellOfShadows), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.BaseValid, AIChallenge.ChallengeTags.PushesShadow, AIChallenge.ChallengeTags.RequiresSociety, AIChallenge.ChallengeTags.PreferLocalRandomized }));
+            aiChallenges_Vampire.Add(new AIChallenge(typeof(Ch_Rest_InOrcCamp), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.HealOrc, AIChallenge.ChallengeTags.PreferLocalRandomized }));
         }
 
         private bool delegate_ValidFor_Rt_Feed(Challenge challenge, UA ua, Location location)
@@ -310,7 +313,21 @@ namespace CommunityLib
 
         private double delegate_Utility_Rt_Feed(Challenge challenge, UA ua, Location location, List<ReasonMsg> reasonMsgs)
         {
-            return challenge.getUtility(ua, reasonMsgs);
+            UAEN_Vampire vampire = ua as UAEN_Vampire;
+            double result = 0.0;
+
+            if (vampire != null)
+            {
+                double val = vampire.call.strength;
+                reasonMsgs?.Add(new ReasonMsg("Strength of the Hunger", val));
+                result += val;
+
+                val = -((1.0 - vampire.person.shadow) * vampire.map.param.mg_theHungerNonShadowResistance);
+                reasonMsgs?.Add(new ReasonMsg("Light in Soul", val));
+                result += val;
+            }
+
+            return result;
         }
 
         private bool delegate_ValidFor_Mg_DeathsShadow(Challenge challenge, UA ua, Location location)
@@ -339,17 +356,32 @@ namespace CommunityLib
 
         private double delegate_Utility_Mg_DeathsShadow(Challenge challenge, UA ua, Location location, List<ReasonMsg> reasonMsgs)
         {
-            double result = map.getStepDist(ua.location, location) + 2.5;
-            result *= 1.0 + (Eleven.random.NextDouble() + Eleven.random.NextDouble());
+            double result = 0;
+            double val;
 
             Pr_Death death = location.properties.OfType<Pr_Death>().FirstOrDefault();
-            if (death == null)
+            if (death != null && death.charge >= map.param.mg_deathsShadowDeathModifierReq)
             {
-                reasonMsgs.Add(new ReasonMsg("Requires Death", -1000.0));
+                val = death.charge;
+                val *= Math.Min(5.0, Math.Max(0.5, 5 / (2 * map.getStepDist(ua.location, location) + 1)));
+
+                reasonMsgs?.Add(new ReasonMsg("Nearby Death", val));
+                result += val;
+            }
+            else
+            { 
+                reasonMsgs?.Add(new ReasonMsg("Requires " + map.param.mg_deathsShadowDeathModifierReq + " Death", -1000.0));
                 return -1000;
             }
 
-            result /= Math.Min(5.0, death.charge / 5);
+            return result;
+        }
+
+        private double delegate_Utility_Ch_Desecrate(Challenge challenge, UA ua, Location location, List<ReasonMsg> reasonMsgs)
+        {
+            double result = 150.0;
+
+            reasonMsgs?.Add(new ReasonMsg("Base", result));
 
             return result;
         }

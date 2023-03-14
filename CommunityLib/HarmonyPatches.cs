@@ -44,7 +44,7 @@ namespace CommunityLib
 
         private static void Patching()
         {
-            Harmony.DEBUG = false;
+            Harmony.DEBUG = true;
             Harmony harmony = new Harmony("ILikeGoodFood.SOFG.CommunityLib");
 
             if (Harmony.HasAnyPatches(harmony.Id))
@@ -84,8 +84,10 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getAttackUtility)), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix))); // , postfix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Postfix))
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getBodyguardUtility)), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getDisruptUtility)), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)));
-            // CH_Rest_InOrcCamp
+            // Ch_Rest_InOrcCamp
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Rest_InOrcCamp), nameof(Ch_Rest_InOrcCamp.complete), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Ch_Rest_InOrcCamp_complete_Postfix)));
+            // Rt_DeepOneReproduce
+            harmony.Patch(original: AccessTools.Constructor(typeof(Rt_DeepOneReproduce), new Type[] { typeof(Location), typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(ctor_Rt_DeepOneReproduce_Postfix)));
 
             // Template Patch
             // harmony.Patch(original: AccessTools.Method(typeof(), nameof(), new Type[] { typeof() }), postfix: new HarmonyMethod(patchType, nameof()));
@@ -954,7 +956,7 @@ namespace CommunityLib
                 return (int)AccessTools.DeclaredMethod(order.GetType(), "computeInfluenceHuman", new Type[] { typeof(List<ReasonMsg>) }).Invoke(order, new object[] { msgs });
             }
 
-            return order.computeInfluenceDark(msgs);
+            return order.computeInfluenceHuman(msgs);
         }
 
         private static string PopUpHolyOrder_setTo_TranspilerBody_DisplayStats(HolyOrder order)
@@ -1075,27 +1077,14 @@ namespace CommunityLib
             return true;
         }
 
-        /*private static double UAEN_UnitInteraction_Postfix(double result, UA __instance)
-        {
-            switch (__instance)
-            {
-                case UAEN_DeepOne _:
-                    return double.MinValue;
-                case UAEN_Ghast _:
-                    return double.MinValue;
-                case UAEN_OrcUpstart _:
-                    return double.MinValue;
-                case UAEN_Vampire _:
-                    return double.MinValue;
-                default:
-                    break;
-            }
-            return result;
-        }*/
-
         private static void Ch_Rest_InOrcCamp_complete_Postfix(UA u)
         {
             u.challengesSinceRest = 0;
+        }
+
+        private static void ctor_Rt_DeepOneReproduce_Postfix(Rt_DeepOneReproduce __instance)
+        {
+            __instance.getPositiveTags().AddItem(Tags.DEEPONES);
         }
 
         private static void Template_TranspilerBody()

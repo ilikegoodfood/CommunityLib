@@ -14,7 +14,7 @@ namespace CommunityLib
             
         }
 
-        public override bool interceptAgentAI(UA ua, List<AIChallenge> aiChallenges, List<AIChallenge> aiRituals, bool respectChallengeVisibility = false, bool respectUnitVisibility = false, bool respectDanger = true, bool valueTimeCost = false)
+        public override bool interceptAgentAI(UA ua, List<AIChallenge> aiChallenges, List<AIChallenge> aiRituals, AgentAI.InputParams inputParamse)
         {
             switch (ua)
             {
@@ -33,39 +33,58 @@ namespace CommunityLib
         {
             if (deepOne == null)
             {
+                //Console.WriteLine("ERROR: DeepOne is not DeepOne");
                 return false;
             }
 
             if (deepOne.moveType == MoveType.NORMAL)
             {
+                //Console.WriteLine("CommunityLib: MoveType is Normal");
                 if (deepOne.location.isOcean)
                 {
+                    //Console.WriteLine("CommunityLib: DeepOne is at ocean location");
                     deepOne.moveType = MoveType.AQUAPHIBIOUS;
-                    return false;
+                    return true;
                 }
 
                 Location nearestOceanLocation = null;
-                List<Location>[] array;
-                if (ModCore.modCore.GetCache().oceanLocationsByStepsExclusiveFromLocation.TryGetValue(deepOne.location, out array) && array != null)
+                List<Location> nearbyOceanLocations = new List<Location>();
+                int distance = 10000;
+                foreach(Location loc in map.locations)
                 {
-                    List<Location> nearbyOceanLocations;
-                    for (int i = 1; i < array.Length; i++)
+                    if (loc.isOcean)
                     {
-                        nearbyOceanLocations = array[i];
-                        if (nearbyOceanLocations != null && nearbyOceanLocations.Count > 0)
+                        int stepDistance = map.getStepDist(deepOne.location, loc);
+                        if (stepDistance < distance)
                         {
-                            nearestOceanLocation = nearbyOceanLocations[Eleven.random.Next(nearbyOceanLocations.Count)];
-                            break;
+                            nearbyOceanLocations.Clear();
+                            nearbyOceanLocations.Add(loc);
+                            distance = stepDistance;
+                        }
+                        else if (stepDistance == distance)
+                        {
+                            nearbyOceanLocations.Add(loc);
                         }
                     }
                 }
 
+                if (nearbyOceanLocations.Count == 1)
+                {
+                    nearestOceanLocation = nearbyOceanLocations[0];
+                }
+                else if (nearbyOceanLocations.Count > 1)
+                {
+                    nearestOceanLocation = nearbyOceanLocations[Eleven.random.Next(nearbyOceanLocations.Count)];
+                }
+
                 if (nearestOceanLocation != null)
                 {
+                    Console.WriteLine("CommunityLib: Going to nearest ocean location");
                     deepOne.task = new Task_GoToLocation(nearestOceanLocation);
                 }
                 else
                 {
+                    Console.WriteLine("CommunityLib: Unable to reach the ocean.");
                     deepOne.die(map, "Unable to reach the ocean");
                 }
 
