@@ -24,7 +24,7 @@ namespace CommunityLib
 
             public void setDefaults()
             {
-                respectChallengeAlignment = false;
+                respectChallengeVisibility = false;
                 respectUnitVisibility = false;
                 respectDanger = true;
                 respectChallengeAlignment = false;

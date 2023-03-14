@@ -99,6 +99,10 @@ namespace CommunityLib
                     }
                     if (unit.location == target)
                     {
+                        if (unit.isCommandable())
+                        {
+                            unit.map.addUnifiedMessage(unit, null, "Unit Arrives", unit.getName() + " has reached " + unit.location.getName(true) + " and begun challenge " + challenge.getName(), UnifiedMessage.messageType.UNIT_ARRIVES, false);
+                        }
                         unit.task = new Task_PerformChallenge(challenge);
                         challenge.claimedBy = unit;
                         break;

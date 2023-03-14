@@ -61,13 +61,13 @@ namespace CommunityLib
 
         public double profile;
 
-        public List<Func<Challenge, UA, Location, double>> delegates_Profile;
+        public List<Func<Challenge, UA, Location, double, double>> delegates_Profile;
 
         public List<Func<Challenge, Location, bool>> delegates_Valid;
 
         public List<Func<Challenge, UA, Location, bool>> delegates_ValidFor;
 
-        public List<Func<Challenge, UA, Location, List<ReasonMsg>, double>> delegates_Utility;
+        public List<Func<Challenge, UA, Location, double, List<ReasonMsg>, double>> delegates_Utility;
 
         /// <summary>
         /// The constructor for AIChallnges. Delegates must be assigned after initialization.
@@ -95,10 +95,10 @@ namespace CommunityLib
             }
             this.tags = tags;
 
-            delegates_Profile = new List<Func<Challenge, UA, Location, double>>();
+            delegates_Profile = new List<Func<Challenge, UA, Location, double, double>>();
             delegates_Valid = new List<Func<Challenge, Location, bool>>();
             delegates_ValidFor = new List<Func<Challenge, UA, Location, bool>>();
-            delegates_Utility = new List<Func<Challenge, UA, Location, List<ReasonMsg>, double>>();
+            delegates_Utility = new List<Func<Challenge, UA, Location, double, List<ReasonMsg>, double>>();
 
             isRitual = challengeType.IsSubclassOf(typeof(Ritual));
         }
@@ -124,9 +124,9 @@ namespace CommunityLib
 
             if (delegates_Profile != null)
             {
-                foreach (Func<Challenge, UA, Location, double> delegate_Profile in delegates_Profile)
+                foreach (Func<Challenge, UA, Location, double, double> delegate_Profile in delegates_Profile)
                 {
-                    profile += delegate_Profile(challenge, ua, location);
+                    profile = delegate_Profile(challenge, ua, location, profile);
                 }
             }
 
@@ -570,9 +570,9 @@ namespace CommunityLib
 
             if (delegates_Utility != null)
             {
-                foreach (Func<Challenge, UA, Location, List<ReasonMsg>, double> delegate_Utility in delegates_Utility)
+                foreach (Func<Challenge, UA, Location, double, List<ReasonMsg>, double> delegate_Utility in delegates_Utility)
                 {
-                    result += delegate_Utility(challenge, ua, location, reasonMsgs);
+                    result = delegate_Utility(challenge, ua, location, result, reasonMsgs);
                 }
             }
 

@@ -90,12 +90,13 @@ namespace CommunityLib
             return false;
         }
 
-        private double delegate_Utility_Rt_DeepOneReproduce(Challenge challenge, UA ua, Location location, List<ReasonMsg> reasonMsgs)
+        private double delegate_Utility_Rt_DeepOneReproduce(Challenge challenge, UA ua, Location location, double utility, List<ReasonMsg> reasonMsgs)
         {
-            double result = 100.0;
-            reasonMsgs?.Add(new ReasonMsg("Base", result));
+            double val = 100.0;
+            reasonMsgs?.Add(new ReasonMsg("Base", val));
+            utility += val;
 
-            return result;
+            return utility;
         }
 
         private bool delegate_Valid_Ch_DeepOnesHumanAppearance(Challenge challenge, Location location)
@@ -109,18 +110,17 @@ namespace CommunityLib
             return false;
         }
 
-        private double delegate_Utility_Ch_DeepOnesHumanAppearance(Challenge challenge, UA ua, Location location, List<ReasonMsg> reasonMsgs)
+        private double delegate_Utility_Ch_DeepOnesHumanAppearance(Challenge challenge, UA ua, Location location, double utility, List<ReasonMsg> reasonMsgs)
         {
-            double result = 0.0;
-
             Pr_DeepOneCult cult = (challenge as Ch_DeepOnesHumanAppearance)?.deepOnes;
             if (cult?.menace > 25.0)
             {
-                result = (cult.menace) * 5;
-                reasonMsgs?.Add(new ReasonMsg("Potential Menace Reduction", result));
+                double val = (cult.menace) * 5;
+                reasonMsgs?.Add(new ReasonMsg("Potential Menace Reduction", val));
+                utility += val;
             }
 
-            return result;
+            return utility;
         }
 
         private bool delegate_Valid_Ch_ConcealDeepOnes(Challenge challenge, Location location)
@@ -134,18 +134,17 @@ namespace CommunityLib
             return false;
         }
 
-        private double delegate_Utility_Ch_ConcealDeepOnes(Challenge challenge, UA ua, Location location, List<ReasonMsg> reasonMsgs)
+        private double delegate_Utility_Ch_ConcealDeepOnes(Challenge challenge, UA ua, Location location,  double utility, List<ReasonMsg> reasonMsgs)
         {
-            double result = 0.0;
-
             Pr_DeepOneCult cult = (challenge as Ch_ConcealDeepOnes)?.deepOnes;
             if (cult?.profile > 25.0)
             {
-                result = (cult.profile) * 5;
-                reasonMsgs?.Add(new ReasonMsg("Potential Profile Reduction", result));
+                double val = (cult.profile) * 5;
+                reasonMsgs?.Add(new ReasonMsg("Potential Profile Reduction", val));
+                utility += val;
             }
 
-            return result;
+            return utility;
         }
 
         private void populateGhast()
@@ -200,13 +199,13 @@ namespace CommunityLib
             return false;
         }
 
-        private double delegate_Utility_Rt_GhastEnshadow(Challenge challenge, UA ua, Location location, List<ReasonMsg> reasonMsgs)
+        private double delegate_Utility_Rt_GhastEnshadow(Challenge challenge, UA ua, Location location, double utility, List<ReasonMsg> reasonMsgs)
         {
-            double result = 100.0;
+            double val = 100.0;
+            reasonMsgs?.Add(new ReasonMsg("Base", val));
+            utility += val;
 
-            reasonMsgs?.Add(new ReasonMsg("Base", result));
-
-            return result;
+            return utility;
         }
 
         private void populateOrcUpstart()
@@ -222,10 +221,8 @@ namespace CommunityLib
             aiChallenges_OrcUpstart.Add(new AIChallenge(typeof(Ch_Rest_InOrcCamp), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.RequiresOwnSociety, AIChallenge.ChallengeTags.HealOrc, AIChallenge.ChallengeTags.Rest }));
         }
 
-        private double delegate_Utility_Ch_OrcRaiding(Challenge challenge, UA ua, Location location, List<ReasonMsg> reasonMsgs)
+        private double delegate_Utility_Ch_OrcRaiding(Challenge challenge, UA ua, Location location, double utility, List<ReasonMsg> reasonMsgs)
         {
-            double result = 0.0;
-
             double potentialDevastation = 0.0;
             int neighbourCount = 0;
             foreach (Location loc in location.getNeighbours())
@@ -244,12 +241,12 @@ namespace CommunityLib
 
             if (neighbourCount > 0)
             {
-                result = potentialDevastation / neighbourCount;
+                double val = potentialDevastation / neighbourCount;
+                reasonMsgs?.Add(new ReasonMsg("Potential Devastation", val));
+                utility += val;
             }
 
-            reasonMsgs?.Add(new ReasonMsg("Potential Devastation", result));
-
-            return result;
+            return utility;
         }
 
         private bool delegate_Valid_Ch_RecruitMinion(Challenge challenge, Location location)
@@ -311,23 +308,22 @@ namespace CommunityLib
             return false;
         }
 
-        private double delegate_Utility_Rt_Feed(Challenge challenge, UA ua, Location location, List<ReasonMsg> reasonMsgs)
+        private double delegate_Utility_Rt_Feed(Challenge challenge, UA ua, Location location, double utility, List<ReasonMsg> reasonMsgs)
         {
             UAEN_Vampire vampire = ua as UAEN_Vampire;
-            double result = 0.0;
 
             if (vampire != null)
             {
                 double val = vampire.call.strength;
                 reasonMsgs?.Add(new ReasonMsg("Strength of the Hunger", val));
-                result += val;
+                utility += val;
 
                 val = -((1.0 - vampire.person.shadow) * vampire.map.param.mg_theHungerNonShadowResistance);
                 reasonMsgs?.Add(new ReasonMsg("Light in Soul", val));
-                result += val;
+                utility += val;
             }
 
-            return result;
+            return utility;
         }
 
         private bool delegate_ValidFor_Mg_DeathsShadow(Challenge challenge, UA ua, Location location)
@@ -354,9 +350,8 @@ namespace CommunityLib
             return true;
         }
 
-        private double delegate_Utility_Mg_DeathsShadow(Challenge challenge, UA ua, Location location, List<ReasonMsg> reasonMsgs)
+        private double delegate_Utility_Mg_DeathsShadow(Challenge challenge, UA ua, Location location, double utility, List<ReasonMsg> reasonMsgs)
         {
-            double result = 0;
             double val;
 
             Pr_Death death = location.properties.OfType<Pr_Death>().FirstOrDefault();
@@ -366,7 +361,7 @@ namespace CommunityLib
                 val *= Math.Min(5.0, Math.Max(0.5, 5 / (2 * map.getStepDist(ua.location, location) + 1)));
 
                 reasonMsgs?.Add(new ReasonMsg("Nearby Death", val));
-                result += val;
+                utility += val;
             }
             else
             { 
@@ -374,16 +369,16 @@ namespace CommunityLib
                 return -1000;
             }
 
-            return result;
+            return utility;
         }
 
-        private double delegate_Utility_Ch_Desecrate(Challenge challenge, UA ua, Location location, List<ReasonMsg> reasonMsgs)
+        private double delegate_Utility_Ch_Desecrate(Challenge challenge, UA ua, Location location, double utility, List<ReasonMsg> reasonMsgs)
         {
-            double result = 150.0;
+            double val = 150.0;
+            reasonMsgs?.Add(new ReasonMsg("Base", val));
+            utility += val;
 
-            reasonMsgs?.Add(new ReasonMsg("Base", result));
-
-            return result;
+            return utility;
         }
     }
 }
