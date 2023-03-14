@@ -226,5 +226,49 @@ namespace CommunityLib
         {
             return;
         }
+
+        /// <summary>
+        /// This hook fires when the Community Library's Agent AI beings processing an agent. It recieves the agent (ua), a list of AIChalleges, excluding rituals, (aiChallenges), a list of AIChallenges that are rituals (aiRituals),  and the boolean control values within an 'AgentAI.InputParams' struct (inputParams.
+        /// If this hook returns true, the rest of the AI process will not happen.
+        /// <para>All instances of this hook will run whenever an AgentAI runs, even those after one which has returned true.</para>
+        /// </summary>
+        /// <param name="ua"></param>
+        /// <param name="aiChallenges"></param>
+        /// <param name="aiRituals"></param>
+        /// <param name="respectChallengeVisibility"></param>
+        /// <param name="respectUnitVisibility"></param>
+        /// <param name="respectDanger"></param>
+        /// <param name="valueTimeCost"></param>
+        /// <returns></returns>
+        public virtual bool interceptAgentAI(UA ua, List<AIChallenge> aiChallenges, List<AIChallenge> aiRituals, AgentAI.InputParams inputParams)
+        {
+            return false;
+        }
+
+        /// <summary>
+        /// This hook fires when the Community Library's Agent AI has finished processing an agent. It recieves the agent (ua), a list of all valid challeges, excluding rituals, (challenges), a dictionary of all locations where one or more rituals is valid, and the rituals (ritualData), and the boolean control values within an 'AgentAI.InputParams' struct (inputParams.).
+        /// </summary>
+        /// <param name="ua"></param>
+        /// <param name="aiChallenges"></param>
+        /// <param name="aiRituals"></param>
+        /// <param name="respectChallengeVisibility"></param>
+        /// <param name="respectUnitVisibility"></param>
+        /// <param name="respectDanger"></param>
+        /// <param name="valueTimeCost"></param>
+        public virtual void onAgentAI_EndOfProcess(UA ua, List<Challenge> challenges, Dictionary<Location, List<Challenge>> ritualData, AgentAI.InputParams inputParams)
+        {
+            return;
+        }
+
+        /// <summary>
+        /// This hook fires when an agent gets the valid list of traits that they can choose from when levelling up, but before they have chosen one. It receives the agent (ua), the list of traits (availableTraits) and whether it is getting the starting traits for specific agent types (isStartingTraits)
+        /// </summary>
+        /// <param name="ua"></param>
+        /// <param name="availableTraits"></param>
+        /// <param name="startingTraits"></param>
+        public virtual void onAgentLevelup_GetTraits(UA ua, List<Trait> availableTraits, bool startingTraits)
+        {
+            return;
+        }
     }
 }

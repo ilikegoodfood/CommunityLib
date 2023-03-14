@@ -2,595 +2,388 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static Assets.Code.Unit;
-using static SortedDictionaryProvider;
-using static UnityEngine.GraphicsBuffer;
 
 namespace CommunityLib
 {
     public class UAENOverrideAI
     {
-        public bool overrideAI_DeepOne = true;
+        public List<AIChallenge> aiChallenges_DeepOne;
 
-        public bool overrideAI_Ghast = true;
+        public List<AIChallenge> aiChallenges_Ghast;
 
-        public bool overrideAI_OrcUpstart = true;
+        public List<AIChallenge> aiChallenges_OrcUpstart;
 
-        public bool overrideAI_Vampire = true;
-
-        public double deepOneCultChance = 0.5;
-
-        public double ghastMoveChance = 0.5;
-
-        public List<Type> customChallenges_DeepOne = new List<Type>();
-
-        public List<Type> customChallenges_Ghast = new List<Type>();
-
-        public List<Type> customChallenges_OrcUpstart = new List<Type>();
-
-        public List<Type> customChallenges_Vampire = new List<Type>();
-
-        public List<Type> customChallenges_Vampire_Death = new List<Type>();
+        public List<AIChallenge> aiChallenges_Vampire;
 
         private Map map;
 
-        private Cache cache;
+        private ModCore mod;
 
-        public UAENOverrideAI(Cache cache, Map map)
+        public UAENOverrideAI(ModCore core, Map map)
         {
-            this.cache = cache;
+            mod = core;
             this.map = map;
+
+            aiChallenges_DeepOne = new List<AIChallenge>();
+            aiChallenges_Ghast = new List<AIChallenge>();
+            aiChallenges_OrcUpstart = new List<AIChallenge>();
+            aiChallenges_Vampire = new List<AIChallenge>();
+
+            populateDeepOne();
+            mod.GetAgentAI().RegisterAgentType(typeof(UAEN_DeepOne));
+            mod.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_DeepOne), aiChallenges_DeepOne);
+
+            populateGhast();
+            mod.GetAgentAI().RegisterAgentType(typeof(UAEN_Ghast));
+            mod.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_Ghast), aiChallenges_Ghast);
+
+            populateOrcUpstart();
+            mod.GetAgentAI().RegisterAgentType(typeof(UAEN_OrcUpstart));
+            mod.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_OrcUpstart), aiChallenges_OrcUpstart);
+
+            populateVampire();
+            mod.GetAgentAI().RegisterAgentType(typeof(UAEN_Vampire));
+            mod.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_Vampire), aiChallenges_Vampire);
         }
 
-        public void OverrideAI_DeepOne(UAEN_DeepOne deepOne)
+        private void populateDeepOne()
         {
-            if (deepOne.moveType == MoveType.NORMAL)
-            {
-                if (deepOne.location.isOcean)
-                {
-                    deepOne.moveType = MoveType.AQUAPHIBIOUS;
-                    return;
-                }
+            AIChallenge challenge = new AIChallenge(typeof(Rt_DeepOneReproduce), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.Aquaphibious }, true);
+            challenge.delegates_Valid.Add(delegate_Valid_Rt_DeepOneReproduce);
+            challenge.delegates_Utility.Add(delegate_Utility_Rt_DeepOneReproduce);
+            aiChallenges_DeepOne.Add(challenge);
 
-                Location nearestOceanLocation = null;
-                List<Location>[] array;
-                if (cache.oceanLocationsByStepsExclusiveFromLocation.TryGetValue(deepOne.location, out array) && array != null)
-                {
-                    List<Location> nearbyOceanLocations;
-                    for (int i = 1; i < array.Length; i++)
-                    {
-                        nearbyOceanLocations = array[i];
-                        if (nearbyOceanLocations != null && nearbyOceanLocations.Count > 0)
-                        {
-                            nearestOceanLocation = nearbyOceanLocations[Eleven.random.Next(nearbyOceanLocations.Count)];
-                            break;
-                        }
-                    }
-                }
+            AIChallenge challenge1 = new AIChallenge(typeof(Ch_DeepOnesHumanAppearance), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.Aquaphibious }, true);
+            challenge1.delegates_Valid.Add(delegate_Valid_Ch_DeepOnesHumanAppearance);
+            challenge1.delegates_Utility.Add(delegate_Utility_Ch_DeepOnesHumanAppearance);
+            aiChallenges_DeepOne.Add(challenge1);
 
-                if (nearestOceanLocation != null)
-                {
-                    deepOne.task = new Task_GoToLocation(nearestOceanLocation);
-                }
-                else
-                {
-                    deepOne.die(map, "Unable to reach the ocean");
-                }
-
-                return;
-            }
-
-            if (deepOne.location.settlement is SettlementHuman)
-            {
-                if ((deepOne.location.soc as Society)?.isOphanimControlled ?? false)
-                {
-                    deepOne.task = null;
-                }
-                else
-                {
-                    bool deepOneCultPresent = false;
-                    foreach (Property property in deepOne.location.properties)
-                    {
-                        Pr_DeepOneCult pr_DeepOneCult = property as Pr_DeepOneCult;
-                        if (pr_DeepOneCult != null)
-                        {
-                            deepOneCultPresent = true;
-                            break;
-                        }
-                    }
-
-                    if (!deepOneCultPresent)
-                    {
-                        deepOne.task = new Task_PerformChallenge(deepOne.rt_reproduce);
-                        return;
-                    }
-                }
-            }
-
-            List<Location> tendCultTargets = new List<Location>();
-            List<Location> jobTargets = new List<Location>();
-            List<SettlementHuman> newCultTargets = new List<SettlementHuman>();
-            foreach (Location coastalLocation in cache.coastalLocations)
-            {
-                if (deepOne.menace >= (double)map.param.ua_armyBlockMenace)
-                {
-                    bool blockedByArmy = false;
-                    foreach (Unit unit in coastalLocation.units)
-                    {
-                        if (unit is UM_HumanArmy)
-                        {
-                            blockedByArmy = true;
-                            break;
-                        }
-                    }
-
-                    if (blockedByArmy)
-                    {
-                        continue;
-                    }
-                }
-
-                bool locationHasCult = false;
-                bool cultNeedsTending = false;
-                foreach (Property property in coastalLocation.properties)
-                {
-                    Pr_DeepOneCult pr_DeepOneCult = property as Pr_DeepOneCult;
-                    if (pr_DeepOneCult != null)
-                    {
-                        if (pr_DeepOneCult.menace > 25.0 && pr_DeepOneCult.fake.claimedBy == null)
-                        {
-                            cultNeedsTending = true;
-                            break;
-                        }
-                        if (pr_DeepOneCult.profile > 25.0 && pr_DeepOneCult.conceal.claimedBy == null)
-                        {
-                            cultNeedsTending = true;
-                            break;
-                        }
-
-                        locationHasCult = true;
-                    }
-                }
-
-                if (cultNeedsTending)
-                {
-                    tendCultTargets.Add(coastalLocation);
-                }
-
-                foreach (Challenge challenge in coastalLocation.GetChallenges())
-                {
-                    if (customChallenges_DeepOne.Contains(challenge.GetType()) && challenge.valid() && challenge.validFor(deepOne) && challenge.claimedBy == null)
-                    {
-                        jobTargets.Add(coastalLocation);
-                        break;
-                    }
-                }
-
-                if (!locationHasCult)
-                {
-                    SettlementHuman settlementHuman = coastalLocation.settlement as SettlementHuman;
-                    if (settlementHuman != null && !((coastalLocation.soc as Society)?.isOphanimControlled ?? false))
-                    {
-                        newCultTargets.Add(settlementHuman);
-                    }
-                }
-            }
-
-            if (tendCultTargets.Count > 0)
-            {
-                Location target = tendCultTargets[Eleven.random.Next(tendCultTargets.Count)];
-                Location[] pathTo = map.getPathTo(deepOne.location, target, deepOne, safeMove: true);
-                if (pathTo != null)
-                {
-                    foreach (Property property in target.properties)
-                    {
-                        Pr_DeepOneCult pr_DeepOneCult = property as Pr_DeepOneCult;
-                        if (pr_DeepOneCult != null)
-                        {
-                            if (pr_DeepOneCult.menace > 25.0 && pr_DeepOneCult.fake.claimedBy == null)
-                            {
-                                pr_DeepOneCult.fake.claimedBy = deepOne;
-                                deepOne.task = new Task_GoToPerformChallenge(pr_DeepOneCult.fake);
-                                return;
-                            }
-                            if (pr_DeepOneCult.profile > 25.0 && pr_DeepOneCult.conceal.claimedBy == null)
-                            {
-                                pr_DeepOneCult.conceal.claimedBy = deepOne;
-                                deepOne.task = new Task_GoToPerformChallenge(pr_DeepOneCult.conceal);
-                                return;
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (jobTargets.Count > 0 && Eleven.random.NextDouble() > deepOneCultChance)
-            {
-                Location target = jobTargets[Eleven.random.Next(jobTargets.Count)];
-                Location[] pathTo = map.getPathTo(deepOne.location, target, deepOne, safeMove: true);
-                if (pathTo != null)
-                {
-                    List<Challenge> validChallenges = new List<Challenge>();
-                    foreach (Challenge challenge in target.GetChallenges())
-                    {
-                        if (customChallenges_DeepOne.Contains(challenge.GetType()) && challenge.valid() && challenge.validFor(deepOne) && challenge.claimedBy == null)
-                        {
-                            validChallenges.Add(challenge);
-                        }
-                    }
-
-                    if (validChallenges.Count > 0)
-                    {
-                        Challenge challenge = validChallenges[Eleven.random.Next(validChallenges.Count)];
-                        challenge.claimedBy = deepOne;
-                        deepOne.task = new Task_GoToPerformChallenge(challenge);
-                        return;
-                    }
-                }
-            }
-
-            if (newCultTargets.Count > 0)
-            {
-                SettlementHuman settlement = newCultTargets[Eleven.random.Next(newCultTargets.Count)];
-                Location[] pathTo = map.getPathTo(deepOne.location, settlement.location, deepOne, safeMove: true);
-                if (pathTo != null)
-                {
-                    deepOne.task = new Task_GoToLocation(settlement.location);
-                    return;
-                }
-            }
+            AIChallenge challenge2 = new AIChallenge(typeof(Ch_ConcealDeepOnes), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.Aquaphibious }, true);
+            challenge2.delegates_Valid.Add(delegate_Valid_Ch_ConcealDeepOnes);
+            challenge2.delegates_Utility.Add(delegate_Utility_Ch_ConcealDeepOnes);
+            aiChallenges_DeepOne.Add(challenge2);
         }
 
-        public void OverrideAI_Ghast(UAEN_Ghast ghast)
+        private bool delegate_Valid_Rt_DeepOneReproduce(Challenge challenge, Location location)
         {
-            SettlementHuman settlementHuman = ghast.location.settlement as SettlementHuman;
+            SettlementHuman settlementHuman = location.settlement as SettlementHuman;
+
+            if ((location.soc as Society)?.isOphanimControlled ?? false)
+            {
+                return false;
+            }
+
             if (settlementHuman != null)
             {
-                Pr_Ward ward = null;
-                foreach (Property property in settlementHuman.location.properties)
+                if (settlementHuman.ophanimTakeOver == true)
                 {
-                    if (property is Pr_Ward)
-                    {
-                        ward = property as Pr_Ward;
-                        break;
-                    }
+                    return false;
                 }
 
-                if (settlementHuman.shadow < 1.0 && (ward == null || ward.charge < 0.66))
+                Pr_DeepOneCult cult = location.properties.OfType<Pr_DeepOneCult>().FirstOrDefault();
+                if (cult == null)
                 {
-                    bool ophanimFaithPresent = false;
-                    foreach (Property property in ghast.location.properties)
-                    {
-                        if (property is Pr_Opha_Faith)
-                        {
-                            ophanimFaithPresent = true;
-                            break;
-                        }
-                    }
-
-                    if (!ophanimFaithPresent)
-                    {
-                        ghast.task = new Task_PerformChallenge(ghast.rt_enshadow);
-                        return;
-                    }
-                }
-
-                List<Challenge> validChallenges = new List<Challenge>();
-                foreach (Challenge challenge in settlementHuman.location.GetChallenges())
-                {
-                    if (customChallenges_Ghast.Contains(challenge.GetType()) && challenge.valid() && challenge.validFor(ghast))
-                    {
-                        validChallenges.Add(challenge);
-                    }
-                }
-
-                if (validChallenges.Count > 0 && Eleven.random.NextDouble() > ghastMoveChance)
-                {
-                    ghast.task = new Task_PerformChallenge(validChallenges[Eleven.random.Next(validChallenges.Count)]);
-                    return;
+                    return true;
                 }
             }
 
-            List<SettlementHuman> targetHumanSettlements = new List<SettlementHuman>();
-            List<Settlement> nearbySettlements = new List<Settlement>();
-            for (int i = 1; i < 125; i++)
-            {
-                if (cache.settlementsByStepsExclusiveFromLocation.ContainsKey(ghast.location) && cache.settlementsByStepsExclusiveFromLocation[ghast.location] != null && cache.settlementsByStepsExclusiveFromLocation[ghast.location][i] != null && cache.settlementsByStepsExclusiveFromLocation[ghast.location][i].Count > 0)
-                {
-                    nearbySettlements = cache.settlementsByStepsExclusiveFromLocation[ghast.location][i];
-                }
-
-                foreach (Settlement nearbySettlement in nearbySettlements)
-                {
-                    SettlementHuman nearbyHumanSettlement = nearbySettlement as SettlementHuman;
-                    if (settlementHuman != null)
-                    {
-                        Pr_Ward ward = null;
-                        foreach (Property property in settlementHuman.location.properties)
-                        {
-                            if (property is Pr_Ward)
-                            {
-                                ward = property as Pr_Ward;
-                                break;
-                            }
-                        }
-                        bool ophanimFaithPresent = false;
-                        foreach (Property property in ghast.location.properties)
-                        {
-                            if (property is Pr_Opha_Faith)
-                            {
-                                ophanimFaithPresent = true;
-                                break;
-                            }
-                        }
-
-                        if (!ophanimFaithPresent && settlementHuman.shadow < 1.0 && (ward == null || ward.charge < 0.66))
-                        {
-                            targetHumanSettlements.Add(settlementHuman);
-                        }
-                    }
-                }
-
-                if (targetHumanSettlements != null && targetHumanSettlements.Count > 0)
-                {
-                    break;
-                }
-            }
-
-            if (targetHumanSettlements.Count > 0)
-            {
-                ghast.task = new Task_GoToLocation(targetHumanSettlements[Eleven.random.Next(targetHumanSettlements.Count)].location);
-            }
+            return false;
         }
 
-        public void OverrideAI_OrcUpstart(UAEN_OrcUpstart upstart)
+        private double delegate_Utility_Rt_DeepOneReproduce(Challenge challenge, UA ua, Location location, List<ReasonMsg> reasonMsgs)
         {
-            //Console.WriteLine("CommunityLib: Running OverrideAI_OrcUpstart.");
-            List<Set_OrcCamp> orcCamps = null;
-            List<Type> validChallengeTypes = new List<Type>() { typeof(Ch_OrcRaiding), typeof(Ch_Rest_InOrcCamp) };
-            List<Challenge> validChallenges = new List<Challenge>();
+            double result = 100.0;
+            reasonMsgs?.Add(new ReasonMsg("Base", result));
 
-            if (cache.settlementsBySocialGroupByType.ContainsKey(upstart.society) && cache.settlementsBySocialGroupByType[upstart.society] != null && cache.settlementsBySocialGroupByType[upstart.society].ContainsKey(typeof(Set_OrcCamp)) && cache.settlementsBySocialGroupByType[upstart.society][typeof(Set_OrcCamp)] != null)
-            {
-                //Console.WriteLine("CommunityLib: Getting orc camps belonging to orc upstart's social group.");
-                orcCamps = cache.settlementsBySocialGroupByType[upstart.society][typeof(Set_OrcCamp)] as List<Set_OrcCamp>;
-            }
-
-            if (upstart.society.isGone() || orcCamps == null || orcCamps.Count == 0)
-            {
-                upstart.die(map, "Died in the wilderness");
-                return;
-            }
-
-            //Console.WriteLine("CommunityLib: Orc camps found.");
-            if (map.worldPanic > map.param.panic_forFundHeroes)
-            {
-                //Console.WriteLine("CommunityLib: World panic high enough to recuit minions.");
-                validChallengeTypes.Add(typeof(Ch_RecruitMinion));
-            }
-            validChallengeTypes.AddRange(customChallenges_OrcUpstart);
-            //Console.WriteLine("CommunityLib: Orc Upstart has " + validChallengeTypes.Count.ToString() + " valid challenge types.");
-
-            Set_OrcCamp orcCamp = orcCamps[Eleven.random.Next(orcCamps.Count)];
-            foreach (Challenge challenge in orcCamp.location.GetChallenges())
-            {
-                //Console.WriteLine("CommunityLib: Checking if challenge of Type " + challenge.GetType().Name + " is of valid type.");
-                if (validChallengeTypes.Contains(challenge.GetType()) && challenge.valid() && challenge.validFor(upstart) && challenge.getUtility(upstart, null) > 0.0)
-                {
-                    //Console.WriteLine("CommunityLib: Valid challenge found: " + challenge.getName() + ".");
-                    validChallenges.Add(challenge);
-                }
-            }
-
-            if (validChallenges.Count > 0)
-            {
-                upstart.task = new Task_GoToPerformChallenge(validChallenges[Eleven.random.Next(validChallenges.Count)]);
-                //Console.WriteLine("CommunityLib: Randomly selected " + (upstart.task as Task_GoToPerformChallenge).challenge.getName() + " challenge from " + validChallenges.Count.ToString() + " valid challenges.");
-            }
+            return result;
         }
 
-        public void OverrideAI_Vampire(UAEN_Vampire vampire)
+        private bool delegate_Valid_Ch_DeepOnesHumanAppearance(Challenge challenge, Location location)
         {
-            //Console.WriteLine("CommunityLib: Running OverrideAI_Vampire.");
-            T_TheHunger call = null;
-            Rt_Feed feed = null;
-
-            //Console.WriteLine("CommunityLib: Getting required traits, rituals, and other variables.");
-            foreach (Trait trait in vampire.person.traits)
+            Pr_DeepOneCult cult = (challenge as Ch_DeepOnesHumanAppearance)?.deepOnes;
+            if (cult?.menace > 25.0)
             {
-                if (trait is T_TheHunger)
-                {
-                    //Console.WriteLine("CommunityLib: Got The Hunger");
-                    call = trait as T_TheHunger;
-                    break;
-                }
+                return true;
             }
 
-            foreach (Ritual ritual in vampire.rituals)
+            return false;
+        }
+
+        private double delegate_Utility_Ch_DeepOnesHumanAppearance(Challenge challenge, UA ua, Location location, List<ReasonMsg> reasonMsgs)
+        {
+            double result = 0.0;
+
+            Pr_DeepOneCult cult = (challenge as Ch_DeepOnesHumanAppearance)?.deepOnes;
+            if (cult?.menace > 25.0)
             {
-                if (ritual is Rt_Feed)
-                {
-                    //Console.WriteLine("CommunityLib: Got Feed");
-                    feed = ritual as Rt_Feed;
-                    break;
-                }
+                result = (cult.menace) * 5;
+                reasonMsgs?.Add(new ReasonMsg("Potential Menace Reduction", result));
             }
 
-            if (call == null || feed == null)
+            return result;
+        }
+
+        private bool delegate_Valid_Ch_ConcealDeepOnes(Challenge challenge, Location location)
+        {
+            Pr_DeepOneCult cult = (challenge as Ch_ConcealDeepOnes)?.deepOnes;
+            if (cult?.profile > 25.0)
             {
-                //Console.WriteLine("CommunityLib: Failed to collect required data.");
-                return;
+                return true;
             }
 
-            if (call.strength >= 50.0)
+            return false;
+        }
+
+        private double delegate_Utility_Ch_ConcealDeepOnes(Challenge challenge, UA ua, Location location, List<ReasonMsg> reasonMsgs)
+        {
+            double result = 0.0;
+
+            Pr_DeepOneCult cult = (challenge as Ch_ConcealDeepOnes)?.deepOnes;
+            if (cult?.profile > 25.0)
             {
-                SettlementHuman humanSettlement = vampire.location.settlement as SettlementHuman;
-                if (humanSettlement != null && humanSettlement.shadow < 0.9 && feed.valid() && feed.validFor(vampire))
+                result = (cult.profile) * 5;
+                reasonMsgs?.Add(new ReasonMsg("Potential Profile Reduction", result));
+            }
+
+            return result;
+        }
+
+        private void populateGhast()
+        {
+            AIChallenge challenge = new AIChallenge(typeof(Rt_GhastEnshadow), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.PreferLocal });
+            challenge.delegates_Valid.Add(delegate_Valid_Rt_GhastEnshadow);
+            challenge.delegates_Utility.Add(delegate_Utility_Rt_GhastEnshadow);
+            aiChallenges_Ghast.Add(challenge);
+        }
+
+        private bool delegate_Valid_Rt_GhastEnshadow(Challenge challenge, Location location)
+        {
+            SettlementHuman settlementHuman = location.settlement as SettlementHuman;
+            if (settlementHuman != null)
+            {
+                if (location.getShadow() >= 1.0)
                 {
-                    vampire.task = new Task_PerformChallenge(feed);
-                    return;
+                    return false;
                 }
 
-                if (call.strength > 100.0)
+                if (settlementHuman.shadowPolicy == Settlement.shadowResponse.DENY)
                 {
-                    List<Settlement> targetSettlements = new List<Settlement>();
-                    List<Settlement> settlements = null;
-                    for (int i = 0; i < 125; i++)
+                    return false;
+                }
+
+                if (settlementHuman.ophanimTakeOver)
+                {
+                    return false;
+                }
+
+                Pr_Opha_Faith faith = location.properties.OfType<Pr_Opha_Faith>().FirstOrDefault();
+                if (faith != null)
+                {
+                    return false;
+                }
+
+                Society society = location.soc as Society;
+                if (society != null && (society.isAlliance && challenge.map.opt_allianceState == 1))
+                {
+                    return false;
+                }
+
+                Pr_Ward ward = location.properties.OfType<Pr_Ward>().FirstOrDefault();
+                if (ward?.charge >= 66)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private double delegate_Utility_Rt_GhastEnshadow(Challenge challenge, UA ua, Location location, List<ReasonMsg> reasonMsgs)
+        {
+            double result = 100.0;
+
+            reasonMsgs?.Add(new ReasonMsg("Base", result));
+
+            return result;
+        }
+
+        private void populateOrcUpstart()
+        {
+            AIChallenge challenge = new AIChallenge(typeof(Ch_OrcRaiding), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.BaseValid, AIChallenge.ChallengeTags.BaseValidFor, AIChallenge.ChallengeTags.RequiresOwnSociety });
+            challenge.delegates_Utility.Add(delegate_Utility_Ch_OrcRaiding);
+            aiChallenges_OrcUpstart.Add(challenge);
+
+            AIChallenge challenge1 = new AIChallenge(typeof(Ch_RecruitMinion), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.RequiresOwnSociety, AIChallenge.ChallengeTags.RecruitsMinion });
+            challenge1.delegates_Valid.Add(delegate_Valid_Ch_RecruitMinion);
+            aiChallenges_OrcUpstart.Add(challenge1);
+
+            aiChallenges_OrcUpstart.Add(new AIChallenge(typeof(Ch_Rest_InOrcCamp), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.RequiresOwnSociety, AIChallenge.ChallengeTags.HealOrc, AIChallenge.ChallengeTags.Rest }));
+        }
+
+        private double delegate_Utility_Ch_OrcRaiding(Challenge challenge, UA ua, Location location, List<ReasonMsg> reasonMsgs)
+        {
+            double result = 0.0;
+
+            double potentialDevastation = 0.0;
+            int neighbourCount = 0;
+            foreach (Location loc in location.getNeighbours())
+            {
+                if (loc.settlement is SettlementHuman && (ua.society == null || ua.society != loc.soc))
+                {
+                    Pr_Devastation devastation = loc.properties.OfType<Pr_Devastation>().FirstOrDefault();
+                    double charge = devastation?.charge ?? 0.0;
+                    potentialDevastation += Math.Max(250 - charge, 0.0) / 5;
+                    if (potentialDevastation > 0)
                     {
-
-                        if (cache.settlementsByStepsExclusiveFromLocation.ContainsKey(vampire.location) && cache.settlementsByStepsExclusiveFromLocation[vampire.location] != null && cache.settlementsByStepsExclusiveFromLocation[vampire.location][i] != null)
-                        {
-                            settlements = cache.settlementsByStepsExclusiveFromLocation[vampire.location][i];
-                        }
-
-                        if (settlements != null && settlements.Count == 0)
-                        {
-                            continue;
-                        }
-
-                        for (int j = 0; j < settlements.Count; j++)
-                        {
-                            if (settlements != null && settlements.Count > 0)
-                            {
-                                foreach (Settlement settlement in settlements)
-                                {
-                                    if (settlement is SettlementHuman && settlement.shadow < 0.7)
-                                    {
-                                        targetSettlements.Add(settlement);
-                                    }
-                                }
-
-                                if (targetSettlements.Count > 0)
-                                {
-                                    Location location = targetSettlements[Eleven.random.Next(targetSettlements.Count)].location;
-                                    vampire.task = new Task_GoToLocation(location);
-                                    return;
-                                }
-                            }
-                        }
+                        neighbourCount++;
                     }
                 }
             }
 
-            bool fullMinions = true;
-            Minion[] minions = vampire.minions;
-            foreach (Minion minion in minions)
+            if (neighbourCount > 0)
+            {
+                result = potentialDevastation / neighbourCount;
+            }
+
+            reasonMsgs?.Add(new ReasonMsg("Potential Devastation", result));
+
+            return result;
+        }
+
+        private bool delegate_Valid_Ch_RecruitMinion(Challenge challenge, Location location)
+        {
+            if (map.worldPanic < map.param.panic_forFundHeroes)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private void populateVampire()
+        {
+            AIChallenge challenge = new AIChallenge(typeof(Rt_Feed), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.PreferLocalRandomized });
+            challenge.delegates_ValidFor.Add(delegate_ValidFor_Rt_Feed);
+            challenge.delegates_Utility.Add(delegate_Utility_Rt_Feed);
+            aiChallenges_Vampire.Add(challenge);
+
+            AIChallenge challenge1 = new AIChallenge(typeof(Mg_DeathsShadow), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.PreferLocalRandomized });
+            challenge1.delegates_ValidFor.Add(delegate_ValidFor_Mg_DeathsShadow);
+            challenge1.delegates_Utility.Add(delegate_Utility_Mg_DeathsShadow);
+            aiChallenges_Vampire.Add(challenge1);
+
+            AIChallenge Challenge2 = new AIChallenge(typeof(Ch_Desecrate), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.BaseValid, AIChallenge.ChallengeTags.BaseValidFor, AIChallenge.ChallengeTags.RequiresInfiltrated, AIChallenge.ChallengeTags.PreferLocalRandomized });
+            Challenge2.delegates_Utility.Add(delegate_Utility_Ch_Desecrate);
+            aiChallenges_Vampire.Add(Challenge2);
+
+            aiChallenges_Vampire.Add(new AIChallenge(typeof(Ch_Enshadow), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.Enshadows, AIChallenge.ChallengeTags.RequiresInfiltrated, AIChallenge.ChallengeTags.PreferLocalRandomized }));
+            aiChallenges_Vampire.Add(new AIChallenge(typeof(Ch_WellOfShadows), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.BaseValid, AIChallenge.ChallengeTags.PushesShadow, AIChallenge.ChallengeTags.RequiresSociety, AIChallenge.ChallengeTags.PreferLocalRandomized }));
+            aiChallenges_Vampire.Add(new AIChallenge(typeof(Ch_Rest_InOrcCamp), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.HealOrc, AIChallenge.ChallengeTags.PreferLocalRandomized }));
+        }
+
+        private bool delegate_ValidFor_Rt_Feed(Challenge challenge, UA ua, Location location)
+        {
+            UAEN_Vampire vampire = ua as UAEN_Vampire;
+            
+            if (vampire == null || vampire.call.strength <= 50.0)
+            {
+                return false;
+            }
+
+            SettlementHuman settlementHuman = location.settlement as SettlementHuman;
+            if (settlementHuman != null)
+            {
+                if (location == vampire.location)
+                {
+                    if (settlementHuman.shadow < 0.9 || vampire.call.strength >= 150.0)
+                    {
+                        return true;
+                    }
+                }
+                else if (settlementHuman.shadow < 0.7 && vampire.call.strength > 100.0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private double delegate_Utility_Rt_Feed(Challenge challenge, UA ua, Location location, List<ReasonMsg> reasonMsgs)
+        {
+            UAEN_Vampire vampire = ua as UAEN_Vampire;
+            double result = 0.0;
+
+            if (vampire != null)
+            {
+                double val = vampire.call.strength;
+                reasonMsgs?.Add(new ReasonMsg("Strength of the Hunger", val));
+                result += val;
+
+                val = -((1.0 - vampire.person.shadow) * vampire.map.param.mg_theHungerNonShadowResistance);
+                reasonMsgs?.Add(new ReasonMsg("Light in Soul", val));
+                result += val;
+            }
+
+            return result;
+        }
+
+        private bool delegate_ValidFor_Mg_DeathsShadow(Challenge challenge, UA ua, Location location)
+        {
+            foreach (Minion minion in ua.minions)
             {
                 if (minion == null)
                 {
-                    fullMinions = false;
-                    break;
+                    return false;
                 }
             }
 
-            double enshadowmentDif = 0.0;
-            if (vampire.location.settlement != null)
+            if (ua.getDeathMastery() < map.param.mg_deathsShadowDeadMasteryReq)
             {
-                List<Settlement> nearbySettlements = cache.settlementsByStepsExclusiveFromLocation[vampire.location][1];
-                if (nearbySettlements != null && nearbySettlements.Count > 0)
-                {
-                    foreach (Settlement nearbySettlement in nearbySettlements)
-                    {
-                        Society society = nearbySettlement.location.soc as Society;
-                        if (nearbySettlement is SettlementHuman && (society == null || !society.isAlliance || map.opt_allianceState != 1))
-                        {
-                            enshadowmentDif += Math.Max(0.0, vampire.location.settlement.shadow - nearbySettlement.shadow);
-                        }
-                    }
-                }
+                return false;
             }
 
-            double value = 0.0;
-            Challenge challenge = null;
-            List<Type> validChallengeTypes = new List<Type>() { typeof(Ch_Enshadow), typeof(Ch_Desecrate) };
-            validChallengeTypes.AddRange(customChallenges_Vampire);
-            List<Type> validChallengeTypes_Death = new List<Type>();
-            validChallengeTypes_Death.AddRange(customChallenges_Vampire_Death);
-            //Console.WriteLine("CommunityLib: Vampire has " + (validChallengeTypes.Count + validChallengeTypes_Death.Count).ToString() + " valid challenge types.");
-            foreach (Challenge validChallenge in vampire.getAllValidChallenges())
+            Pr_Death death = location.properties.OfType<Pr_Death>().FirstOrDefault();
+            if (death == null || death.charge < map.param.mg_deathsShadowDeathModifierReq)
             {
-                double deathCharge = 0.0;
-                foreach (Property property in validChallenge.location.properties)
-                {
-                    if (property is Pr_Death)
-                    {
-                        deathCharge = property.charge;
-                        break;
-                    }
-                }
-
-                if (fullMinions && validChallenge is Mg_DeathsShadow)
-                {
-                    double cost = (double)map.getStepDist(validChallenge.location, vampire.location) + 2.5;
-                    // Random number between 1.0 and 3.0, weighted by bell curve towards 2.0.
-                    cost *= 1.0 + (Eleven.random.NextDouble() + Eleven.random.NextDouble());
-                    cost /= Math.Min(5.0, deathCharge / 5.0);
-
-                    if (challenge == null || cost < value)
-                    {
-                        value = cost;
-                        challenge = validChallenge;
-                    }
-                }
-
-                double wellOfShadowsCharge = 0.0;
-                foreach (Property property in validChallenge.location.properties)
-                {
-                    if (property is Pr_WellOfShadows)
-                    {
-                        wellOfShadowsCharge = property.charge;
-                        break;
-                    }
-                }
-
-                if (validChallenge is Ch_WellOfShadows && wellOfShadowsCharge < 75.0 && enshadowmentDif > 0.05)
-                {
-                    double cost = (double)map.getStepDist(validChallenge.location, vampire.location) + 2.5;
-                    cost *= 1.0 + (Eleven.random.NextDouble() + Eleven.random.NextDouble());
-                    if (challenge == null || cost < value)
-                    {
-                        value = cost;
-                        challenge = validChallenge;
-                    }
-                }
-
-                if (validChallengeTypes.Contains(validChallenge.GetType()))
-                {
-                    double cost = (double)map.getStepDist(validChallenge.location, vampire.location) + 2.5;
-                    cost *= 1.0 + (Eleven.random.NextDouble() + Eleven.random.NextDouble());
-                    if (challenge == null || cost < value)
-                    {
-                        value = cost;
-                        challenge = validChallenge;
-                    }
-                }
-
-                if (validChallengeTypes_Death.Contains(validChallenge.GetType()))
-                {
-                    double cost = (double)map.getStepDist(validChallenge.location, vampire.location) + 2.5;
-                    // Random number between 1.0 and 3.0, weighted by bell curve towards 2.0.
-                    cost *= 1.0 + (Eleven.random.NextDouble() + Eleven.random.NextDouble());
-                    cost /= Math.Min(5.0, deathCharge / 5.0);
-
-                    if (challenge == null || cost < value)
-                    {
-                        value = cost;
-                        challenge = validChallenge;
-                    }
-                }
+                return false;
             }
 
-            if (challenge != null)
+            return true;
+        }
+
+        private double delegate_Utility_Mg_DeathsShadow(Challenge challenge, UA ua, Location location, List<ReasonMsg> reasonMsgs)
+        {
+            double result = 0;
+            double val;
+
+            Pr_Death death = location.properties.OfType<Pr_Death>().FirstOrDefault();
+            if (death != null && death.charge >= map.param.mg_deathsShadowDeathModifierReq)
             {
-                //Console.WriteLine("CommunityLib: Randomly selected " + challenge.getName() + " challenge.");
-                vampire.task = new Task_GoToPerformChallenge(challenge);
+                val = death.charge;
+                val *= Math.Min(5.0, Math.Max(0.5, 5 / (2 * map.getStepDist(ua.location, location) + 1)));
+
+                reasonMsgs?.Add(new ReasonMsg("Nearby Death", val));
+                result += val;
             }
             else
-            {
-                map.overmind.autoAI.aiShadow.turnTick(vampire);
+            { 
+                reasonMsgs?.Add(new ReasonMsg("Requires " + map.param.mg_deathsShadowDeathModifierReq + " Death", -1000.0));
+                return -1000;
             }
+
+            return result;
+        }
+
+        private double delegate_Utility_Ch_Desecrate(Challenge challenge, UA ua, Location location, List<ReasonMsg> reasonMsgs)
+        {
+            double result = 150.0;
+
+            reasonMsgs?.Add(new ReasonMsg("Base", result));
+
+            return result;
         }
     }
 }
