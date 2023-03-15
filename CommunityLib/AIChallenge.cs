@@ -164,11 +164,11 @@ namespace CommunityLib
         public bool checkChallengeIsValid(Challenge challenge, UA ua, Location location = null)
         {
             // Test Message
-            Console.WriteLine("CommunityLib: Checking validity of " + challenge.getName() + " at " + location.getName() + " for " + ua.getName() + " of social group " + ua.society.getName());
+            //Console.WriteLine("CommunityLib: Checking validity of " + challenge.getName() + " at " + location.getName() + " for " + ua.getName() + " of social group " + ua.society.getName());
 
             if (challenge.GetType() != challengeType)
             {
-                Console.WriteLine("ERROR:: Challenge is not of Type " + challengeType);
+                Console.WriteLine("CommunityLib: ERROR: Challenge is not of Type " + challengeType);
                 return false;
             }
 
@@ -176,7 +176,7 @@ namespace CommunityLib
             {
                 if (location == null)
                 {
-                    Console.WriteLine("ERROR:: Challenge is ritual and location is null");
+                    Console.WriteLine("CommunityLib: ERROR: Challenge is ritual and location is null");
                     return false;
                 }
             }
@@ -226,7 +226,7 @@ namespace CommunityLib
             }
 
             // Test Message
-            Console.WriteLine("CommunityLib: Valid");
+            //Console.WriteLine("CommunityLib: Valid");
             //Console.WriteLine("CommunityLib: " + challenge.getName() + " at " + location.getName() + " is valid for " + ua.getName() + " of social group " + ua.society.getName());
             return true;
         }
@@ -577,7 +577,7 @@ namespace CommunityLib
             }
 
             // Test Message
-            Console.WriteLine("CommunityLib: AgentAI getting Utility for challenge " + challenge.getName() + " at " + location.getName() + " on behalf of " + ua.getName() + " of social group " + ua.society.getName());
+            /*Console.WriteLine("CommunityLib: AgentAI getting Utility for challenge " + challenge.getName() + " at " + location.getName() + " on behalf of " + ua.getName() + " of social group " + ua.society.getName());
             if (reasonMsgs != null)
             {
                 foreach (ReasonMsg reasonMsg in reasonMsgs)
@@ -585,7 +585,7 @@ namespace CommunityLib
                     Console.WriteLine(reasonMsg.msg + ": " + reasonMsg.value);
                 }
                 Console.WriteLine("Utility: " + result);
-            }
+            }*/
             
             return result;
         }

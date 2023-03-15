@@ -472,7 +472,7 @@ namespace CommunityLib
                     }
 
                     // Reome after testing.
-                    List<ReasonMsg> reasonMsgs = new List<ReasonMsg>();
+                    /*List<ReasonMsg> reasonMsgs = new List<ReasonMsg>();
                     Console.WriteLine("CommunityLib: " + ua.getName() + " is moving to attack " + targetUnit.getName());
                     ua.getAttackUtility(targetUnit, reasonMsgs, true);
                     if (reasonMsgs != null)
@@ -482,7 +482,7 @@ namespace CommunityLib
                             Console.WriteLine(reasonMsg.msg + ": " + reasonMsg.value);
                         }
                         Console.WriteLine("Utility: " + utility);
-                    }
+                    }*/
                     //
 
                     UA agent = targetUnit as UA;
@@ -503,7 +503,7 @@ namespace CommunityLib
                     }
 
                     // Reome after testing.
-                    List<ReasonMsg> reasonMsgs = new List<ReasonMsg>();
+                    /*List<ReasonMsg> reasonMsgs = new List<ReasonMsg>();
                     Console.WriteLine("CommunityLib: " + ua.getName() + " is moveing to disrupt " + targetDisrupt.getName());
                     ua.getDisruptUtility(targetDisrupt, reasonMsgs);
                     if (reasonMsgs != null)
@@ -513,7 +513,7 @@ namespace CommunityLib
                             Console.WriteLine(reasonMsg.msg + ": " + reasonMsg.value);
                         }
                         Console.WriteLine("Utility: " + utility);
-                    }
+                    }*/
                     //
 
                     if (ua.person.isWatched())
@@ -533,7 +533,7 @@ namespace CommunityLib
                     }
 
                     // Reome after testing.
-                    List<ReasonMsg> reasonMsgs = new List<ReasonMsg>();
+                    /*List<ReasonMsg> reasonMsgs = new List<ReasonMsg>();
                     Console.WriteLine("CommunityLib: " + ua.getName() + " is moving to guard " + targetGuard.getName());
                     ua.getBodyguardUtility(targetGuard, reasonMsgs);
                     if (reasonMsgs != null)
@@ -543,7 +543,7 @@ namespace CommunityLib
                             Console.WriteLine(reasonMsg.msg + ": " + reasonMsg.value);
                         }
                         Console.WriteLine("Utility: " + utility);
-                    }
+                    }*/
                     //
 
                     if (ua.person.isWatched())
@@ -566,11 +566,11 @@ namespace CommunityLib
                     }
 
                     // Reome after testing.
-                    Console.WriteLine("CommunityLib: " + ua.getName() + " is going to perform challenge " + targetChallenge.getName() + " at " + targetLocation.getName());
+                    /*Console.WriteLine("CommunityLib: " + ua.getName() + " is going to perform challenge " + targetChallenge.getName() + " at " + targetLocation.getName());
 
                     List<ReasonMsg> reasonMsgs = new List<ReasonMsg>();
                     AIChallenge targetAIChalenge = aiChallenges.FirstOrDefault(aiC => aiC.challengeType == targetChallenge.GetType());
-                    getChallengeUtility(targetChallenge, targetAIChalenge, ua, targetLocation, inputParams, reasonMsgs);
+                    getChallengeUtility(targetChallenge, targetAIChalenge, ua, targetLocation, inputParams, reasonMsgs);*/
                     /*if (reasonMsgs != null)
                     {
                         foreach (ReasonMsg reasonMsg in reasonMsgs)
