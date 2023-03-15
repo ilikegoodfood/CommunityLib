@@ -80,23 +80,13 @@ namespace CommunityLib
                     unit.movesTaken++;
                     steps++;
 
-                    if (unit.location == target)
-                    {
-                        if (steps > 1 && unit.isCommandable())
-                        {
-                            unit.map.addUnifiedMessage(unit, null, "Unit Arrives", unit.getName() + " has reached " + unit.location.getName(true) + " and begun challenge " + challenge.getName(), UnifiedMessage.messageType.UNIT_ARRIVES, false);
-                        }
-                        unit.task = new Task_PerformChallenge(challenge);
-                        challenge.claimedBy = unit;
-                        return;
-                    }
-
-                    if (!unit.map.moveTowards(unit, challenge.location))
+                    if (!unit.map.moveTowards(unit, target))
                     {
                         World.log("Move unsuccessful. Cancelling");
                         unit.task = null;
                         break;
                     }
+
                     if (unit.location == target)
                     {
                         if (unit.isCommandable())
@@ -107,15 +97,6 @@ namespace CommunityLib
                         challenge.claimedBy = unit;
                         break;
                     }
-                }
-                if (unit.location == target)
-                {
-                    if (steps > 1 && unit.isCommandable())
-                    {
-                        unit.map.addUnifiedMessage(unit, null, "Unit Arrives", unit.getName() + " has reached " + unit.location.getName(true) + " and begun challenge " + challenge.getName(), UnifiedMessage.messageType.UNIT_ARRIVES, false);
-                    }
-                    unit.task = new Task_PerformChallenge(challenge);
-                    challenge.claimedBy = unit;
                 }
             }
         }

@@ -771,16 +771,11 @@ namespace CommunityLib
                         AIChallenge targetAIChalenge = aiChallenges.FirstOrDefault(aiC => aiC.challengeType == targetChallenge.GetType());
                         getChallengeUtility(targetChallenge, targetAIChalenge, ua, targetLocation, inputParams, reasonMsgs);
 
-                        if (!debug.outputUtility_ValidChallenges)
+                        foreach (ReasonMsg reasonMsg in reasonMsgs)
                         {
-                            {
-                                foreach (ReasonMsg reasonMsg in reasonMsgs)
-                                {
-                                    Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
-                                }
-                                Console.WriteLine("CommunityLib: Total: " + utility);
-                            }
+                            Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
                         }
+                        Console.WriteLine("CommunityLib: Total: " + utility);
                     }
 
                     if (ua.person.isWatched() || targetLocation.isWatched)
