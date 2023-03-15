@@ -211,7 +211,7 @@ namespace CommunityLib
                 {
                     if (AgentAI.debug.outputValidity_AllChallenges)
                     {
-                        Console.WriteLine("CommunityLib: Invalid: Failed safeMove");
+                        Console.WriteLine("CommunityLib: Invalid: Failed to find Path");
                     }
                     return false;
                 }

@@ -413,7 +413,23 @@ namespace CommunityLib
                     {
                         aiChallenge = aiChallengesFiltered[challenge.GetType()];
 
+                        List<ReasonMsg> reasonMsgs = null;
+                        if (debug.outputUtility_ValidChallenges)
+                        {
+                            reasonMsgs = new List<ReasonMsg>();
+                        }
+
                         utility2 = getChallengeUtility(challenge, aiChallenge, ua, challenge.location, inputParams);
+
+                        if (reasonMsgs != null)
+                        {
+                            Console.WriteLine("CommunityLib: Utility for " + challenge.getName() + " at " + challenge.location.getName() + " (" + (challenge.location.soc?.getName() ?? "Wilderness") + ")");
+                            foreach (ReasonMsg reasonMsg in reasonMsgs)
+                            {
+                                Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
+                            }
+                            Console.WriteLine("CommunityLib: Total: " + utility2);
+                        }
 
                         if (targetChallenges.Count == 0 || utility2 > utility)
                         {
@@ -435,15 +451,24 @@ namespace CommunityLib
                         foreach (Challenge ritual in pair.Value)
                         {
                             aiChallenge = aiRituals[ritual.GetType()];
-                            if (inputParams.respectChallengeVisibility)
+
+                            List<ReasonMsg> reasonMsgs = null;
+                            if (debug.outputUtility_ValidChallenges)
                             {
-                                if (!aiChallenge.checkChallengeVisibility(ritual, ua, pair.Key))
-                                {
-                                    continue;
-                                }
+                                reasonMsgs = new List<ReasonMsg>();
                             }
 
                             utility2 = getChallengeUtility(ritual, aiChallenge, ua, pair.Key, inputParams);
+
+                            if (reasonMsgs != null)
+                            {
+                                Console.WriteLine("CommunityLib: Utility for " + ritual.getName() + " at " + pair.Key.getName() + " (" + (pair.Key.soc?.getName() ?? "Wilderness") + ")");
+                                foreach (ReasonMsg reasonMsg in reasonMsgs)
+                                {
+                                    Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
+                                }
+                                Console.WriteLine("CommunityLib: Total: " + utility2);
+                            }
 
                             if (utility2 > utility)
                             {
@@ -738,7 +763,6 @@ namespace CommunityLib
                         targetLocation = targetLocations[index];
                     }
 
-                    // Reome after testing.
                     if (debug.outputUtility_ChosenAction)
                     {
                         Console.WriteLine("CommunityLib: " + ua.getName() + " is going to perform challenge " + targetChallenge.getName() + " at " + targetLocation.getName() + " (" + (targetLocation.soc?.getName() ?? "No Society") + ")");
@@ -881,7 +905,7 @@ namespace CommunityLib
                 {
                     if (debug.outputProfile_AllChallenges || debug.outputVisibility_AllChallenges || debug.outputValidity_AllChallenges || debug.outputValidity_ValidChallenges)
                     {
-                        Console.WriteLine("CommunityLib: Validity for " + ritual.getName() + " at " + location.getName() + " (" + (location.soc?.getName() ?? "Wilderness") + ")");
+                        Console.WriteLine("CommunityLib: Visibility and Validity for " + ritual.getName() + " at " + location.getName() + " (" + (location.soc?.getName() ?? "Wilderness") + ")");
                     }
 
                     if (!inputParams.respectChallengeVisibility || aiChallenges[ritual.GetType()].checkChallengeVisibility(ritual, ua, location))
