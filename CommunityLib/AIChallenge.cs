@@ -1,5 +1,4 @@
 ﻿using Assets.Code;
-using FullSerializer;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -82,7 +81,7 @@ namespace CommunityLib
         {
             if (!challengeType.IsSubclassOf(typeof(Challenge)))
             {
-                throw new ArgumentException("challengeType is not subclass of Challenge", "challengeType");
+                throw new ArgumentException("CommunityLib: challengeType " + challengeType + " is not subclass of Challenge");
             }
 
             this.challengeType = challengeType;
@@ -107,6 +106,7 @@ namespace CommunityLib
         {
             if (challenge.GetType() != challengeType)
             {
+                Console.WriteLine("CommunityLib: ERROR: Challenge is not of Type " + challengeType);
                 return -1;
             }
 
@@ -114,6 +114,7 @@ namespace CommunityLib
             {
                 if (location == null)
                 {
+                    Console.WriteLine("CommunityLib: ERROR: Challenge is ritual and location is null");
                     return -1;
                 }
             }
@@ -122,21 +123,28 @@ namespace CommunityLib
                 location = challenge.location;
             }
 
+            double result = profile;
             if (delegates_Profile != null)
             {
                 foreach (Func<Challenge, UA, Location, double, double> delegate_Profile in delegates_Profile)
                 {
-                    profile = delegate_Profile(challenge, ua, location, profile);
+                    result = delegate_Profile(challenge, ua, location, profile);
                 }
             }
 
-            return profile;
+            if (AgentAI.debug.outputProfile_AllChallenges)
+            {
+                Console.WriteLine("CommunityLib: Profile: " + result);
+            }
+
+            return result;
         }
 
         public bool checkChallengeVisibility(Challenge challenge, UA ua, Location location = null)
         {
             if (challenge.GetType() != challengeType)
             {
+                Console.WriteLine("CommunityLib: ERROR: Challenge is not of Type " + challengeType);
                 return false;
             }
 
@@ -144,6 +152,7 @@ namespace CommunityLib
             {
                 if (location == null)
                 {
+                    Console.WriteLine("CommunityLib: ERROR: Challenge is ritual and location is null");
                     return false;
                 }
             }
@@ -153,19 +162,29 @@ namespace CommunityLib
             }
 
             double profile = checkChallengeProfile(challenge, ua, location);
-            if (profile / 10 >= ua.map.getStepDist(ua.location, location))
+            int dist = ua.map.getStepDist(ua.location, location);
+            if (profile / 10 >= dist)
             {
+                if (!AgentAI.debug.outputProfile_AllChallenges && AgentAI.debug.outputProfile_VisibleChallenges)
+                {
+                    Console.WriteLine("CommunityLib: Profile: " + profile);
+                }
+                if (AgentAI.debug.outputVisibility_AllChallenges || AgentAI.debug.outputVisibility_VisibleChallenges)
+                {
+                    Console.WriteLine("CommunityLib: Visible");
+                }
                 return true;
             }
 
+            if (AgentAI.debug.outputVisibility_AllChallenges)
+            {
+                Console.WriteLine("CommunityLib: NOT Visible");
+            }
             return false;
         }
 
         public bool checkChallengeIsValid(Challenge challenge, UA ua, Location location = null)
         {
-            // Test Message
-            //Console.WriteLine("CommunityLib: Checking validity of " + challenge.getName() + " at " + location.getName() + " for " + ua.getName() + " of social group " + ua.society.getName());
-
             if (challenge.GetType() != challengeType)
             {
                 Console.WriteLine("CommunityLib: ERROR: Challenge is not of Type " + challengeType);
@@ -190,11 +209,19 @@ namespace CommunityLib
                 Location[] pathTo = ua.location.map.getPathTo(ua.location, location, ua, safeMove);
                 if (pathTo == null || pathTo.Length < 2)
                 {
+                    if (AgentAI.debug.outputValidity_AllChallenges)
+                    {
+                        Console.WriteLine("CommunityLib: Invalid: Failed safeMove");
+                    }
                     return false;
                 }
             }
             else if (safeMove && (location.soc?.hostileTo(ua) ?? false))
             {
+                if (AgentAI.debug.outputValidity_AllChallenges)
+                {
+                    Console.WriteLine("CommunityLib: Invalid: Failed safeMove");
+                }
                 return false;
             }
 
@@ -209,6 +236,10 @@ namespace CommunityLib
                 {
                     if (!delegate_Valid(challenge, location))
                     {
+                        if (AgentAI.debug.outputValidity_AllChallenges)
+                        {
+                            Console.WriteLine("CommunityLib: Invalid: Failed Valid delegates");
+                        }
                         return false;
                     }
                 }
@@ -220,14 +251,19 @@ namespace CommunityLib
                 {
                     if (!delegate_ValidFor(challenge, ua, location))
                     {
+                        if (AgentAI.debug.outputValidity_AllChallenges)
+                        {
+                            Console.WriteLine("CommunityLib: Invalid: Failed ValidFor delegates");
+                        }
                         return false;
                     }
                 }
             }
 
-            // Test Message
-            //Console.WriteLine("CommunityLib: Valid");
-            //Console.WriteLine("CommunityLib: " + challenge.getName() + " at " + location.getName() + " is valid for " + ua.getName() + " of social group " + ua.society.getName());
+            if (AgentAI.debug.outputValidity_AllChallenges || AgentAI.debug.outputValidity_ValidChallenges)
+            {
+                Console.WriteLine("CommunityLib: Valid");
+            }
             return true;
         }
 
@@ -240,41 +276,67 @@ namespace CommunityLib
                     case ChallengeTags.BaseValid:
                         if (!challenge.valid())
                         {
-                            // Console.WriteLine("Not Base Valid");
+                            if (AgentAI.debug.outputValidity_AllChallenges)
+                            {
+                                Console.WriteLine("CommunityLib: Invalid: challenge.valid returned false");
+                            }
                             return false;
                         }
                         break;
                     case ChallengeTags.BaseValidFor:
                         if (!challenge.validFor(ua))
                         {
-                            // Console.WriteLine("Not Base ValidFor " + ua.getName());
+                            if (AgentAI.debug.outputValidity_AllChallenges)
+                            {
+                                Console.WriteLine("CommunityLib: Invalid: challenge.validFor returned false");
+                            }
                             return false;
                         }
                         break;
                     case ChallengeTags.Forbidden:
+                        if (AgentAI.debug.outputValidity_AllChallenges)
+                        {
+                            Console.WriteLine("CommunityLib: Invalid: Challenge Forbidden");
+                        }
                         return false;
                     case ChallengeTags.RequiresDeath:
                         Pr_Death death = location.properties.OfType<Pr_Death>().FirstOrDefault();
                         if (death == null || death.charge <= 0.0)
                         {
+                            if (AgentAI.debug.outputValidity_AllChallenges)
+                            {
+                                Console.WriteLine("CommunityLib: Invalid: No Death at location");
+                            }
                             return false;
                         }
                         break;
                     case ChallengeTags.RequiresShadow:
                         if (location.getShadow() < 0.05)
                         {
+                            if (AgentAI.debug.outputValidity_AllChallenges)
+                            {
+                                Console.WriteLine("CommunityLib: Invalid: No shadow at location");
+                            }
                             return false;
                         }
                         break;
                     case ChallengeTags.RequiresInfiltrated:
                         if (location.settlement?.infiltration < 1.0)
                         {
+                            if (AgentAI.debug.outputValidity_AllChallenges)
+                            {
+                                Console.WriteLine("CommunityLib: Invalid: Settlement not infiltrated");
+                            }
                             return false;
                         }
                         break;
                     case ChallengeTags.Enshadows:
                         if (location.getShadow() >= 1.0)
                         {
+                            if (AgentAI.debug.outputValidity_AllChallenges)
+                            {
+                                Console.WriteLine("CommunityLib: Invalid: No shadow at location");
+                            }
                             return false;
                         }
                         Settlement settlement = location.settlement;
@@ -282,24 +344,40 @@ namespace CommunityLib
                         {
                             if (settlement.shadowPolicy == Settlement.shadowResponse.DENY)
                             {
+                                if (AgentAI.debug.outputValidity_AllChallenges)
+                                {
+                                    Console.WriteLine("CommunityLib: Invalid: Settlement cannot be ensahdowed");
+                                }
                                 return false;
                             }
 
                             SettlementHuman settlementHuman = settlement as SettlementHuman;
                             if (settlementHuman?.ophanimTakeOver ?? false)
                             {
+                                if (AgentAI.debug.outputValidity_AllChallenges)
+                                {
+                                    Console.WriteLine("CommunityLib: Invalid: Perfected settlement cannot be enshadowed");
+                                }
                                 return false;
                             }
                         }
                         Society society = location.soc as Society;
                         if (society != null && (society.isAlliance && challenge.map.opt_allianceState == 1))
                         {
+                            if (AgentAI.debug.outputValidity_AllChallenges)
+                            {
+                                Console.WriteLine("CommunityLib: Invalid: Alliance cannot be enshadowed");
+                            }
                             return false;
                         }
                         break;
                     case ChallengeTags.PushesShadow:
                         if (location.getShadow() < 0.05)
                         {
+                            if (AgentAI.debug.outputValidity_AllChallenges)
+                            {
+                                Console.WriteLine("CommunityLib: Invalid: No shadow at location");
+                            }
                             return false;
                         }
                         double deltaShadow = 0.0;
@@ -342,6 +420,10 @@ namespace CommunityLib
                         }
                         if (deltaShadow < 0.05)
                         {
+                            if (AgentAI.debug.outputValidity_AllChallenges)
+                            {
+                                Console.WriteLine("CommunityLib: Invalid: No potential to push shadow to neighbouring locations");
+                            }
                             return false;
                         }
                         break;
@@ -352,16 +434,28 @@ namespace CommunityLib
                             SettlementHuman settlementHuman = settlement as SettlementHuman;
                             if (settlementHuman?.ophanimTakeOver ?? false)
                             {
+                                if (AgentAI.debug.outputValidity_AllChallenges)
+                                {
+                                    Console.WriteLine("CommunityLib: Invalid: Perfected settlements cannot be enshadowed");
+                                }
                                 return false;
                             }
                         }
                         society = location.soc as Society;
                         if (society != null && society.isAlliance && challenge.map.opt_allianceState == 1)
                         {
+                            if (AgentAI.debug.outputValidity_AllChallenges)
+                            {
+                                Console.WriteLine("CommunityLib: Alliance cannot be enshadowed");
+                            }
                             return false;
                         }
                         if (location.getShadow() < 0.05)
                         {
+                            if (AgentAI.debug.outputValidity_AllChallenges)
+                            {
+                                Console.WriteLine("CommunityLib: No shadow at location");
+                            }
                             return false;
                         }
                         break;
@@ -372,21 +466,37 @@ namespace CommunityLib
                             SettlementHuman settlementHuman = settlement as SettlementHuman;
                             if (settlementHuman?.ophanimTakeOver ?? false)
                             {
+                                if (AgentAI.debug.outputValidity_AllChallenges)
+                                {
+                                    Console.WriteLine("CommunityLib: Invalid: Perfected settlements cannot be enshadowed");
+                                }
                                 return false;
                             }
                         }
                         society = location.soc as Society;
                         if (society != null && (society.isAlliance && challenge.map.opt_allianceState == 1))
                         {
+                            if (AgentAI.debug.outputValidity_AllChallenges)
+                            {
+                                Console.WriteLine("CommunityLib: Invalid: Alliance cannot be enshadowed");
+                            }
                             return false;
                         }
                         if (location.getShadow() >= 1.0)
                         {
+                            if (AgentAI.debug.outputValidity_AllChallenges)
+                            {
+                                Console.WriteLine("CommunityLib: Invalid: Location alreadt enshadowed");
+                            }
                             return false;
                         }
                         ward = location.properties.OfType<Pr_Ward>().FirstOrDefault();
                         if (ward?.charge >= 99)
                         {
+                            if (AgentAI.debug.outputValidity_AllChallenges)
+                            {
+                                Console.WriteLine("CommunityLib: Invalid: Location protected by ward");
+                            }
                             return false;
                         }
                         break;
@@ -395,54 +505,64 @@ namespace CommunityLib
                         Ch_RecruitOgre recruitOgre = challenge as Ch_RecruitOgre;
                         if (recruitMinion != null)
                         {
-                            if (ua.getStatCommandLimit() < recruitMinion.exemplar.getCommandCost())
-                            {
-                                // Console.WriteLine("CommunityLib: Insufficient command to recruit minion");
-                                return false;
-                            }
                             if (ua.person?.gold < recruitMinion.exemplar.getGoldCost())
                             {
-                                // Console.WriteLine("CommunityLib: Insufficient gold to recruit minion");
+                                if (AgentAI.debug.outputValidity_AllChallenges)
+                                {
+                                    Console.WriteLine("CommunityLib: Invalid: Insufficient Gold");
+                                }
                                 return false;
                             }
                         }
                         else if (recruitOgre != null)
                         {
-                            if (ua.getStatCommandLimit() < recruitOgre.exemplar.getCommandCost())
-                            {
-                                return false;
-                            }
                             if (ua.person?.gold < recruitOgre.exemplar.getGoldCost())
                             {
+                                if (AgentAI.debug.outputValidity_AllChallenges)
+                                {
+                                    Console.WriteLine("CommunityLib: Invalid: Insufficient Gold");
+                                }
                                 return false;
                             }
-                        }
-                        else if (ua.getStatCommandLimit() <= ua.getCurrentlyUsedCommand())
-                        {
-                            return false;
                         }
                         break;
                     case ChallengeTags.ManageMenace:
                         if (ua.menace < ua.inner_menaceMin)
                         {
+                            if (AgentAI.debug.outputValidity_AllChallenges)
+                            {
+                                Console.WriteLine("CommunityLib: Invalid: Menace at minimum");
+                            }
                             return false;
                         }
                         break;
                     case ChallengeTags.ManageProfile:
                         if (ua.profile < ua.inner_profileMin)
                         {
+                            if (AgentAI.debug.outputValidity_AllChallenges)
+                            {
+                                Console.WriteLine("CommunityLib: Invalid: Profile at minimum");
+                            }
                             return false;
                         }
                         break;
                     case ChallengeTags.ManageMenaceProfile:
-                        if (ua.menace < ua.inner_menaceMin + ua.inner_profileMin)
+                        if (ua.menace + ua.profile < ua.inner_menaceMin + ua.inner_profileMin)
                         {
+                            if (AgentAI.debug.outputValidity_AllChallenges)
+                            {
+                                Console.WriteLine("CommunityLib: Invalid: Menace and Profile are at minimum");
+                            }
                             return false;
                         }
                         break;
                     case ChallengeTags.ManageSocietyMenace:
                         if (ua.society?.menace <= 0.05)
                         {
+                            if (AgentAI.debug.outputValidity_AllChallenges)
+                            {
+                                Console.WriteLine("CommunityLib: Invalid: No society menace");
+                            }
                             return false;
                         }
                         break;
@@ -451,6 +571,10 @@ namespace CommunityLib
                         {
                             if (tagIndex == Tags.UNDEAD || tagIndex == Tags.ORC)
                             {
+                                if (AgentAI.debug.outputValidity_AllChallenges)
+                                {
+                                    Console.WriteLine("CommunityLib: Invalid: UA is Orc or Undead");
+                                }
                                 return false;
                             }
                         }
@@ -458,25 +582,40 @@ namespace CommunityLib
                     case ChallengeTags.RequiresSociety:
                         if (ua.location.soc == null)
                         {
+                            if (AgentAI.debug.outputValidity_AllChallenges)
+                            {
+                                Console.WriteLine("CommunityLib: Invalid: Location is wilderness");
+                            }
                             return false;
                         }
                         break;
                     case ChallengeTags.RequiresNoSociety:
                         if (ua.location.soc != null)
                         {
+                            if (AgentAI.debug.outputValidity_AllChallenges)
+                            {
+                                Console.WriteLine("CommunityLib: Invalid: Location is not wilderness");
+                            }
                             return false;
                         }
                         break;
                     case ChallengeTags.RequiresOwnSociety:
                         if (ua.society == null ||  ua.society != location.soc)
                         {
-                            // Console.WriteLine("CommunityLib: Society " + location.soc?.getName() ?? "NULL" + " is not own society.");
+                            if (AgentAI.debug.outputValidity_AllChallenges)
+                            {
+                                Console.WriteLine("CommunityLib: Invalid: Location does not belong to own soceity");
+                            }
                             return false;
                         }
                         break;
                     case ChallengeTags.ForbidOwnSociety:
                         if (ua.society != null && ua.society == location.soc)
                         {
+                            if (AgentAI.debug.outputValidity_AllChallenges)
+                            {
+                                Console.WriteLine("CommunityLib: Invalid: Location belongs to own soceity");
+                            }
                             return false;
                         }
                         break;
@@ -485,6 +624,10 @@ namespace CommunityLib
                         {
                             if (location.soc != null && ua.society.relations.ContainsKey(location.soc) && ua.society.relations[location.soc].state == DipRel.dipState.war)
                             {
+                                if (AgentAI.debug.outputValidity_AllChallenges)
+                                {
+                                    Console.WriteLine("CommunityLib: Invalid: Is at war with society that controls location");
+                                }
                                 return false;
                             }
                         }
@@ -496,12 +639,20 @@ namespace CommunityLib
                         }
                         else if (location.soc != null && ua.society.relations.ContainsKey(location.soc) && ua.society.relations[location.soc].state != DipRel.dipState.war)
                         {
+                            if (AgentAI.debug.outputValidity_AllChallenges)
+                            {
+                                Console.WriteLine("CommunityLib: Invalid: Is not at war with soceity that controls location");
+                            }
                             return false;
                         }
                         break;
                     case ChallengeTags.Aquaphibious:
                         if (!location.isOcean && !location.isCoastal)
                         {
+                            if (AgentAI.debug.outputValidity_AllChallenges)
+                            {
+                                Console.WriteLine("CommunityLib: Invalid: Location is not coastal or ocean");
+                            }
                             return false;
                         }
                         break;

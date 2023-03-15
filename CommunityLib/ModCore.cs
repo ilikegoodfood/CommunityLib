@@ -30,7 +30,7 @@ namespace CommunityLib
             modCore = this;
         }
 
-        public override void afterMapGenBeforeHistorical(Map map)
+        public override void beforeMapGen(Map map)
         {
             //Initialize subclasses.
             if (agentAI == null)
