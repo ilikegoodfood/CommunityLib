@@ -10,8 +10,6 @@ namespace CommunityLib
     {
         public static DebugProperties debug;
 
-        ModCore mod;
-
         Map map;
 
         private Dictionary<Type, List<AIChallenge>> ai;
@@ -122,10 +120,9 @@ namespace CommunityLib
             }
         }
 
-        public AgentAI(ModCore core, Map map)
+        public AgentAI(Map map)
         {
             debug = DebugProperties.newOff();
-            mod = core;
             this.map = map;
 
             ai = new Dictionary<Type, List<AIChallenge>>();
@@ -373,7 +370,7 @@ namespace CommunityLib
             filterAIChallengeAndRituals(aiChallenges, out aiChallengesFiltered, out aiRituals);
 
             bool result = false;
-            foreach (Hooks hook in mod.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
                 bool retValue = hook.interceptAgentAI(ua, aiChallengesFiltered.Values.ToList(), aiRituals.Values.ToList(), inputParams);
                 if (retValue)
@@ -797,7 +794,7 @@ namespace CommunityLib
                     ua.task = new Task_GoToPerformChallengeAtLocation(targetChallenge, targetLocation, safeMove);
                 }
 
-                foreach (Hooks hook in mod.GetRegisteredHooks())
+                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
                 {
                     hook.onAgentAI_EndOfProcess(ua, challenges, ritualData, inputParams);
                 }

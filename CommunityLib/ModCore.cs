@@ -7,7 +7,9 @@ namespace CommunityLib
 {
     public class ModCore : Assets.Code.Modding.ModKernel
     {
-        public static ModCore modCore;
+        public static ModCore core;
+
+        public static double versionID;
 
         private List<Hooks> registeredHooks = new List<Hooks>();
 
@@ -24,18 +26,20 @@ namespace CommunityLib
             if (!patched)
             {
                 patched = true;
-                HarmonyPatches.PatchingInit(this);
+                HarmonyPatches.PatchingInit();
             }
 
-            modCore = this;
+            core = this;
         }
 
         public override void beforeMapGen(Map map)
         {
+            map.
+
             //Initialize subclasses.
             if (agentAI == null)
             {
-                agentAI = new AgentAI(this, map);
+                agentAI = new AgentAI(map);
             }
 
             if (hooks == null)
@@ -46,7 +50,7 @@ namespace CommunityLib
 
             if (overrideAI == null)
             {
-                overrideAI = new UAENOverrideAI(this, map);
+                overrideAI = new UAENOverrideAI(map);
             }
         }
 
@@ -55,7 +59,7 @@ namespace CommunityLib
             //Initialize subclasses.
             if (agentAI == null)
             {
-                agentAI = new AgentAI(this, map);
+                agentAI = new AgentAI(map);
             }
 
             if (hooks == null)
@@ -66,29 +70,7 @@ namespace CommunityLib
 
             if (overrideAI == null)
             {
-                overrideAI = new UAENOverrideAI(this, map);
-            }
-        }
-
-        public override void onAgentAIDecision(UA uA)
-        {
-            //Console.WriteLine("CommunityLib: Running onAgentAIDecision");
-            switch (uA)
-            {
-                case UAEN_DeepOne deepOne:
-                    agentAI.onTurnTickAI(deepOne, AgentAI.InputParams.newDefault());
-                    break;
-                case UAEN_Ghast ghast:
-                    agentAI.onTurnTickAI(ghast, AgentAI.InputParams.newDefault());
-                    break;
-                case UAEN_OrcUpstart upstart:
-                    agentAI.onTurnTickAI(upstart, AgentAI.InputParams.newDefault());
-                    break;
-                case UAEN_Vampire vampire:
-                    agentAI.onTurnTickAI(vampire, AgentAI.InputParams.newDefault());
-                    break;
-                default:
-                    break;
+                overrideAI = new UAENOverrideAI(map);
             }
         }
 

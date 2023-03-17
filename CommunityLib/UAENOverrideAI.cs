@@ -17,11 +17,8 @@ namespace CommunityLib
 
         private Map map;
 
-        private ModCore mod;
-
-        public UAENOverrideAI(ModCore core, Map map)
+        public UAENOverrideAI(Map map)
         {
-            mod = core;
             this.map = map;
 
             aiChallenges_DeepOne = new List<AIChallenge>();
@@ -30,20 +27,20 @@ namespace CommunityLib
             aiChallenges_Vampire = new List<AIChallenge>();
 
             populateDeepOne();
-            mod.GetAgentAI().RegisterAgentType(typeof(UAEN_DeepOne));
-            mod.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_DeepOne), aiChallenges_DeepOne);
+            ModCore.core.GetAgentAI().RegisterAgentType(typeof(UAEN_DeepOne));
+            ModCore.core.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_DeepOne), aiChallenges_DeepOne);
 
             populateGhast();
-            mod.GetAgentAI().RegisterAgentType(typeof(UAEN_Ghast));
-            mod.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_Ghast), aiChallenges_Ghast);
+            ModCore.core.GetAgentAI().RegisterAgentType(typeof(UAEN_Ghast));
+            ModCore.core.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_Ghast), aiChallenges_Ghast);
 
             populateOrcUpstart();
-            mod.GetAgentAI().RegisterAgentType(typeof(UAEN_OrcUpstart));
-            mod.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_OrcUpstart), aiChallenges_OrcUpstart);
+            ModCore.core.GetAgentAI().RegisterAgentType(typeof(UAEN_OrcUpstart));
+            ModCore.core.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_OrcUpstart), aiChallenges_OrcUpstart);
 
             populateVampire();
-            mod.GetAgentAI().RegisterAgentType(typeof(UAEN_Vampire));
-            mod.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_Vampire), aiChallenges_Vampire);
+            ModCore.core.GetAgentAI().RegisterAgentType(typeof(UAEN_Vampire));
+            ModCore.core.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_Vampire), aiChallenges_Vampire);
         }
 
         private void populateDeepOne()

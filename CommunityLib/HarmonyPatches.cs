@@ -14,8 +14,6 @@ namespace CommunityLib
     {
         private static readonly Type patchType = typeof(HarmonyPatches);
 
-        private static ModCore mod;
-
         private static bool patched = false;
 
         public static ArmyBattleData armyBattleData_StartOfCycle;
@@ -26,7 +24,7 @@ namespace CommunityLib
         /// Initialises variables in this class that are required to perform patches, then executes harmony patches.
         /// </summary>
         /// <param name="core"></param>
-        public static void PatchingInit(ModCore core)
+        public static void PatchingInit()
         {
             if (patched)
             {
@@ -36,8 +34,6 @@ namespace CommunityLib
             {
                 patched = true;
             }
-
-            mod = core;
 
             Patching();
         }
@@ -81,9 +77,14 @@ namespace CommunityLib
 
             // UAEN OVERRIDE AI //
             // Negate unit interactions.
-            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getAttackUtility)), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix))); // , postfix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Postfix))
+            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getAttackUtility)), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getBodyguardUtility)), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getDisruptUtility)), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)));
+            // Override AI
+            harmony.Patch(original: AccessTools.Method(typeof(UAEN_DeepOne), nameof(UAEN_DeepOne.turnTickAI), new Type[] {  }), prefix: new HarmonyMethod(patchType, nameof(UAEN_DeepOne_turnTickAI_Prefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UAEN_Ghast), nameof(UAEN_Ghast.turnTickAI), new Type[] {  }), prefix: new HarmonyMethod(patchType, nameof(UAEN_Ghast_turnTickAI_Prefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UAEN_OrcUpstart), nameof(UAEN_OrcUpstart.turnTickAI), new Type[] {  }), prefix: new HarmonyMethod(patchType, nameof(UAEN_OrcUpstart_turnTickAI_Prefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UAEN_Vampire), nameof(UAEN_Vampire.turnTickAI), new Type[] {  }), prefix: new HarmonyMethod(patchType, nameof(UAEN_OrcUpstart_turnTickAI_Prefix)));
             // Ch_Rest_InOrcCamp
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Rest_InOrcCamp), nameof(Ch_Rest_InOrcCamp.complete), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Ch_Rest_InOrcCamp_complete_Postfix)));
             // Rt_DeepOneReproduce
@@ -271,7 +272,7 @@ namespace CommunityLib
         {
             bool result = false;
 
-            foreach (Hooks hook in mod.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
                 bool retValue = hook?.interceptUnitDeath(u, v, killer) ?? false;
 
@@ -286,7 +287,7 @@ namespace CommunityLib
 
         private static void Unit_die_TranspilerBody_StartOfProcess(Unit u, string v, Person killer = null)
         {
-            foreach (Hooks hook in mod.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
                 hook?.onUnitDeath_StartOfProcess(u, v, killer);
             }
@@ -382,7 +383,7 @@ namespace CommunityLib
         private static bool BattleArmy_cycle_TranspilerBody_InterceptCycle(BattleArmy battle)
         {
             bool result = false;
-            foreach (Hooks hook in mod.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
                 bool retValue = hook.interceptArmyBattleCycle(battle);
 
@@ -397,7 +398,7 @@ namespace CommunityLib
 
         private static void BattleArmy_cycle_TranspilerBody_StartOfProcess(BattleArmy battle)
         {
-            foreach (Hooks hook in mod.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
                 hook?.onArmyBattleCycle_StartOfProcess(battle);
             }
@@ -405,7 +406,7 @@ namespace CommunityLib
 
         private static void BattleArmy_cycle_TranspilerBody_EndOfProcess(BattleArmy battle)
         {
-            foreach (Hooks hook in mod.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
                 hook?.onArmyBattleCycle_EndOfProcess(battle);
             }
@@ -463,7 +464,7 @@ namespace CommunityLib
                 }
             }
 
-            foreach (Hooks hook in mod.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
                 hook?.onArmyBattleVictory(battle, victorUnits, victorComs, defeatedUnits, defeatedComs);
             }
@@ -512,7 +513,7 @@ namespace CommunityLib
 
         private static void BattleArmy_unitMovesFromLocation_TranspilerBody_OnAmryBattleRetreatOrFlee(BattleArmy battle, Unit u)
         {
-            foreach (Hooks hook in mod.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
                 hook?.onArmyBattleRetreatOrFlee(battle, u);
             }
@@ -534,7 +535,7 @@ namespace CommunityLib
                 victorComs.AddRange(battle.attComs);
             }
 
-            foreach (Hooks hook in mod.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
                 hook?.onArmyBattleTerminated(battle, victorUnits, victorComs, u);
             }
@@ -565,7 +566,7 @@ namespace CommunityLib
 
         private static void BattleArmy_computeAdvantage_TranspilerBody(BattleArmy battle, double advantage)
         {
-            foreach (Hooks hook in mod.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
                 hook?.onArmyBattleCycle_ComputeAdvantage(battle, advantage);
             }
@@ -607,7 +608,7 @@ namespace CommunityLib
 
         private static void BattleArmy_allocateDamage_TranspilerBody_allocateDamage(BattleArmy battle, List<UM> units, int[] dmgs)
         {
-            foreach (Hooks hook in mod.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
                 hook?.onArmyBattleCycle_AllocateDamage(battle, units, dmgs);
             }
@@ -615,7 +616,7 @@ namespace CommunityLib
 
         private static void BattleArmy_allocateDamage_TranspilerBody_receivesDamage(BattleArmy battle, List<UM> units, int[] dmgs, int i)
         {
-            foreach (Hooks hook in mod.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
                 dmgs[i] = hook?.onUnitReceivesArmyBattleDamage(battle, units[i], dmgs[i]) ?? dmgs[i];
             }
@@ -658,7 +659,7 @@ namespace CommunityLib
         {
             bool result = false;
 
-            foreach (Hooks hook in mod.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
                 bool retValue = hook?.interceptSettlementFallIntoRuin(__instance, v, killer) ?? false;
 
@@ -673,7 +674,7 @@ namespace CommunityLib
                 return result;
             }
 
-            foreach (Hooks hook in mod.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
                 hook?.onSettlementFallIntoRuin_StartOfProcess(__instance, v, killer);
             }
@@ -683,7 +684,7 @@ namespace CommunityLib
 
         private static void Settlement_FallIntoRuin_TranspilerBody_End(Settlement __instance, string v, object killer)
         {
-            foreach (Hooks hook in mod.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
                 hook?.onSettlementFallIntoRuin_EndOfProcess(__instance, v, killer);
             }
@@ -878,7 +879,7 @@ namespace CommunityLib
                 new ReasonMsgMax("Gold for Temples", order.cashForTemples, order.costTemple)
             };
 
-            foreach (Hooks hook in mod.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
                 hook?.onPopupHolyOrder_DisplayBudget(order, msgs);
             }
@@ -969,7 +970,7 @@ namespace CommunityLib
                 new ReasonMsg("of which Rulers", order.nWorshippingRulers)
             };
 
-            foreach (Hooks hook in mod.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
                 hook?.onPopupHolyOrder_DisplayStats(order, msgs);
             }
@@ -1000,7 +1001,7 @@ namespace CommunityLib
                 "/turn)"
             });
 
-            foreach (Hooks hook in mod.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
                 s = hook?.onPopupHolyOrder_DisplayInfluenceElder(order, s, infGain);
             }
@@ -1020,7 +1021,7 @@ namespace CommunityLib
                 "/turn)"
             });
 
-            foreach (Hooks hook in mod.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
                 s = hook?.onPopupHolyOrder_DisplayInfluenceHuman(order, s, infGain);
             }
@@ -1030,7 +1031,7 @@ namespace CommunityLib
 
         private static List<Trait> UA_getStartingTraits_Postfix(List<Trait> traits, UA __instance)
         {
-            foreach (Hooks hook in mod.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
                 hook?.onAgentLevelup_GetTraits(__instance, traits, true);
             }
@@ -1047,7 +1048,7 @@ namespace CommunityLib
 
             if (!ua.hasStartingTraits() || ua.hasAssignedStartingTraits)
             {
-                foreach (Hooks hook in mod.GetRegisteredHooks())
+                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
                 {
                     hook?.onAgentLevelup_GetTraits(ua, traits, false);
                 }
@@ -1077,6 +1078,46 @@ namespace CommunityLib
             return true;
         }
 
+        private static bool UAEN_DeepOne_turnTickAI_Prefix(UAEN_DeepOne __instance)
+        {
+            if (ModCore.core.GetAgentAI().TryGetAgentType(typeof(UAEN_DeepOne), out _))
+            {
+                ModCore.core.GetAgentAI().onTurnTickAI(__instance, AgentAI.InputParams.newDefault());
+                return false;
+            }
+            return true;
+        }
+
+        private static bool UAEN_Ghast_turnTickAI_Prefix(UAEN_Ghast __instance)
+        {
+            if (ModCore.core.GetAgentAI().TryGetAgentType(typeof(UAEN_Ghast), out _))
+            {
+                ModCore.core.GetAgentAI().onTurnTickAI(__instance, AgentAI.InputParams.newDefault());
+                return false;
+            }
+            return true;
+        }
+
+        private static bool UAEN_OrcUpstart_turnTickAI_Prefix(UAEN_OrcUpstart __instance)
+        {
+            if (ModCore.core.GetAgentAI().TryGetAgentType(typeof(UAEN_OrcUpstart), out _))
+            {
+                ModCore.core.GetAgentAI().onTurnTickAI(__instance, AgentAI.InputParams.newDefault());
+                return false;
+            }
+            return true;
+        }
+
+        private static bool UAEN_Vampire_turnTickAI_Prefix(UAEN_Vampire __instance)
+        {
+            if (ModCore.core.GetAgentAI().TryGetAgentType(typeof(UAEN_Vampire), out _))
+            {
+                ModCore.core.GetAgentAI().onTurnTickAI(__instance, AgentAI.InputParams.newDefault());
+                return false;
+            }
+            return true;
+        }
+
         private static void Ch_Rest_InOrcCamp_complete_Postfix(UA u)
         {
             u.challengesSinceRest = 0;
@@ -1089,7 +1130,7 @@ namespace CommunityLib
 
         private static void Template_TranspilerBody()
         {
-            foreach(Hooks hook in mod.GetRegisteredHooks())
+            foreach(Hooks hook in ModCore.core.GetRegisteredHooks())
             {
 
             }
