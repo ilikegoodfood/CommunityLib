@@ -34,8 +34,6 @@ namespace CommunityLib
 
         public override void beforeMapGen(Map map)
         {
-            map.
-
             //Initialize subclasses.
             if (agentAI == null)
             {

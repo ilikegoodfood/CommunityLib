@@ -235,10 +235,7 @@ namespace CommunityLib
         /// <param name="ua"></param>
         /// <param name="aiChallenges"></param>
         /// <param name="aiRituals"></param>
-        /// <param name="respectChallengeVisibility"></param>
-        /// <param name="respectUnitVisibility"></param>
-        /// <param name="respectDanger"></param>
-        /// <param name="valueTimeCost"></param>
+        /// <param name="inputParams"</param>
         /// <returns></returns>
         public virtual bool interceptAgentAI(UA ua, List<AIChallenge> aiChallenges, List<AIChallenge> aiRituals, AgentAI.InputParams inputParams)
         {
@@ -246,15 +243,24 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when the Community Library's Agent AI has finished processing an agent. It recieves the agent (ua), a list of all valid challeges, excluding rituals, (challenges), a dictionary of all locations where one or more rituals is valid, and the rituals (ritualData), and the boolean control values within an 'AgentAI.InputParams' struct (inputParams.).
+        /// This hook fires when the Community Library's Agent AI has started processing an agent, immediately after the 'interceptAgentAI' hook. It recieves the agent (ua), a list of AIChalleges, excluding rituals, (aiChallenges), a list of AIChallenges that are rituals (aiRituals),  and the boolean control values within an 'AgentAI.InputParams' struct (inputParams.
         /// </summary>
         /// <param name="ua"></param>
         /// <param name="aiChallenges"></param>
         /// <param name="aiRituals"></param>
-        /// <param name="respectChallengeVisibility"></param>
-        /// <param name="respectUnitVisibility"></param>
-        /// <param name="respectDanger"></param>
-        /// <param name="valueTimeCost"></param>
+        /// <param name="inputParams"></param>
+        public virtual void onAgentAI_StartOfProcess(UA ua, List<AIChallenge> aiChallenges, List<AIChallenge> aiRituals, AgentAI.InputParams inputParams)
+        {
+            return;
+        }
+
+        /// <summary>
+        /// This hook fires when the Community Library's Agent AI has finished processing an agent. It recieves the agent (ua), a list of all valid challeges, excluding rituals, (challenges), a dictionary of all locations where one or more rituals is valid, and the rituals (ritualData), and the boolean control values within an 'AgentAI.InputParams' struct (inputParams.).
+        /// </summary>
+        /// <param name="ua"></param>
+        /// <param name="challenges"></param>
+        /// <param name="ritualData"></param>
+        /// <param name="inputParams"></param>
         public virtual void onAgentAI_EndOfProcess(UA ua, List<Challenge> challenges, Dictionary<Location, List<Challenge>> ritualData, AgentAI.InputParams inputParams)
         {
             return;
@@ -262,6 +268,7 @@ namespace CommunityLib
 
         /// <summary>
         /// This hook fires when an agent gets the valid list of traits that they can choose from when levelling up, but before they have chosen one. It receives the agent (ua), the list of traits (availableTraits) and whether it is getting the starting traits for specific agent types (isStartingTraits)
+        /// <para>The function that this hooks fires after caches if the agent ua has any possible traits left to get, in the 'ua.person.cachedOutOfTraits' boolean. If adding new traits to the list, make sure to set 'cachedOutOfTraits' to false if your trait is still available. If removing traits, make sure to set 'cachedOutOfTraits' to true if trait other than the one you are removing is available.</para>
         /// </summary>
         /// <param name="ua"></param>
         /// <param name="availableTraits"></param>

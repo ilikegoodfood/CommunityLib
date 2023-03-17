@@ -383,6 +383,11 @@ namespace CommunityLib
                 return;
             }
 
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            {
+                hook.onAgentAI_StartOfProcess(ua, aiChallengesFiltered.Values.ToList(), aiRituals.Values.ToList(), inputParams);
+            }
+
             if (ua.isCommandable() && map.automatic)
             {
                 map.overmind.autoAI.UAAI(ua);
