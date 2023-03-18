@@ -887,7 +887,6 @@ namespace CommunityLib
             if (controlParams.valueTimeCost)
             {
                 double distanceDivisor = getDistanceDivisor(challengeData, ua);
-                reasonMsgs?.Add(new ReasonMsg("Distance Divisor", distanceDivisor));
                 utility /= distanceDivisor;
             }
 
