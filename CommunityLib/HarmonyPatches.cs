@@ -40,7 +40,7 @@ namespace CommunityLib
 
         private static void Patching()
         {
-            Harmony.DEBUG = true;
+            Harmony.DEBUG = false;
             Harmony harmony = new Harmony("ILikeGoodFood.SOFG.CommunityLib");
 
             if (Harmony.HasAnyPatches(harmony.Id))
@@ -75,11 +75,17 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getStartingTraits)), postfix: new HarmonyMethod(patchType, nameof(UA_getStartingTraits_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(Trait), nameof(Trait.getAvailableTraits), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Trait_getAvailableTraits_Postfix)));
 
+            // AGENT AI //
+            // UIScroll_Unit (Challenge utility panel)
+            harmony.Patch(original: AccessTools.Method(typeof(UIScroll_Unit), nameof(UIScroll_Unit.checkData), new Type[] { }), transpiler: new HarmonyMethod(patchType, nameof(UIScroll_Unit_checkData_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIScroll_Unit), nameof(UIScroll_Unit.Update), new Type[] { }), transpiler: new HarmonyMethod(patchType, nameof(UIScroll_Unit_Update_Transpiler)));
+
             // UAEN OVERRIDE AI //
             // Negate unit interactions.
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getAttackUtility)), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getBodyguardUtility)), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getDisruptUtility)), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getVisibleUnits)), prefix: new HarmonyMethod(patchType, nameof(UA_getVisibleUnits_Prefix)));
             // Override AI
             harmony.Patch(original: AccessTools.Method(typeof(UAEN_DeepOne), nameof(UAEN_DeepOne.turnTickAI), new Type[] {  }), prefix: new HarmonyMethod(patchType, nameof(UAEN_DeepOne_turnTickAI_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UAEN_Ghast), nameof(UAEN_Ghast.turnTickAI), new Type[] {  }), prefix: new HarmonyMethod(patchType, nameof(UAEN_Ghast_turnTickAI_Prefix)));
@@ -1056,6 +1062,188 @@ namespace CommunityLib
             return traits;
         }
 
+        private static IEnumerable<CodeInstruction> UIScroll_Unit_checkData_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(UI_Scroll_Unit_checkData_TranspilerBody));
+
+            Label noAI = ilg.DefineLabel();
+            Label skip = ilg.DefineLabel();
+
+            bool found = false;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (!found && i > 5)
+                {
+                    if (instructionList[i].opcode == OpCodes.Nop && instructionList[i - 1].opcode == OpCodes.Callvirt && instructionList[i + 1].opcode == OpCodes.Ldloc_0)
+                    {
+                        for (int j = i; j < instructionList.Count; j++)
+                        {
+                            if (instructionList[j].opcode == OpCodes.Brfalse)
+                            {
+                                skip = (Label)instructionList[j].operand;
+                                break;
+                            }
+                        }
+
+                        yield return new CodeInstruction(OpCodes.Ldarg_0);
+                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                        yield return new CodeInstruction(OpCodes.Brtrue_S, skip);
+                        yield return new CodeInstruction(OpCodes.Nop, noAI);
+                        found = true;
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+        }
+
+        private static bool UI_Scroll_Unit_checkData_TranspilerBody(UIScroll_Unit ui)
+        {
+            UA ua = GraphicalMap.selectedUnit as UA;
+            Console.WriteLine("CommunityLib: Got unit");
+            
+            if (ua == null)
+            {
+                Console.WriteLine("CommunityLib: Unit is not UA");
+                return false;
+            }
+
+            if (ModCore.core.GetAgentAI().TryGetAgentType(ua.GetType(), out List<AIChallenge> _, out AgentAI.ControlParameters? control))
+            {
+                Console.WriteLine("CommunityLib: Got registered AI");
+                if (control == null)
+                {
+                    Console.WriteLine("CommunityLib: cotnrol is null");
+                    return false;
+                }
+                AgentAI.ControlParameters controlParams = (AgentAI.ControlParameters)control;
+
+                List<UIScroll_Unit.SortableTaskBlock> blocks = new List<UIScroll_Unit.SortableTaskBlock>();
+                Console.WriteLine("CommunityLib: Got valid challenges and rituals");
+                foreach (AgentAI.ChallengeData challengeData in ModCore.core.GetAgentAI().getAllValidChallengesAndRituals(ua))
+                {
+                    Console.WriteLine("CommunityLib: Iterating " + challengeData.challenge.getName());
+                    UIScroll_Unit.SortableTaskBlock block = new UIScroll_Unit.SortableTaskBlock();
+                    block.challenge = challengeData.challenge;
+                    block.utility = ModCore.core.GetAgentAI().getChallengeUtility(challengeData, ua, controlParams, block.msgs);
+                    blocks.Add(block);
+                    Console.WriteLine("CommunityLib: Added " + challengeData.challenge.getName());
+                }
+                foreach (Unit unit in ua.getVisibleUnits())
+                {
+                    Console.WriteLine("CommunityLib: Iterating " + unit.getName());
+                    if (unit is UA agent)
+                    {
+                        Console.WriteLine("CommunityLib: Unit is UA");
+                        UIScroll_Unit.SortableTaskBlock blockAttack = new UIScroll_Unit.SortableTaskBlock();
+                        blockAttack.unitToAttack = unit;
+                        blockAttack.utility = ua.getAttackUtility(unit, blockAttack.msgs, controlParams.includeDangerousFoe);
+                        if (blockAttack.utility >= -1000)
+                        {
+                            blocks.Add(blockAttack);
+                        }
+                        Console.WriteLine("CommunityLib: Added attack " + unit.getName());
+                        if (ua != ua.map.awarenessManager.getChosenOne())
+                        {
+                            UIScroll_Unit.SortableTaskBlock blockGuard = new UIScroll_Unit.SortableTaskBlock();
+                            blockGuard.unitToGuard = unit;
+                            blockGuard.utility = ua.getBodyguardUtility(unit, blockGuard.msgs);
+                            if (blockGuard.utility >= -1000)
+                            {
+                                blocks.Add(blockGuard);
+                            }
+                            Console.WriteLine("CommunityLib: Added Guard" + unit.getName());
+                        }
+                        if (agent.task is Task_PerformChallenge performChallenge && performChallenge.challenge.isChannelled())
+                        {
+                            UIScroll_Unit.SortableTaskBlock blockDisrupt = new UIScroll_Unit.SortableTaskBlock();
+                            blockDisrupt.unitToDisrupt = unit;
+                            blockDisrupt.utility = ua.getDisruptUtility(unit, blockDisrupt.msgs);
+                            if (blockDisrupt.utility >= -1000)
+                            {
+                                blocks.Add(blockDisrupt);
+                            }
+                            Console.WriteLine("CommunityLib: Added Disrupt " + unit.getName());
+                        }
+                    }
+                }
+
+                Console.WriteLine("CommunityLib: Created Blocks");
+                blocks.Sort(ui);
+                int num = 10;
+                HashSet<Type> hashSet = new HashSet<Type>();
+                foreach (UIScroll_Unit.SortableTaskBlock block in blocks)
+                {
+                    bool compression = ui.tHeroCompression.isOn;
+                    if (compression && block.challenge != null)
+                    {
+                        if (hashSet.Contains(block.challenge.GetType()))
+                        {
+                            continue;
+                        }
+                        hashSet.Add(block.challenge.GetType());
+                    }
+                    GameObject gO = UnityEngine.Object.Instantiate<GameObject>(ui.master.world.prefabStore.uieChallengePerceptionBox, ui.listContent);
+                    gO.GetComponent<UIE_ChallengePerception>().setTo(ui.master.world, block);
+                    num--;
+                }
+            }
+
+            return false;
+        }
+
+        private static IEnumerable<CodeInstruction> UIScroll_Unit_Update_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(UIScroll_Unit_Update_TranspilerBody));
+            FieldInfo FI_UIScroll_Unit_Master = AccessTools.Field(typeof(UIScroll_Unit), nameof(UIScroll_Unit.master));
+            FieldInfo FI_UIMaster_World = AccessTools.Field(typeof(UIMaster), nameof(UIMaster.world));
+
+            bool found = false;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                yield return instructionList[i];
+
+                if (!found)
+                {
+                    if (instructionList[i].opcode == OpCodes.Brfalse && instructionList[i - 1].opcode == OpCodes.Ldloc_S)
+                    {
+                        if (instructionList[i + 3].opcode == OpCodes.Ldfld && instructionList[i + 3].operand as FieldInfo == FI_UIScroll_Unit_Master)
+                        {
+                            if (instructionList[i + 4].opcode == OpCodes.Ldfld && instructionList[i + 4].operand as FieldInfo == FI_UIMaster_World)
+                            {
+                                yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                                yield return new CodeInstruction(OpCodes.Brtrue, instructionList[i].operand);
+                                found = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private static bool UIScroll_Unit_Update_TranspilerBody()
+        {
+            if (GraphicalMap.selectedUnit is UA ua && ModCore.core.GetAgentAI().TryGetAgentType(ua.GetType(), out List<AIChallenge> _, out AgentAI.ControlParameters? control))
+            {
+                if (control == null)
+                {
+                    return false;
+                }
+                AgentAI.ControlParameters controlParams = (AgentAI.ControlParameters)control;
+
+                if (!controlParams.valueTimeCost)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private static bool UAEN_UnitInteraction_Prefix(UA __instance, ref double __result)
         {
             switch (__instance)
@@ -1078,11 +1266,33 @@ namespace CommunityLib
             return true;
         }
 
+        private static bool UA_getVisibleUnits_Prefix(UA __instance, ref List<Unit> __result)
+        {
+            switch (__instance)
+            {
+                case UAEN_DeepOne _:
+                    __result = new List<Unit>();
+                    return false;
+                case UAEN_Ghast _:
+                    __result = new List<Unit>();
+                    return false;
+                case UAEN_OrcUpstart _:
+                    __result = new List<Unit>();
+                    return false;
+                case UAEN_Vampire _:
+                    __result = new List<Unit>();
+                    return false;
+                default:
+                    break;
+            }
+            return true;
+        }
+
         private static bool UAEN_DeepOne_turnTickAI_Prefix(UAEN_DeepOne __instance)
         {
-            if (ModCore.core.GetAgentAI().TryGetAgentType(typeof(UAEN_DeepOne), out _))
+            if (ModCore.core.GetAgentAI().TryGetAgentType(typeof(UAEN_DeepOne)))
             {
-                ModCore.core.GetAgentAI().onTurnTickAI(__instance, AgentAI.InputParams.newDefault());
+                ModCore.core.GetAgentAI().onTurnTickAI(__instance);
                 return false;
             }
             return true;
@@ -1090,9 +1300,9 @@ namespace CommunityLib
 
         private static bool UAEN_Ghast_turnTickAI_Prefix(UAEN_Ghast __instance)
         {
-            if (ModCore.core.GetAgentAI().TryGetAgentType(typeof(UAEN_Ghast), out _))
+            if (ModCore.core.GetAgentAI().TryGetAgentType(typeof(UAEN_Ghast)))
             {
-                ModCore.core.GetAgentAI().onTurnTickAI(__instance, AgentAI.InputParams.newDefault());
+                ModCore.core.GetAgentAI().onTurnTickAI(__instance);
                 return false;
             }
             return true;
@@ -1100,9 +1310,9 @@ namespace CommunityLib
 
         private static bool UAEN_OrcUpstart_turnTickAI_Prefix(UAEN_OrcUpstart __instance)
         {
-            if (ModCore.core.GetAgentAI().TryGetAgentType(typeof(UAEN_OrcUpstart), out _))
+            if (ModCore.core.GetAgentAI().TryGetAgentType(typeof(UAEN_OrcUpstart)))
             {
-                ModCore.core.GetAgentAI().onTurnTickAI(__instance, AgentAI.InputParams.newDefault());
+                ModCore.core.GetAgentAI().onTurnTickAI(__instance);
                 return false;
             }
             return true;
@@ -1110,9 +1320,9 @@ namespace CommunityLib
 
         private static bool UAEN_Vampire_turnTickAI_Prefix(UAEN_Vampire __instance)
         {
-            if (ModCore.core.GetAgentAI().TryGetAgentType(typeof(UAEN_Vampire), out _))
+            if (ModCore.core.GetAgentAI().TryGetAgentType(typeof(UAEN_Vampire)))
             {
-                ModCore.core.GetAgentAI().onTurnTickAI(__instance, AgentAI.InputParams.newDefault());
+                ModCore.core.GetAgentAI().onTurnTickAI(__instance);
                 return false;
             }
             return true;

@@ -60,13 +60,13 @@ namespace CommunityLib
 
         public double profile;
 
-        public List<Func<Challenge, UA, Location, double, double>> delegates_Profile;
+        public List<Func<AgentAI.ChallengeData, UA, double, double>> delegates_Profile;
 
-        public List<Func<Challenge, Location, bool>> delegates_Valid;
+        public List<Func<AgentAI.ChallengeData, bool>> delegates_Valid;
 
-        public List<Func<Challenge, UA, Location, bool>> delegates_ValidFor;
+        public List<Func<AgentAI.ChallengeData, UA, bool>> delegates_ValidFor;
 
-        public List<Func<Challenge, UA, Location, double, List<ReasonMsg>, double>> delegates_Utility;
+        public List<Func<AgentAI.ChallengeData, UA, double, List<ReasonMsg>, double>> delegates_Utility;
 
         /// <summary>
         /// The constructor for AIChallnges. Delegates must be assigned after initialization.
@@ -94,41 +94,28 @@ namespace CommunityLib
             }
             this.tags = tags;
 
-            delegates_Profile = new List<Func<Challenge, UA, Location, double, double>>();
-            delegates_Valid = new List<Func<Challenge, Location, bool>>();
-            delegates_ValidFor = new List<Func<Challenge, UA, Location, bool>>();
-            delegates_Utility = new List<Func<Challenge, UA, Location, double, List<ReasonMsg>, double>>();
+            delegates_Profile = new List<Func<AgentAI.ChallengeData, UA,  double, double>>();
+            delegates_Valid = new List<Func<AgentAI.ChallengeData,  bool>>();
+            delegates_ValidFor = new List<Func<AgentAI.ChallengeData, UA, bool>>();
+            delegates_Utility = new List<Func<AgentAI.ChallengeData, UA, double, List<ReasonMsg>, double>>();
 
             isRitual = challengeType.IsSubclassOf(typeof(Ritual));
         }
 
-        public double checkChallengeProfile(Challenge challenge, UA ua, Location location = null)
+        public double checkChallengeProfile(AgentAI.ChallengeData challengeData, UA ua)
         {
-            if (challenge.GetType() != challengeType)
+            if (challengeData.challenge.GetType() != challengeType)
             {
                 Console.WriteLine("CommunityLib: ERROR: Challenge is not of Type " + challengeType);
                 return -1;
             }
 
-            if (isRitual)
-            {
-                if (location == null)
-                {
-                    Console.WriteLine("CommunityLib: ERROR: Challenge is ritual and location is null");
-                    return -1;
-                }
-            }
-            else
-            {
-                location = challenge.location;
-            }
-
             double result = profile;
             if (delegates_Profile != null)
             {
-                foreach (Func<Challenge, UA, Location, double, double> delegate_Profile in delegates_Profile)
+                foreach (Func<AgentAI.ChallengeData, UA, double, double> delegate_Profile in delegates_Profile)
                 {
-                    result = delegate_Profile(challenge, ua, location, profile);
+                    result = delegate_Profile(challengeData, ua, profile);
                 }
             }
 
@@ -140,29 +127,16 @@ namespace CommunityLib
             return result;
         }
 
-        public bool checkChallengeVisibility(Challenge challenge, UA ua, Location location = null)
+        public bool checkChallengeVisibility(AgentAI.ChallengeData challengeData, UA ua)
         {
-            if (challenge.GetType() != challengeType)
+            if (challengeData.challenge.GetType() != challengeType)
             {
                 Console.WriteLine("CommunityLib: ERROR: Challenge is not of Type " + challengeType);
                 return false;
             }
 
-            if (isRitual)
-            {
-                if (location == null)
-                {
-                    Console.WriteLine("CommunityLib: ERROR: Challenge is ritual and location is null");
-                    return false;
-                }
-            }
-            else
-            {
-                location = challenge.location;
-            }
-
-            double profile = checkChallengeProfile(challenge, ua, location);
-            int dist = ua.map.getStepDist(ua.location, location);
+            double profile = checkChallengeProfile(challengeData, ua);
+            int dist = ua.map.getStepDist(ua.location, challengeData.location);
             if (profile / 10 >= dist)
             {
                 if (!AgentAI.debug.outputProfile_AllChallenges && AgentAI.debug.outputProfile_VisibleChallenges)
@@ -183,30 +157,17 @@ namespace CommunityLib
             return false;
         }
 
-        public bool checkChallengeIsValid(Challenge challenge, UA ua, Location location = null)
+        public bool checkChallengeIsValid(AgentAI.ChallengeData challengeData, UA ua)
         {
-            if (challenge.GetType() != challengeType)
+            if (challengeData.challenge.GetType() != challengeType)
             {
                 Console.WriteLine("CommunityLib: ERROR: Challenge is not of Type " + challengeType);
                 return false;
             }
 
-            if (isRitual)
+            if (challengeData.location != ua.location)
             {
-                if (location == null)
-                {
-                    Console.WriteLine("CommunityLib: ERROR: Challenge is ritual and location is null");
-                    return false;
-                }
-            }
-            else
-            {
-                location = challenge.location;
-            }
-
-            if (location != ua.location)
-            {
-                Location[] pathTo = ua.location.map.getPathTo(ua.location, location, ua, safeMove);
+                Location[] pathTo = ua.location.map.getPathTo(ua.location, challengeData.location, ua, safeMove);
                 if (pathTo == null || pathTo.Length < 2)
                 {
                     if (AgentAI.debug.outputValidity_AllChallenges)
@@ -216,7 +177,7 @@ namespace CommunityLib
                     return false;
                 }
             }
-            else if (safeMove && (location.soc?.hostileTo(ua) ?? false))
+            else if (safeMove && (challengeData.location.soc?.hostileTo(ua) ?? false))
             {
                 if (AgentAI.debug.outputValidity_AllChallenges)
                 {
@@ -225,16 +186,16 @@ namespace CommunityLib
                 return false;
             }
 
-            if (!validTags(challenge, ua, location))
+            if (!validTags(challengeData, ua))
             {
                 return false;
             }
 
             if (delegates_Valid != null)
             {
-                foreach (Func<Challenge, Location, bool> delegate_Valid in delegates_Valid)
+                foreach (Func<AgentAI.ChallengeData, bool> delegate_Valid in delegates_Valid)
                 {
-                    if (!delegate_Valid(challenge, location))
+                    if (!delegate_Valid(challengeData))
                     {
                         if (AgentAI.debug.outputValidity_AllChallenges)
                         {
@@ -247,9 +208,9 @@ namespace CommunityLib
 
             if (delegates_ValidFor != null)
             {
-                foreach (Func<Challenge, UA, Location, bool> delegate_ValidFor in delegates_ValidFor)
+                foreach (Func<AgentAI.ChallengeData, UA, bool> delegate_ValidFor in delegates_ValidFor)
                 {
-                    if (!delegate_ValidFor(challenge, ua, location))
+                    if (!delegate_ValidFor(challengeData, ua))
                     {
                         if (AgentAI.debug.outputValidity_AllChallenges)
                         {
@@ -267,14 +228,14 @@ namespace CommunityLib
             return true;
         }
 
-        private bool validTags(Challenge challenge, UA ua, Location location)
+        private bool validTags(AgentAI.ChallengeData challengeData, UA ua)
         {
             foreach (ChallengeTags tag in tags)
             {
                 switch (tag)
                 {
                     case ChallengeTags.BaseValid:
-                        if (!challenge.valid())
+                        if (!challengeData.challenge.valid())
                         {
                             if (AgentAI.debug.outputValidity_AllChallenges)
                             {
@@ -284,7 +245,7 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.BaseValidFor:
-                        if (!challenge.validFor(ua))
+                        if (!challengeData.challenge.validFor(ua))
                         {
                             if (AgentAI.debug.outputValidity_AllChallenges)
                             {
@@ -300,7 +261,7 @@ namespace CommunityLib
                         }
                         return false;
                     case ChallengeTags.RequiresDeath:
-                        Pr_Death death = location.properties.OfType<Pr_Death>().FirstOrDefault();
+                        Pr_Death death = challengeData.location.properties.OfType<Pr_Death>().FirstOrDefault();
                         if (death == null || death.charge <= 0.0)
                         {
                             if (AgentAI.debug.outputValidity_AllChallenges)
@@ -311,7 +272,7 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.RequiresShadow:
-                        if (location.getShadow() < 0.05)
+                        if (challengeData.location.getShadow() < 0.05)
                         {
                             if (AgentAI.debug.outputValidity_AllChallenges)
                             {
@@ -321,7 +282,7 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.RequiresInfiltrated:
-                        if (location.settlement?.infiltration < 1.0)
+                        if (challengeData.location.settlement?.infiltration < 1.0)
                         {
                             if (AgentAI.debug.outputValidity_AllChallenges)
                             {
@@ -331,7 +292,7 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.Enshadows:
-                        if (location.getShadow() >= 1.0)
+                        if (challengeData.location.getShadow() >= 1.0)
                         {
                             if (AgentAI.debug.outputValidity_AllChallenges)
                             {
@@ -339,7 +300,7 @@ namespace CommunityLib
                             }
                             return false;
                         }
-                        Settlement settlement = location.settlement;
+                        Settlement settlement = challengeData.location.settlement;
                         if (settlement != null)
                         {
                             if (settlement.shadowPolicy == Settlement.shadowResponse.DENY)
@@ -361,8 +322,8 @@ namespace CommunityLib
                                 return false;
                             }
                         }
-                        Society society = location.soc as Society;
-                        if (society != null && (society.isAlliance && challenge.map.opt_allianceState == 1))
+                        Society society = challengeData.location.soc as Society;
+                        if (society != null && (society.isAlliance && challengeData.challenge.map.opt_allianceState == 1))
                         {
                             if (AgentAI.debug.outputValidity_AllChallenges)
                             {
@@ -372,7 +333,7 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.PushesShadow:
-                        if (location.getShadow() < 0.05)
+                        if (challengeData.location.getShadow() < 0.05)
                         {
                             if (AgentAI.debug.outputValidity_AllChallenges)
                             {
@@ -381,12 +342,12 @@ namespace CommunityLib
                             return false;
                         }
                         double deltaShadow = 0.0;
-                        List<Location> neighbouringLocations = location.getNeighbours();
+                        List<Location> neighbouringLocations = challengeData.location.getNeighbours();
                         Pr_Ward ward;
                         foreach (Location loc in neighbouringLocations)
                         {
                             settlement = loc.settlement;
-                            if (settlement == null && challenge is Ch_WellOfShadows)
+                            if (settlement == null && challengeData.challenge is Ch_WellOfShadows)
                             {
                                 continue;
                             }
@@ -399,7 +360,7 @@ namespace CommunityLib
                                 SettlementHuman settlementHuman = settlement as SettlementHuman;
                                 if (settlementHuman == null)
                                 {
-                                    if (challenge is Ch_WellOfShadows)
+                                    if (challengeData.challenge is Ch_WellOfShadows)
                                     {
                                         continue;
                                     }
@@ -410,13 +371,13 @@ namespace CommunityLib
                                 }
                             }
                             society = loc.soc as Society;
-                            if (society != null && society.isAlliance && challenge.map.opt_allianceState == 1)
+                            if (society != null && society.isAlliance && challengeData.challenge.map.opt_allianceState == 1)
                             {
                                 continue;
                             }
                             ward = loc.properties.OfType<Pr_Ward>().FirstOrDefault();
                             double charge = (ward?.charge ?? 0.0) / 100;
-                            deltaShadow += Math.Max((location.getShadow() - loc.getShadow()) * (1 - charge), 0.0);
+                            deltaShadow += Math.Max((challengeData.location.getShadow() - loc.getShadow()) * (1 - charge), 0.0);
                         }
                         if (deltaShadow < 0.05)
                         {
@@ -428,7 +389,7 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.RemovesShadow:
-                        settlement = location.settlement;
+                        settlement = challengeData.location.settlement;
                         if (settlement != null)
                         {
                             SettlementHuman settlementHuman = settlement as SettlementHuman;
@@ -441,8 +402,8 @@ namespace CommunityLib
                                 return false;
                             }
                         }
-                        society = location.soc as Society;
-                        if (society != null && society.isAlliance && challenge.map.opt_allianceState == 1)
+                        society = challengeData.location.soc as Society;
+                        if (society != null && society.isAlliance && challengeData.challenge.map.opt_allianceState == 1)
                         {
                             if (AgentAI.debug.outputValidity_AllChallenges)
                             {
@@ -450,7 +411,7 @@ namespace CommunityLib
                             }
                             return false;
                         }
-                        if (location.getShadow() < 0.05)
+                        if (challengeData.location.getShadow() < 0.05)
                         {
                             if (AgentAI.debug.outputValidity_AllChallenges)
                             {
@@ -460,7 +421,7 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.PreventsReceiveingShadow:
-                        settlement = location.settlement;
+                        settlement = challengeData.location.settlement;
                         if (settlement != null)
                         {
                             SettlementHuman settlementHuman = settlement as SettlementHuman;
@@ -473,8 +434,8 @@ namespace CommunityLib
                                 return false;
                             }
                         }
-                        society = location.soc as Society;
-                        if (society != null && (society.isAlliance && challenge.map.opt_allianceState == 1))
+                        society = challengeData.location.soc as Society;
+                        if (society != null && (society.isAlliance && challengeData.challenge.map.opt_allianceState == 1))
                         {
                             if (AgentAI.debug.outputValidity_AllChallenges)
                             {
@@ -482,7 +443,7 @@ namespace CommunityLib
                             }
                             return false;
                         }
-                        if (location.getShadow() >= 1.0)
+                        if (challengeData.location.getShadow() >= 1.0)
                         {
                             if (AgentAI.debug.outputValidity_AllChallenges)
                             {
@@ -490,7 +451,7 @@ namespace CommunityLib
                             }
                             return false;
                         }
-                        ward = location.properties.OfType<Pr_Ward>().FirstOrDefault();
+                        ward = challengeData.location.properties.OfType<Pr_Ward>().FirstOrDefault();
                         if (ward?.charge >= 99)
                         {
                             if (AgentAI.debug.outputValidity_AllChallenges)
@@ -501,8 +462,8 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.RecruitsMinion:
-                        Ch_RecruitMinion recruitMinion = challenge as Ch_RecruitMinion;
-                        Ch_RecruitOgre recruitOgre = challenge as Ch_RecruitOgre;
+                        Ch_RecruitMinion recruitMinion = challengeData.challenge as Ch_RecruitMinion;
+                        Ch_RecruitOgre recruitOgre = challengeData.challenge as Ch_RecruitOgre;
                         if (recruitMinion != null)
                         {
                             if (ua.person?.gold < recruitMinion.exemplar.getGoldCost())
@@ -600,7 +561,7 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.RequiresOwnSociety:
-                        if (ua.society == null ||  ua.society != location.soc)
+                        if (ua.society == null ||  ua.society != challengeData.location.soc)
                         {
                             if (AgentAI.debug.outputValidity_AllChallenges)
                             {
@@ -610,7 +571,7 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.ForbidOwnSociety:
-                        if (ua.society != null && ua.society == location.soc)
+                        if (ua.society != null && ua.society == challengeData.location.soc)
                         {
                             if (AgentAI.debug.outputValidity_AllChallenges)
                             {
@@ -620,9 +581,9 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.ForbidWar:
-                        if ((ua.society == null || ua.society != location.soc))
+                        if ((ua.society == null || ua.society != challengeData.location.soc))
                         {
-                            if (location.soc != null && ua.society.relations.ContainsKey(location.soc) && ua.society.relations[location.soc].state == DipRel.dipState.war)
+                            if (challengeData.location.soc != null && ua.society.relations.ContainsKey(challengeData.location.soc) && ua.society.relations[challengeData.location.soc].state == DipRel.dipState.war)
                             {
                                 if (AgentAI.debug.outputValidity_AllChallenges)
                                 {
@@ -633,11 +594,11 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.ForbidPeace:
-                        if (ua.society != null && ua.society == location.soc)
+                        if (ua.society != null && ua.society == challengeData.location.soc)
                         {
                             break;
                         }
-                        else if (location.soc != null && ua.society.relations.ContainsKey(location.soc) && ua.society.relations[location.soc].state != DipRel.dipState.war)
+                        else if (challengeData.location.soc != null && ua.society.relations.ContainsKey(challengeData.location.soc) && ua.society.relations[challengeData.location.soc].state != DipRel.dipState.war)
                         {
                             if (AgentAI.debug.outputValidity_AllChallenges)
                             {
@@ -647,7 +608,7 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.Aquaphibious:
-                        if (!location.isOcean && !location.isCoastal)
+                        if (!challengeData.location.isOcean && !challengeData.location.isCoastal)
                         {
                             if (AgentAI.debug.outputValidity_AllChallenges)
                             {
@@ -664,7 +625,7 @@ namespace CommunityLib
             return true;
         }
 
-        public double checkChallengeUtility(Challenge challenge, UA ua, List<ReasonMsg> reasonMsgs = null, Location location = null)
+        public double checkChallengeUtility(AgentAI.ChallengeData challengeData, UA ua, List<ReasonMsg> reasonMsgs = null)
         {
             // Reome after testing.
             if (reasonMsgs == null)
@@ -675,28 +636,15 @@ namespace CommunityLib
 
             double result = 0.0;
 
-            if (challenge.GetType() != challengeType)
+            if (challengeData.challenge.GetType() != challengeType)
             {
-                reasonMsgs?.Add(new ReasonMsg("ERROR: Challenge " + challenge.getName() + " is not of type " + challengeType, -10000.0));
+                reasonMsgs?.Add(new ReasonMsg("ERROR: Challenge " + challengeData.challenge.getName() + " is not of type " + challengeType, -10000.0));
                 return -10000.0;
             }
 
-            if (isRitual)
+            if (challengeData.location != ua.location)
             {
-                if (location == null)
-                {
-                    reasonMsgs?.Add(new ReasonMsg("ERROR: Ritual " + challenge.getName() + " requires a location to be performed at. Provided location was null", -10000.0));
-                    return -10000.0;
-                }
-            }
-            else
-            {
-                location = challenge.location;
-            }
-
-            if (location != ua.location)
-            {
-                Location[] pathTo = ua.location.map.getPathTo(ua.location, location, ua, safeMove);
+                Location[] pathTo = ua.location.map.getPathTo(ua.location, challengeData.location, ua, safeMove);
                 if (pathTo == null || pathTo.Length < 2)
                 {
                     if (safeMove)
@@ -711,37 +659,26 @@ namespace CommunityLib
                     }
                 }
             }
-            else if (safeMove && location.soc != null && location.soc.hostileTo(ua))
+            else if (safeMove && challengeData.location.soc != null && challengeData.location.soc.hostileTo(ua))
             {
                 reasonMsgs?.Add(new ReasonMsg("Army Blocking Me", -125.0));
                 result -= 125;
             }
 
-            result += utilityTags(challenge, ua, location, reasonMsgs);
+            result += utilityTags(challengeData, ua, reasonMsgs);
 
             if (delegates_Utility != null)
             {
-                foreach (Func<Challenge, UA, Location, double, List<ReasonMsg>, double> delegate_Utility in delegates_Utility)
+                foreach (Func<AgentAI.ChallengeData, UA, double, List<ReasonMsg>, double> delegate_Utility in delegates_Utility)
                 {
-                    result = delegate_Utility(challenge, ua, location, result, reasonMsgs);
+                    result = delegate_Utility(challengeData, ua, result, reasonMsgs);
                 }
             }
-
-            // Test Message
-            /*Console.WriteLine("CommunityLib: AgentAI getting Utility for challenge " + challenge.getName() + " at " + location.getName() + " on behalf of " + ua.getName() + " of social group " + ua.society.getName());
-            if (reasonMsgs != null)
-            {
-                foreach (ReasonMsg reasonMsg in reasonMsgs)
-                {
-                    Console.WriteLine(reasonMsg.msg + ": " + reasonMsg.value);
-                }
-                Console.WriteLine("Utility: " + result);
-            }*/
             
             return result;
         }
 
-        private double utilityTags(Challenge challenge, UA ua, Location location, List<ReasonMsg> reasonMsgs)
+        private double utilityTags(AgentAI.ChallengeData challengeData, UA ua, List<ReasonMsg> reasonMsgs)
         {
             double result = 0.0;
             foreach (ChallengeTags tag in tags)
@@ -749,7 +686,7 @@ namespace CommunityLib
                 switch (tag)
                 {
                     case ChallengeTags.BaseUtility:
-                        result += challenge.getUtility(ua, reasonMsgs);
+                        result += challengeData.challenge.getUtility(ua, reasonMsgs);
                         break;
                     case ChallengeTags.Forbidden:
                         double val = -10000.0;
@@ -757,7 +694,7 @@ namespace CommunityLib
                         result += val;
                         break;
                     case ChallengeTags.RequiresDeath:
-                        Pr_Death death = location.properties.OfType<Pr_Death>().FirstOrDefault();
+                        Pr_Death death = challengeData.location.properties.OfType<Pr_Death>().FirstOrDefault();
                         val = -1000;
                         if (death == null || death.charge <= 0.0)
                         {
@@ -772,7 +709,7 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.RequiresShadow:
-                        if (location.getShadow() < 0.05)
+                        if (challengeData.location.getShadow() < 0.05)
                         {
                             val = -1000;
                             reasonMsgs?.Add(new ReasonMsg("Requires Shadow", val));
@@ -781,12 +718,12 @@ namespace CommunityLib
                         break;
                     case ChallengeTags.Enshadows:
                         val = -1000;
-                        if (location.getShadow() == 1.0)
+                        if (challengeData.location.getShadow() == 1.0)
                         {
                             reasonMsgs?.Add(new ReasonMsg("Location Already Ensahdowed", val));
                             result += val;
                         }
-                        Settlement settlement = location.settlement;
+                        Settlement settlement = challengeData.location.settlement;
                         if (settlement != null)
                         {
                             if (settlement.shadowPolicy == Settlement.shadowResponse.DENY)
@@ -802,28 +739,28 @@ namespace CommunityLib
                                 result += val;
                             }
                         }
-                        Society society = location.soc as Society;
+                        Society society = challengeData.location.soc as Society;
                         if (society != null && society.isAlliance)
                         {
-                            if (challenge.map.opt_allianceState == 1)
+                            if (challengeData.challenge.map.opt_allianceState == 1)
                             {
                                 reasonMsgs?.Add(new ReasonMsg("Alliance cannot be enshadowed", val));
                                 result += val;
                             }
-                            else if (challenge.map.opt_allianceState == 2)
+                            else if (challengeData.challenge.map.opt_allianceState == 2)
                             {
                                 val = -20;
                                 reasonMsgs?.Add(new ReasonMsg("Alliance can purge shadow", val));
                                 result += val;
                             }
                         }
-                        val = (1 - location.getShadow()) * 100;
+                        val = (1 - challengeData.location.getShadow()) * 100;
                         reasonMsgs?.Add(new ReasonMsg("Purity", val));
                         result += val;
                         break;
                     case ChallengeTags.PushesShadow:
                         val = -1000;
-                        if (location.getShadow() < 0.05)
+                        if (challengeData.location.getShadow() < 0.05)
                         {
                             reasonMsgs?.Add(new ReasonMsg("Requires Shadow", val));
                             result += val;
@@ -831,10 +768,10 @@ namespace CommunityLib
                         else
                         {
                             double deltaShadow = 0.0;
-                            foreach (Location loc in location.getNeighbours())
+                            foreach (Location loc in challengeData.location.getNeighbours())
                             {
                                 settlement = loc.settlement;
-                                if (settlement == null && challenge is Ch_WellOfShadows)
+                                if (settlement == null && challengeData.challenge is Ch_WellOfShadows)
                                 {
                                     continue;
                                 }
@@ -847,7 +784,7 @@ namespace CommunityLib
                                     SettlementHuman settlementHuman = settlement as SettlementHuman;
                                     if (settlementHuman == null)
                                     {
-                                        if (challenge is Ch_WellOfShadows)
+                                        if (challengeData.challenge is Ch_WellOfShadows)
                                         {
                                             continue;
                                         }
@@ -858,13 +795,13 @@ namespace CommunityLib
                                     }
                                 }
                                 society = loc.soc as Society;
-                                if (society != null && (society.isAlliance && challenge.map.opt_allianceState == 1))
+                                if (society != null && (society.isAlliance && challengeData.challenge.map.opt_allianceState == 1))
                                 {
                                     continue;
                                 }
                                 Pr_Ward ward = loc.properties.OfType<Pr_Ward>().FirstOrDefault();
                                 double charge = (ward?.charge ?? 0.0) / 100;
-                                double diff = location.getShadow() - loc.getShadow();
+                                double diff = challengeData.location.getShadow() - loc.getShadow();
                                 deltaShadow += Math.Max(diff * (1 - charge), 0.0);
                             }
                             if (deltaShadow < 0.05)
@@ -882,15 +819,15 @@ namespace CommunityLib
                         break;
                     case ChallengeTags.RemovesShadow:
                         val = -1000;
-                        if (location.getShadow() < 0.05)
+                        if (challengeData.location.getShadow() < 0.05)
                         {
                             reasonMsgs?.Add(new ReasonMsg("Requires Shadow", val));
                             result += val;
                         }
                         else
                         {
-                            settlement = location.settlement;
-                            Pr_WellOfShadows well = location.properties.OfType<Pr_WellOfShadows>().FirstOrDefault();
+                            settlement = challengeData.location.settlement;
+                            Pr_WellOfShadows well = challengeData.location.properties.OfType<Pr_WellOfShadows>().FirstOrDefault();
                             if (settlement != null)
                             {
                                 if (settlement.shadowPolicy == Settlement.shadowResponse.DENY && well == null)
@@ -909,7 +846,7 @@ namespace CommunityLib
                             }
 
                             double deltaShadow = 0.0;
-                            foreach (Location loc in location.getNeighbours())
+                            foreach (Location loc in challengeData.location.getNeighbours())
                             {
                                 settlement = loc.settlement;
                                 if (settlement != null)
@@ -928,13 +865,13 @@ namespace CommunityLib
                                     }
                                 }
                                 society = loc.soc as Society;
-                                if (society != null && (society.isAlliance && challenge.map.opt_allianceState == 1))
+                                if (society != null && (society.isAlliance && challengeData.challenge.map.opt_allianceState == 1))
                                 {
                                     continue;
                                 }
                                 Pr_Ward ward = loc.properties.OfType<Pr_Ward>().FirstOrDefault();
                                 double charge = ward?.charge ?? 0.0;
-                                double diff = location.getShadow() - loc.getShadow();
+                                double diff = challengeData.location.getShadow() - loc.getShadow();
                                 deltaShadow += Math.Max(diff * (1 - charge), 0.0);
                             }
 
@@ -951,14 +888,14 @@ namespace CommunityLib
                         break;
                     case ChallengeTags.PreventsReceiveingShadow:
                         val = -1000;
-                        if (location.getShadow() >= 1.0)
+                        if (challengeData.location.getShadow() >= 1.0)
                         {
                             reasonMsgs?.Add(new ReasonMsg("Location Already Enshadowed", val));
                             result += val;
                         }
                         else
                         {
-                            Pr_Ward ward = location.properties.OfType<Pr_Ward>().FirstOrDefault();
+                            Pr_Ward ward = challengeData.location.properties.OfType<Pr_Ward>().FirstOrDefault();
                             val = (ward?.charge ?? -1.0) * -1;
                             if (val < 0.0)
                             {
@@ -966,8 +903,8 @@ namespace CommunityLib
                                 result += val;
                             }
 
-                            settlement = location.settlement;
-                            Pr_WellOfShadows well = location.properties.OfType<Pr_WellOfShadows>().FirstOrDefault();
+                            settlement = challengeData.location.settlement;
+                            Pr_WellOfShadows well = challengeData.location.properties.OfType<Pr_WellOfShadows>().FirstOrDefault();
                             if (settlement != null)
                             {
                                 if (settlement.shadowPolicy == Settlement.shadowResponse.DENY && well == null)
@@ -988,9 +925,9 @@ namespace CommunityLib
 
                             double deltaShadow = 0.0;
                             double deltaShadow2 = 0.0;
-                            foreach (Location loc in location.getNeighbours())
+                            foreach (Location loc in challengeData.location.getNeighbours())
                             {
-                                settlement = location.settlement;
+                                settlement = challengeData.location.settlement;
                                 if (settlement != null)
                                 {
                                     if (settlement.shadowPolicy == Settlement.shadowResponse.DENY)
@@ -1004,11 +941,11 @@ namespace CommunityLib
                                     }
                                 }
                                 society = loc.soc as Society;
-                                if (society != null && (society.isAlliance && challenge.map.opt_allianceState == 1))
+                                if (society != null && (society.isAlliance && challengeData.challenge.map.opt_allianceState == 1))
                                 {
                                     continue;
                                 }
-                                double diff = loc.getShadow() - location.getShadow();
+                                double diff = loc.getShadow() - challengeData.location.getShadow();
                                 if (diff > 0.0)
                                 {
                                     Pr_WellOfShadows well2 = loc.properties.OfType<Pr_WellOfShadows>().FirstOrDefault();
@@ -1034,8 +971,8 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.RecruitsMinion:
-                        Ch_RecruitMinion recruitMinion = challenge as Ch_RecruitMinion;
-                        Ch_RecruitOgre recruitOgre = challenge as Ch_RecruitOgre;
+                        Ch_RecruitMinion recruitMinion = challengeData.challenge as Ch_RecruitMinion;
+                        Ch_RecruitOgre recruitOgre = challengeData.challenge as Ch_RecruitOgre;
                         if (recruitMinion != null)
                         {
                             if (recruitMinion.exemplar.getCommandCost() > ua.getStatCommandLimit())
@@ -1307,7 +1244,7 @@ namespace CommunityLib
                         result += val;
                         break;
                     case ChallengeTags.StayInShadow:
-                        if (location.hex.purity > 0.25)
+                        if (challengeData.location.hex.purity > 0.25)
                         {
                             val = -75.0;
                             reasonMsgs?.Add(new ReasonMsg("Shouldn't Leave Shadow", val));
@@ -1331,7 +1268,7 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.RequiresOwnSociety:
-                        if (ua.society != null && ua.society != location.soc)
+                        if (ua.society != null && ua.society != challengeData.location.soc)
                         {
                             val = -1000.0;
                             reasonMsgs?.Add(new ReasonMsg("Requires Own Society", val));
@@ -1339,7 +1276,7 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.ForbidOwnSociety:
-                        if (ua.society != null && ua.society == location.soc)
+                        if (ua.society != null && ua.society == challengeData.location.soc)
                         {
                             val = -1000.0;
                             reasonMsgs?.Add(new ReasonMsg("Requires society that is not own society", val));
@@ -1347,7 +1284,7 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.PreferOwnSociety:
-                        if (ua.society != null && ua.society == location.soc)
+                        if (ua.society != null && ua.society == challengeData.location.soc)
                         {
                             val = 10;
                             reasonMsgs?.Add(new ReasonMsg("Own Society", val));
@@ -1355,7 +1292,7 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.AvoidOwnSociety:
-                            if (ua.society != null && ua.society == location.soc)
+                            if (ua.society != null && ua.society == challengeData.location.soc)
                             {
                                 val = -10;
                                 reasonMsgs?.Add(new ReasonMsg("Own Society", val));
@@ -1363,13 +1300,13 @@ namespace CommunityLib
                             }
                         break;
                     case ChallengeTags.PreferPositiveRelations:
-                        if (ua.society != null && location.soc != null)
+                        if (ua.society != null && challengeData.location.soc != null)
                         {
-                            if (ua.society != null && ua.society != location.soc)
+                            if (ua.society != null && ua.society != challengeData.location.soc)
                             {
-                                if (location.soc != null && ua.society.relations.ContainsKey(location.soc))
+                                if (challengeData.location.soc != null && ua.society.relations.ContainsKey(challengeData.location.soc))
                                 {
-                                    DipRel rel = ua.society.relations[location.soc];
+                                    DipRel rel = ua.society.relations[challengeData.location.soc];
                                     if (rel != null && rel.state != DipRel.dipState.war && rel.state != DipRel.dipState.hostile)
                                     {
                                         val = rel.status * 10;
@@ -1381,13 +1318,13 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.AvoidPositiveRelations:
-                        if (ua.society != null && location.soc != null)
+                        if (ua.society != null && challengeData.location.soc != null)
                         {
-                            if (ua.society != null && ua.society != location.soc)
+                            if (ua.society != null && ua.society != challengeData.location.soc)
                             {
-                                if (location.soc != null && ua.society.relations.ContainsKey(location.soc))
+                                if (challengeData.location.soc != null && ua.society.relations.ContainsKey(challengeData.location.soc))
                                 {
-                                    DipRel rel = ua.society.relations[location.soc];
+                                    DipRel rel = ua.society.relations[challengeData.location.soc];
                                     if (rel != null && rel.state != DipRel.dipState.war && rel.state != DipRel.dipState.hostile)
                                     {
                                         val = rel.status * -10;
@@ -1399,13 +1336,13 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.PreferNegativeRelations:
-                        if (ua.society != null && location.soc != null)
+                        if (ua.society != null && challengeData.location.soc != null)
                         {
-                            if (ua.society != null && ua.society != location.soc)
+                            if (ua.society != null && ua.society != challengeData.location.soc)
                             {
-                                if (location.soc != null && ua.society.relations.ContainsKey(location.soc))
+                                if (challengeData.location.soc != null && ua.society.relations.ContainsKey(challengeData.location.soc))
                                 {
-                                    DipRel rel = ua.society.relations[location.soc];
+                                    DipRel rel = ua.society.relations[challengeData.location.soc];
                                     if (rel != null && rel.state != DipRel.dipState.alliance)
                                     {
                                         if (rel.status <= 0.0)
@@ -1420,13 +1357,13 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.AvoidNegativeRelations:
-                        if (ua.society != null && location.soc != null)
+                        if (ua.society != null && challengeData.location.soc != null)
                         {
-                            if (ua.society != null && ua.society != location.soc)
+                            if (ua.society != null && ua.society != challengeData.location.soc)
                             {
-                                if (location.soc != null && ua.society.relations.ContainsKey(location.soc))
+                                if (challengeData.location.soc != null && ua.society.relations.ContainsKey(challengeData.location.soc))
                                 {
-                                    DipRel rel = ua.society.relations[location.soc];
+                                    DipRel rel = ua.society.relations[challengeData.location.soc];
                                     if (rel != null && rel.state != DipRel.dipState.alliance)
                                     {
                                         if (rel.status <= 0.0)
@@ -1441,9 +1378,9 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.ForbidWar:
-                        if (ua.society != null && ua.location.soc != null && ua.society != location.soc)
+                        if (ua.society != null && ua.location.soc != null && ua.society != challengeData.location.soc)
                         {
-                            if (ua.society.relations.ContainsKey(location.soc) && ua.society.relations[location.soc].state == DipRel.dipState.war)
+                            if (ua.society.relations.ContainsKey(challengeData.location.soc) && ua.society.relations[challengeData.location.soc].state == DipRel.dipState.war)
                             {
                                 val = -1000.0;
                                 reasonMsgs?.Add(new ReasonMsg("Is At War", val));
@@ -1452,9 +1389,9 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.ForbidPeace:
-                        if (ua.society != null && location.soc != null && ua.society != location.soc)
+                        if (ua.society != null && challengeData.location.soc != null && ua.society != challengeData.location.soc)
                         {
-                            if (ua.society.relations.ContainsKey(location.soc) && ua.society.relations[location.soc].state != DipRel.dipState.war)
+                            if (ua.society.relations.ContainsKey(challengeData.location.soc) && ua.society.relations[challengeData.location.soc].state != DipRel.dipState.war)
                             {
                                 val = -1000.0;
                                 reasonMsgs?.Add(new ReasonMsg("Is Not At War", val));
@@ -1463,7 +1400,7 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.PreferLocal:
-                        double dist = ua.map.getStepDist(ua.location, location);
+                        double dist = ua.map.getStepDist(ua.location, challengeData.location);
                         if (dist == 0)
                         {
                             val = 20;
@@ -1476,7 +1413,7 @@ namespace CommunityLib
                         result += val;
                         break;
                     case ChallengeTags.PreferLocalRandomized:
-                        dist = ua.map.getStepDist(ua.location, location);
+                        dist = ua.map.getStepDist(ua.location, challengeData.location);
                         dist -= 1 + Eleven.random.Next(2) + Eleven.random.Next(2);
                         val = dist * -10;
                         reasonMsgs?.Add(new ReasonMsg("Distance", val));

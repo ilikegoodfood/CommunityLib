@@ -27,19 +27,19 @@ namespace CommunityLib
             aiChallenges_Vampire = new List<AIChallenge>();
 
             populateDeepOne();
-            ModCore.core.GetAgentAI().RegisterAgentType(typeof(UAEN_DeepOne));
+            ModCore.core.GetAgentAI().RegisterAgentType(typeof(UAEN_DeepOne), AgentAI.ControlParameters.newDefault());
             ModCore.core.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_DeepOne), aiChallenges_DeepOne);
 
             populateGhast();
-            ModCore.core.GetAgentAI().RegisterAgentType(typeof(UAEN_Ghast));
+            ModCore.core.GetAgentAI().RegisterAgentType(typeof(UAEN_Ghast), AgentAI.ControlParameters.newDefault());
             ModCore.core.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_Ghast), aiChallenges_Ghast);
 
             populateOrcUpstart();
-            ModCore.core.GetAgentAI().RegisterAgentType(typeof(UAEN_OrcUpstart));
+            ModCore.core.GetAgentAI().RegisterAgentType(typeof(UAEN_OrcUpstart), AgentAI.ControlParameters.newDefault());
             ModCore.core.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_OrcUpstart), aiChallenges_OrcUpstart);
 
             populateVampire();
-            ModCore.core.GetAgentAI().RegisterAgentType(typeof(UAEN_Vampire));
+            ModCore.core.GetAgentAI().RegisterAgentType(typeof(UAEN_Vampire), AgentAI.ControlParameters.newDefault());
             ModCore.core.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_Vampire), aiChallenges_Vampire);
         }
 
@@ -61,11 +61,11 @@ namespace CommunityLib
             aiChallenges_DeepOne.Add(challenge2);
         }
 
-        private bool delegate_Valid_Rt_DeepOneReproduce(Challenge challenge, Location location)
+        private bool delegate_Valid_Rt_DeepOneReproduce(AgentAI.ChallengeData challengeData)
         {
-            SettlementHuman settlementHuman = location.settlement as SettlementHuman;
+            SettlementHuman settlementHuman = challengeData.location.settlement as SettlementHuman;
 
-            if ((location.soc as Society)?.isOphanimControlled ?? false)
+            if ((challengeData.location.soc as Society)?.isOphanimControlled ?? false)
             {
                 return false;
             }
@@ -77,7 +77,7 @@ namespace CommunityLib
                     return false;
                 }
 
-                Pr_DeepOneCult cult = location.properties.OfType<Pr_DeepOneCult>().FirstOrDefault();
+                Pr_DeepOneCult cult = challengeData.location.properties.OfType<Pr_DeepOneCult>().FirstOrDefault();
                 if (cult == null)
                 {
                     return true;
@@ -87,7 +87,7 @@ namespace CommunityLib
             return false;
         }
 
-        private double delegate_Utility_Rt_DeepOneReproduce(Challenge challenge, UA ua, Location location, double utility, List<ReasonMsg> reasonMsgs)
+        private double delegate_Utility_Rt_DeepOneReproduce(AgentAI.ChallengeData challengeData, UA ua, double utility, List<ReasonMsg> reasonMsgs)
         {
             double val = 100.0;
             reasonMsgs?.Add(new ReasonMsg("Base", val));
@@ -96,9 +96,9 @@ namespace CommunityLib
             return utility;
         }
 
-        private bool delegate_Valid_Ch_DeepOnesHumanAppearance(Challenge challenge, Location location)
+        private bool delegate_Valid_Ch_DeepOnesHumanAppearance(AgentAI.ChallengeData challengeData)
         {
-            Pr_DeepOneCult cult = (challenge as Ch_DeepOnesHumanAppearance)?.deepOnes;
+            Pr_DeepOneCult cult = (challengeData.challenge as Ch_DeepOnesHumanAppearance)?.deepOnes;
             if (cult?.menace > 25.0)
             {
                 return true;
@@ -107,9 +107,9 @@ namespace CommunityLib
             return false;
         }
 
-        private double delegate_Utility_Ch_DeepOnesHumanAppearance(Challenge challenge, UA ua, Location location, double utility, List<ReasonMsg> reasonMsgs)
+        private double delegate_Utility_Ch_DeepOnesHumanAppearance(AgentAI.ChallengeData challengeData, UA ua, double utility, List<ReasonMsg> reasonMsgs)
         {
-            Pr_DeepOneCult cult = (challenge as Ch_DeepOnesHumanAppearance)?.deepOnes;
+            Pr_DeepOneCult cult = (challengeData.challenge as Ch_DeepOnesHumanAppearance)?.deepOnes;
             if (cult?.menace > 25.0)
             {
                 double val = (cult.menace) * 5;
@@ -120,9 +120,9 @@ namespace CommunityLib
             return utility;
         }
 
-        private bool delegate_Valid_Ch_ConcealDeepOnes(Challenge challenge, Location location)
+        private bool delegate_Valid_Ch_ConcealDeepOnes(AgentAI.ChallengeData challengeData)
         {
-            Pr_DeepOneCult cult = (challenge as Ch_ConcealDeepOnes)?.deepOnes;
+            Pr_DeepOneCult cult = (challengeData.challenge as Ch_ConcealDeepOnes)?.deepOnes;
             if (cult?.profile > 25.0)
             {
                 return true;
@@ -131,9 +131,9 @@ namespace CommunityLib
             return false;
         }
 
-        private double delegate_Utility_Ch_ConcealDeepOnes(Challenge challenge, UA ua, Location location,  double utility, List<ReasonMsg> reasonMsgs)
+        private double delegate_Utility_Ch_ConcealDeepOnes(AgentAI.ChallengeData challengeData, UA ua, double utility, List<ReasonMsg> reasonMsgs)
         {
-            Pr_DeepOneCult cult = (challenge as Ch_ConcealDeepOnes)?.deepOnes;
+            Pr_DeepOneCult cult = (challengeData.challenge as Ch_ConcealDeepOnes)?.deepOnes;
             if (cult?.profile > 25.0)
             {
                 double val = (cult.profile) * 5;
@@ -152,12 +152,12 @@ namespace CommunityLib
             aiChallenges_Ghast.Add(challenge);
         }
 
-        private bool delegate_Valid_Rt_GhastEnshadow(Challenge challenge, Location location)
+        private bool delegate_Valid_Rt_GhastEnshadow(AgentAI.ChallengeData challengeData)
         {
-            SettlementHuman settlementHuman = location.settlement as SettlementHuman;
+            SettlementHuman settlementHuman = challengeData.location.settlement as SettlementHuman;
             if (settlementHuman != null)
             {
-                if (location.getShadow() >= 1.0)
+                if (challengeData.location.getShadow() >= 1.0)
                 {
                     return false;
                 }
@@ -172,19 +172,19 @@ namespace CommunityLib
                     return false;
                 }
 
-                Pr_Opha_Faith faith = location.properties.OfType<Pr_Opha_Faith>().FirstOrDefault();
+                Pr_Opha_Faith faith = challengeData.location.properties.OfType<Pr_Opha_Faith>().FirstOrDefault();
                 if (faith != null)
                 {
                     return false;
                 }
 
-                Society society = location.soc as Society;
-                if (society != null && (society.isAlliance && challenge.map.opt_allianceState == 1))
+                Society society = challengeData.location.soc as Society;
+                if (society != null && (society.isAlliance && challengeData.challenge.map.opt_allianceState == 1))
                 {
                     return false;
                 }
 
-                Pr_Ward ward = location.properties.OfType<Pr_Ward>().FirstOrDefault();
+                Pr_Ward ward = challengeData.location.properties.OfType<Pr_Ward>().FirstOrDefault();
                 if (ward?.charge >= 66)
                 {
                     return false;
@@ -196,7 +196,7 @@ namespace CommunityLib
             return false;
         }
 
-        private double delegate_Utility_Rt_GhastEnshadow(Challenge challenge, UA ua, Location location, double utility, List<ReasonMsg> reasonMsgs)
+        private double delegate_Utility_Rt_GhastEnshadow(AgentAI.ChallengeData challengeData, UA ua, double utility, List<ReasonMsg> reasonMsgs)
         {
             double val = 100.0;
             reasonMsgs?.Add(new ReasonMsg("Base", val));
@@ -218,11 +218,11 @@ namespace CommunityLib
             aiChallenges_OrcUpstart.Add(new AIChallenge(typeof(Ch_Rest_InOrcCamp), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.RequiresOwnSociety, AIChallenge.ChallengeTags.HealOrc, AIChallenge.ChallengeTags.Rest }));
         }
 
-        private double delegate_Utility_Ch_OrcRaiding(Challenge challenge, UA ua, Location location, double utility, List<ReasonMsg> reasonMsgs)
+        private double delegate_Utility_Ch_OrcRaiding(AgentAI.ChallengeData challengeData, UA ua, double utility, List<ReasonMsg> reasonMsgs)
         {
             double potentialDevastation = 0.0;
             int neighbourCount = 0;
-            foreach (Location loc in location.getNeighbours())
+            foreach (Location loc in challengeData.location.getNeighbours())
             {
                 if (loc.settlement is SettlementHuman && (ua.society == null || ua.society != loc.soc))
                 {
@@ -246,7 +246,7 @@ namespace CommunityLib
             return utility;
         }
 
-        private bool delegate_Valid_Ch_RecruitMinion(Challenge challenge, Location location)
+        private bool delegate_Valid_Ch_RecruitMinion(AgentAI.ChallengeData challengeData)
         {
             if (map.worldPanic < map.param.panic_forFundHeroes)
             {
@@ -277,7 +277,7 @@ namespace CommunityLib
             aiChallenges_Vampire.Add(new AIChallenge(typeof(Ch_Rest_InOrcCamp), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.HealOrc, AIChallenge.ChallengeTags.PreferLocalRandomized }));
         }
 
-        private bool delegate_ValidFor_Rt_Feed(Challenge challenge, UA ua, Location location)
+        private bool delegate_ValidFor_Rt_Feed(AgentAI.ChallengeData challengeData, UA ua)
         {
             UAEN_Vampire vampire = ua as UAEN_Vampire;
             
@@ -286,10 +286,10 @@ namespace CommunityLib
                 return false;
             }
 
-            SettlementHuman settlementHuman = location.settlement as SettlementHuman;
+            SettlementHuman settlementHuman = challengeData.location.settlement as SettlementHuman;
             if (settlementHuman != null)
             {
-                if (location == vampire.location)
+                if (challengeData.location == vampire.location)
                 {
                     if (settlementHuman.shadow < 0.9 || vampire.call.strength >= 150.0)
                     {
@@ -305,7 +305,7 @@ namespace CommunityLib
             return false;
         }
 
-        private double delegate_Utility_Rt_Feed(Challenge challenge, UA ua, Location location, double utility, List<ReasonMsg> reasonMsgs)
+        private double delegate_Utility_Rt_Feed(AgentAI.ChallengeData challengeData, UA ua, double utility, List<ReasonMsg> reasonMsgs)
         {
             UAEN_Vampire vampire = ua as UAEN_Vampire;
 
@@ -323,7 +323,7 @@ namespace CommunityLib
             return utility;
         }
 
-        private bool delegate_ValidFor_Mg_DeathsShadow(Challenge challenge, UA ua, Location location)
+        private bool delegate_ValidFor_Mg_DeathsShadow(AgentAI.ChallengeData challengeData, UA ua)
         {
             foreach (Minion minion in ua.minions)
             {
@@ -338,7 +338,7 @@ namespace CommunityLib
                 return false;
             }
 
-            Pr_Death death = location.properties.OfType<Pr_Death>().FirstOrDefault();
+            Pr_Death death = challengeData.location.properties.OfType<Pr_Death>().FirstOrDefault();
             if (death == null || death.charge < map.param.mg_deathsShadowDeathModifierReq)
             {
                 return false;
@@ -347,15 +347,15 @@ namespace CommunityLib
             return true;
         }
 
-        private double delegate_Utility_Mg_DeathsShadow(Challenge challenge, UA ua, Location location, double utility, List<ReasonMsg> reasonMsgs)
+        private double delegate_Utility_Mg_DeathsShadow(AgentAI.ChallengeData challengeData, UA ua, double utility, List<ReasonMsg> reasonMsgs)
         {
             double val;
 
-            Pr_Death death = location.properties.OfType<Pr_Death>().FirstOrDefault();
+            Pr_Death death = challengeData.location.properties.OfType<Pr_Death>().FirstOrDefault();
             if (death != null && death.charge >= map.param.mg_deathsShadowDeathModifierReq)
             {
                 val = death.charge;
-                val *= Math.Min(5.0, Math.Max(0.5, 5 / (2 * map.getStepDist(ua.location, location) + 1)));
+                val *= Math.Min(5.0, Math.Max(0.5, 5 / (2 * map.getStepDist(ua.location, challengeData.location) + 1)));
 
                 reasonMsgs?.Add(new ReasonMsg("Nearby Death", val));
                 utility += val;
@@ -369,7 +369,7 @@ namespace CommunityLib
             return utility;
         }
 
-        private double delegate_Utility_Ch_Desecrate(Challenge challenge, UA ua, Location location, double utility, List<ReasonMsg> reasonMsgs)
+        private double delegate_Utility_Ch_Desecrate(AgentAI.ChallengeData challengeData, UA ua, double utility, List<ReasonMsg> reasonMsgs)
         {
             double val = 150.0;
             reasonMsgs?.Add(new ReasonMsg("Base", val));

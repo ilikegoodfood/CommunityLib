@@ -228,40 +228,37 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when the Community Library's Agent AI beings processing an agent. It recieves the agent (ua), a list of AIChalleges, excluding rituals, (aiChallenges), a list of AIChallenges that are rituals (aiRituals),  and the boolean control values within an 'AgentAI.InputParams' struct (inputParams.
+        /// This hook fires when the Community Library's Agent AI beings processing an agent. It recieves the agent (ua), a list of AgentAI.ChallengeData structs (validChallengeData), and the boolean control values within an 'AgentAI.ControlParameters' struct (controlParams).
         /// If this hook returns true, the rest of the AI process will not happen.
         /// <para>All instances of this hook will run whenever an AgentAI runs, even those after one which has returned true.</para>
         /// </summary>
         /// <param name="ua"></param>
-        /// <param name="aiChallenges"></param>
-        /// <param name="aiRituals"></param>
+        /// <param name="validChallengeData"></param>
         /// <param name="inputParams"</param>
         /// <returns></returns>
-        public virtual bool interceptAgentAI(UA ua, List<AIChallenge> aiChallenges, List<AIChallenge> aiRituals, AgentAI.InputParams inputParams)
+        public virtual bool interceptAgentAI(UA ua, List<AgentAI.ChallengeData> validChallengeData, AgentAI.ControlParameters controlParams)
         {
             return false;
         }
 
         /// <summary>
-        /// This hook fires when the Community Library's Agent AI has started processing an agent, immediately after the 'interceptAgentAI' hook. It recieves the agent (ua), a list of AIChalleges, excluding rituals, (aiChallenges), a list of AIChallenges that are rituals (aiRituals),  and the boolean control values within an 'AgentAI.InputParams' struct (inputParams.
+        /// This hook fires when the Community Library's Agent AI has started processing an agent, immediately after the 'interceptAgentAI' hook. It recieves the agent (ua), a list of AgentAI.ChallengeData structs (validChallengeData), and the boolean control values within an 'AgentAI.ControlParameters' struct (controlParams)
         /// </summary>
         /// <param name="ua"></param>
-        /// <param name="aiChallenges"></param>
-        /// <param name="aiRituals"></param>
-        /// <param name="inputParams"></param>
-        public virtual void onAgentAI_StartOfProcess(UA ua, List<AIChallenge> aiChallenges, List<AIChallenge> aiRituals, AgentAI.InputParams inputParams)
+        /// <param name="validChallengeData"></param>
+        /// <param name="controlParams"></param>
+        public virtual void onAgentAI_StartOfProcess(UA ua, List<AgentAI.ChallengeData> validChallengeData, AgentAI.ControlParameters controlParams)
         {
             return;
         }
 
         /// <summary>
-        /// This hook fires when the Community Library's Agent AI has finished processing an agent. It recieves the agent (ua), a list of all valid challeges, excluding rituals, (challenges), a dictionary of all locations where one or more rituals is valid, and the rituals (ritualData), and the boolean control values within an 'AgentAI.InputParams' struct (inputParams.).
+        /// This hook fires when the Community Library's Agent AI has finished processing an agent. It recieves the agent (ua), a list of AgentAI.ChallengeData structs (validChallengeData), and the boolean control values within an 'AgentAI.ControlParameters' struct (controlParams)
         /// </summary>
         /// <param name="ua"></param>
-        /// <param name="challenges"></param>
-        /// <param name="ritualData"></param>
+        /// <param name="validChallengeData"></param>
         /// <param name="inputParams"></param>
-        public virtual void onAgentAI_EndOfProcess(UA ua, List<Challenge> challenges, Dictionary<Location, List<Challenge>> ritualData, AgentAI.InputParams inputParams)
+        public virtual void onAgentAI_EndOfProcess(UA ua, List<AgentAI.ChallengeData> validChallengeData, AgentAI.ControlParameters controlParams)
         {
             return;
         }

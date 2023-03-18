@@ -14,7 +14,7 @@ namespace CommunityLib
             
         }
 
-        public override bool interceptAgentAI(UA ua, List<AIChallenge> aiChallenges, List<AIChallenge> aiRituals, AgentAI.InputParams inputParamse)
+        public override bool interceptAgentAI(UA ua, List<AgentAI.ChallengeData> challengeData, AgentAI.ControlParameters inputParamse)
         {
             switch (ua)
             {

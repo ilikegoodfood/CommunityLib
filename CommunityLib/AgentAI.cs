@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Assets.Code;
 using System.Linq;
+using System.Diagnostics;
 
 namespace CommunityLib
 {
@@ -12,19 +13,16 @@ namespace CommunityLib
 
         Map map;
 
-        private Dictionary<Type, List<AIChallenge>> ai;
+        private Dictionary<Type, Tuple<List<AIChallenge>, ControlParameters>> ai;
 
         public struct DebugProperties
         {
             public bool outputProfile_AllChallenges;
             public bool outputProfile_VisibleChallenges;
-            public bool outputProfile_AllAgents;
             public bool outputProfile_VisibleAgents;
 
             public bool outputVisibility_AllChallenges;
             public bool outputVisibility_VisibleChallenges;
-            public bool outputVisibility_AllAgents;
-            public bool outputVisibility_VisibleAgents;
 
             public bool outputValidity_AllChallenges;
             public bool outputValidity_ValidChallenges;
@@ -39,12 +37,9 @@ namespace CommunityLib
             {
                 outputProfile_AllChallenges = false;
                 outputProfile_VisibleChallenges = false;
-                outputProfile_AllAgents = false;
-                outputVisibility_VisibleAgents = false;
+                outputProfile_VisibleAgents = false;
                 outputVisibility_AllChallenges = false;
                 outputVisibility_VisibleChallenges = false;
-                outputValidity_AllChallenges = false;
-                outputVisibility_AllAgents = false;
                 outputValidity_AllChallenges = false;
                 outputValidity_ValidChallenges = false;
                 outputUtility_ValidChallenges = false;
@@ -58,18 +53,12 @@ namespace CommunityLib
             {
                 outputProfile_AllChallenges = true;
                 outputProfile_VisibleChallenges = true;
-                outputProfile_AllAgents = true;
-                outputVisibility_VisibleAgents = true;
+                outputProfile_VisibleAgents = true;
                 outputVisibility_AllChallenges = true;
                 outputVisibility_VisibleChallenges = true;
-                outputVisibility_AllAgents = true;
-                outputVisibility_VisibleAgents = true;
                 outputValidity_AllChallenges = true;
                 outputValidity_ValidChallenges = true;
                 outputUtility_ValidChallenges = true;
-                outputUtility_VisibleAgentsAttack = true;
-                outputUtility_VisibleAgentsBodyguard = true;
-                outputUtility_VisibleAgentsDisrupt = true;
                 outputUtility_VisibleAgentsAttack = true;
                 outputUtility_VisibleAgentsBodyguard = true;
                 outputUtility_VisibleAgentsDisrupt = true;
@@ -91,33 +80,42 @@ namespace CommunityLib
             }
         }
 
-        public struct InputParams
+        public struct ControlParameters
         {
             public bool respectChallengeVisibility;
-            public bool respectUnitVisibility;
             public bool respectDanger;
             public bool respectChallengeAlignment;
             public bool valueTimeCost;
 
+            public bool includeDangerousFoe;
+
             public void setDefaults()
             {
                 respectChallengeVisibility = false;
-                respectUnitVisibility = false;
                 respectDanger = true;
                 respectChallengeAlignment = false;
                 valueTimeCost = false;
+
+                includeDangerousFoe = true;
             }
 
             /// <summary>
             /// Returns a new instance of InputParams with the following default values: respectChallengeAlignment = false; respectUnitVisibility = false; respectDanger = true; respectChallengeAlignment = false; valueTimeCost = false;
             /// </summary>
             /// <returns></returns>
-            public static InputParams newDefault()
+            public static ControlParameters newDefault()
             {
-                InputParams result = new InputParams();
+                ControlParameters result = new ControlParameters();
                 result.setDefaults();
                 return result;
             }
+        }
+
+        public struct ChallengeData
+        {
+            public AIChallenge aiChallenge;
+            public Challenge challenge;
+            public Location location;
         }
 
         public AgentAI(Map map)
@@ -125,7 +123,7 @@ namespace CommunityLib
             debug = DebugProperties.newOff();
             this.map = map;
 
-            ai = new Dictionary<Type, List<AIChallenge>>();
+            ai = new Dictionary<Type, Tuple<List<AIChallenge>, ControlParameters>>();
         }
 
         /// <summary>
@@ -134,7 +132,7 @@ namespace CommunityLib
         /// </summary>
         /// <param name="t"></param>
         /// <returns></returns>
-        public bool RegisterAgentType(Type t)
+        public bool RegisterAgentType(Type t, ControlParameters control)
         {
             if (!t.IsSubclassOf(typeof(UA)))
             {
@@ -145,13 +143,13 @@ namespace CommunityLib
             {
                 if (ai[t] == null)
                 {
-                    ai[t] = new List<AIChallenge>();
+                    ai[t] = new Tuple<List<AIChallenge>, ControlParameters>(new List<AIChallenge>(), control);
                     return true;
                 }
             }
             else
             {
-                ai.Add(t, new List<AIChallenge>());
+                ai.Add(t, new Tuple<List<AIChallenge>, ControlParameters>(new List<AIChallenge>(), control));
                 return true;
             }
 
@@ -159,15 +157,12 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// Checks if an agent type t has been registered. If it has, it provides the list of AIChallenges that have been assigned to it. If it has not, it returns false and the returned list is null.
-        /// <para>This is the primary means of altering AIChallnges that were assigned to the agent type's AI by other mods, including those that mimic the base game that were added by the Community Library itself.</para>
+        /// Checks if an agent type t has been registered. If it has, it returns true.
         /// </summary>
         /// <param name="t"></param>
-        /// <param name="aiChallenges"></param>
         /// <returns></returns>
-        public bool TryGetAgentType(Type t, out List<AIChallenge> aiChallenges)
+        public bool TryGetAgentType(Type t)
         {
-            aiChallenges = null;
             if (!t.IsSubclassOf(typeof(UA)))
             {
                 return false;
@@ -175,7 +170,33 @@ namespace CommunityLib
 
             if (ai.ContainsKey(t))
             {
-                aiChallenges = ai[t];
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Checks if an agent type t has been registered. If it has, it provides the list of AIChallenges that have been assigned to it and the ControlParameters. If it has not, it returns false and both the returned list and ControlParameters are null.
+        /// <para>This is the primary means of altering AIChallnges that were assigned to the agent type's AI by other mods, including those that mimic the base game that were added by the Community Library itself.</para>
+        /// </summary>
+        /// <param name="t"></param>
+        /// <param name="aiChallenges"></param>
+        /// <param name="control"></param>
+        /// <returns></returns>
+        public bool TryGetAgentType(Type t, out List<AIChallenge> aiChallenges, out ControlParameters? control)
+        {
+            aiChallenges = null;
+            control = null;
+            if (!t.IsSubclassOf(typeof(UA)))
+            {
+                return false;
+            }
+
+            if (ai.ContainsKey(t))
+            {
+                aiChallenges = ai[t].Item1;
+                control = ai[t].Item2;
                 return true;
             }
 
@@ -190,9 +211,9 @@ namespace CommunityLib
         /// <param name="t"></param>
         /// <param name="aiChallenges"></param>
         /// <returns></returns>
-        public bool DeregisterAgentType(Type t, out List<AIChallenge> aiChallenges)
+        public bool DeregisterAgentType(Type t, out List<AIChallenge> aiChallenges, out ControlParameters? control)
         {
-            bool result = TryGetAgentType(t, out aiChallenges);
+            bool result = TryGetAgentType(t, out aiChallenges, out control);
 
             if (result)
             {
@@ -210,7 +231,7 @@ namespace CommunityLib
         /// <returns></returns>
         public bool AddChallengeToAgentType(Type t, AIChallenge aiChallenge)
         {
-            bool result = TryGetAgentType(t, out List<AIChallenge> aiChallenges);
+            bool result = TryGetAgentType(t, out List<AIChallenge> aiChallenges, out _);
 
             if (result && !aiChallenges.Contains(aiChallenge))
             {
@@ -229,7 +250,7 @@ namespace CommunityLib
         /// <returns></returns>
         public bool AddChallengesToAgentType(Type t, List<AIChallenge> newAIChallenges)
         {
-            bool result = TryGetAgentType(t, out List<AIChallenge> aiChallenges);
+            bool result = TryGetAgentType(t, out List<AIChallenge> aiChallenges, out _);
 
             if (result)
             {
@@ -254,7 +275,7 @@ namespace CommunityLib
         /// <returns></returns>
         public bool AddChallengesToAgentType(Type t, AIChallenge[] newAIChallenges)
         {
-            bool result = TryGetAgentType(t, out List<AIChallenge> aiChallenges);
+            bool result = TryGetAgentType(t, out List<AIChallenge> aiChallenges, out _);
 
             if (result)
             {
@@ -279,7 +300,7 @@ namespace CommunityLib
         /// <returns></returns>
         public AIChallenge GetAIChallengeFromAgentType(Type t, Type c)
         {
-            bool result = TryGetAgentType(t, out List<AIChallenge> aiChallenges);
+            bool result = TryGetAgentType(t, out List<AIChallenge> aiChallenges, out _);
 
             if (result)
             {
@@ -310,7 +331,7 @@ namespace CommunityLib
                 return false;
             }
 
-            bool result = TryGetAgentType(t, out List<AIChallenge> aiChallenges);
+            bool result = TryGetAgentType(t, out List<AIChallenge> aiChallenges, out _);
 
             if (result)
             {
@@ -335,44 +356,41 @@ namespace CommunityLib
                 return false;
             }
 
-            bool result = TryGetAgentType(t, out List<AIChallenge> aiChallenges);
+            bool result = TryGetAgentType(t, out List<AIChallenge> aiChallengesAll, out _);
 
             if (result)
             {
                 AIChallenge challenge = GetAIChallengeFromAgentType(t, c);
                 if (challenge != null)
                 {
-                    return aiChallenges.Remove(challenge);
+                    return aiChallengesAll.Remove(challenge);
                 }
             }
 
             return false;
         }
 
-        public void onTurnTickAI(UA ua, InputParams inputParams)
+        public void onTurnTickAI(UA ua)
         {
             if (ua == null)
             {
                 return;
             }
 
-            List<AIChallenge> aiChallenges;
-            bool gotAgentType = TryGetAgentType(ua.GetType(), out aiChallenges);
+            bool gotAgentType = TryGetAgentType(ua.GetType(), out List<AIChallenge> aiChallenges, out ControlParameters? control);
 
-            if (!gotAgentType || aiChallenges == null)
+            if (!gotAgentType || aiChallenges == null || control == null)
             {
                 return;
             }
-
-            // Seperates aiChallenges between challenges and rituals.
-            Dictionary<Type, AIChallenge> aiChallengesFiltered;
-            Dictionary<Type, AIChallenge> aiRituals;
-            filterAIChallengeAndRituals(aiChallenges, out aiChallengesFiltered, out aiRituals);
+            ControlParameters controlParams = (ControlParameters)control;
+            
+            List<ChallengeData> validChallengeData = getAllValidChallengesAndRituals(ua);
 
             bool result = false;
             foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
-                bool retValue = hook.interceptAgentAI(ua, aiChallengesFiltered.Values.ToList(), aiRituals.Values.ToList(), inputParams);
+                bool retValue = hook.interceptAgentAI(ua, validChallengeData, controlParams);
                 if (retValue)
                 {
                     result = true;
@@ -385,7 +403,7 @@ namespace CommunityLib
 
             foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
-                hook.onAgentAI_StartOfProcess(ua, aiChallengesFiltered.Values.ToList(), aiRituals.Values.ToList(), inputParams);
+                hook.onAgentAI_StartOfProcess(ua, validChallengeData, controlParams);
             }
 
             if (ua.isCommandable() && map.automatic)
@@ -394,38 +412,28 @@ namespace CommunityLib
             }
             else
             {
-                List<Challenge> challenges = null;
-                Dictionary<Location, List<Challenge>> ritualData = null;
-
                 double utility = -double.MaxValue;
                 double utility2;
-                List<Challenge> targetChallenges = new List<Challenge>();
+                List<ChallengeData> targetChallenges = new List<ChallengeData>();
                 List<Unit> targetUnits = new List<Unit>();
                 List<Unit> targetGuards = new List<Unit>();
                 List<UA> targetDisrupts = new List<UA>();
-                List<Location> targetLocations = new List<Location>();
-                AIChallenge aiChallenge;
 
                 if (aiChallenges.Count > 0)
                 {
-                    // Process aiChallenges
-                    getAllValidChallengesAndRituals(ua, aiChallengesFiltered, aiRituals, out challenges, out ritualData, inputParams);
-
-                    foreach (Challenge challenge in challenges)
+                    foreach (ChallengeData cData in validChallengeData)
                     {
-                        aiChallenge = aiChallengesFiltered[challenge.GetType()];
-
                         List<ReasonMsg> reasonMsgs = null;
                         if (debug.outputUtility_ValidChallenges)
                         {
                             reasonMsgs = new List<ReasonMsg>();
                         }
 
-                        utility2 = getChallengeUtility(challenge, aiChallenge, ua, challenge.location, inputParams);
+                        utility2 = getChallengeUtility(cData, ua, controlParams);
 
-                        if (reasonMsgs != null)
+                        if (debug.outputUtility_ValidChallenges && reasonMsgs != null)
                         {
-                            Console.WriteLine("CommunityLib: Utility for " + challenge.getName() + " at " + challenge.location.getName() + " (" + (challenge.location.soc?.getName() ?? "Wilderness") + ")");
+                            Console.WriteLine("CommunityLib: Utility for " + cData.challenge.getName() + " at " + cData.challenge.location.getName() + " (" + (cData.challenge.location.soc?.getName() ?? "Wilderness") + ")");
                             foreach (ReasonMsg reasonMsg in reasonMsgs)
                             {
                                 Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
@@ -437,34 +445,43 @@ namespace CommunityLib
                         {
                             utility = utility2;
                             targetChallenges.Clear();
-                            targetChallenges.Add(challenge);
-                            targetLocations.Clear();
-                            targetLocations.Add(challenge.location);
+                            targetChallenges.Add(cData);
                         }
                         else if (utility2 == utility)
                         {
-                            targetChallenges.Add(challenge);
-                            targetLocations.Add(challenge.location);
+                            targetChallenges.Add(cData);
                         }
                     }
+                }
 
-                    foreach (KeyValuePair<Location, List<Challenge>> pair in ritualData)
+                foreach (Unit unit in ua.getVisibleUnits())
+                {
+                    UA agent = unit as UA;
+                    if (agent != null && !agent.isDead)
                     {
-                        foreach (Challenge ritual in pair.Value)
+                        if (debug.outputUtility_VisibleAgentsAttack || debug.outputUtility_VisibleAgentsBodyguard || debug.outputUtility_VisibleAgentsDisrupt)
                         {
-                            aiChallenge = aiRituals[ritual.GetType()];
+                            Console.WriteLine("CommunityLib: Unit " + unit.getName() + " (" + (unit.society?.getName() ?? "No Society") + ") at " + unit.location.getName() + " (" + (unit.location.soc?.getName() ?? "No Society") + ")");
+                        }
 
-                            List<ReasonMsg> reasonMsgs = null;
-                            if (debug.outputUtility_ValidChallenges)
+                        if (debug.outputProfile_VisibleAgents)
+                        {
+                            Console.WriteLine("CommunityLib: Profile: " + agent.profile);
+                        }
+
+                        List<ReasonMsg> reasonMsgs = null;
+                        if (!(agent.task is Task_InHiding))
+                        {
+                            if (debug.outputUtility_VisibleAgentsAttack)
                             {
                                 reasonMsgs = new List<ReasonMsg>();
                             }
 
-                            utility2 = getChallengeUtility(ritual, aiChallenge, ua, pair.Key, inputParams);
+                            utility2 = ua.getAttackUtility(agent, reasonMsgs, controlParams.includeDangerousFoe);
 
-                            if (reasonMsgs != null)
+                            if (debug.outputUtility_VisibleAgentsAttack && reasonMsgs != null)
                             {
-                                Console.WriteLine("CommunityLib: Utility for " + ritual.getName() + " at " + pair.Key.getName() + " (" + (pair.Key.soc?.getName() ?? "Wilderness") + ")");
+                                Console.WriteLine("CommunityLib: Attack Utility");
                                 foreach (ReasonMsg reasonMsg in reasonMsgs)
                                 {
                                     Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
@@ -476,69 +493,31 @@ namespace CommunityLib
                             {
                                 utility = utility2;
                                 targetChallenges.Clear();
-                                targetChallenges.Add(ritual);
-                                targetLocations.Clear();
-                                targetLocations.Add(pair.Key);
+                                targetUnits.Clear();
+                                targetUnits.Add(unit);
                             }
                             else if (utility2 == utility)
                             {
-                                targetChallenges.Add(ritual);
-                                targetLocations.Add(pair.Key);
+                                targetChallenges.Clear();
+                                targetUnits.Add(unit);
                             }
                         }
-                    }
-                }
 
-                foreach (Unit unit in map.units)
-                {
-                    UA agent = unit as UA;
-                    if (agent != null && !agent.isDead)
-                    {
-                        if (debug.outputProfile_AllAgents || debug.outputVisibility_AllAgents || debug.outputUtility_VisibleAgentsAttack || debug.outputUtility_VisibleAgentsBodyguard || debug.outputUtility_VisibleAgentsDisrupt)
+                        reasonMsgs = null;
+                        if (ua != map.awarenessManager.getChosenOne())
                         {
-                            Console.WriteLine("CommunityLib: Unit " + unit.getName() + " (" + (unit.society?.getName() ?? "No Society") + ") at " + unit.location.getName() + " (" + (unit.location.soc?.getName() ?? "No Society") + ")");
-                        }
-
-                        bool visible = (agent.profile / 10) > map.getStepDist(ua.location, agent.location);
-                        if (!inputParams.respectUnitVisibility || visible)
-                        {
-                            if (debug.outputProfile_AllAgents)
+                            if (ua.society?.getRel(unit.society).state != DipRel.dipState.war)
                             {
-                                Console.WriteLine("CommunityLib: Profile: " + agent.profile);
-                            }
-                            else if (debug.outputProfile_VisibleAgents && visible)
-                            {
-                                Console.WriteLine("CommunityLib: Profile: " + agent.profile);
-                            }
-                            if (debug.outputVisibility_AllAgents)
-                            {
-                                if (visible)
-                                {
-                                    Console.WriteLine("CommunityLib: Visible");
-                                }
-                                else
-                                {
-                                    Console.WriteLine("CommunityLib: NOT Visible");
-                                }
-                            }
-                            else if (debug.outputVisibility_VisibleAgents && visible)
-                            {
-                                Console.WriteLine("CommunityLib: Visible");
-                            }
-
-                            List<ReasonMsg> reasonMsgs = null;
-                            if (!(agent.task is Task_InHiding))
-                            {
-                                if (debug.outputUtility_VisibleAgentsAttack)
+                                if (debug.outputUtility_VisibleAgentsBodyguard)
                                 {
                                     reasonMsgs = new List<ReasonMsg>();
                                 }
 
-                                utility2 = ua.getAttackUtility(agent, reasonMsgs, true);
+                                utility2 = ua.getBodyguardUtility(unit, null);
 
-                                if (reasonMsgs != null)
+                                if (debug.outputUtility_VisibleAgentsBodyguard && reasonMsgs != null)
                                 {
-                                    Console.WriteLine("CommunityLib: Attack Utility");
+                                    Console.WriteLine("CommunityLib: Bodyguard Utility");
                                     foreach (ReasonMsg reasonMsg in reasonMsgs)
                                     {
                                         Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
@@ -551,111 +530,56 @@ namespace CommunityLib
                                     utility = utility2;
                                     targetChallenges.Clear();
                                     targetUnits.Clear();
-                                    targetUnits.Add(unit);
-                                    targetLocations.Clear();
+                                    targetGuards.Clear();
+                                    targetGuards.Add(unit);
                                 }
                                 else if (utility2 == utility)
                                 {
                                     targetChallenges.Clear();
-                                    targetUnits.Add(unit);
-                                    targetLocations.Clear();
-                                }
-                            }
+                                    targetUnits.Clear();
+                                    targetGuards.Add(unit);
 
-                            reasonMsgs = null;
-                            if (ua != map.awarenessManager.getChosenOne())
-                            {
-                                if (ua.society?.getRel(unit.society).state != DipRel.dipState.war)
-                                {
-                                    if (debug.outputUtility_VisibleAgentsBodyguard)
-                                    {
-                                        reasonMsgs = new List<ReasonMsg>();
-                                    }
-
-                                    utility2 = ua.getBodyguardUtility(unit, null);
-
-                                    if (reasonMsgs != null)
-                                    {
-                                        Console.WriteLine("CommunityLib: Bodyguard Utility");
-                                        foreach (ReasonMsg reasonMsg in reasonMsgs)
-                                        {
-                                            Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
-                                        }
-                                        Console.WriteLine("CommunityLib: Total: " + utility2);
-                                    }
-
-                                    if (reasonMsgs != null)
-                                    {
-                                        foreach (ReasonMsg reasonMsg in reasonMsgs)
-                                        {
-                                            Console.WriteLine(reasonMsg.msg + ": " + reasonMsg.value);
-                                        }
-                                    }
-
-                                    if (utility2 > utility)
-                                    {
-                                        utility = utility2;
-                                        targetChallenges.Clear();
-                                        targetUnits.Clear();
-                                        targetGuards.Clear();
-                                        targetGuards.Add(unit);
-                                        targetLocations.Clear();
-                                    }
-                                    else if (utility2 == utility)
-                                    {
-                                        targetChallenges.Clear();
-                                        targetUnits.Clear();
-                                        targetGuards.Add(unit);
-                                        targetLocations.Clear();
-
-                                    }
-                                }
-                            }
-
-                            reasonMsgs = null;
-                            Task_PerformChallenge task = unit.task as Task_PerformChallenge;
-                            if (!(task?.challenge.isChannelled() ?? true))
-                            {
-                                if (debug.outputUtility_VisibleAgentsDisrupt)
-                                {
-                                    reasonMsgs = new List<ReasonMsg>();
-                                }
-
-                                utility2 = ua.getDisruptUtility(unit, null);
-
-                                if (reasonMsgs != null)
-                                {
-                                    Console.WriteLine("CommunityLib: Disrupt Utility");
-                                    foreach (ReasonMsg reasonMsg in reasonMsgs)
-                                    {
-                                        Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
-                                    }
-                                    Console.WriteLine("CommunityLib: Total: " + utility2);
-                                }
-
-                                if (utility2 > utility)
-                                {
-                                    utility = utility2;
-                                    targetLocations.Clear();
-                                    targetLocations.Clear();
-                                    targetLocations.Clear();
-                                    targetDisrupts.Clear();
-                                    targetDisrupts.Add(agent);
-                                    targetLocations.Clear();
-                                }
-                                else if (utility2 == utility)
-                                {
-                                    targetLocations.Clear();
-                                    targetLocations.Clear();
-                                    targetLocations.Clear();
-                                    targetDisrupts.Add(agent);
-                                    targetLocations.Clear();
                                 }
                             }
                         }
-                        else
-                        {
 
+                        reasonMsgs = null;
+                        Task_PerformChallenge task = unit.task as Task_PerformChallenge;
+                        if (!(task?.challenge.isChannelled() ?? true))
+                        {
+                            if (debug.outputUtility_VisibleAgentsDisrupt)
+                            {
+                                reasonMsgs = new List<ReasonMsg>();
+                            }
+
+                            utility2 = ua.getDisruptUtility(unit, null);
+
+                            if (debug.outputUtility_VisibleAgentsDisrupt && reasonMsgs != null)
+                            {
+                                Console.WriteLine("CommunityLib: Disrupt Utility");
+                                foreach (ReasonMsg reasonMsg in reasonMsgs)
+                                {
+                                    Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
+                                }
+                                Console.WriteLine("CommunityLib: Total: " + utility2);
+                            }
+
+                            if (utility2 > utility)
+                            {
+                                utility = utility2;
+                                targetChallenges.Clear();
+                                targetUnits.Clear();
+                                targetGuards.Clear();
+                                targetDisrupts.Clear();
+                                targetDisrupts.Add(agent);
+                            }
+                            else if (utility2 == utility)
+                            {
+                                targetChallenges.Clear();
+                                targetUnits.Clear();
+                                targetGuards.Clear();
+                                targetDisrupts.Add(agent);
+                            }
                         }
                     }
                 }
@@ -753,25 +677,21 @@ namespace CommunityLib
                     Task_Bodyguard task = new Task_Bodyguard(ua, targetGuard);
                     ua.task = task;
                 }
-                else if (targetChallenges.Count > 0 && targetChallenges.Count == targetLocations.Count)
+                else if (targetChallenges.Count > 0)
                 {
-                    Challenge targetChallenge = targetChallenges[0];
-                    Location targetLocation = targetLocations[0];
+                    ChallengeData targetChallenge = targetChallenges[0];
 
                     if (targetChallenges.Count > 1)
-                    {
-                        int index = Eleven.random.Next(targetChallenges.Count);
-                        targetChallenge = targetChallenges[index];
-                        targetLocation = targetLocations[index];
+                    { 
+                        targetChallenge = targetChallenges[Eleven.random.Next(targetChallenges.Count)];
                     }
 
                     if (debug.outputUtility_ChosenAction)
                     {
-                        Console.WriteLine("CommunityLib: " + ua.getName() + " is going to perform challenge " + targetChallenge.getName() + " at " + targetLocation.getName() + " (" + (targetLocation.soc?.getName() ?? "No Society") + ")");
+                        Console.WriteLine("CommunityLib: " + ua.getName() + " is going to perform challenge " + targetChallenge.challenge.getName() + " at " + targetChallenge.location.getName() + " (" + (targetChallenge.location.soc?.getName() ?? "No Society") + ")");
 
                         List<ReasonMsg> reasonMsgs = new List<ReasonMsg>();
-                        AIChallenge targetAIChalenge = aiChallenges.FirstOrDefault(aiC => aiC.challengeType == targetChallenge.GetType());
-                        getChallengeUtility(targetChallenge, targetAIChalenge, ua, targetLocation, inputParams, reasonMsgs);
+                        getChallengeUtility(targetChallenge, ua, controlParams, reasonMsgs);
 
                         foreach (ReasonMsg reasonMsg in reasonMsgs)
                         {
@@ -780,28 +700,23 @@ namespace CommunityLib
                         Console.WriteLine("CommunityLib: Total: " + utility);
                     }
 
-                    if (ua.person.isWatched() || targetLocation.isWatched)
+                    if (ua.person.isWatched() || targetChallenge.location.isWatched)
                     {
-                        map.addUnifiedMessage(ua, null, "Beginning Quest", ua.getName() + " is beginning quest " + targetChallenge.getName() + " at location " + targetLocation.getName(true), UnifiedMessage.messageType.BEGINNING_QUEST);
+                        map.addUnifiedMessage(ua, null, "Beginning Quest", ua.getName() + " is beginning quest " + targetChallenge.challenge.getName() + " at location " + targetChallenge.location.getName(true), UnifiedMessage.messageType.BEGINNING_QUEST);
                     }
-                    targetChallenge.claimedBy = ua;
-
-                    bool safeMove;
-                    if (targetChallenge is Ritual)
+                    if (!targetChallenge.challenge.allowMultipleUsers())
                     {
-                        safeMove = aiRituals[targetChallenge.GetType()].safeMove;
-                    }
-                    else
-                    {
-                        safeMove = aiChallengesFiltered[targetChallenge.GetType()].safeMove;
+                        targetChallenge.challenge.claimedBy = ua;
                     }
 
-                    ua.task = new Task_GoToPerformChallengeAtLocation(targetChallenge, targetLocation, safeMove);
+                    bool safeMove = targetChallenge.aiChallenge.safeMove;
+
+                    ua.task = new Task_GoToPerformChallengeAtLocation(targetChallenge.challenge, targetChallenge.location, safeMove);
                 }
 
                 foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
                 {
-                    hook.onAgentAI_EndOfProcess(ua, challenges, ritualData, inputParams);
+                    hook.onAgentAI_EndOfProcess(ua, validChallengeData, controlParams);
                 }
             }
 
@@ -811,13 +726,23 @@ namespace CommunityLib
             }
         }
 
-        public void filterAIChallengeAndRituals(List<AIChallenge> aiChallenges, out Dictionary<Type, AIChallenge> aiChallengesFiltered, out Dictionary<Type, AIChallenge> aiRituals)
+        public List<ChallengeData> getAllValidChallengesAndRituals(UA ua)
         {
-            aiChallengesFiltered = new Dictionary<Type, AIChallenge>();
-            aiRituals = new Dictionary<Type, AIChallenge>();
-            if (aiChallenges.Count > 0)
+            List<ChallengeData> result = new List<ChallengeData>();
+            List<ChallengeData> ritualData = new List<ChallengeData>();
+
+            if (!TryGetAgentType(ua.GetType(), out List<AIChallenge> aiChallengesAll, out ControlParameters? control) || aiChallengesAll == null || control == null)
             {
-                foreach (AIChallenge aiChallenge in aiChallenges)
+                return null;
+            }
+            ControlParameters controlParams = (ControlParameters)control;
+
+            // Sort all aiChallenges into type-keyed dictionaries for faster searching.
+            Dictionary<Type, AIChallenge>  aiChallenges = new Dictionary<Type, AIChallenge>();
+            Dictionary<Type, AIChallenge>  aiRituals = new Dictionary<Type, AIChallenge>();
+            if (aiChallengesAll.Count > 0)
+            {
+                foreach (AIChallenge aiChallenge in aiChallengesAll)
                 {
                     if (aiChallenge.isRitual)
                     {
@@ -825,19 +750,12 @@ namespace CommunityLib
                     }
                     else
                     {
-                        aiChallengesFiltered.Add(aiChallenge.challengeType, aiChallenge);
+                        aiChallenges.Add(aiChallenge.challengeType, aiChallenge);
                     }
                 }
             }
-        }
 
-        public void getAllValidChallengesAndRituals(UA ua, Dictionary<Type, AIChallenge> aiChallenges, Dictionary<Type, AIChallenge> aiRituals, out List<Challenge> challenges, out Dictionary<Location, List<Challenge>> ritualData, InputParams inputParams)
-        {
-            challenges = new List<Challenge>();
-            List<Challenge> rituals = new List<Challenge>();
-            ritualData = new Dictionary<Location, List<Challenge>>();
-
-            // Gets all rituals attached to the UA, directly and indirectly.
+            // Get instances of Ritual challenges and store in ChallengeData objects.
             if (aiRituals.Count > 0)
             {
                 //Console.WriteLine("CommunityLib: Has " + aiRituals.Count + " rituals");
@@ -857,101 +775,118 @@ namespace CommunityLib
                     if (aiRituals.ContainsKey(ritual.GetType()))
                     {
                         //Console.WriteLine("CommunityLib: Found ritual " + ritual.getName());
-                        rituals.Add(ritual);
+                        ChallengeData d = new ChallengeData();
+                        d.aiChallenge = aiRituals[ritual.GetType()];
+                        d.challenge = ritual;
+                        ritualData.Add(d);
                     }
                 }
             }
 
-            // Iterate over all map locations, gather valid challenges, and test rituals.
-            foreach (Location location in map.locations)
+            if (aiChallenges.Count > 0 || aiRituals.Count > 0)
             {
-                foreach (Challenge challenge in location.GetChallenges())
+                foreach (Location location in ua.map.locations)
                 {
-                    if (challenge.claimedBy?.isDead ?? false)
-                    {
-                        challenge.claimedBy = null;
-                    }
+                    List<Challenge> challenges = location.GetChallenges();
 
-                    if (aiChallenges.ContainsKey(challenge.GetType()))
+                    foreach (Challenge challenge in challenges)
                     {
-                        if (debug.outputProfile_AllChallenges || debug.outputVisibility_AllChallenges || debug.outputValidity_AllChallenges || debug.outputValidity_ValidChallenges)
+                        if (challenge is Ritual)
                         {
-                            Console.WriteLine("CommunityLib: Visibility and Validity for " + challenge.getName() + " at " + location.getName() + " (" + (location.soc?.getName() ?? "Wilderness") + ") by " + ua.getName() + " (" + (ua.society?.getName() ?? "No Society") + ")");
+                            continue;
                         }
 
-                        if (!inputParams.respectChallengeVisibility || aiChallenges[challenge.GetType()].checkChallengeVisibility(challenge, ua, location))
+                        if (aiChallenges.ContainsKey(challenge.GetType()))
                         {
-                            if (!inputParams.respectChallengeAlignment || !(challenge.isGoodTernary() == -1 && ua is UAG && !ua.corrupted))
+                            ChallengeData d = new ChallengeData();
+                            d.aiChallenge = aiChallenges[challenge.GetType()];
+                            d.challenge = challenge;
+                            d.location = location;
+                            if (getChallengeIsValid(ua, d, controlParams))
                             {
-                                if (!inputParams.respectChallengeAlignment || !(challenge.isGoodTernary() == 1 && (ua is UAE || ua.corrupted)))
-                                {
-                                    if (challenge.allowMultipleUsers() || challenge.claimedBy == null || challenge.claimedBy == ua)
-                                    {
-                                        if (aiChallenges[challenge.GetType()].checkChallengeIsValid(challenge, ua, location))
-                                        {
-                                            challenges.Add(challenge);
-                                        }
-                                    }
-                                }
+                                result.Add(d);
                             }
                         }
                     }
-                }
 
-                foreach(Challenge ritual in rituals)
-                {
-                    if (debug.outputProfile_AllChallenges || debug.outputVisibility_AllChallenges || debug.outputValidity_AllChallenges || debug.outputValidity_ValidChallenges)
+                    foreach (ChallengeData rData in ritualData)
                     {
-                        Console.WriteLine("CommunityLib: Visibility and Validity for " + ritual.getName() + " at " + location.getName() + " (" + (location.soc?.getName() ?? "Wilderness") + ")");
-                    }
-
-                    if (!inputParams.respectChallengeVisibility || aiChallenges[ritual.GetType()].checkChallengeVisibility(ritual, ua, location))
-                    {
-                        if (!inputParams.respectChallengeAlignment || !(ritual.isGoodTernary() == -1 && ua is UAG && !ua.corrupted))
+                        ChallengeData d = new ChallengeData();
+                        d.aiChallenge = rData.aiChallenge;
+                        d.challenge = rData.challenge;
+                        d.location = location;
+                        if (getChallengeIsValid(ua, d, controlParams))
                         {
-                            if (!inputParams.respectChallengeAlignment || !(ritual.isGoodTernary() == 1 && (ua is UAE || ua.corrupted)))
-                            {
-                                AIChallenge aiChallenge = aiRituals[ritual.GetType()];
-                                if (aiChallenge.checkChallengeIsValid(ritual, ua, location))
-                                {
-                                    if (!ritualData.ContainsKey(location))
-                                    {
-                                        ritualData.Add(location, new List<Challenge>());
-                                    }
-                                    else if (ritualData[location] == null)
-                                    {
-                                        ritualData[location] = new List<Challenge>();
-                                    }
-
-                                    if (!ritualData[location].Contains(ritual))
-                                    {
-                                        ritualData[location].Add(ritual);
-                                    }
-                                }
-                            }
+                            result.Add(d);
                         }
                     }
                 }
             }
+
+            return result;
         }
 
-        public double getChallengeUtility(Challenge challenge, AIChallenge aiChallenge, UA ua, Location location, InputParams inputParams, List<ReasonMsg> reasonMsgs = null)
+        public bool getChallengeIsValid(UA ua, ChallengeData challengeData, ControlParameters controlParams)
+        {
+            if (challengeData.challenge.claimedBy?.isDead ?? false)
+            {
+                challengeData.challenge.claimedBy = null;
+            }
+
+            if (debug.outputProfile_AllChallenges || debug.outputVisibility_AllChallenges || debug.outputValidity_AllChallenges || debug.outputValidity_ValidChallenges)
+            {
+                Console.WriteLine("CommunityLib: Visibility and Validity for " + challengeData.challenge.getName() + " at " + challengeData.location.getName() + " (" + (challengeData.location.soc?.getName() ?? "Wilderness") + ") by " + ua.getName() + " (" + (ua.society?.getName() ?? "No Society") + ")");
+            }
+
+            if (!controlParams.respectChallengeVisibility || challengeData.aiChallenge.checkChallengeVisibility(challengeData, ua))
+            {
+                if (!controlParams.respectChallengeAlignment || !(challengeData.challenge.isGoodTernary() == -1 && ua is UAG && !ua.corrupted))
+                {
+                    if (!controlParams.respectChallengeAlignment || !(challengeData.challenge.isGoodTernary() == 1 && (ua is UAE || ua.corrupted)))
+                    {
+                        if (challengeData.challenge.allowMultipleUsers() || challengeData.challenge.claimedBy == null || challengeData.challenge.claimedBy == ua)
+                        {
+                            if (challengeData.aiChallenge.checkChallengeIsValid(challengeData, ua))
+                            {
+                                return true;
+                            }
+                        }
+                        else if (debug.outputValidity_AllChallenges)
+                        {
+                            Console.WriteLine("CommunityLib: Invalid: Challenge Claimed by Other Agent");
+                        }
+                    }
+                    else if (debug.outputValidity_AllChallenges)
+                    {
+                        Console.WriteLine("CommunityLib: Invalid: Evil Agent Vs Good Challenge");
+                    }
+                }
+                else if (debug.outputValidity_AllChallenges)
+                {
+                    Console.WriteLine("CommunityLib: Invalid: Good Agent Vs Evil Challenge");
+                }
+            }
+
+            return false;
+        }
+
+        public double getChallengeUtility(ChallengeData challengeData, UA ua, ControlParameters controlParams, List<ReasonMsg> reasonMsgs = null)
         {
             double utility = 0.0;
 
-            utility += ua.person.getTagUtility(challenge.getPositiveTags(), challenge.getNegativeTags(), reasonMsgs);
+            utility += ua.person.getTagUtility(challengeData.challenge.getPositiveTags(), challengeData.challenge.getNegativeTags(), reasonMsgs);
 
-            if (inputParams.respectDanger)
+            if (controlParams.respectDanger)
             {
-                double danger = getDangerUtility(challenge, ua);
+                double danger = getDangerUtility(challengeData, ua);
                 utility += danger;
             }
 
-            utility += aiChallenge.checkChallengeUtility(challenge, ua, reasonMsgs, location);
+            utility += challengeData.aiChallenge.checkChallengeUtility(challengeData, ua, reasonMsgs);
 
-            if (inputParams.valueTimeCost)
+            if (controlParams.valueTimeCost)
             {
-                double distanceDivisor = getDistanceDivisor(challenge, ua, location);
+                double distanceDivisor = getDistanceDivisor(challengeData, ua);
                 reasonMsgs?.Add(new ReasonMsg("Distance Divisor", distanceDivisor));
                 utility /= distanceDivisor;
             }
@@ -959,16 +894,16 @@ namespace CommunityLib
             return utility;
         }
 
-        private double getDangerUtility(Challenge challenge, UA ua, List<ReasonMsg> reasonMsgs = null)
+        private double getDangerUtility(ChallengeData challengeData, UA ua, List<ReasonMsg> reasonMsgs = null)
         {
             double result = 0.0;
 
-            if (challenge.getDanger() <= 0)
+            if (challengeData.challenge.getDanger() <= 0)
             {
                 return result;
             }
 
-            result = challenge.getDanger();
+            result = challengeData.challenge.getDanger();
             result /= Math.Max(ua.hp, 1);
 
             foreach (Minion minion in ua.minions)
@@ -984,7 +919,7 @@ namespace CommunityLib
             reasonMsgs?.Add(new ReasonMsg("Danger (vs my HP)", result));
 
             bool dangerTag = false;
-            foreach (int tag in challenge.getPositiveTags())
+            foreach (int tag in challengeData.challenge.getPositiveTags())
             {
                 if (tag == Tags.DANGER)
                 {
@@ -1001,10 +936,10 @@ namespace CommunityLib
             return result;
         }
 
-        private double getDistanceDivisor(Challenge challenge, UA ua, Location location)
+        private double getDistanceDivisor(ChallengeData challengeData, UA ua)
         {
-            int distance = map.getStepDist(ua.location, location) / ua.getMaxMoves();
-            int duration = (int)Math.Max(1.0, Math.Ceiling(challenge.getCompletionMenaceAfterDifficulty() / challenge.getProgressPerTurn(ua, null)));
+            int distance = map.getStepDist(ua.location, challengeData.location) / ua.getMaxMoves();
+            int duration = (int)Math.Max(1.0, Math.Ceiling(challengeData.challenge.getCompletionMenaceAfterDifficulty() / challengeData.challenge.getProgressPerTurn(ua, null)));
             return (map.param.ua_flatTimeCostUtility + distance + duration) / 10;
         }
     }
