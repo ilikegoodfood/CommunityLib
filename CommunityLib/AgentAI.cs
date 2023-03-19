@@ -412,7 +412,7 @@ namespace CommunityLib
             }
             else
             {
-                double utility = -double.MaxValue;
+                double utility = 0.01;
                 double utility2;
                 List<ChallengeData> targetChallenges = new List<ChallengeData>();
                 List<Unit> targetUnits = new List<Unit>();
