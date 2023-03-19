@@ -274,5 +274,28 @@ namespace CommunityLib
         {
             return;
         }
+
+        /// <summary>
+        /// This hook fires when an agent tries to get visible units to test for unit interactions. It recieves the agent (ua), and the list of units that it considers visible (visibleUnits).
+        /// If this hook returns true, the base game's getVisibleUnits function will not run.
+        /// <para>All instances of this hook will run whenever an AgentAI runs, even those after one which has returned true.</para>
+        /// </summary>
+        /// <param name="ua"></param>
+        /// <returns></returns>
+        public virtual bool interceptGetVisibleUnits(UA ua, List<Unit> visibleUnits)
+        {
+            return false;
+        }
+
+        /// <summary>
+        /// This hook fires immediately after an agent has gathered visible units to test for unit interactions. It recieves the agent (ua), and the list of units that it considers visible (visibleUnits). It returns the list of visible units.
+        /// </summary>
+        /// <param name="visibleUnits"></param>
+        /// <param name="ua"></param>
+        /// <returns></returns>
+        public virtual List<Unit> getVisibleUnits_EndOfProcess(UA ua, List<Unit> visibleUnits)
+        {
+            return visibleUnits;
+        }
     }
 }

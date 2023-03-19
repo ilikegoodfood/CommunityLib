@@ -85,7 +85,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getAttackUtility)), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getBodyguardUtility)), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getDisruptUtility)), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)));
-            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getVisibleUnits)), prefix: new HarmonyMethod(patchType, nameof(UA_getVisibleUnits_Prefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getVisibleUnits)), prefix: new HarmonyMethod(patchType, nameof(UA_getVisibleUnits_Prefix)), postfix: new HarmonyMethod(patchType, nameof(UA_getVisibleUnits_Postfix)));
             // Override AI
             harmony.Patch(original: AccessTools.Method(typeof(UAEN_DeepOne), nameof(UAEN_DeepOne.turnTickAI), new Type[] {  }), prefix: new HarmonyMethod(patchType, nameof(UAEN_DeepOne_turnTickAI_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UAEN_Ghast), nameof(UAEN_Ghast.turnTickAI), new Type[] {  }), prefix: new HarmonyMethod(patchType, nameof(UAEN_Ghast_turnTickAI_Prefix)));
@@ -1102,75 +1102,79 @@ namespace CommunityLib
         private static bool UI_Scroll_Unit_checkData_TranspilerBody(UIScroll_Unit ui)
         {
             UA ua = GraphicalMap.selectedUnit as UA;
-            Console.WriteLine("CommunityLib: Got unit");
+            //Console.WriteLine("CommunityLib: Got unit");
             
             if (ua == null)
             {
-                Console.WriteLine("CommunityLib: Unit is not UA");
+                //Console.WriteLine("CommunityLib: Unit is not UA");
                 return false;
             }
 
             if (ModCore.core.GetAgentAI().TryGetAgentType(ua.GetType(), out List<AIChallenge> _, out AgentAI.ControlParameters? control))
             {
-                Console.WriteLine("CommunityLib: Got registered AI");
+                //Console.WriteLine("CommunityLib: Got registered AI");
                 if (control == null)
                 {
-                    Console.WriteLine("CommunityLib: cotnrol is null");
+                    //Console.WriteLine("CommunityLib: cotnrol is null");
                     return false;
                 }
                 AgentAI.ControlParameters controlParams = (AgentAI.ControlParameters)control;
 
                 List<UIScroll_Unit.SortableTaskBlock> blocks = new List<UIScroll_Unit.SortableTaskBlock>();
-                Console.WriteLine("CommunityLib: Got valid challenges and rituals");
+                //Console.WriteLine("CommunityLib: Got valid challenges and rituals");
                 foreach (AgentAI.ChallengeData challengeData in ModCore.core.GetAgentAI().getAllValidChallengesAndRituals(ua))
                 {
-                    Console.WriteLine("CommunityLib: Iterating " + challengeData.challenge.getName());
+                    //Console.WriteLine("CommunityLib: Iterating " + challengeData.challenge.getName());
                     UIScroll_Unit.SortableTaskBlock block = new UIScroll_Unit.SortableTaskBlock();
                     block.challenge = challengeData.challenge;
                     block.utility = ModCore.core.GetAgentAI().getChallengeUtility(challengeData, ua, controlParams, block.msgs);
                     blocks.Add(block);
-                    Console.WriteLine("CommunityLib: Added " + challengeData.challenge.getName());
+                    //Console.WriteLine("CommunityLib: Added " + challengeData.challenge.getName());
                 }
-                foreach (Unit unit in ua.getVisibleUnits())
+                List<Unit> visibleUnits = ua.getVisibleUnits();
+                if (visibleUnits?.Count > 0)
                 {
-                    Console.WriteLine("CommunityLib: Iterating " + unit.getName());
-                    if (unit is UA agent)
+                    foreach (Unit unit in visibleUnits)
                     {
-                        Console.WriteLine("CommunityLib: Unit is UA");
-                        UIScroll_Unit.SortableTaskBlock blockAttack = new UIScroll_Unit.SortableTaskBlock();
-                        blockAttack.unitToAttack = unit;
-                        blockAttack.utility = ua.getAttackUtility(unit, blockAttack.msgs, controlParams.includeDangerousFoe);
-                        if (blockAttack.utility >= -1000)
+                        //Console.WriteLine("CommunityLib: Iterating " + unit.getName());
+                        if (unit is UA agent)
                         {
-                            blocks.Add(blockAttack);
-                        }
-                        Console.WriteLine("CommunityLib: Added attack " + unit.getName());
-                        if (ua != ua.map.awarenessManager.getChosenOne())
-                        {
-                            UIScroll_Unit.SortableTaskBlock blockGuard = new UIScroll_Unit.SortableTaskBlock();
-                            blockGuard.unitToGuard = unit;
-                            blockGuard.utility = ua.getBodyguardUtility(unit, blockGuard.msgs);
-                            if (blockGuard.utility >= -1000)
+                            //Console.WriteLine("CommunityLib: Unit is UA");
+                            UIScroll_Unit.SortableTaskBlock blockAttack = new UIScroll_Unit.SortableTaskBlock();
+                            blockAttack.unitToAttack = unit;
+                            blockAttack.utility = ua.getAttackUtility(unit, blockAttack.msgs, controlParams.includeDangerousFoe);
+                            if (blockAttack.utility >= -1000)
                             {
-                                blocks.Add(blockGuard);
+                                blocks.Add(blockAttack);
                             }
-                            Console.WriteLine("CommunityLib: Added Guard" + unit.getName());
-                        }
-                        if (agent.task is Task_PerformChallenge performChallenge && performChallenge.challenge.isChannelled())
-                        {
-                            UIScroll_Unit.SortableTaskBlock blockDisrupt = new UIScroll_Unit.SortableTaskBlock();
-                            blockDisrupt.unitToDisrupt = unit;
-                            blockDisrupt.utility = ua.getDisruptUtility(unit, blockDisrupt.msgs);
-                            if (blockDisrupt.utility >= -1000)
+                            //Console.WriteLine("CommunityLib: Added attack " + unit.getName());
+                            if (ua != ua.map.awarenessManager.getChosenOne())
                             {
-                                blocks.Add(blockDisrupt);
+                                UIScroll_Unit.SortableTaskBlock blockGuard = new UIScroll_Unit.SortableTaskBlock();
+                                blockGuard.unitToGuard = unit;
+                                blockGuard.utility = ua.getBodyguardUtility(unit, blockGuard.msgs);
+                                if (blockGuard.utility >= -1000)
+                                {
+                                    blocks.Add(blockGuard);
+                                }
+                                //Console.WriteLine("CommunityLib: Added Guard" + unit.getName());
                             }
-                            Console.WriteLine("CommunityLib: Added Disrupt " + unit.getName());
+                            if (agent.task is Task_PerformChallenge performChallenge && performChallenge.challenge.isChannelled())
+                            {
+                                UIScroll_Unit.SortableTaskBlock blockDisrupt = new UIScroll_Unit.SortableTaskBlock();
+                                blockDisrupt.unitToDisrupt = unit;
+                                blockDisrupt.utility = ua.getDisruptUtility(unit, blockDisrupt.msgs);
+                                if (blockDisrupt.utility >= -1000)
+                                {
+                                    blocks.Add(blockDisrupt);
+                                }
+                                //Console.WriteLine("CommunityLib: Added Disrupt " + unit.getName());
+                            }
                         }
                     }
                 }
 
-                Console.WriteLine("CommunityLib: Created Blocks");
+                //Console.WriteLine("CommunityLib: Created Blocks");
                 blocks.Sort(ui);
                 int num = 10;
                 HashSet<Type> hashSet = new HashSet<Type>();
@@ -1266,26 +1270,34 @@ namespace CommunityLib
             return true;
         }
 
-        private static bool UA_getVisibleUnits_Prefix(UA __instance, ref List<Unit> __result)
+        private static bool UA_getVisibleUnits_Prefix(UA __instance, ref List<Unit> __result, out bool __state)
         {
-            switch (__instance)
+            bool result = true;
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
-                case UAEN_DeepOne _:
-                    __result = new List<Unit>();
-                    return false;
-                case UAEN_Ghast _:
-                    __result = new List<Unit>();
-                    return false;
-                case UAEN_OrcUpstart _:
-                    __result = new List<Unit>();
-                    return false;
-                case UAEN_Vampire _:
-                    __result = new List<Unit>();
-                    return false;
-                default:
-                    break;
+                bool retValue = hook.interceptGetVisibleUnits(__instance, __result);
+
+                if (retValue)
+                {
+                    result = false;
+                }
             }
-            return true;
+
+            __state = result;
+            return result;
+        }
+
+        private static List<Unit> UA_getVisibleUnits_Postfix(List<Unit> visibleUnits, UA __instance, bool __state)
+        {
+            if (__state)
+            {
+                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+                {
+                    hook.getVisibleUnits_EndOfProcess(__instance, visibleUnits);
+                }
+            }
+
+            return visibleUnits;
         }
 
         private static bool UAEN_DeepOne_turnTickAI_Prefix(UAEN_DeepOne __instance)

@@ -15,6 +15,10 @@ namespace CommunityLib
 
         private Dictionary<Type, Tuple<List<AIChallenge>, ControlParameters>> ai;
 
+        public Dictionary <UA, Dictionary<ChallengeData, Dictionary<string, double>>> randStore;
+
+        public bool aiRunning = false;
+
         public struct DebugProperties
         {
             public bool outputProfile_AllChallenges;
@@ -124,6 +128,8 @@ namespace CommunityLib
             this.map = map;
 
             ai = new Dictionary<Type, Tuple<List<AIChallenge>, ControlParameters>>();
+
+            randStore = new Dictionary<UA, Dictionary<ChallengeData, Dictionary<string, double>>>();
         }
 
         /// <summary>
@@ -370,6 +376,64 @@ namespace CommunityLib
             return false;
         }
 
+        /// <summary>
+        /// Safely checks for a value in randStore. If none exists, it sets the value to the new value.
+        /// </summary>
+        /// <param name="ua"></param>
+        /// <param name="challengeData"></param>
+        /// <param name="key"></param>
+        /// <param name="newValue"></param>
+        /// <returns></returns>
+        public double tryGetRand(UA ua, ChallengeData challengeData, string key, double newValue)
+        {
+            if (ua == null || key == null)
+            {
+                return -1.0;
+            }
+
+            if (!randStore.ContainsKey(ua))
+            {
+                randStore.Add(ua, new Dictionary<AgentAI.ChallengeData, Dictionary<string, double>>());
+            }
+            if (!randStore[ua].ContainsKey(challengeData))
+            {
+                randStore[ua].Add(challengeData, new Dictionary<string, double>());
+            }
+            if (!randStore[ua][challengeData].ContainsKey(key))
+            {
+                randStore[ua][challengeData].Add(key, newValue);
+            }
+
+            return randStore[ua][challengeData][key];
+        }
+
+        /// <summary>
+        /// Safely sets the value to randStore.
+        /// </summary>
+        /// <param name="ua"></param>
+        /// <param name="challengeData"></param>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
+        public void setRand(UA ua, ChallengeData challengeData, string key, double value)
+        {
+            if (!randStore.ContainsKey(ua))
+            {
+                randStore.Add(ua, new Dictionary<AgentAI.ChallengeData, Dictionary<string, double>>());
+            }
+            if (!randStore[ua].ContainsKey(challengeData))
+            {
+                randStore[ua].Add(challengeData, new Dictionary<string, double>());
+            }
+            if (!randStore[ua][challengeData].ContainsKey(key))
+            {
+                randStore[ua][challengeData].Add(key, value);
+            }
+            else
+            {
+                randStore[ua][challengeData][key] = value;
+            }
+        }
+
         public void onTurnTickAI(UA ua)
         {
             if (ua == null)
@@ -412,6 +476,12 @@ namespace CommunityLib
             }
             else
             {
+                aiRunning = true;
+                if (!randStore.ContainsKey(ua))
+                {
+                    randStore.Add(ua, new Dictionary<ChallengeData, Dictionary<string, double>>());
+                }
+
                 double utility = 0.01;
                 double utility2;
                 List<ChallengeData> targetChallenges = new List<ChallengeData>();
@@ -423,6 +493,11 @@ namespace CommunityLib
                 {
                     foreach (ChallengeData cData in validChallengeData)
                     {
+                        if (!randStore[ua].ContainsKey(cData))
+                        {
+                            randStore[ua].Add(cData, new Dictionary<string, double>());
+                        }
+
                         List<ReasonMsg> reasonMsgs = null;
                         if (debug.outputUtility_ValidChallenges)
                         {
@@ -441,7 +516,7 @@ namespace CommunityLib
                             Console.WriteLine("CommunityLib: Total: " + utility2);
                         }
 
-                        if (targetChallenges.Count == 0 || utility2 > utility)
+                        if (utility2 > utility)
                         {
                             utility = utility2;
                             targetChallenges.Clear();
@@ -454,70 +529,112 @@ namespace CommunityLib
                     }
                 }
 
-                foreach (Unit unit in ua.getVisibleUnits())
+                List<Unit> visibleUnits = ua.getVisibleUnits();
+                if (visibleUnits?.Count > 0)
                 {
-                    UA agent = unit as UA;
-                    if (agent != null && !agent.isDead)
+                    foreach (Unit unit in visibleUnits)
                     {
-                        if (debug.outputUtility_VisibleAgentsAttack || debug.outputUtility_VisibleAgentsBodyguard || debug.outputUtility_VisibleAgentsDisrupt)
+                        UA agent = unit as UA;
+                        if (agent != null && !agent.isDead)
                         {
-                            Console.WriteLine("CommunityLib: Unit " + unit.getName() + " (" + (unit.society?.getName() ?? "No Society") + ") at " + unit.location.getName() + " (" + (unit.location.soc?.getName() ?? "No Society") + ")");
-                        }
-
-                        if (debug.outputProfile_VisibleAgents)
-                        {
-                            Console.WriteLine("CommunityLib: Profile: " + agent.profile);
-                        }
-
-                        List<ReasonMsg> reasonMsgs = null;
-                        if (!(agent.task is Task_InHiding))
-                        {
-                            if (debug.outputUtility_VisibleAgentsAttack)
+                            if (debug.outputUtility_VisibleAgentsAttack || debug.outputUtility_VisibleAgentsBodyguard || debug.outputUtility_VisibleAgentsDisrupt)
                             {
-                                reasonMsgs = new List<ReasonMsg>();
+                                Console.WriteLine("CommunityLib: Unit " + unit.getName() + " (" + (unit.society?.getName() ?? "No Society") + ") at " + unit.location.getName() + " (" + (unit.location.soc?.getName() ?? "No Society") + ")");
                             }
 
-                            utility2 = ua.getAttackUtility(agent, reasonMsgs, controlParams.includeDangerousFoe);
-
-                            if (debug.outputUtility_VisibleAgentsAttack && reasonMsgs != null)
+                            if (debug.outputProfile_VisibleAgents)
                             {
-                                Console.WriteLine("CommunityLib: Attack Utility");
-                                foreach (ReasonMsg reasonMsg in reasonMsgs)
-                                {
-                                    Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
-                                }
-                                Console.WriteLine("CommunityLib: Total: " + utility2);
+                                Console.WriteLine("CommunityLib: Profile: " + agent.profile);
                             }
 
-                            if (utility2 > utility)
+                            List<ReasonMsg> reasonMsgs = null;
+                            if (!(agent.task is Task_InHiding))
                             {
-                                utility = utility2;
-                                targetChallenges.Clear();
-                                targetUnits.Clear();
-                                targetUnits.Add(unit);
-                            }
-                            else if (utility2 == utility)
-                            {
-                                targetChallenges.Clear();
-                                targetUnits.Add(unit);
-                            }
-                        }
-
-                        reasonMsgs = null;
-                        if (ua != map.awarenessManager.getChosenOne())
-                        {
-                            if (ua.society?.getRel(unit.society).state != DipRel.dipState.war)
-                            {
-                                if (debug.outputUtility_VisibleAgentsBodyguard)
+                                if (debug.outputUtility_VisibleAgentsAttack)
                                 {
                                     reasonMsgs = new List<ReasonMsg>();
                                 }
 
-                                utility2 = ua.getBodyguardUtility(unit, null);
+                                utility2 = ua.getAttackUtility(agent, reasonMsgs, controlParams.includeDangerousFoe);
 
-                                if (debug.outputUtility_VisibleAgentsBodyguard && reasonMsgs != null)
+                                if (debug.outputUtility_VisibleAgentsAttack && reasonMsgs != null)
                                 {
-                                    Console.WriteLine("CommunityLib: Bodyguard Utility");
+                                    Console.WriteLine("CommunityLib: Attack Utility");
+                                    foreach (ReasonMsg reasonMsg in reasonMsgs)
+                                    {
+                                        Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
+                                    }
+                                    Console.WriteLine("CommunityLib: Total: " + utility2);
+                                }
+
+                                if (utility2 > utility)
+                                {
+                                    utility = utility2;
+                                    targetChallenges.Clear();
+                                    targetUnits.Clear();
+                                    targetUnits.Add(unit);
+                                }
+                                else if (utility2 == utility)
+                                {
+                                    targetChallenges.Clear();
+                                    targetUnits.Add(unit);
+                                }
+                            }
+
+                            reasonMsgs = null;
+                            if (ua != map.awarenessManager.getChosenOne())
+                            {
+                                if (ua.society?.getRel(unit.society).state != DipRel.dipState.war)
+                                {
+                                    if (debug.outputUtility_VisibleAgentsBodyguard)
+                                    {
+                                        reasonMsgs = new List<ReasonMsg>();
+                                    }
+
+                                    utility2 = ua.getBodyguardUtility(unit, null);
+
+                                    if (debug.outputUtility_VisibleAgentsBodyguard && reasonMsgs != null)
+                                    {
+                                        Console.WriteLine("CommunityLib: Bodyguard Utility");
+                                        foreach (ReasonMsg reasonMsg in reasonMsgs)
+                                        {
+                                            Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
+                                        }
+                                        Console.WriteLine("CommunityLib: Total: " + utility2);
+                                    }
+
+                                    if (utility2 > utility)
+                                    {
+                                        utility = utility2;
+                                        targetChallenges.Clear();
+                                        targetUnits.Clear();
+                                        targetGuards.Clear();
+                                        targetGuards.Add(unit);
+                                    }
+                                    else if (utility2 == utility)
+                                    {
+                                        targetChallenges.Clear();
+                                        targetUnits.Clear();
+                                        targetGuards.Add(unit);
+
+                                    }
+                                }
+                            }
+
+                            reasonMsgs = null;
+                            Task_PerformChallenge task = unit.task as Task_PerformChallenge;
+                            if (!(task?.challenge.isChannelled() ?? true))
+                            {
+                                if (debug.outputUtility_VisibleAgentsDisrupt)
+                                {
+                                    reasonMsgs = new List<ReasonMsg>();
+                                }
+
+                                utility2 = ua.getDisruptUtility(unit, null);
+
+                                if (debug.outputUtility_VisibleAgentsDisrupt && reasonMsgs != null)
+                                {
+                                    Console.WriteLine("CommunityLib: Disrupt Utility");
                                     foreach (ReasonMsg reasonMsg in reasonMsgs)
                                     {
                                         Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
@@ -531,54 +648,16 @@ namespace CommunityLib
                                     targetChallenges.Clear();
                                     targetUnits.Clear();
                                     targetGuards.Clear();
-                                    targetGuards.Add(unit);
+                                    targetDisrupts.Clear();
+                                    targetDisrupts.Add(agent);
                                 }
                                 else if (utility2 == utility)
                                 {
                                     targetChallenges.Clear();
                                     targetUnits.Clear();
-                                    targetGuards.Add(unit);
-
+                                    targetGuards.Clear();
+                                    targetDisrupts.Add(agent);
                                 }
-                            }
-                        }
-
-                        reasonMsgs = null;
-                        Task_PerformChallenge task = unit.task as Task_PerformChallenge;
-                        if (!(task?.challenge.isChannelled() ?? true))
-                        {
-                            if (debug.outputUtility_VisibleAgentsDisrupt)
-                            {
-                                reasonMsgs = new List<ReasonMsg>();
-                            }
-
-                            utility2 = ua.getDisruptUtility(unit, null);
-
-                            if (debug.outputUtility_VisibleAgentsDisrupt && reasonMsgs != null)
-                            {
-                                Console.WriteLine("CommunityLib: Disrupt Utility");
-                                foreach (ReasonMsg reasonMsg in reasonMsgs)
-                                {
-                                    Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
-                                }
-                                Console.WriteLine("CommunityLib: Total: " + utility2);
-                            }
-
-                            if (utility2 > utility)
-                            {
-                                utility = utility2;
-                                targetChallenges.Clear();
-                                targetUnits.Clear();
-                                targetGuards.Clear();
-                                targetDisrupts.Clear();
-                                targetDisrupts.Add(agent);
-                            }
-                            else if (utility2 == utility)
-                            {
-                                targetChallenges.Clear();
-                                targetUnits.Clear();
-                                targetGuards.Clear();
-                                targetDisrupts.Add(agent);
                             }
                         }
                     }
@@ -724,6 +803,12 @@ namespace CommunityLib
             {
                 ua.task = new Task_GoToLocation(map.locations[ua.homeLocation]);
             }
+            else if (ua.task == null && ua.location.index == ua.homeLocation)
+            {
+                ua.task = new Task_GoToLocation(map.locations[ua.homeLocation].getNeighbours()[Eleven.random.Next(map.locations[ua.homeLocation].getNeighbours().Count)]);
+            }
+
+            aiRunning = false;
         }
 
         public List<ChallengeData> getAllValidChallengesAndRituals(UA ua)
@@ -886,8 +971,8 @@ namespace CommunityLib
 
             if (controlParams.valueTimeCost)
             {
-                double distanceDivisor = getDistanceDivisor(challengeData, ua);
-                utility /= distanceDivisor;
+                //Console.WriteLine("CommunityLib: distance Divisor is " + getDistanceDivisor(challengeData, ua).ToString());
+                utility /= getDistanceDivisor(challengeData, ua);
             }
 
             return utility;
@@ -937,9 +1022,10 @@ namespace CommunityLib
 
         private double getDistanceDivisor(ChallengeData challengeData, UA ua)
         {
-            int distance = map.getStepDist(ua.location, challengeData.location) / ua.getMaxMoves();
+            double distance = map.getStepDist(ua.location, challengeData.location) / ua.getMaxMoves();
+            distance = Math.Ceiling(distance);
             int duration = (int)Math.Max(1.0, Math.Ceiling(challengeData.challenge.getCompletionMenaceAfterDifficulty() / challengeData.challenge.getProgressPerTurn(ua, null)));
-            return (map.param.ua_flatTimeCostUtility + distance + duration) / 10;
+            return (map.param.ua_flatTimeCostUtility + distance + duration) / 10.0;
         }
     }
 }

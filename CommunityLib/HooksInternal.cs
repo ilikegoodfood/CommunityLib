@@ -14,6 +14,29 @@ namespace CommunityLib
             
         }
 
+        public override bool interceptGetVisibleUnits(UA ua, List<Unit> visibleUnits)
+        {
+            switch (ua)
+            {
+                case UAEN_DeepOne _:
+                    visibleUnits = new List<Unit>();
+                    return true;
+                case UAEN_Ghast _:
+                    visibleUnits = new List<Unit>();
+                    return true;
+                case UAEN_OrcUpstart _:
+                    visibleUnits = new List<Unit>();
+                    return true;
+                case UAEN_Vampire _:
+                    visibleUnits = new List<Unit>();
+                    return true;
+                default:
+                    break;
+            }
+
+            return false;
+        }
+
         public override bool interceptAgentAI(UA ua, List<AgentAI.ChallengeData> challengeData, AgentAI.ControlParameters inputParamse)
         {
             switch (ua)

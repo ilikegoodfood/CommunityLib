@@ -35,43 +35,50 @@ namespace CommunityLib
         public override void beforeMapGen(Map map)
         {
             //Initialize subclasses.
-            if (agentAI == null)
-            {
-                agentAI = new AgentAI(map);
-            }
+            agentAI = new AgentAI(map);
 
-            if (hooks == null)
-            {
-                hooks = new HooksInternal(map);
-                RegisterHooks(hooks);
-            }
+            hooks = new HooksInternal(map);
+            RegisterHooks(hooks);
 
-            if (overrideAI == null)
-            {
-                overrideAI = new UAENOverrideAI(map);
-            }
+            overrideAI = new UAENOverrideAI(map);
         }
 
         public override void afterLoading(Map map)
         {
             //Initialize subclasses.
-            if (agentAI == null)
+            agentAI = new AgentAI(map);
+
+            hooks = new HooksInternal(map);
+            RegisterHooks(hooks);
+
+
+            overrideAI = new UAENOverrideAI(map);
+        }
+
+        public override void onTurnEnd(Map map)
+        {
+            List<UA> deadAgents = new List<UA>();
+            foreach (UA ua in agentAI.randStore.Keys)
             {
-                agentAI = new AgentAI(map);
+                if (ua.isDead)
+                {
+                    deadAgents.Add(ua);
+                }
             }
 
-            if (hooks == null)
+            if (deadAgents.Count > 0)
             {
-                hooks = new HooksInternal(map);
-                RegisterHooks(hooks);
-            }
-
-            if (overrideAI == null)
-            {
-                overrideAI = new UAENOverrideAI(map);
+                foreach (UA ua in deadAgents)
+                {
+                    agentAI.randStore.Remove(ua);
+                }
             }
         }
 
+        /// <summary>
+        /// Returns the instance of the AgentAI.
+        /// </summary>
+        /// <returns></returns>
         public AgentAI GetAgentAI()
         {
             return agentAI;
