@@ -1068,7 +1068,6 @@ namespace CommunityLib
 
             MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(UI_Scroll_Unit_checkData_TranspilerBody));
 
-            Label noAI = ilg.DefineLabel();
             Label skip = ilg.DefineLabel();
 
             bool found = false;
@@ -1087,10 +1086,10 @@ namespace CommunityLib
                             }
                         }
 
+                        yield return new CodeInstruction(OpCodes.Nop);
                         yield return new CodeInstruction(OpCodes.Ldarg_0);
                         yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
                         yield return new CodeInstruction(OpCodes.Brtrue_S, skip);
-                        yield return new CodeInstruction(OpCodes.Nop, noAI);
                         found = true;
                     }
                 }
@@ -1139,7 +1138,7 @@ namespace CommunityLib
                         //Console.WriteLine("CommunityLib: Iterating " + unit.getName());
                         if (unit is UA agent)
                         {
-                            //Console.WriteLine("CommunityLib: Unit is UA");
+                            Console.WriteLine("CommunityLib: Unit is UA");
                             UIScroll_Unit.SortableTaskBlock blockAttack = new UIScroll_Unit.SortableTaskBlock();
                             blockAttack.unitToAttack = unit;
                             blockAttack.utility = ua.getAttackUtility(unit, blockAttack.msgs, controlParams.includeDangerousFoe);
@@ -1193,6 +1192,8 @@ namespace CommunityLib
                     gO.GetComponent<UIE_ChallengePerception>().setTo(ui.master.world, block);
                     num--;
                 }
+                //Console.WriteLine("CommunityLib: Instantiated Blocks");
+                return true;
             }
 
             return false;
