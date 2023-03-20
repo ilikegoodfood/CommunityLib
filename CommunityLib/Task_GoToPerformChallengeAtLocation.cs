@@ -40,6 +40,11 @@ namespace CommunityLib
                 }
             }
 
+            if (!challenge.allowMultipleUsers() && !(challenge.claimedBy == null || challenge.claimedBy == unit))
+            {
+                unit.task = null;
+            }
+
             if (unit.map.automatic && (challenge is Ch_FulfillTheProphecy || challenge is Ch_ReforgeTheSeals))
             {
                 foreach (Unit unit2 in unit.map.overmind.agents)
@@ -57,12 +62,23 @@ namespace CommunityLib
 
             if (unit.location == target)
             {
-                if (unit.isCommandable())
+                if (unit.isCommandable() || target.isWatched)
                 {
                     unit.map.addUnifiedMessage(unit, null, "Unit Arrives", unit.getName() + " has reached " + unit.location.getName(true) + " and begun challenge " + challenge.getName(), UnifiedMessage.messageType.UNIT_ARRIVES, false);
                 }
-                unit.task = new Task_PerformChallenge(challenge);
-                challenge.claimedBy = unit;
+                
+                if (challenge.allowMultipleUsers() || challenge.claimedBy == null || challenge.claimedBy == unit)
+                {
+                    unit.task = new Task_PerformChallenge(challenge);
+                    if (!challenge.allowMultipleUsers())
+                    {
+                        challenge.claimedBy = unit;
+                    }
+                }
+                else
+                {
+                    unit.task = null;
+                }
             }
             else
             {
@@ -89,12 +105,22 @@ namespace CommunityLib
 
                     if (unit.location == target)
                     {
-                        if (unit.isCommandable())
+                        if (unit.isCommandable() || target.isWatched)
                         {
                             unit.map.addUnifiedMessage(unit, null, "Unit Arrives", unit.getName() + " has reached " + unit.location.getName(true) + " and begun challenge " + challenge.getName(), UnifiedMessage.messageType.UNIT_ARRIVES, false);
                         }
-                        unit.task = new Task_PerformChallenge(challenge);
-                        challenge.claimedBy = unit;
+                        if (challenge.allowMultipleUsers() || challenge.claimedBy == null || challenge.claimedBy == unit)
+                        {
+                            unit.task = new Task_PerformChallenge(challenge);
+                            if (!challenge.allowMultipleUsers())
+                            {
+                                challenge.claimedBy = unit;
+                            }
+                        }
+                        else
+                        {
+                            unit.task = null;
+                        }
                         break;
                     }
                 }
