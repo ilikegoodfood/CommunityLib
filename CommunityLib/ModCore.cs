@@ -45,12 +45,12 @@ namespace CommunityLib
 
         public override void afterLoading(Map map)
         {
+            core = this;
             //Initialize subclasses.
             agentAI = new AgentAI(map);
 
             hooks = new HooksInternal(map);
             RegisterHooks(hooks);
-
 
             overrideAI = new UAENOverrideAI(map);
         }
