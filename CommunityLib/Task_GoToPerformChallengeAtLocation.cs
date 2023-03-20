@@ -2,7 +2,7 @@
 
 namespace CommunityLib
 {
-    internal class Task_GoToPerformChallengeAtLocation : Task_GoToPerformChallenge
+    public class Task_GoToPerformChallengeAtLocation : Task_GoToPerformChallenge
     {
         public Location target;
         public bool safeMove;
