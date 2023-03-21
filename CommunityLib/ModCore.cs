@@ -45,6 +45,7 @@ namespace CommunityLib
 
         public override void afterLoading(Map map)
         {
+            core = this;
             //Initialize subclasses.
             agentAI = new AgentAI(map);
 
