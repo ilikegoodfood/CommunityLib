@@ -7,13 +7,13 @@ namespace CommunityLib
 {
     public class UAENOverrideAI
     {
-        public List<AIChallenge> aiChallenges_DeepOne;
+        private List<AIChallenge> aiChallenges_DeepOne;
 
-        public List<AIChallenge> aiChallenges_Ghast;
+        private List<AIChallenge> aiChallenges_Ghast;
 
-        public List<AIChallenge> aiChallenges_OrcUpstart;
+        private List<AIChallenge> aiChallenges_OrcUpstart;
 
-        public List<AIChallenge> aiChallenges_Vampire;
+        private List<AIChallenge> aiChallenges_Vampire;
 
         private Map map;
 

@@ -11,13 +11,13 @@ namespace CommunityLib
     {
         public static DebugProperties debug;
 
-        Map map;
+        private Dictionary<UA, Dictionary<ChallengeData, Dictionary<string, double>>> randStore;
+
+        private bool aiRunning = false;
 
         private Dictionary<Type, Tuple<List<AIChallenge>, ControlParameters>> ai;
 
-        public Dictionary <UA, Dictionary<ChallengeData, Dictionary<string, double>>> randStore;
-
-        public bool aiRunning = false;
+        private Map map;
 
         public struct DebugProperties
         {
@@ -434,7 +434,29 @@ namespace CommunityLib
             }
         }
 
-        public void onTurnTickAI(UA ua)
+        public bool isAIRunning()
+        {
+            return aiRunning;
+        }
+
+        internal void cleanRandStore()
+        {
+            List<UA> deadAgents = new List<UA>();
+            foreach (UA ua in randStore.Keys)
+            {
+                if (ua.isDead)
+                {
+                    deadAgents.Add(ua);
+                }
+            }
+
+            foreach (UA ua in deadAgents)
+            {
+                randStore.Remove(ua);
+            }
+        }
+
+        public void turnTickAI(UA ua)
         {
             if (ua == null)
             {

@@ -1415,7 +1415,7 @@ namespace CommunityLib
                     case ChallengeTags.PreferLocalRandomized:
                         dist = ua.map.getStepDist(ua.location, challengeData.location);
                         dist -= ModCore.core.GetAgentAI().tryGetRand(ua, challengeData, "localRand", 1 + Eleven.random.Next(2) + Eleven.random.Next(2));
-                        if (ModCore.core.GetAgentAI().aiRunning)
+                        if (ModCore.core.GetAgentAI().isAIRunning())
                         {
                             ModCore.core.GetAgentAI().setRand(ua, challengeData, "localRand", 1 + Eleven.random.Next(2) + Eleven.random.Next(2));
                         }

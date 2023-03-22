@@ -23,13 +23,13 @@ namespace CommunityLib
 
         public override void onModsInitiallyLoaded()
         {
+            core = this;
+
             if (!patched)
             {
                 patched = true;
                 HarmonyPatches.PatchingInit();
             }
-
-            core = this;
         }
 
         public override void beforeMapGen(Map map)
@@ -57,22 +57,7 @@ namespace CommunityLib
 
         public override void onTurnEnd(Map map)
         {
-            List<UA> deadAgents = new List<UA>();
-            foreach (UA ua in agentAI.randStore.Keys)
-            {
-                if (ua.isDead)
-                {
-                    deadAgents.Add(ua);
-                }
-            }
-
-            if (deadAgents.Count > 0)
-            {
-                foreach (UA ua in deadAgents)
-                {
-                    agentAI.randStore.Remove(ua);
-                }
-            }
+            agentAI.cleanRandStore();
         }
 
         /// <summary>

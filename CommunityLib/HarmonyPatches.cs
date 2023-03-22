@@ -1138,7 +1138,7 @@ namespace CommunityLib
                         //Console.WriteLine("CommunityLib: Iterating " + unit.getName());
                         if (unit is UA agent)
                         {
-                            Console.WriteLine("CommunityLib: Unit is UA");
+                            //Console.WriteLine("CommunityLib: Unit is UA");
                             UIScroll_Unit.SortableTaskBlock blockAttack = new UIScroll_Unit.SortableTaskBlock();
                             blockAttack.unitToAttack = unit;
                             blockAttack.utility = ua.getAttackUtility(unit, blockAttack.msgs, controlParams.includeDangerousFoe);
@@ -1305,7 +1305,7 @@ namespace CommunityLib
         {
             if (ModCore.core.GetAgentAI().TryGetAgentType(typeof(UAEN_DeepOne)))
             {
-                ModCore.core.GetAgentAI().onTurnTickAI(__instance);
+                ModCore.core.GetAgentAI().turnTickAI(__instance);
                 return false;
             }
             return true;
@@ -1315,7 +1315,7 @@ namespace CommunityLib
         {
             if (ModCore.core.GetAgentAI().TryGetAgentType(typeof(UAEN_Ghast)))
             {
-                ModCore.core.GetAgentAI().onTurnTickAI(__instance);
+                ModCore.core.GetAgentAI().turnTickAI(__instance);
                 return false;
             }
             return true;
@@ -1325,7 +1325,7 @@ namespace CommunityLib
         {
             if (ModCore.core.GetAgentAI().TryGetAgentType(typeof(UAEN_OrcUpstart)))
             {
-                ModCore.core.GetAgentAI().onTurnTickAI(__instance);
+                ModCore.core.GetAgentAI().turnTickAI(__instance);
                 return false;
             }
             return true;
@@ -1335,7 +1335,7 @@ namespace CommunityLib
         {
             if (ModCore.core.GetAgentAI().TryGetAgentType(typeof(UAEN_Vampire)))
             {
-                ModCore.core.GetAgentAI().onTurnTickAI(__instance);
+                ModCore.core.GetAgentAI().turnTickAI(__instance);
                 return false;
             }
             return true;
