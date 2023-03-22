@@ -11,8 +11,6 @@ namespace CommunityLib
     {
         public static DebugProperties debug;
 
-        private Dictionary<UA, Dictionary<ChallengeData, Dictionary<string, double>>> randStore;
-
         private bool aiRunning = false;
 
         private Dictionary<Type, Tuple<List<AIChallenge>, ControlParameters>> ai;
@@ -128,8 +126,6 @@ namespace CommunityLib
             this.map = map;
 
             ai = new Dictionary<Type, Tuple<List<AIChallenge>, ControlParameters>>();
-
-            randStore = new Dictionary<UA, Dictionary<ChallengeData, Dictionary<string, double>>>();
         }
 
         /// <summary>
@@ -376,84 +372,9 @@ namespace CommunityLib
             return false;
         }
 
-        /// <summary>
-        /// Safely checks for a value in randStore. If none exists, it sets the value to the new value.
-        /// </summary>
-        /// <param name="ua"></param>
-        /// <param name="challengeData"></param>
-        /// <param name="key"></param>
-        /// <param name="newValue"></param>
-        /// <returns></returns>
-        public double tryGetRand(UA ua, ChallengeData challengeData, string key, double newValue)
-        {
-            if (ua == null || key == null)
-            {
-                return -1.0;
-            }
-
-            if (!randStore.ContainsKey(ua))
-            {
-                randStore.Add(ua, new Dictionary<AgentAI.ChallengeData, Dictionary<string, double>>());
-            }
-            if (!randStore[ua].ContainsKey(challengeData))
-            {
-                randStore[ua].Add(challengeData, new Dictionary<string, double>());
-            }
-            if (!randStore[ua][challengeData].ContainsKey(key))
-            {
-                randStore[ua][challengeData].Add(key, newValue);
-            }
-
-            return randStore[ua][challengeData][key];
-        }
-
-        /// <summary>
-        /// Safely sets the value to randStore.
-        /// </summary>
-        /// <param name="ua"></param>
-        /// <param name="challengeData"></param>
-        /// <param name="key"></param>
-        /// <param name="value"></param>
-        public void setRand(UA ua, ChallengeData challengeData, string key, double value)
-        {
-            if (!randStore.ContainsKey(ua))
-            {
-                randStore.Add(ua, new Dictionary<AgentAI.ChallengeData, Dictionary<string, double>>());
-            }
-            if (!randStore[ua].ContainsKey(challengeData))
-            {
-                randStore[ua].Add(challengeData, new Dictionary<string, double>());
-            }
-            if (!randStore[ua][challengeData].ContainsKey(key))
-            {
-                randStore[ua][challengeData].Add(key, value);
-            }
-            else
-            {
-                randStore[ua][challengeData][key] = value;
-            }
-        }
-
         public bool isAIRunning()
         {
             return aiRunning;
-        }
-
-        internal void cleanRandStore()
-        {
-            List<UA> deadAgents = new List<UA>();
-            foreach (UA ua in randStore.Keys)
-            {
-                if (ua.isDead)
-                {
-                    deadAgents.Add(ua);
-                }
-            }
-
-            foreach (UA ua in deadAgents)
-            {
-                randStore.Remove(ua);
-            }
         }
 
         public void turnTickAI(UA ua)
@@ -499,9 +420,9 @@ namespace CommunityLib
             else
             {
                 aiRunning = true;
-                if (!randStore.ContainsKey(ua))
+                if (!ModCore.core.randStore.ContainsKey(ua))
                 {
-                    randStore.Add(ua, new Dictionary<ChallengeData, Dictionary<string, double>>());
+                    ModCore.core.randStore.Add(ua, new Dictionary<ChallengeData, Dictionary<string, double>>());
                 }
 
                 double utility = 0.01;
@@ -515,9 +436,9 @@ namespace CommunityLib
                 {
                     foreach (ChallengeData cData in validChallengeData)
                     {
-                        if (!randStore[ua].ContainsKey(cData))
+                        if (!ModCore.core.randStore[ua].ContainsKey(cData))
                         {
-                            randStore[ua].Add(cData, new Dictionary<string, double>());
+                            ModCore.core.randStore[ua].Add(cData, new Dictionary<string, double>());
                         }
 
                         List<ReasonMsg> reasonMsgs = null;

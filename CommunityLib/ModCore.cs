@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Assets.Code;
+using static CommunityLib.AgentAI;
 
 namespace CommunityLib
 {
@@ -10,6 +11,8 @@ namespace CommunityLib
         public static ModCore core;
 
         public static double versionID;
+
+        public Dictionary<UA, Dictionary<ChallengeData, Dictionary<string, double>>> randStore;
 
         private List<Hooks> registeredHooks = new List<Hooks>();
 
@@ -35,6 +38,8 @@ namespace CommunityLib
         public override void beforeMapGen(Map map)
         {
             //Initialize subclasses.
+            randStore = new Dictionary<UA, Dictionary<ChallengeData, Dictionary<string, double>>>();
+
             agentAI = new AgentAI(map);
 
             hooks = new HooksInternal(map);
@@ -46,6 +51,12 @@ namespace CommunityLib
         public override void afterLoading(Map map)
         {
             core = this;
+
+            if (randStore == null)
+            {
+                randStore = new Dictionary<UA, Dictionary<ChallengeData, Dictionary<string, double>>>();
+            }
+
             //Initialize subclasses.
             agentAI = new AgentAI(map);
 
@@ -57,7 +68,7 @@ namespace CommunityLib
 
         public override void onTurnEnd(Map map)
         {
-            agentAI.cleanRandStore();
+            cleanRandStore();
         }
 
         /// <summary>
@@ -84,6 +95,81 @@ namespace CommunityLib
         internal List<Hooks> GetRegisteredHooks()
         {
             return registeredHooks;
+        }
+
+        /// <summary>
+        /// Safely checks for a value in randStore. If none exists, it sets the value to the new value.
+        /// </summary>
+        /// <param name="ua"></param>
+        /// <param name="challengeData"></param>
+        /// <param name="key"></param>
+        /// <param name="newValue"></param>
+        /// <returns></returns>
+        public double tryGetRand(UA ua, ChallengeData challengeData, string key, double newValue)
+        {
+            if (ua == null || key == null)
+            {
+                return -1.0;
+            }
+
+            if (!randStore.ContainsKey(ua))
+            {
+                randStore.Add(ua, new Dictionary<AgentAI.ChallengeData, Dictionary<string, double>>());
+            }
+            if (!randStore[ua].ContainsKey(challengeData))
+            {
+                randStore[ua].Add(challengeData, new Dictionary<string, double>());
+            }
+            if (!randStore[ua][challengeData].ContainsKey(key))
+            {
+                randStore[ua][challengeData].Add(key, newValue);
+            }
+
+            return randStore[ua][challengeData][key];
+        }
+
+        /// <summary>
+        /// Safely sets the value to randStore.
+        /// </summary>
+        /// <param name="ua"></param>
+        /// <param name="challengeData"></param>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
+        public void setRand(UA ua, ChallengeData challengeData, string key, double value)
+        {
+            if (!randStore.ContainsKey(ua))
+            {
+                randStore.Add(ua, new Dictionary<AgentAI.ChallengeData, Dictionary<string, double>>());
+            }
+            if (!randStore[ua].ContainsKey(challengeData))
+            {
+                randStore[ua].Add(challengeData, new Dictionary<string, double>());
+            }
+            if (!randStore[ua][challengeData].ContainsKey(key))
+            {
+                randStore[ua][challengeData].Add(key, value);
+            }
+            else
+            {
+                randStore[ua][challengeData][key] = value;
+            }
+        }
+
+        internal void cleanRandStore()
+        {
+            List<UA> deadAgents = new List<UA>();
+            foreach (UA ua in randStore.Keys)
+            {
+                if (ua.isDead)
+                {
+                    deadAgents.Add(ua);
+                }
+            }
+
+            foreach (UA ua in deadAgents)
+            {
+                randStore.Remove(ua);
+            }
         }
     }
 }
