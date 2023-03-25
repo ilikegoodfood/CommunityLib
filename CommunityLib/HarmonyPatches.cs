@@ -697,29 +697,56 @@ namespace CommunityLib
         }
 
         // Religion UI Screen modification
-        private static IEnumerable<CodeInstruction> PopupHolyOrder_bPrevNext_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        private static IEnumerable<CodeInstruction> PopupHolyOrder_bPrevNext_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
             MethodInfo MI_HolyOrder_isGone = AccessTools.Method(typeof(HolyOrder), nameof(HolyOrder.isGone));
 
-            Label isFalseLabel;
+            FieldInfo FI_PopupHolyOrder_us = AccessTools.Field(typeof(PopupHolyOrder), nameof(PopupHolyOrder.us));
 
-            bool found = false;
+            Label continueLabel;
+            Label isDeadLabel = ilg.DefineLabel();
+            Label isAliveLabel = ilg.DefineLabel();
+
+            int targetIndex = 0;
 
             for (int i = 0; i < instructionList.Count; i++)
             {
-                yield return instructionList[i];
-
-                if (!found && instructionList[i].opcode == OpCodes.Brfalse_S)
+                
+                if (targetIndex == 0 && i > 0 && instructionList[i-1].opcode == OpCodes.Brfalse_S && instructionList[i].opcode == OpCodes.Nop)
                 {
-                    found = true;
-                    isFalseLabel = (Label)instructionList[i].operand;
+                    targetIndex = 1;
+                    continueLabel = (Label)instructionList[i-1].operand;
 
                     yield return new CodeInstruction(OpCodes.Ldloc_S, 4);
                     yield return new CodeInstruction(OpCodes.Callvirt, MI_HolyOrder_isGone);
-                    yield return new CodeInstruction(OpCodes.Brtrue_S, isFalseLabel);
+                    yield return new CodeInstruction(OpCodes.Brtrue_S, continueLabel);
                 }
+
+                if (targetIndex == 2 && instructionList[i - 1].opcode == OpCodes.Stloc_1 && instructionList[i].opcode == OpCodes.Ldarg_0)
+                {
+                    targetIndex = 3;
+                    instructionList[i].labels.Add(isDeadLabel);
+                }
+
+                if (targetIndex == 1 && instructionList[i - 1].opcode == OpCodes.Ldloc_0 && instructionList[i].opcode == OpCodes.Ldarg_0)
+                {
+                    targetIndex = 2;
+                    yield return new CodeInstruction(OpCodes.Pop);
+                    yield return new CodeInstruction(OpCodes.Ldarg_0);
+                    yield return new CodeInstruction(OpCodes.Ldfld, FI_PopupHolyOrder_us);
+                    yield return new CodeInstruction(OpCodes.Callvirt, MI_HolyOrder_isGone);
+                    yield return new CodeInstruction(OpCodes.Brfalse_S, isAliveLabel);
+                    yield return new CodeInstruction(OpCodes.Ldc_I4_0);
+                    yield return new CodeInstruction(OpCodes.Stloc_1);
+                    yield return new CodeInstruction(OpCodes.Br_S, isDeadLabel);
+                    CodeInstruction code = new CodeInstruction(OpCodes.Ldloc_0);
+                    code.labels.Add(isAliveLabel);
+                    yield return code;
+                }
+
+                yield return instructionList[i];
             }
         }
 

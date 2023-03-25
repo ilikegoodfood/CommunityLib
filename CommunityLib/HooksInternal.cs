@@ -67,7 +67,7 @@ namespace CommunityLib
                 {
                     //Console.WriteLine("CommunityLib: DeepOne is at ocean location");
                     deepOne.moveType = MoveType.AQUAPHIBIOUS;
-                    return true;
+                    return false;
                 }
 
                 Location nearestOceanLocation = null;
@@ -119,7 +119,7 @@ namespace CommunityLib
 
         private bool interceptOrcUpstart(UAEN_OrcUpstart upstart)
         {
-            if (upstart.society.isGone() || upstart.society.lastTurnLocs.Count == 0)
+            if (upstart.society.checkIsGone() || upstart.society.lastTurnLocs.Count == 0)
             {
                 upstart.die(map, "Died in the wilderness", null);
                 return true;
