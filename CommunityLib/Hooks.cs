@@ -1,15 +1,43 @@
 ﻿using Assets.Code;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using UnityEngine;
 
 namespace CommunityLib
 {
     public abstract class Hooks
     {
         public Map map;
+
+        public struct TaskData
+        {
+            public Challenge challenge;
+            public Action<World, UM, UIE_Challenge> onClick;
+            public string title;
+            public Sprite icon;
+            public int profileGain;
+            public int menaceGain;
+            public Color backColor;
+            public bool enabled;
+            public int special;
+            public UA targetUA;
+            public UM targetUM;
+        }
+
+        public struct TaskData_Popout
+        {
+            public string title;
+            public Sprite icon;
+            public Sprite iconBackground;
+            public string description;
+            public string restrictions;
+            public int profileGain;
+            public int menaceGain;
+            public Color backColor;
+            public int complexity;
+            public int progressPerTurn;
+            public List<ReasonMsg> progressReasonMsgs;
+        }
 
         public Hooks(Map map)
         {
@@ -296,6 +324,33 @@ namespace CommunityLib
         public virtual List<Unit> getVisibleUnits_EndOfProcess(UA ua, List<Unit> visibleUnits)
         {
             return visibleUnits;
+        }
+
+        /// <summary>
+        /// This hook fires when the UIScroll_Unit interface (the panel on the right that shows challenges and tasks available to the selected unit) attempts to populate tasks for a commandable military unit. It returns a liss of TaskData structs, which are then used to create an action button for the unit.
+        /// </summary>
+        /// <param name="um"></param>
+        /// <returns></returns>
+        public virtual List<TaskData> onUIScroll_Unit_populateUM(UM um)
+        {
+            return null;
+        }
+
+
+        /// <summary>
+        /// This hook fires when you hover your mouse over an action button in the UIScroll_Unit interface (the panel on the right that shows challenges and tasks available to the selected unit), excluding buttons for challenges, for a commandable military unit. It receives the military unit (um), a partial reconstruction of the TaskData object that could have been used to create it, not the original object. It does not include the onClick delegate, profile gain, or menace gain
+        /// <para>If the partially reconstructed TaskData matches a task that your mod adds, populate the popoutData (TaskData_Popout) and return true. Otherwise, return false to allow another mod or the base game to handle the challenge popout screen for that action button.</para>
+        /// <para>The title, icon and icon background are pre-set in popoutData when it is passed into the hook, and the progressReasonMsgs are set to an empty list of ReasonMsg</para>
+        /// <para>No hook after the first hook to return true will be called.</para>
+        /// </summary>
+        /// </summary>
+        /// <param name="um"></param>
+        /// <param name="taskData"></param>
+        /// <param name="popoutData"></param>
+        /// <returns></returns>
+        public virtual bool interceptChallengePopout(UM um, TaskData taskData, ref TaskData_Popout popoutData)
+        {
+            return false;
         }
     }
 }

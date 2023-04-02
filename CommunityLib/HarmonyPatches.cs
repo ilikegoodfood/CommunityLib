@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -19,6 +20,8 @@ namespace CommunityLib
         public static ArmyBattleData armyBattleData_StartOfCycle;
 
         public static Text budgetLabels = null;
+
+        private static bool populatedUM;
 
         /// <summary>
         /// Initialises variables in this class that are required to perform patches, then executes harmony patches.
@@ -77,7 +80,7 @@ namespace CommunityLib
 
             // AGENT AI //
             // UIScroll_Unit (Challenge utility panel)
-            harmony.Patch(original: AccessTools.Method(typeof(UIScroll_Unit), nameof(UIScroll_Unit.checkData), new Type[] { }), transpiler: new HarmonyMethod(patchType, nameof(UIScroll_Unit_checkData_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIScroll_Unit), nameof(UIScroll_Unit.checkData), new Type[] { }), prefix: new HarmonyMethod(patchType, nameof(UIScroll_Unit_checkData_Prefix)), transpiler: new HarmonyMethod(patchType, nameof(UIScroll_Unit_checkData_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(UIScroll_Unit), nameof(UIScroll_Unit.Update), new Type[] { }), transpiler: new HarmonyMethod(patchType, nameof(UIScroll_Unit_Update_Transpiler)));
 
             // UAEN OVERRIDE AI //
@@ -1089,15 +1092,23 @@ namespace CommunityLib
             return traits;
         }
 
+        private static void UIScroll_Unit_checkData_Prefix()
+        {
+            populatedUM = false;
+        }
+
         private static IEnumerable<CodeInstruction> UIScroll_Unit_checkData_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(UI_Scroll_Unit_checkData_TranspilerBody));
+            MethodInfo MI_TranspilerBody_UA = AccessTools.Method(patchType, nameof(UI_Scroll_Unit_checkData_TranspilerBody_UA));
+            MethodInfo MI_TranspilerBody_UM = AccessTools.Method(patchType, nameof(UI_Scroll_Unit_checkData_TranspilerBody_UM));
+            MethodInfo MI_Unit_isCommandable = AccessTools.Method(typeof(Unit), nameof(Unit.isCommandable));
 
             Label skip = ilg.DefineLabel();
 
             bool found = false;
+            int counter = 0;
             for (int i = 0; i < instructionList.Count; i++)
             {
                 if (!found && i > 5)
@@ -1115,9 +1126,23 @@ namespace CommunityLib
 
                         yield return new CodeInstruction(OpCodes.Nop);
                         yield return new CodeInstruction(OpCodes.Ldarg_0);
-                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_UA);
                         yield return new CodeInstruction(OpCodes.Brtrue_S, skip);
                         found = true;
+                    }
+                }
+
+                if (found)
+                {
+                    if (instructionList[i].opcode == OpCodes.Callvirt && (MethodInfo)instructionList[i].operand == MI_Unit_isCommandable)
+                    {
+                        counter++;
+                    }
+
+                    if (counter == 3 && instructionList[i].opcode == OpCodes.Ldloc_S)
+                    {
+                        yield return new CodeInstruction(OpCodes.Ldarg_0);
+                        yield return new CodeInstruction(OpCodes.Callvirt, MI_TranspilerBody_UM);
                     }
                 }
 
@@ -1125,7 +1150,7 @@ namespace CommunityLib
             }
         }
 
-        private static bool UI_Scroll_Unit_checkData_TranspilerBody(UIScroll_Unit ui)
+        private static bool UI_Scroll_Unit_checkData_TranspilerBody_UA(UIScroll_Unit ui)
         {
             UA ua = GraphicalMap.selectedUnit as UA;
             //Console.WriteLine("CommunityLib: Got unit");
@@ -1226,20 +1251,138 @@ namespace CommunityLib
             return false;
         }
 
+        private static void UI_Scroll_Unit_checkData_TranspilerBody_UM(UIScroll_Unit ui)
+        {
+            if (populatedUM)
+            {
+                return;
+            }
+            else
+            {
+                populatedUM = true;
+            }
+
+            UM um = GraphicalMap.selectedUnit as UM;
+
+            List<Hooks.TaskData> data = new List<Hooks.TaskData>();
+
+            if (um != null && um.isCommandable())
+            {
+                foreach(Hooks hook in ModCore.core.GetRegisteredHooks())
+                {
+                    List<Hooks.TaskData> retData = hook?.onUIScroll_Unit_populateUM(um);
+
+                    if (retData?.Count > 0)
+                    {
+                        data.AddRange(retData);
+                    }
+                }
+
+                if (data.Count > 0)
+                {
+                    foreach (Hooks.TaskData taskData in data)
+                    {
+                        GameObject block = GameObject.Instantiate<GameObject>(ui.master.world.prefabStore.uieChallengeBox, ui.listContent);
+                        UIE_Challenge challenge = block.GetComponent<UIE_Challenge>();
+
+                        if (taskData.challenge != null)
+                        {
+                            challenge.setTo(ui.master.world, taskData.challenge, um);
+                        }
+                        else
+                        {
+                            challenge.title.text = taskData.title;
+                            challenge.icon.sprite = taskData.icon;
+
+                            if (taskData.profileGain != 0 || taskData.menaceGain != 0)
+                            {
+                                challenge.tStats.text = taskData.profileGain.ToString() + "\n" + taskData.menaceGain.ToString();
+                            }
+                            else
+                            {
+                                challenge.tStats.text = "";
+                            }
+
+                            challenge.backColour.color = taskData.backColor;
+                            challenge.claimedBy.text = "";
+                            challenge.tComplexity.text = "";
+                            challenge.special = taskData.special;
+
+                            if (taskData.enabled)
+                            {
+                                challenge.disabledMask.enabled = false;
+                            }
+                            else
+                            {
+                                challenge.disabledMask.enabled = true;
+                            }
+
+                            challenge.target = taskData.targetUA;
+                            challenge.targetUM = taskData.targetUM;
+
+                            challenge.button.onClick.AddListener(delegate ()
+                            {
+                                taskData.onClick(ui.master.world, um, challenge);
+                            });
+                        }
+                    }
+
+                    ui.textTabDesc.text = "Commandable Military can, among other tasks, Raze Human Settlements and cause heroes to retreat";
+                }
+                else
+                {
+                    ui.textTabDesc.text = "Commandable Military can Raze Human Settlements or cause heroes to retreat";
+                }
+                
+            }
+        }
+
         private static IEnumerable<CodeInstruction> UIScroll_Unit_Update_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(UIScroll_Unit_Update_TranspilerBody));
+            MethodInfo MI_TranspilerBody_TimeStats = AccessTools.Method(patchType, nameof(UIScroll_Unit_Update_TranspilerBody_TimeStats));
+            MethodInfo MI_TranspilerBody_Popout = AccessTools.Method(patchType, nameof(UIScroll_Unit_Update_TranspilerBody_Popout));
+
             FieldInfo FI_UIScroll_Unit_Master = AccessTools.Field(typeof(UIScroll_Unit), nameof(UIScroll_Unit.master));
             FieldInfo FI_UIMaster_World = AccessTools.Field(typeof(UIMaster), nameof(UIMaster.world));
+            FieldInfo FI_UIScorll_challengePopout = AccessTools.Field(typeof(UIScroll_Unit), nameof(UIScroll_Unit.challengePopout));
 
-            bool found = false;
+            Label intercept = ilg.DefineLabel();
+
+            int targetIndex = 0;
+            int popoutCounter = 0;
             for (int i = 0; i < instructionList.Count; i++)
             {
+                if (targetIndex == 1)
+                {
+                    if (instructionList[i].opcode == OpCodes.Ldfld && (FieldInfo)instructionList[i].operand == FI_UIScorll_challengePopout)
+                    {
+                        popoutCounter++;
+                    }
+
+                    if (popoutCounter == 4)
+                    {
+                        targetIndex++;
+                        yield return new CodeInstruction(OpCodes.Ldloc_S, 5);
+                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Popout);
+                        yield return new CodeInstruction(OpCodes.Brtrue_S, intercept);
+                        yield return new CodeInstruction(OpCodes.Ldarg_0);
+                    }
+                }
+
+                if (targetIndex == 2)
+                {
+                    if (instructionList[i].opcode == OpCodes.Br)
+                    {
+                        targetIndex++;
+                        instructionList[i].labels.Add(intercept);
+                    }
+                }
+
                 yield return instructionList[i];
 
-                if (!found)
+                if (targetIndex == 0)
                 {
                     if (instructionList[i].opcode == OpCodes.Brfalse && instructionList[i - 1].opcode == OpCodes.Ldloc_S)
                     {
@@ -1247,9 +1390,9 @@ namespace CommunityLib
                         {
                             if (instructionList[i + 4].opcode == OpCodes.Ldfld && instructionList[i + 4].operand as FieldInfo == FI_UIMaster_World)
                             {
-                                yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                                yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_TimeStats);
                                 yield return new CodeInstruction(OpCodes.Brtrue, instructionList[i].operand);
-                                found = true;
+                                targetIndex++;
                             }
                         }
                     }
@@ -1257,7 +1400,7 @@ namespace CommunityLib
             }
         }
 
-        private static bool UIScroll_Unit_Update_TranspilerBody()
+        private static bool UIScroll_Unit_Update_TranspilerBody_TimeStats()
         {
             if (GraphicalMap.selectedUnit is UA ua && ModCore.core.GetAgentAI().TryGetAgentType(ua.GetType(), out List<AIChallenge> _, out AgentAI.ControlParameters? control))
             {
@@ -1274,6 +1417,132 @@ namespace CommunityLib
             }
 
             return false;
+        }
+
+        private static bool UIScroll_Unit_Update_TranspilerBody_Popout(UIScroll_Unit __instance, UIE_Challenge challenge)
+        {
+            bool result = false;
+
+            if (challenge.challenge != null)
+            {
+                return result;
+            }
+
+            UM um = GraphicalMap.selectedUnit as UM;
+            if (um == null)
+            {
+                return false;
+            }
+
+            // Partially reconstruct TaskData
+            Hooks.TaskData taskData = new Hooks.TaskData();
+            taskData.challenge = challenge.challenge;
+            taskData.title = challenge.title.text;
+            taskData.icon = challenge.icon.sprite;
+            taskData.backColor = challenge.backColour.color;
+
+            if (challenge.disabledMask.enabled)
+            {
+                taskData.enabled = false;
+            }
+            else
+            {
+                taskData.enabled = true;
+            }
+
+            taskData.special = challenge.special;
+            taskData.targetUA = challenge.target;
+            taskData.targetUM = challenge.targetUM;
+
+            // Prepopulate popoutData
+            Hooks.TaskData_Popout popoutData = new Hooks.TaskData_Popout();
+            popoutData.title = challenge.title.text;
+            popoutData.icon = challenge.icon.sprite;
+            
+            if (challenge.target != null)
+            {
+                popoutData.iconBackground = challenge.target.getPortraitBackground();
+            }
+            else if (challenge.targetUM != null)
+            {
+                popoutData.iconBackground = challenge.targetUM.getPortraitBackground();
+            }
+            else
+            {
+                popoutData.iconBackground = __instance.master.world.iconStore.standardBack;
+            }
+
+            popoutData.progressReasonMsgs = new List<ReasonMsg>();
+
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            {
+                // Call hook.
+                bool retValue = hook.interceptChallengePopout(um, taskData, ref popoutData);
+
+                if (retValue)
+                {
+                    __instance.challengePopout.title.text = popoutData.title;
+                    __instance.challengePopout.icon.sprite = popoutData.icon;
+
+                    if (popoutData.iconBackground == null)
+                    {
+                        __instance.challengePopout.iconBack.sprite = __instance.master.world.iconStore.standardBack;
+                    }
+                    else
+                    {
+                        __instance.challengePopout.iconBack.sprite = popoutData.iconBackground;
+                    }
+
+                    __instance.challengePopout.tDesc.text = popoutData.description;
+                    __instance.challengePopout.tRestriction.text = popoutData.restrictions;
+
+                    if (popoutData.profileGain != 0 || popoutData.menaceGain != 0)
+                    {
+                        __instance.challengePopout.tStats.text = popoutData.profileGain.ToString() + "\n" + popoutData.menaceGain.ToString() + "\n";
+                    }
+                    else
+                    {
+                        __instance.challengePopout.tStats.text = "";
+                    }
+
+                    if (popoutData.backColor == null)
+                    {
+                        __instance.challengePopout.backColour.color = taskData.backColor;
+                    }
+                    else
+                    {
+                        __instance.challengePopout.backColour.color = popoutData.backColor;
+                    }
+
+                    if (popoutData.complexity > 0 && popoutData.progressPerTurn > 0)
+                    {
+                        __instance.challengePopout.tComplexity.text = popoutData.complexity.ToString() + "\n" + popoutData.progressPerTurn.ToString() + "\n" + Math.Ceiling((double)popoutData.complexity / (double)popoutData.progressPerTurn).ToString();
+                    }
+                    else
+                    {
+                        __instance.challengePopout.tComplexity.text = "";
+                    }
+                    
+
+                    if (popoutData.progressReasonMsgs?.Count > 0)
+                    {
+                        string text = "";
+                        foreach (ReasonMsg msg in popoutData.progressReasonMsgs)
+                        {
+                            text += msg.msg + " +" + msg.value.ToString() + "\n";
+                        }
+                    }
+                    else
+                    {
+                        __instance.challengePopout.tProgressReasons.text = "";
+                    }
+
+                    result = true;
+                    break;
+                }
+            }
+
+            return result;
         }
 
         private static bool UAEN_UnitInteraction_Prefix(UA __instance, ref double __result)
