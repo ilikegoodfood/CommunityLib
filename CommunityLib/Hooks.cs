@@ -91,7 +91,7 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires at the end of a cycle of an army battle, but not if the battle was won. It recieves the battle (battle) that has just undergone its cycle.
+        /// This hook fires at the end of a cycle of an ongoing army battle, not if the battle was won. It recieves the battle (battle) that has just undergone its cycle.
         /// </summary>
         /// <param name="battle"></param>
         public virtual void onArmyBattleCycle_EndOfProcess(BattleArmy battle)
@@ -150,7 +150,7 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when a unit moves out of an army battle, befoire they are removed from the battle's data. It recieves the battle (battle), and the unit that fled (u).
+        /// This hook fires when a unit moves out of an army battle, before they are removed from the battle's data. It recieves the battle (battle), and the unit that fled (u).
         /// </summary>
         /// <param name="battle"></param>
         /// <param name="u"></param>
@@ -160,7 +160,7 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when a military unit is about to recieve damage in an army battle. It recieves the army battle (battle), the military unit (u), and the damage it is about to recieve (dmg). It returns a new integer damage value.
+        /// This hook fires when a military unit is about to recieve damage in an army battle. It recieves the army battle (battle), the military unit (u), and the damage it is about to recieve (dmg). It returns the calculated damage value damage value as an int.
         /// </summary>
         /// <param name="battle"></param>
         /// <param name="u"></param>
@@ -184,7 +184,7 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when a relgiion is viewed in the religion screen. It recieves the holy order (order), and the list of reason messages (msgs) that is used to compile the output.
+        /// This hook fires when a relgiion is viewed in the religion screen. It recieves the holy order (order), and the list of reason messages (msgs) that is used to compile the stats displayed in the top left (acolytes, worshippers, etc.).
         /// </summary>
         /// <param name="order"></param>
         /// <param name="msgs"></param>
@@ -270,7 +270,7 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when the Community Library's Agent AI has started processing an agent, immediately after the 'interceptAgentAI' hook. It recieves the agent (ua), a list of AgentAI.ChallengeData structs (validChallengeData), and the boolean control values within an 'AgentAI.ControlParameters' struct (controlParams)
+        /// This hook fires when the Community Library's Agent AI has started processing an agent, immediately after the 'interceptAgentAI' hook. It recieves the agent (ua), a list of AgentAI.ChallengeData structs (validChallengeData), and the boolean control values within an 'AgentAI.ControlParameters' struct (controlParams).
         /// </summary>
         /// <param name="ua"></param>
         /// <param name="validChallengeData"></param>
@@ -281,7 +281,7 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when the Community Library's Agent AI has finished processing an agent. It recieves the agent (ua), a list of AgentAI.ChallengeData structs (validChallengeData), and the boolean control values within an 'AgentAI.ControlParameters' struct (controlParams)
+        /// This hook fires when the Community Library's Agent AI has finished processing an agent. It recieves the agent (ua), a list of AgentAI.ChallengeData structs (validChallengeData), and the boolean control values within an 'AgentAI.ControlParameters' struct (controlParams).
         /// </summary>
         /// <param name="ua"></param>
         /// <param name="validChallengeData"></param>
@@ -293,7 +293,7 @@ namespace CommunityLib
 
         /// <summary>
         /// This hook fires when an agent gets the valid list of traits that they can choose from when levelling up, but before they have chosen one. It receives the agent (ua), the list of traits (availableTraits) and whether it is getting the starting traits for specific agent types (isStartingTraits)
-        /// <para>The function that this hooks fires after caches if the agent ua has any possible traits left to get, in the 'ua.person.cachedOutOfTraits' boolean. If adding new traits to the list, make sure to set 'cachedOutOfTraits' to false if your trait is still available. If removing traits, make sure to set 'cachedOutOfTraits' to true if trait other than the one you are removing is available.</para>
+        /// <para>The function that this hook fires after caches if the agent ua has any possible traits left to get, in the 'ua.person.cachedOutOfTraits' boolean. If adding new traits to the list, make sure to set 'cachedOutOfTraits' to false if your trait is still available. If removing traits, make sure to set 'cachedOutOfTraits' to true if trait other than the one you are removing are not available.</para>
         /// </summary>
         /// <param name="ua"></param>
         /// <param name="availableTraits"></param>
@@ -327,7 +327,7 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when the UIScroll_Unit interface (the panel on the right that shows challenges and tasks available to the selected unit) attempts to populate tasks for a commandable military unit. It returns a liss of TaskData structs, which are then used to create an action button for the unit.
+        /// This hook fires when the UIScroll_Unit interface (the panel on the right that shows challenges and tasks available to the selected unit) attempts to populate tasks for a commandable military unit. It returns a list of TaskData structs, which are then used to create action buttons for the unit.
         /// </summary>
         /// <param name="um"></param>
         /// <returns></returns>
@@ -342,7 +342,6 @@ namespace CommunityLib
         /// <para>If the partially reconstructed TaskData matches a task that your mod adds, populate the popoutData (TaskData_Popout) and return true. Otherwise, return false to allow another mod or the base game to handle the challenge popout screen for that action button.</para>
         /// <para>The title, icon and icon background are pre-set in popoutData when it is passed into the hook, and the progressReasonMsgs are set to an empty list of ReasonMsg</para>
         /// <para>No hook after the first hook to return true will be called.</para>
-        /// </summary>
         /// </summary>
         /// <param name="um"></param>
         /// <param name="taskData"></param>
