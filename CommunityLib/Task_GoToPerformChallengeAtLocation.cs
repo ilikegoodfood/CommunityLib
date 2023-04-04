@@ -6,7 +6,6 @@ namespace CommunityLib
     {
         public Location target;
         public bool safeMove;
-        public int steps = 0;
 
         public Task_GoToPerformChallengeAtLocation(Challenge c, Location loc, bool safeMove = false)
             : base (c)
@@ -70,10 +69,7 @@ namespace CommunityLib
                 if (challenge.allowMultipleUsers() || challenge.claimedBy == null || challenge.claimedBy == unit)
                 {
                     unit.task = new Task_PerformChallenge(challenge);
-                    if (!challenge.allowMultipleUsers())
-                    {
-                        challenge.claimedBy = unit;
-                    }
+                    challenge.claimedBy = unit;
                 }
                 else
                 {
@@ -88,20 +84,19 @@ namespace CommunityLib
 
                     if (pathTo == null || pathTo.Length < 2)
                     {
+                        World.log("Path unavailable. Cancelling");
                         unit.task = null;
                         return;
                     }
 
-                    unit.location.map.adjacentMoveTo(unit, pathTo[1]);
-                    unit.movesTaken++;
-                    steps++;
-
-                    if (!unit.map.moveTowards(unit, target))
+                    unit.map.adjacentMoveTo(unit, pathTo[1]);
+                    if (unit.location != pathTo[1])
                     {
                         World.log("Move unsuccessful. Cancelling");
                         unit.task = null;
                         break;
                     }
+                    unit.movesTaken++;
 
                     if (unit.location == target)
                     {
@@ -112,10 +107,7 @@ namespace CommunityLib
                         if (challenge.allowMultipleUsers() || challenge.claimedBy == null || challenge.claimedBy == unit)
                         {
                             unit.task = new Task_PerformChallenge(challenge);
-                            if (!challenge.allowMultipleUsers())
-                            {
-                                challenge.claimedBy = unit;
-                            }
+                            challenge.claimedBy = unit;
                         }
                         else
                         {
