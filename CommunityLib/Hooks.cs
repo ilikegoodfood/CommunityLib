@@ -292,6 +292,36 @@ namespace CommunityLib
         }
 
         /// <summary>
+        /// This hook fires when the Community Library's Agent AI beings processing processing the utility of a challenge for an agent. It recieves the agent (ua), the AgentAI.ChallengeData (challengeData), the boolean control values within an 'AgentAI.ControlParameters' struct (controlParams), the utility (utility), and a list of ReasonMsgs (reasonMsgs).
+        /// If this hook returns true, the rest of the getChallengeutility process will not happen.
+        /// <para>All instances of this hook will run whenever an AgentAI runs, even those after one which has returned true.</para>
+        /// </summary>
+        /// <param name="ua"></param>
+        /// <param name="challengeData"></param>
+        /// <param name="controlParams"></param>
+        /// <param name="utility"></param>
+        /// <param name="reasonMsgs"></param>
+        /// <returns></returns>
+        public virtual bool interceptAgentAI_GetChallengeUtility(UA ua, AgentAI.ChallengeData challengeData, AgentAI.ControlParameters controlParams, ref double utility, List<ReasonMsg> reasonMsgs)
+        {
+            return false;
+        }
+
+        /// <summary>
+        /// This hook fires when the Community Library's Agent AI has finished processing the utility of a challenge for an agent. It recieves the agent (ua), the AgentAI.ChallengeData (challengeData), the boolean control values within an 'AgentAI.ControlParameters' struct (controlParams), the utility (utility), and a list of ReasonMsgs (reasonMsgs), which may be null.
+        /// </summary>
+        /// <param name="ua"></param>
+        /// <param name="challengeData"></param>
+        /// <param name="controlParams"></param>
+        /// <param name="utility"></param>
+        /// <param name="reasonMsgs"></param>
+        /// <returns></returns>
+        public virtual double onAgentAI_GetChallengeUtility(UA ua, AgentAI.ChallengeData challengeData, AgentAI.ControlParameters controlParams, double utility, List<ReasonMsg> reasonMsgs)
+        {
+            return utility;
+        }
+
+        /// <summary>
         /// This hook fires when an agent gets the valid list of traits that they can choose from when levelling up, but before they have chosen one. It receives the agent (ua), the list of traits (availableTraits) and whether it is getting the starting traits for specific agent types (isStartingTraits)
         /// <para>The function that this hook fires after caches if the agent ua has any possible traits left to get, in the 'ua.person.cachedOutOfTraits' boolean. If adding new traits to the list, make sure to set 'cachedOutOfTraits' to false if your trait is still available. If removing traits, make sure to set 'cachedOutOfTraits' to true if trait other than the one you are removing are not available.</para>
         /// </summary>
@@ -324,6 +354,21 @@ namespace CommunityLib
         public virtual List<Unit> getVisibleUnits_EndOfProcess(UA ua, List<Unit> visibleUnits)
         {
             return visibleUnits;
+        }
+
+        /// <summary>
+        /// This hook fires when a non-commandable Agent is considering whether to swap an item in their inventory with a new item of higher level. It recieves the person (person) who is about to make the swap, the item (item) that they are about to get rid of, the item (newItem) that they are about to gain, and a boolean that determines if they must take the new item (obligateHold).
+        /// If this hook returns true, the person will not swap the item for the new item, and will instead test against the following item slots.
+        /// <para>All instances of this hook will run whenever a non-commandable agent, even those after one which has returned true.</para>
+        /// </summary>
+        /// <param name="person"></param>
+        /// <param name="item"></param>
+        /// <param name="newItem"></param>
+        /// <param name="obligateHold"></param>
+        /// <returns></returns>
+        public virtual bool interceptReplaceItem(Person person, Item item, Item newItem, bool obligateHold)
+        {
+            return false;
         }
 
         /// <summary>

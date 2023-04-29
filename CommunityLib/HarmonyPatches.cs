@@ -69,19 +69,27 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), "allocateDamage", new Type[] { typeof(List<UM>), typeof(int[]) }), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_allocateDamage_Transpiler)));
             // Settlement destruction hooks
             harmony.Patch(original: AccessTools.Method(typeof(Settlement), nameof(Settlement.fallIntoRuin), new Type[] { typeof(string), typeof(object) }), transpiler: new HarmonyMethod(patchType, nameof(Settlement_FallIntoRuin_Transpiler)));
-            // Religion UI Screen modification
-            harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bPrev)), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bNext)), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
-            // Religion UI Screen Hooks
+            // Religion UI Screen hooks
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.setTo), new Type[] { typeof(HolyOrder), typeof(int) }), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_setTo_Transpiler)));
             // LevelUp Traits Hook
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getStartingTraits)), postfix: new HarmonyMethod(patchType, nameof(UA_getStartingTraits_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(Trait), nameof(Trait.getAvailableTraits), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Trait_getAvailableTraits_Postfix)));
+            // Gain Item Hooks
+            harmony.Patch(original: AccessTools.Method(typeof(Person), nameof(Person.gainItem), new Type[] { typeof(Item), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(Person_gainItem_Transpiler)));
+
+            // SYSTEM MODIFICATIONS //
+            // Religion UI Screen modification
+            harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bPrev)), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bNext)), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
+
+            // Orc Expansion modifications
+            harmony.Patch(original: AccessTools.Method(typeof(SG_Orc), nameof(SG_Orc.canSettle), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(SG_Orc_canSettle_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Rt_Orcs_ClaimTerritory), nameof(Rt_Orcs_ClaimTerritory.validFor), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Rt_Orcs_ClaimTerritory_validFor_Transpiler)));
 
             // AGENT AI //
             // UIScroll_Unit (Challenge utility panel)
-            harmony.Patch(original: AccessTools.Method(typeof(UIScroll_Unit), nameof(UIScroll_Unit.checkData), new Type[] { }), prefix: new HarmonyMethod(patchType, nameof(UIScroll_Unit_checkData_Prefix)), transpiler: new HarmonyMethod(patchType, nameof(UIScroll_Unit_checkData_Transpiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(UIScroll_Unit), nameof(UIScroll_Unit.Update), new Type[] { }), transpiler: new HarmonyMethod(patchType, nameof(UIScroll_Unit_Update_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIScroll_Unit), nameof(UIScroll_Unit.checkData), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UIScroll_Unit_checkData_Prefix)), transpiler: new HarmonyMethod(patchType, nameof(UIScroll_Unit_checkData_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIScroll_Unit), nameof(UIScroll_Unit.Update), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(UIScroll_Unit_Update_Transpiler)));
 
             // UAEN OVERRIDE AI //
             // Negate unit interactions.
@@ -96,8 +104,6 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(UAEN_Vampire), nameof(UAEN_Vampire.turnTickAI), new Type[] {  }), prefix: new HarmonyMethod(patchType, nameof(UAEN_OrcUpstart_turnTickAI_Prefix)));
             // Ch_Rest_InOrcCamp
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Rest_InOrcCamp), nameof(Ch_Rest_InOrcCamp.complete), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Ch_Rest_InOrcCamp_complete_Postfix)));
-            // Rt_DeepOneReproduce
-            harmony.Patch(original: AccessTools.Constructor(typeof(Rt_DeepOneReproduce), new Type[] { typeof(Location), typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(ctor_Rt_DeepOneReproduce_Postfix)));
 
             // Template Patch
             // harmony.Patch(original: AccessTools.Method(typeof(), nameof(), new Type[] { typeof() }), postfix: new HarmonyMethod(patchType, nameof()));
@@ -699,60 +705,6 @@ namespace CommunityLib
             }
         }
 
-        // Religion UI Screen modification
-        private static IEnumerable<CodeInstruction> PopupHolyOrder_bPrevNext_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
-        {
-            List<CodeInstruction> instructionList = codeInstructions.ToList();
-
-            MethodInfo MI_HolyOrder_isGone = AccessTools.Method(typeof(HolyOrder), nameof(HolyOrder.isGone));
-
-            FieldInfo FI_PopupHolyOrder_us = AccessTools.Field(typeof(PopupHolyOrder), nameof(PopupHolyOrder.us));
-
-            Label continueLabel;
-            Label isDeadLabel = ilg.DefineLabel();
-            Label isAliveLabel = ilg.DefineLabel();
-
-            int targetIndex = 0;
-
-            for (int i = 0; i < instructionList.Count; i++)
-            {
-                
-                if (targetIndex == 0 && i > 0 && instructionList[i-1].opcode == OpCodes.Brfalse_S && instructionList[i].opcode == OpCodes.Nop)
-                {
-                    targetIndex = 1;
-                    continueLabel = (Label)instructionList[i-1].operand;
-
-                    yield return new CodeInstruction(OpCodes.Ldloc_S, 4);
-                    yield return new CodeInstruction(OpCodes.Callvirt, MI_HolyOrder_isGone);
-                    yield return new CodeInstruction(OpCodes.Brtrue_S, continueLabel);
-                }
-
-                if (targetIndex == 2 && instructionList[i - 1].opcode == OpCodes.Stloc_1 && instructionList[i].opcode == OpCodes.Ldarg_0)
-                {
-                    targetIndex = 3;
-                    instructionList[i].labels.Add(isDeadLabel);
-                }
-
-                if (targetIndex == 1 && instructionList[i - 1].opcode == OpCodes.Ldloc_0 && instructionList[i].opcode == OpCodes.Ldarg_0)
-                {
-                    targetIndex = 2;
-                    yield return new CodeInstruction(OpCodes.Pop);
-                    yield return new CodeInstruction(OpCodes.Ldarg_0);
-                    yield return new CodeInstruction(OpCodes.Ldfld, FI_PopupHolyOrder_us);
-                    yield return new CodeInstruction(OpCodes.Callvirt, MI_HolyOrder_isGone);
-                    yield return new CodeInstruction(OpCodes.Brfalse_S, isAliveLabel);
-                    yield return new CodeInstruction(OpCodes.Ldc_I4_0);
-                    yield return new CodeInstruction(OpCodes.Stloc_1);
-                    yield return new CodeInstruction(OpCodes.Br_S, isDeadLabel);
-                    CodeInstruction code = new CodeInstruction(OpCodes.Ldloc_0);
-                    code.labels.Add(isAliveLabel);
-                    yield return code;
-                }
-
-                yield return instructionList[i];
-            }
-        }
-
         private static IEnumerable<CodeInstruction> PopupHolyOrder_setTo_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
@@ -1090,6 +1042,225 @@ namespace CommunityLib
                 }
             }
             return traits;
+        }
+
+        private static IEnumerable<CodeInstruction> Person_gainItem_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Person_gainItem_TranspilerBody));
+
+            FieldInfo FI_Person_Items = AccessTools.Field(typeof(Person), nameof(Person.items));
+
+            Label falseLabel = ilg.DefineLabel();
+
+            int targetIndex = 0;
+
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex == 0)
+                {
+                    if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i - 1].opcode == OpCodes.Ldloc_S)
+                    {
+                        targetIndex++;
+                        falseLabel = (Label)instructionList[i].operand;
+
+                        yield return new CodeInstruction(OpCodes.Brfalse_S, falseLabel);
+                        yield return new CodeInstruction(OpCodes.Ldarg_0);
+                        yield return new CodeInstruction(OpCodes.Dup);
+                        yield return new CodeInstruction(OpCodes.Ldfld, FI_Person_Items);
+                        yield return new CodeInstruction(OpCodes.Ldloc_S, 4);
+                        yield return new CodeInstruction(OpCodes.Ldelem_Ref);
+                        yield return new CodeInstruction(OpCodes.Ldarg_1);
+                        yield return new CodeInstruction(OpCodes.Ldarg_2);
+                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+        }
+
+        private static bool Person_gainItem_TranspilerBody(Person person, Item item, Item newItem, bool obligateHold)
+        {
+            bool result = true;
+
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            {
+                bool retValue = hook?.interceptReplaceItem(person, item, newItem, obligateHold) ?? false;
+
+                if (retValue)
+                {
+                    result = false;
+                }
+            }
+
+            return result;
+        }
+
+        // Religion UI Screen modification
+        private static IEnumerable<CodeInstruction> PopupHolyOrder_bPrevNext_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_HolyOrder_isGone = AccessTools.Method(typeof(HolyOrder), nameof(HolyOrder.isGone));
+
+            FieldInfo FI_PopupHolyOrder_us = AccessTools.Field(typeof(PopupHolyOrder), nameof(PopupHolyOrder.us));
+
+            Label continueLabel;
+            Label isDeadLabel = ilg.DefineLabel();
+            Label isAliveLabel = ilg.DefineLabel();
+
+            int targetIndex = 0;
+
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+
+                if (targetIndex == 0 && i > 0 && instructionList[i - 1].opcode == OpCodes.Brfalse_S && instructionList[i].opcode == OpCodes.Nop)
+                {
+                    targetIndex = 1;
+                    continueLabel = (Label)instructionList[i - 1].operand;
+
+                    yield return new CodeInstruction(OpCodes.Ldloc_S, 4);
+                    yield return new CodeInstruction(OpCodes.Callvirt, MI_HolyOrder_isGone);
+                    yield return new CodeInstruction(OpCodes.Brtrue_S, continueLabel);
+                }
+
+                if (targetIndex == 2 && instructionList[i - 1].opcode == OpCodes.Stloc_1 && instructionList[i].opcode == OpCodes.Ldarg_0)
+                {
+                    targetIndex = 3;
+                    instructionList[i].labels.Add(isDeadLabel);
+                }
+
+                if (targetIndex == 1 && instructionList[i - 1].opcode == OpCodes.Ldloc_0 && instructionList[i].opcode == OpCodes.Ldarg_0)
+                {
+                    targetIndex = 2;
+                    yield return new CodeInstruction(OpCodes.Pop);
+                    yield return new CodeInstruction(OpCodes.Ldarg_0);
+                    yield return new CodeInstruction(OpCodes.Ldfld, FI_PopupHolyOrder_us);
+                    yield return new CodeInstruction(OpCodes.Callvirt, MI_HolyOrder_isGone);
+                    yield return new CodeInstruction(OpCodes.Brfalse_S, isAliveLabel);
+                    yield return new CodeInstruction(OpCodes.Ldc_I4_0);
+                    yield return new CodeInstruction(OpCodes.Stloc_1);
+                    yield return new CodeInstruction(OpCodes.Br_S, isDeadLabel);
+                    CodeInstruction code = new CodeInstruction(OpCodes.Ldloc_0);
+                    code.labels.Add(isAliveLabel);
+                    yield return code;
+                }
+
+                yield return instructionList[i];
+            }
+        }
+
+        // Orc Expansion modifications
+        private static IEnumerable<CodeInstruction> SG_Orc_canSettle_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(SG_Orc_canSettle_TranspilerBody));
+
+            yield return new CodeInstruction(OpCodes.Nop);
+            yield return new CodeInstruction(OpCodes.Ldarg_1);
+            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+            yield return new CodeInstruction(OpCodes.Ret);
+        }
+
+        private static bool SG_Orc_canSettle_TranspilerBody(Location location)
+        {
+            if (location.isOcean || location.soc != null || location.hex.getHabilitability() < location.map.opt_orcHabMult * location.map.param.orc_habRequirement)
+            {
+                return false;
+            }
+            if (location.settlement != null)
+            {
+                if (ModCore.core.getSettlementTypesForOrcExpanion().TryGetValue(location.settlement.GetType(), out List<Type> subsettlementBlacklist) && subsettlementBlacklist?.Count > 0)
+                {
+                    foreach (Subsettlement sub in location.settlement.subs)
+                    {
+                        if (subsettlementBlacklist.Contains(sub.GetType()))
+                        {
+                            return false;
+                        }
+                    }
+                }
+
+                return true;
+            }
+
+            return true;
+        }
+
+        private static IEnumerable<CodeInstruction> Rt_Orcs_ClaimTerritory_validFor_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Rt_Orcs_ClaimTerritory_validFor_TranspilerBody));
+
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            yield return new CodeInstruction(OpCodes.Nop);
+            yield return new CodeInstruction(OpCodes.Ldarg_1);
+            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+            yield return new CodeInstruction(OpCodes.Ret);
+        }
+
+        private static bool Rt_Orcs_ClaimTerritory_validFor_TranspilerBody(UA ua)
+        {
+            bool result = false;
+
+            SG_Orc orcSociety = ua.society as SG_Orc;
+
+            if (orcSociety == null)
+            {
+                return result;
+            }
+
+            if (ua.location.isOcean || ua.location.hex.getHabilitability() < ua.location.map.opt_orcHabMult * ua.location.map.param.orc_habRequirement)
+            {
+                return result;
+            }
+
+            result = true;
+
+            if (ua.location.settlement != null)
+            {
+                if (ModCore.core.getSettlementTypesForOrcExpanion().TryGetValue(ua.location.settlement.GetType(), out List<Type> subsettlementBlacklist))
+                {
+                    if (subsettlementBlacklist?.Count > 0)
+                    {
+                        foreach (Subsettlement sub in ua.location.settlement.subs)
+                        {
+                            if (subsettlementBlacklist.Contains(sub.GetType()))
+                            {
+                                result = false;
+                                break;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    result = false;
+                }
+            }
+
+            if (result && orcSociety.lastTurnLocs.Count == 0)
+            {
+                return result;
+            }
+
+            if (result && ua.location.getNeighbours().FirstOrDefault(l => l.soc == orcSociety) != null)
+            {
+                return result;
+            }
+            else if (result && ua.location.isCoastal)
+            {
+                foreach (Location location in ua.map.locations)
+                {
+                    if (location.soc == orcSociety && location.settlement is Set_OrcCamp camp && camp.specialism == 5)
+                    {
+                        return result;
+                    }
+                }
+            }
+
+            return false;
         }
 
         private static void UIScroll_Unit_checkData_Prefix()
@@ -1640,11 +1811,6 @@ namespace CommunityLib
         private static void Ch_Rest_InOrcCamp_complete_Postfix(UA u)
         {
             u.challengesSinceRest = 0;
-        }
-
-        private static void ctor_Rt_DeepOneReproduce_Postfix(Rt_DeepOneReproduce __instance)
-        {
-            __instance.getPositiveTags().AddItem(Tags.DEEPONES);
         }
 
         private static void Template_TranspilerBody()

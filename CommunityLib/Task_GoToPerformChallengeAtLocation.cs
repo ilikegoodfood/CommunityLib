@@ -61,20 +61,7 @@ namespace CommunityLib
 
             if (unit.location == target)
             {
-                if (unit.isCommandable() || target.isWatched)
-                {
-                    unit.map.addUnifiedMessage(unit, null, "Unit Arrives", unit.getName() + " has reached " + unit.location.getName(true) + " and begun challenge " + challenge.getName(), UnifiedMessage.messageType.UNIT_ARRIVES, false);
-                }
-                
-                if (challenge.allowMultipleUsers() || challenge.claimedBy == null || challenge.claimedBy == unit)
-                {
-                    unit.task = new Task_PerformChallenge(challenge);
-                    challenge.claimedBy = unit;
-                }
-                else
-                {
-                    unit.task = null;
-                }
+                startChallenge(unit, challenge);
             }
             else
             {
@@ -100,22 +87,68 @@ namespace CommunityLib
 
                     if (unit.location == target)
                     {
+                        startChallenge(unit, challenge);
+                        break;
+                    }
+                }
+            }
+        }
+
+        public void startChallenge(Unit unit, Challenge challenge)
+        {
+            if (challenge.allowMultipleUsers() || challenge.claimedBy == null || challenge.claimedBy == unit || challenge.claimedBy.location != target)
+            {
+                if (challenge.valid())
+                {
+                    if (unit is UM um && challenge.validFor(um))
+                    {
                         if (unit.isCommandable() || target.isWatched)
                         {
                             unit.map.addUnifiedMessage(unit, null, "Unit Arrives", unit.getName() + " has reached " + unit.location.getName(true) + " and begun challenge " + challenge.getName(), UnifiedMessage.messageType.UNIT_ARRIVES, false);
                         }
-                        if (challenge.allowMultipleUsers() || challenge.claimedBy == null || challenge.claimedBy == unit)
+
+                        unit.task = new Task_PerformChallenge(challenge);
+                        challenge.claimedBy = unit;
+                    }
+                    else if (unit is UA ua && challenge.validFor(ua))
+                    {
+                        if (unit.isCommandable() || target.isWatched)
                         {
-                            unit.task = new Task_PerformChallenge(challenge);
-                            challenge.claimedBy = unit;
+                            unit.map.addUnifiedMessage(unit, null, "Unit Arrives", unit.getName() + " has reached " + unit.location.getName(true) + " and begun challenge " + challenge.getName(), UnifiedMessage.messageType.UNIT_ARRIVES, false);
                         }
-                        else
+
+                        unit.task = new Task_PerformChallenge(challenge);
+                        challenge.claimedBy = unit;
+                    }
+                    else
+                    {
+                        if (unit.isCommandable() || target.isWatched)
                         {
-                            unit.task = null;
+                            unit.map.addUnifiedMessage(unit, null, "Unit Arrives", unit.getName() + " has reached " + unit.location.getName(true) + " but could not perform challenge " + challenge.getName() + " because " + unit.getName() + " does not meat the rquirements to start the challenge.", UnifiedMessage.messageType.UNIT_ARRIVES, false);
                         }
-                        break;
+
+                        unit.task = null;
                     }
                 }
+                else
+                {
+                    if (unit.isCommandable() || target.isWatched)
+                    {
+                        unit.map.addUnifiedMessage(unit, null, "Unit Arrives", unit.getName() + " has reached " + unit.location.getName(true) + " but could not perform challenge " + challenge.getName() + " because the requirements to start this challenge have not yet been met.", UnifiedMessage.messageType.UNIT_ARRIVES, false);
+                        unit.task = null;
+                    }
+                }
+
+            }
+            else
+            {
+                if (unit.isCommandable() || target.isWatched)
+                {
+                    unit.map.addUnifiedMessage(unit, null, "Unit Arrives", unit.getName() + " has reached " + unit.location.getName(true) + " but could not perform challenge " + challenge.getName() + " because it is already being performed by " + challenge.claimedBy.getName() + ".", UnifiedMessage.messageType.UNIT_ARRIVES, false);
+                    unit.task = null;
+                }
+
+                unit.task = null;
             }
         }
 

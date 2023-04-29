@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Assets.Code;
+using static Assets.Code.RelObj;
 using static CommunityLib.AgentAI;
 
 namespace CommunityLib
@@ -15,6 +17,8 @@ namespace CommunityLib
         public Dictionary<UA, Dictionary<ChallengeData, Dictionary<string, double>>> randStore;
 
         private List<Hooks> registeredHooks = new List<Hooks>();
+
+        private Dictionary<Type, List<Type>> settlementTypesForOrcExpansion = new Dictionary<Type,  List<Type>>();
 
         private AgentAI agentAI;
 
@@ -46,6 +50,9 @@ namespace CommunityLib
             RegisterHooks(hooks);
 
             overrideAI = new UAENOverrideAI(map);
+
+            registerSettlementTypeForOrcExpansion(typeof(Set_CityRuins));
+            registerSettlementTypeForOrcExpansion(typeof(Set_MinorOther), new Type[] { typeof(Sub_WitchCoven), typeof(Sub_Wonder_DeathIsland), typeof(Sub_Wonder_Doorway), typeof(Sub_Wonder_PrimalFont) });
         }
 
         public override void afterLoading(Map map)
@@ -64,6 +71,9 @@ namespace CommunityLib
             RegisterHooks(hooks);
 
             overrideAI = new UAENOverrideAI(map);
+
+            registerSettlementTypeForOrcExpansion(typeof(Set_CityRuins));
+            registerSettlementTypeForOrcExpansion(typeof(Set_MinorOther), new Type[] { typeof(Sub_WitchCoven) });
         }
 
         public override void onTurnEnd(Map map)
@@ -170,6 +180,66 @@ namespace CommunityLib
             {
                 randStore.Remove(ua);
             }
+        }
+
+        public bool registerSettlementTypeForOrcExpansion(Type t)
+        {
+            if (!t.IsSubclassOf(typeof(Settlement)) || settlementTypesForOrcExpansion.ContainsKey(t))
+            {
+                return false;
+            }
+
+            settlementTypesForOrcExpansion.Add(t, null);
+            return true;
+        }
+
+        public bool registerSettlementTypeForOrcExpansion(Type t, List<Type> subsettlementBlacklist = null)
+        {
+            if (!t.IsSubclassOf(typeof(Settlement)) || settlementTypesForOrcExpansion.ContainsKey(t))
+            {
+                return false;
+            }
+
+            settlementTypesForOrcExpansion.Add(t, subsettlementBlacklist);
+            return true;
+        }
+
+        public bool registerSettlementTypeForOrcExpansion(Type t, Type[] subsettlementBlacklist = null)
+        {
+            if (!t.IsSubclassOf(typeof(Settlement)) || settlementTypesForOrcExpansion.ContainsKey(t))
+            {
+                return false;
+            }
+
+            settlementTypesForOrcExpansion.Add(t, subsettlementBlacklist?.ToList() ?? null);
+            return true;
+        }
+
+        public bool removeSettlementTypeForOrcExpansion(Type t, out List<Type> subsettlementBlacklist)
+        {
+            if (t.IsSubclassOf(typeof(Settlement)) && settlementTypesForOrcExpansion.TryGetValue(t, out subsettlementBlacklist))
+            {
+                return settlementTypesForOrcExpansion.Remove(t);
+            }
+
+            subsettlementBlacklist = null;
+            return false;
+        }
+
+        internal Dictionary<Type, List<Type>> getSettlementTypesForOrcExpanion()
+        {
+            return settlementTypesForOrcExpansion;
+        }
+
+        public bool tryGetSettlementTypeForOrcExpansion(Type t, out List<Type> subsettlementBlacklist)
+        {
+            if (t.IsSubclassOf(typeof(Settlement)) && settlementTypesForOrcExpansion.TryGetValue(t, out subsettlementBlacklist))
+            {
+                return true;
+            }
+
+            subsettlementBlacklist = null;
+            return false;
         }
     }
 }

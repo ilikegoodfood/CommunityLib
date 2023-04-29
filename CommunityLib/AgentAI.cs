@@ -902,6 +902,22 @@ namespace CommunityLib
         {
             double utility = 0.0;
 
+            bool intercept = false;
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            {
+                bool retValue = hook?.interceptAgentAI_GetChallengeUtility(ua, challengeData, controlParams, ref utility, reasonMsgs) ?? false;
+
+                if (retValue)
+                {
+                    intercept = true;
+                }
+            }
+
+            if (intercept)
+            {
+                return utility;
+            }
+
             utility += ua.person.getTagUtility(challengeData.challenge.getPositiveTags(), challengeData.challenge.getNegativeTags(), reasonMsgs);
 
             if (controlParams.respectDanger)
@@ -916,6 +932,11 @@ namespace CommunityLib
             {
                 //Console.WriteLine("CommunityLib: distance Divisor is " + getDistanceDivisor(challengeData, ua).ToString());
                 utility /= getDistanceDivisor(challengeData, ua);
+            }
+
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            {
+                utility = hook?.onAgentAI_GetChallengeUtility(ua, challengeData, controlParams, utility, reasonMsgs) ?? utility;
             }
 
             return utility;

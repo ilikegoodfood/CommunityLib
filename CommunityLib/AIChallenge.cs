@@ -488,7 +488,7 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.ManageMenace:
-                        if (ua.menace < ua.inner_menaceMin)
+                        if (ua.menace <= ua.inner_menaceMin)
                         {
                             if (AgentAI.debug.outputValidity_AllChallenges)
                             {
@@ -498,7 +498,7 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.ManageProfile:
-                        if (ua.profile < ua.inner_profileMin)
+                        if (ua.profile <= ua.inner_profileMin)
                         {
                             if (AgentAI.debug.outputValidity_AllChallenges)
                             {
@@ -508,7 +508,7 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.ManageMenaceProfile:
-                        if (ua.menace + ua.profile < ua.inner_menaceMin + ua.inner_profileMin)
+                        if (ua.menace + ua.profile <= ua.inner_menaceMin + ua.inner_profileMin)
                         {
                             if (AgentAI.debug.outputValidity_AllChallenges)
                             {
@@ -696,7 +696,7 @@ namespace CommunityLib
                     case ChallengeTags.RequiresDeath:
                         Pr_Death death = challengeData.location.properties.OfType<Pr_Death>().FirstOrDefault();
                         val = -1000;
-                        if (death == null || death.charge <= 0.0)
+                        if (death == null || death.charge <= 0.05)
                         {
                             reasonMsgs?.Add(new ReasonMsg("Requires Death", val));
                             result += val;
@@ -800,7 +800,13 @@ namespace CommunityLib
                                     continue;
                                 }
                                 Pr_Ward ward = loc.properties.OfType<Pr_Ward>().FirstOrDefault();
-                                double charge = (ward?.charge ?? 0.0) / 100;
+                                double charge = 0.0;
+
+                                if (ward != null)
+                                {
+                                    charge = ward.charge / 100;
+                                }
+
                                 double diff = challengeData.location.getShadow() - loc.getShadow();
                                 deltaShadow += Math.Max(diff * (1 - charge), 0.0);
                             }
@@ -1007,11 +1013,11 @@ namespace CommunityLib
                                 continue;
                             }
                             bool[] dismissalPlan = recruitOgre.dismissalPlan(ua, recruitOgre.exemplar.getCommandCost());
-                            for (int i = 0; i < dismissalPlan.Length; i++)
+                            if (dismissalPlan.Length > 0)
                             {
-                                if (dismissalPlan[i])
+                                for (int i = 0; i < dismissalPlan.Length; i++)
                                 {
-                                    if (ua.minions[i] != null)
+                                    if (dismissalPlan[i] && ua.minions[i] != null)
                                     {
                                         double dismissalCost = -(ua.minions[i].getCommandCost() * ua.map.param.utility_UA_recruitPerPoint + recruitOgre.getPersonaUtilityTowardsMinion(ua, ua.minions[i]));
                                         reasonMsgs?.Add(new ReasonMsg("Would have to dismiss " + ua.minions[i].getName(), dismissalCost));
@@ -1304,10 +1310,9 @@ namespace CommunityLib
                         {
                             if (ua.society != null && ua.society != challengeData.location.soc)
                             {
-                                if (challengeData.location.soc != null && ua.society.relations.ContainsKey(challengeData.location.soc))
+                                if (challengeData.location.soc != null && ua.society.relations.TryGetValue(challengeData.location.soc, out DipRel rel) && rel != null)
                                 {
-                                    DipRel rel = ua.society.relations[challengeData.location.soc];
-                                    if (rel != null && rel.state != DipRel.dipState.war && rel.state != DipRel.dipState.hostile)
+                                    if (rel.state != DipRel.dipState.war && rel.state != DipRel.dipState.hostile)
                                     {
                                         val = rel.status * 10;
                                         reasonMsgs?.Add(new ReasonMsg("International Relations", val));
@@ -1322,10 +1327,9 @@ namespace CommunityLib
                         {
                             if (ua.society != null && ua.society != challengeData.location.soc)
                             {
-                                if (challengeData.location.soc != null && ua.society.relations.ContainsKey(challengeData.location.soc))
+                                if (challengeData.location.soc != null && ua.society.relations.TryGetValue(challengeData.location.soc, out DipRel rel) && rel != null)
                                 {
-                                    DipRel rel = ua.society.relations[challengeData.location.soc];
-                                    if (rel != null && rel.state != DipRel.dipState.war && rel.state != DipRel.dipState.hostile)
+                                    if (rel.state != DipRel.dipState.war && rel.state != DipRel.dipState.hostile)
                                     {
                                         val = rel.status * -10;
                                         reasonMsgs?.Add(new ReasonMsg("International Relations", val));
@@ -1340,10 +1344,9 @@ namespace CommunityLib
                         {
                             if (ua.society != null && ua.society != challengeData.location.soc)
                             {
-                                if (challengeData.location.soc != null && ua.society.relations.ContainsKey(challengeData.location.soc))
+                                if (challengeData.location.soc != null && ua.society.relations.TryGetValue(challengeData.location.soc, out DipRel rel) && rel != null)
                                 {
-                                    DipRel rel = ua.society.relations[challengeData.location.soc];
-                                    if (rel != null && rel.state != DipRel.dipState.alliance)
+                                    if (rel.state != DipRel.dipState.alliance)
                                     {
                                         if (rel.status <= 0.0)
                                         {
@@ -1361,10 +1364,9 @@ namespace CommunityLib
                         {
                             if (ua.society != null && ua.society != challengeData.location.soc)
                             {
-                                if (challengeData.location.soc != null && ua.society.relations.ContainsKey(challengeData.location.soc))
+                                if (challengeData.location.soc != null && ua.society.relations.TryGetValue(challengeData.location.soc, out DipRel rel) && rel != null)
                                 {
-                                    DipRel rel = ua.society.relations[challengeData.location.soc];
-                                    if (rel != null && rel.state != DipRel.dipState.alliance)
+                                    if (rel.state != DipRel.dipState.alliance)
                                     {
                                         if (rel.status <= 0.0)
                                         {
@@ -1378,24 +1380,30 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.ForbidWar:
-                        if (ua.society != null && ua.location.soc != null && ua.society != challengeData.location.soc)
+                        if (ua.society != null && challengeData.location.soc != null)
                         {
-                            if (ua.society.relations.ContainsKey(challengeData.location.soc) && ua.society.relations[challengeData.location.soc].state == DipRel.dipState.war)
+                            if (ua.society != null && ua.society != challengeData.location.soc)
                             {
-                                val = -1000.0;
-                                reasonMsgs?.Add(new ReasonMsg("Is At War", val));
-                                result += val;
+                                if (challengeData.location.soc != null && ua.society.relations.TryGetValue(challengeData.location.soc, out DipRel rel) && rel != null && rel.state == DipRel.dipState.war)
+                                {
+                                    val = -1000.0;
+                                    reasonMsgs?.Add(new ReasonMsg("At War", val));
+                                    result += val;
+                                }
                             }
                         }
                         break;
                     case ChallengeTags.ForbidPeace:
-                        if (ua.society != null && challengeData.location.soc != null && ua.society != challengeData.location.soc)
+                        if (ua.society != null && challengeData.location.soc != null)
                         {
-                            if (ua.society.relations.ContainsKey(challengeData.location.soc) && ua.society.relations[challengeData.location.soc].state != DipRel.dipState.war)
+                            if (ua.society != null && ua.society != challengeData.location.soc)
                             {
-                                val = -1000.0;
-                                reasonMsgs?.Add(new ReasonMsg("Is Not At War", val));
-                                result += val;
+                                if (challengeData.location.soc != null && ua.society.relations.TryGetValue(challengeData.location.soc, out DipRel rel) && rel != null && rel.state != DipRel.dipState.war)
+                                {
+                                    val = -1000.0;
+                                    reasonMsgs?.Add(new ReasonMsg("Not At War", val));
+                                    result += val;
+                                }
                             }
                         }
                         break;
