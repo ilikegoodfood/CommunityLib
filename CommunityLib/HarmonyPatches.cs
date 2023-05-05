@@ -76,17 +76,22 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Trait), nameof(Trait.getAvailableTraits), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Trait_getAvailableTraits_Postfix)));
             // Gain Item Hooks
             harmony.Patch(original: AccessTools.Method(typeof(Person), nameof(Person.gainItem), new Type[] { typeof(Item), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(Person_gainItem_Transpiler)));
+            // Action Taking Monster Hooks
+            harmony.Patch(original: AccessTools.Method(typeof(SG_ActionTakingMonster), nameof(SG_ActionTakingMonster.turnTick), new Type[] { }), transpiler: new HarmonyMethod(patchType, nameof(SG_ActionTakingMonster_turnTick_Transpiler)));
 
             // SYSTEM MODIFICATIONS //
             // Religion UI Screen modification
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bPrev)), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bNext)), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
 
+            // Overmind modifications
+            harmony.Patch(original: AccessTools.Method(typeof(Overmind), nameof(Overmind.getThreats), new Type[] { }), transpiler: new HarmonyMethod(patchType, nameof(Overmind_getThreats_Transpiler)));
+
             // Orc Expansion modifications
             harmony.Patch(original: AccessTools.Method(typeof(SG_Orc), nameof(SG_Orc.canSettle), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(SG_Orc_canSettle_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Rt_Orcs_ClaimTerritory), nameof(Rt_Orcs_ClaimTerritory.validFor), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Rt_Orcs_ClaimTerritory_validFor_Transpiler)));
 
-            // AGENT AI //
+            // AGENT UI //
             // UIScroll_Unit (Challenge utility panel)
             harmony.Patch(original: AccessTools.Method(typeof(UIScroll_Unit), nameof(UIScroll_Unit.checkData), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UIScroll_Unit_checkData_Prefix)), transpiler: new HarmonyMethod(patchType, nameof(UIScroll_Unit_checkData_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(UIScroll_Unit), nameof(UIScroll_Unit.Update), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(UIScroll_Unit_Update_Transpiler)));
@@ -1098,6 +1103,59 @@ namespace CommunityLib
             return result;
         }
 
+        private static IEnumerable<CodeInstruction> SG_ActionTakingMonster_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody_populate = AccessTools.Method(patchType, nameof(SG_ActionTakingMonster_turnTick_TranspilerBody_populate), new Type[] { typeof(SG_ActionTakingMonster), typeof(List<MonsterAction>) });
+            MethodInfo MI_TranspilerBody_getUtility = AccessTools.Method(patchType, nameof(SG_ActionTakingMonster_turnTick_TranspilerBody_getUtility), new Type[] { typeof(SG_ActionTakingMonster), typeof(MonsterAction), typeof(double), typeof(List<ReasonMsg>) });
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Ldc_R8 && instructionList[i-1].opcode == OpCodes.Stloc_S && instructionList[i-2].opcode == OpCodes.Callvirt)
+                    {
+                        targetIndex++;
+
+                        yield return new CodeInstruction(OpCodes.Ldarg_0);
+                        yield return new CodeInstruction(OpCodes.Ldloc_S, 4);
+                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_populate);
+                    }
+
+                    if (targetIndex == 2 && instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i-1].opcode == OpCodes.Stloc_S && instructionList[i-2].opcode == OpCodes.Callvirt)
+                    {
+                        targetIndex = 0;
+
+                        yield return new CodeInstruction(OpCodes.Ldarg_0);
+                        yield return new CodeInstruction(OpCodes.Ldloc_S, 8);
+                        yield return new CodeInstruction(OpCodes.Ldloc_S, 9);
+                        yield return new CodeInstruction(OpCodes.Ldnull);
+                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_getUtility);
+                    }
+                }
+                
+                yield return instructionList[i];
+            }
+        }
+
+        private static void SG_ActionTakingMonster_turnTick_TranspilerBody_populate(SG_ActionTakingMonster monster, List<MonsterAction> actions)
+        {
+            foreach(Hooks hook in ModCore.core.GetRegisteredHooks())
+            {
+                hook?.populatingMonsterActions(monster, actions);
+            }
+        }
+
+        private static void SG_ActionTakingMonster_turnTick_TranspilerBody_getUtility(SG_ActionTakingMonster monster, MonsterAction action, double utility, List<ReasonMsg> reasonMsgs)
+        {
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            {
+                hook?.onActionTakingMonster_getUtility(monster, action, utility, reasonMsgs);
+            }
+        }
+
         // Religion UI Screen modification
         private static IEnumerable<CodeInstruction> PopupHolyOrder_bPrevNext_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
         {
@@ -1152,6 +1210,86 @@ namespace CommunityLib
             }
         }
 
+        // Overmind modification 
+        private static IEnumerable<CodeInstruction> Overmind_getThreats_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            FieldInfo FI_influenceElder = AccessTools.Field(typeof(HolyOrder), nameof(HolyOrder.influenceElder));
+            MethodInfo MI_TranspilerBody_HolyOrderGone = AccessTools.Method(patchType, nameof(TranspilerBody_HolyOrder_isGone));
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Ldfld && (FieldInfo)instructionList[i].operand == FI_influenceElder)
+                    {
+                        targetIndex++;
+                    }
+
+                    if (targetIndex == 3 && instructionList[i].opcode == OpCodes.Ldloc_S)
+                    {
+                        targetIndex = 0;
+
+                        yield return new CodeInstruction(OpCodes.Ldloc_S, 46);
+                        yield return new CodeInstruction(OpCodes.Callvirt, MI_TranspilerBody_HolyOrderGone);
+                        yield return new CodeInstruction(OpCodes.Brtrue_S, instructionList[i+1].operand);
+                    }
+
+                    if (targetIndex == 2 && instructionList[i].opcode == OpCodes.Ldloc_S)
+                    {
+                        targetIndex++;
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> DivineEntity_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody_HolyOrderGone = AccessTools.Method(patchType, nameof(TranspilerBody_HolyOrder_isGone));
+
+            FieldInfo FI_Order = AccessTools.Field(typeof(DivineEntity), nameof(DivineEntity.order));
+
+            Label label = ilg.DefineLabel();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Ldloc_1)
+                    {
+                        targetIndex++;
+
+                        yield return new CodeInstruction(OpCodes.Ldarg_0);
+                        yield return new CodeInstruction(OpCodes.Ldfld, FI_Order);
+                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_HolyOrderGone);
+                        yield return new CodeInstruction(OpCodes.Brtrue_S, label);
+                    }
+
+                    if (targetIndex == 2 && instructionList[i].opcode == OpCodes.Nop)
+                    {
+                        targetIndex = 0;
+
+                        instructionList[i].labels.Add(label);
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+        }
+
+            private static bool TranspilerBody_HolyOrder_isGone(HolyOrder order)
+        {
+            //Console.WriteLine("CommunityLib: order " + order.getName() + " isGone returns " + order.isGone().ToString());
+            return order.isGone();
+        }
+
         // Orc Expansion modifications
         private static IEnumerable<CodeInstruction> SG_Orc_canSettle_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
@@ -1171,15 +1309,22 @@ namespace CommunityLib
             }
             if (location.settlement != null)
             {
-                if (ModCore.core.getSettlementTypesForOrcExpanion().TryGetValue(location.settlement.GetType(), out List<Type> subsettlementBlacklist) && subsettlementBlacklist?.Count > 0)
+                if (ModCore.core.getSettlementTypesForOrcExpanion().TryGetValue(location.settlement.GetType(), out List<Type> subsettlementBlacklist))
                 {
-                    foreach (Subsettlement sub in location.settlement.subs)
+                    if (subsettlementBlacklist?.Count > 0)
                     {
-                        if (subsettlementBlacklist.Contains(sub.GetType()))
+                        foreach (Subsettlement sub in location.settlement.subs)
                         {
-                            return false;
+                            if (subsettlementBlacklist.Contains(sub.GetType()))
+                            {
+                                return false;
+                            }
                         }
                     }
+                }
+                else
+                {
+                    return false;
                 }
 
                 return true;
@@ -1190,7 +1335,7 @@ namespace CommunityLib
 
         private static IEnumerable<CodeInstruction> Rt_Orcs_ClaimTerritory_validFor_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
-            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Rt_Orcs_ClaimTerritory_validFor_TranspilerBody));
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Rt_Orcs_ClaimTerritory_validFor_TranspilerBody), new Type[] { typeof(UA) });
 
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
@@ -1202,64 +1347,83 @@ namespace CommunityLib
 
         private static bool Rt_Orcs_ClaimTerritory_validFor_TranspilerBody(UA ua)
         {
-            bool result = false;
+            //Console.WriteLine("CommunityLib: ClaimTerritory.validFor");
 
             SG_Orc orcSociety = ua.society as SG_Orc;
 
             if (orcSociety == null)
             {
-                return result;
+                //Console.WriteLine("CommunityLib: ua is not of orc society");
+                return false;
             }
 
             if (ua.location.isOcean || ua.location.hex.getHabilitability() < ua.location.map.opt_orcHabMult * ua.location.map.param.orc_habRequirement)
             {
-                return result;
+                //Console.WriteLine("CommunityLib: Location is uninhabitable");
+                return false;
             }
-
-            result = true;
 
             if (ua.location.settlement != null)
             {
+                //Console.WriteLine("CommunityLib: Testing Claim Territory against Permitted Settlements");
                 if (ModCore.core.getSettlementTypesForOrcExpanion().TryGetValue(ua.location.settlement.GetType(), out List<Type> subsettlementBlacklist))
                 {
+                    //Console.WriteLine("CommunityLib: Settlement of Type " + ua.location.settlement.GetType().Name + " may be expanded onto");
                     if (subsettlementBlacklist?.Count > 0)
                     {
+                        //Console.WriteLine("CommunityLibrary: Settlment has blacklisted subsettlements");
                         foreach (Subsettlement sub in ua.location.settlement.subs)
                         {
-                            if (subsettlementBlacklist.Contains(sub.GetType()))
+                            //Console.WriteLine("CommunityLibrary: Testing subsettlement of Type " + sub.GetType().Name + " against blacklist.");
+                            foreach (Type t in subsettlementBlacklist)
                             {
-                                result = false;
-                                break;
+                                //Console.WriteLine("CommunityLib: Blacklist Type " + t.Name);
+                                if (t == sub.GetType())
+                                {
+                                    //Console.WriteLine("CommunityLib: Blacklisted subsettlement found");
+                                    return false;
+                                }
                             }
+
+                            /*if (subsettlementBlacklist.Contains(sub.GetType()))
+                            {
+                                Console.WriteLine("CommunityLib: Blacklisted subsettlement found");
+                                return false;
+                            }*/
                         }
                     }
                 }
                 else
                 {
-                    result = false;
+                    //Console.WriteLine("CommunityLib: Location does not have a Permitted Settlement");
+                    return false;
                 }
             }
 
-            if (result && orcSociety.lastTurnLocs.Count == 0)
+            if (orcSociety.lastTurnLocs.Count == 0)
             {
-                return result;
+                //Console.WriteLine("CommunityLib: Orcs have no locations");
+                return true;
             }
-
-            if (result && ua.location.getNeighbours().FirstOrDefault(l => l.soc == orcSociety) != null)
+            else if (ua.location.getNeighbours().FirstOrDefault(l => l.soc == orcSociety) != null)
             {
-                return result;
+                //Console.WriteLine("CommunityLib: Location neighbours orc society");
+                return true;
             }
-            else if (result && ua.location.isCoastal)
+            else if (ua.location.isCoastal)
             {
+                //Console.WriteLine("CommunityLib: Location is coastal");
                 foreach (Location location in ua.map.locations)
                 {
                     if (location.soc == orcSociety && location.settlement is Set_OrcCamp camp && camp.specialism == 5)
                     {
-                        return result;
+                        //Console.WriteLine("CommunityLib: orc society has shipyard");
+                        return true;
                     }
                 }
             }
 
+            //Console.WriteLine("CommunityLib: Location not claimable");
             return false;
         }
 
@@ -1343,6 +1507,7 @@ namespace CommunityLib
                 AgentAI.ControlParameters controlParams = (AgentAI.ControlParameters)control;
 
                 List<UIScroll_Unit.SortableTaskBlock> blocks = new List<UIScroll_Unit.SortableTaskBlock>();
+                Dictionary<UIScroll_Unit.SortableTaskBlock, Location> ritualLocDict = new Dictionary<UIScroll_Unit.SortableTaskBlock, Location>();
                 //Console.WriteLine("CommunityLib: Got valid challenges and rituals");
                 foreach (AgentAI.ChallengeData challengeData in ModCore.core.GetAgentAI().getAllValidChallengesAndRituals(ua))
                 {
@@ -1351,6 +1516,11 @@ namespace CommunityLib
                     block.challenge = challengeData.challenge;
                     block.utility = ModCore.core.GetAgentAI().getChallengeUtility(challengeData, ua, controlParams, block.msgs);
                     blocks.Add(block);
+
+                    if (challengeData.challenge is Ritual)
+                    {
+                        ritualLocDict.Add(block, challengeData.location);
+                    }
                     //Console.WriteLine("CommunityLib: Added " + challengeData.challenge.getName());
                 }
                 List<Unit> visibleUnits = ua.getVisibleUnits();
@@ -1413,6 +1583,15 @@ namespace CommunityLib
                     }
                     GameObject gO = UnityEngine.Object.Instantiate<GameObject>(ui.master.world.prefabStore.uieChallengePerceptionBox, ui.listContent);
                     gO.GetComponent<UIE_ChallengePerception>().setTo(ui.master.world, block);
+                    
+                    if (block.challenge is Ritual)
+                    {
+                        UIE_ChallengePerception perception = gO.GetComponentInChildren<UIE_ChallengePerception>();
+                        if (perception != null && ritualLocDict.TryGetValue(block, out Location loc) && loc != null)
+                        {
+                            perception.tLoc.text = loc.getName(true);
+                        }
+                    }
                     num--;
                 }
                 //Console.WriteLine("CommunityLib: Instantiated Blocks");

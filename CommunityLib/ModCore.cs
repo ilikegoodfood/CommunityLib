@@ -51,8 +51,7 @@ namespace CommunityLib
 
             overrideAI = new UAENOverrideAI(map);
 
-            registerSettlementTypeForOrcExpansion(typeof(Set_CityRuins));
-            registerSettlementTypeForOrcExpansion(typeof(Set_MinorOther), new Type[] { typeof(Sub_WitchCoven), typeof(Sub_Wonder_DeathIsland), typeof(Sub_Wonder_Doorway), typeof(Sub_Wonder_PrimalFont) });
+            orcExpansionDefaults();
         }
 
         public override void afterLoading(Map map)
@@ -72,8 +71,13 @@ namespace CommunityLib
 
             overrideAI = new UAENOverrideAI(map);
 
+            orcExpansionDefaults();
+        }
+
+        public void orcExpansionDefaults()
+        {
             registerSettlementTypeForOrcExpansion(typeof(Set_CityRuins));
-            registerSettlementTypeForOrcExpansion(typeof(Set_MinorOther), new Type[] { typeof(Sub_WitchCoven) });
+            registerSettlementTypeForOrcExpansion(typeof(Set_MinorOther), new Type[] { typeof(Sub_WitchCoven), typeof(Sub_Wonder_DeathIsland), typeof(Sub_Wonder_Doorway), typeof(Sub_Wonder_PrimalFont), typeof(Sub_Temple) });
         }
 
         public override void onTurnEnd(Map map)
@@ -102,7 +106,7 @@ namespace CommunityLib
             }
         }
 
-        internal List<Hooks> GetRegisteredHooks()
+        public List<Hooks> GetRegisteredHooks()
         {
             return registeredHooks;
         }

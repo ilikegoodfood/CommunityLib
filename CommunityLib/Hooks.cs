@@ -396,5 +396,27 @@ namespace CommunityLib
         {
             return false;
         }
+
+        /// <summary>
+        /// This hook fires when an action taking monster finishes populating it's actions. It recieves the action taking monster (monster) and a list of monster actions (actions).
+        /// </summary>
+        /// <param name="sg"></param>
+        /// <param name="actions"></param>
+        public virtual void populatingMonsterActions(SG_ActionTakingMonster monster, List<MonsterAction> actions)
+        {
+            return;
+        }
+
+        /// <summary>
+        /// This hook fires when an action taking monster gets the utility score for a monster action. It recieves the action taking monster (monster), the monster action (action), the utility score (utility), and a list of reason messages (reasonMsgs). It returns the utility score.
+        /// </summary>
+        /// <param name="monster"></param>
+        /// <param name="utility"></param>
+        /// <param name="action"></param>
+        /// <returns></returns>
+        public virtual double onActionTakingMonster_getUtility(SG_ActionTakingMonster monster, MonsterAction action, double utility, List<ReasonMsg> reasonMsgs)
+        {
+            return utility;
+        }
     }
 }
