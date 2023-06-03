@@ -67,6 +67,8 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), nameof(BattleArmy.unitMovesFromLocation)), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_unitMovesFromLocation_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), nameof(BattleArmy.computeAdvantage)), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_computeAdvantage_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), "allocateDamage", new Type[] { typeof(List<UM>), typeof(int[]) }), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_allocateDamage_Transpiler)));
+            // Raze Location Hooks
+            harmony.Patch(original: AccessTools.Method(typeof(Task_RazeLocation), nameof(Task_RazeLocation.turnTick), new Type[] { typeof(Unit) }), transpiler: new HarmonyMethod(patchType, nameof(Task_RazeLocation_turnTick_Transpiler)));
             // Settlement destruction hooks
             harmony.Patch(original: AccessTools.Method(typeof(Settlement), nameof(Settlement.fallIntoRuin), new Type[] { typeof(string), typeof(object) }), transpiler: new HarmonyMethod(patchType, nameof(Settlement_FallIntoRuin_Transpiler)));
             // Religion UI Screen hooks
@@ -326,6 +328,7 @@ namespace CommunityLib
             MethodInfo MI_TranspilerBody_StartOfProcess = AccessTools.Method(patchType, nameof(BattleArmy_cycle_TranspilerBody_StartOfProcess), new Type[] { typeof(BattleArmy) });
             MethodInfo MI_TranspilerBody_EndOfProcess = AccessTools.Method(patchType, nameof(BattleArmy_cycle_TranspilerBody_EndOfProcess), new Type[] { typeof(BattleArmy) });
             MethodInfo MI_TranspilerBody_Victory = AccessTools.Method(patchType, nameof(BattleArmy_cycle_TranspilerBody_onArmyBattleVictory), new Type[] { typeof(BattleArmy) });
+            MethodInfo MI_TranspilerBody_DamageCalc = AccessTools.Method(patchType, nameof(BattleArmy_cycle_TranspilerBody_DamageCalculated), new Type[] { typeof(BattleArmy), typeof(int), typeof(int), typeof(int), typeof(bool) });
 
             FieldInfo FI_BattleArmy_Done = AccessTools.Field(typeof(BattleArmy), nameof(BattleArmy.done));
 
@@ -335,6 +338,8 @@ namespace CommunityLib
             bool hooksIntecerptAndStartOfProcess = false;
             bool hookVictory = false;
             int hookVictoryCount = 0;
+            bool hookDamage = false;
+            int hookDamageCount = 0;
 
             for (int i = 0; i < instructionList.Count; i++)
             {
@@ -371,6 +376,43 @@ namespace CommunityLib
                     yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Victory);
                 }
 
+                if (!hookDamage && i > 2 && instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i-1].opcode == OpCodes.Stloc_S && instructionList[i-2].opcode == OpCodes.Conv_I4)
+                {
+                    hookDamageCount++;
+                    if (hookDamageCount >= 2)
+                    {
+                        hookDamage = true;
+                    }
+
+                    yield return new CodeInstruction(OpCodes.Ldarg_0);
+
+                    if (hookDamageCount == 1)
+                    {
+                        yield return new CodeInstruction(OpCodes.Ldloc, 48);
+                        yield return new CodeInstruction(OpCodes.Ldloc, 45);
+                        yield return new CodeInstruction(OpCodes.Ldloc, 46);
+                        yield return new CodeInstruction(OpCodes.Ldc_I4_1);
+                    }
+                    else
+                    {
+                        yield return new CodeInstruction(OpCodes.Ldloc, 56);
+                        yield return new CodeInstruction(OpCodes.Ldloc, 53);
+                        yield return new CodeInstruction(OpCodes.Ldloc, 54);
+                        yield return new CodeInstruction(OpCodes.Ldc_I4_0);
+                    }
+
+                    yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_DamageCalc);
+                    
+                    if (hookDamageCount == 1)
+                    {
+                        yield return new CodeInstruction(OpCodes.Stloc, 48);
+                    }
+                    else
+                    {
+                        yield return new CodeInstruction(OpCodes.Stloc, 56);
+                    }
+                }
+
                 if (i == instructionList.Count - 1 && instructionList[i].opcode == OpCodes.Ret)
                 {
                     // Implements onArmyBattleCycle_EndOfproccess
@@ -397,7 +439,7 @@ namespace CommunityLib
             data.defComs = new List<UA>();
             data.defComs.AddRange(battle.defComs);
 
-            HarmonyPatches.armyBattleData_StartOfCycle = data;
+            armyBattleData_StartOfCycle = data;
         }
 
         private static bool BattleArmy_cycle_TranspilerBody_InterceptCycle(BattleArmy battle)
@@ -411,6 +453,11 @@ namespace CommunityLib
                 {
                     result = true;
                 }
+            }
+
+            if (result && !battle.done)
+            {
+                battle.done = true;
             }
 
             return result;
@@ -434,16 +481,26 @@ namespace CommunityLib
 
         private static void BattleArmy_cycle_TranspilerBody_onArmyBattleVictory(BattleArmy battle)
         {
-            ArmyBattleData data = HarmonyPatches.armyBattleData_StartOfCycle;
-            Tuple<List<UM>, List<UA>> victors;
+            ArmyBattleData data = armyBattleData_StartOfCycle;
+            Tuple<List<UM>, List<UA>> victors = null;
             List<UM> victorUnits = new List<UM>();
             List<UA> victorComs = new List<UA>();
             List<UM> defeatedUnits = new List<UM>();
             List<UA> defeatedComs= new List<UA>();
 
-            if (battle.attackers.Count == 0 && battle.defenders.Count > 0)
+            if (battle.attackers.Count == 0 && battle.defenders.Count == 0)
             {
-                victors = armyBattleData_StartOfCycle.GetDefenders();
+                victors = new Tuple<List<UM>, List<UA>>(new List<UM>(), new List<UA>());
+
+                defeatedUnits.AddRange(data.GetAttackers().Item1);
+                defeatedUnits.AddRange(data.GetDefenders().Item1);
+
+                defeatedComs.AddRange(data.GetAttackers().Item2);
+                defeatedComs.AddRange(data.GetDefenders().Item2);
+            }
+            else if (battle.attackers.Count == 0)
+            {
+                victors = data.GetDefenders();
                 victorUnits = victors.Item1;
                 victorComs = victors.Item2;
 
@@ -462,9 +519,9 @@ namespace CommunityLib
                     }
                 }
             }
-            else if (battle.defenders.Count == 0 && battle.attackers.Count > 0)
+            else if (battle.defenders.Count == 0)
             {
-                victors = armyBattleData_StartOfCycle.GetAttackers();
+                victors = data.GetAttackers();
                 victorUnits = victors.Item1;
                 victorComs = victors.Item2;
 
@@ -484,12 +541,40 @@ namespace CommunityLib
                 }
             }
 
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            if (victors != null)
             {
-                hook?.onArmyBattleVictory(battle, victorUnits, victorComs, defeatedUnits, defeatedComs);
+                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+                {
+                    hook?.onArmyBattleVictory(battle, victorUnits, victorComs, defeatedUnits, defeatedComs);
+                }
+            }
+        }
+
+        private static int BattleArmy_cycle_TranspilerBody_DamageCalculated(BattleArmy battle, int dmg, int unitIndex, int targetIndex, bool isAttackers)
+        {
+            UM unit;
+            UM target;
+
+            if (isAttackers)
+            {
+                unit = battle.attackers[unitIndex];
+                target = battle.defenders[targetIndex];
+            }
+            else
+            {
+                unit = battle.defenders[unitIndex];
+                target = battle.attackers[targetIndex];
             }
 
-            armyBattleData_StartOfCycle.Clear();
+            if (unit != null && target != null)
+            {
+                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+                {
+                    dmg = hook?.onArmyBattleCycle_DamageCalculated(battle, dmg, unit, target) ?? dmg;
+                }
+            }
+
+            return dmg;
         }
 
         private static IEnumerable<CodeInstruction> BattleArmy_unitMovesFromLocation_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
@@ -639,6 +724,44 @@ namespace CommunityLib
             foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
                 dmgs[i] = hook?.onUnitReceivesArmyBattleDamage(battle, units[i], dmgs[i]) ?? dmgs[i];
+            }
+        }
+
+        // Raze Location Hooks
+
+        private static IEnumerable<CodeInstruction> Task_RazeLocation_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Task_RazeLocation_turnTick_TranspilerBody), new Type[] { typeof(Unit) });
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Nop && instructionList[i+1].opcode == OpCodes.Ldarg_1 && instructionList[i + 2].opcode == OpCodes.Ldfld)
+                    {
+                        targetIndex = 0;
+
+                        yield return new CodeInstruction(OpCodes.Nop);
+                        yield return new CodeInstruction(OpCodes.Ldarg_1);
+                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+        }
+
+        private static void Task_RazeLocation_turnTick_TranspilerBody(Unit u)
+        {
+            if (u is UM um)
+            {
+                foreach(Hooks hook in ModCore.core.GetRegisteredHooks())
+                {
+                    hook?.onRazeLocation_StartOfProcess(um);
+                }
             }
         }
 

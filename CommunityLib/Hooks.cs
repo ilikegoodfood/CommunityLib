@@ -111,7 +111,20 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when an army battle has allocated damage to the military units fighting on a side, but before the damage is applied. It recieves the army battle (battle), the list of units (units) that are about to recieve damage, and an integer array of the damage that the units are about to recieve (dmgs). These values are matched by index.
+        /// This hook fires when an army battle cycle calculates the damage that a unit will do to its target on the opposed side of the battle. It recieves the army battle (battle), the damage that will be dealt (dmg), the unit dealing the damage (unit), and the unit that will recieve the damage (target). It returns the damage that will be dealt.
+        /// </summary>
+        /// <param name="batle"></param>
+        /// <param name="dmg"></param>
+        /// <param name="unit"></param>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        public virtual int onArmyBattleCycle_DamageCalculated(BattleArmy batle, int dmg, UM unit, UM target)
+        {
+            return dmg;
+        }
+
+        /// <summary>
+        /// This hook fires when an army battle has allocated damage to the military units fighting on a side, but before the damage is applied. It recieves the army battle (battle), the list of units (units) that are about to recieve damage, and an integer array of the total damage that the units are about to recieve (dmgs). These values are matched by index.
         /// </summary>
         /// <param name="battle"></param>
         /// <param name="units"></param>
@@ -124,7 +137,7 @@ namespace CommunityLib
         /// <summary>
         /// This hook fires when an army battle has been won, by one side having zero remaining units. It recieves the battle (battle) that has just been won, a list of surviving military units on the winning side (victorUnits), a list of surviving agents commanding the winning side (victorComs), a list of military units of the defeated side that were alive and in battle at the start of the battle cycle (defeatedUnits), and a list of the agents commanding the defeated side that were alive and in battle at the start of the battle cycle (defeatedComs).
         /// <para>If a battle is won as a consequence of units being killed, or retreating, between cycles, the defeatedUnits and defeatedComs lists will be empty.</para>
-        /// <para>If neither side has any surviving units, an error has occured, and the lists of units and agents will all be empty.</para>
+        /// <para>If neither side has any surviving units, the lists of surviving victorious units and agents (victorUnits and victorComs) will all be empty, and the list of defeated units and agents (defeatedUnits and defeatedComs) will contain all units and agents that were alive and in battle at the start of the battle cycle.</para>
         /// </summary>
         /// <param name="battle"></param>
         /// <param name="victorUnits"></param>
@@ -138,7 +151,7 @@ namespace CommunityLib
 
         /// <summary>
         /// This hook fires when a battle is ended as a consequence of the last military unit on one of the sides moving out of the battle, after the unit is removed from the battle's data. It recieves the battle (battle) that has just been terminated, a list of remaining military units (victorUnits), a list of remaining agents commanding the remaining side (victorComs), and the military unit who fled the battle (u).
-        /// <para>If neither side has any surviving units, an error has occured, and the lists of units and agents will all be empty.</para>
+        /// <para>If neither side has any surviving units, an error has occured, and the lists of surviving victorious units and agents (victorUnits and victorComs) will both be empty.</para>
         /// </summary>
         /// <param name="battle"></param>
         /// <param name="victorUnits"></param>
@@ -160,7 +173,8 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when a military unit is about to recieve damage in an army battle. It recieves the army battle (battle), the military unit (u), and the damage it is about to recieve (dmg). It returns the calculated damage value damage value as an int.
+        /// This hook fires when a military unit is about to recieve damage in an army battle. It recieves the army battle (battle), the military unit (u), and the total damage it is about to recieve (dmg). It returns the damage the unit is about to recieve as an int.
+        /// <para>The damage that the unit is about to recieve is the total of all damage sources being applied to that unit in that battle cycle. This hook does not fire for each individual damage source. If you wish to modify the damage sources individually, use the 'onArmyBattleCycle_DamageCalculated' hook</para>
         /// </summary>
         /// <param name="battle"></param>
         /// <param name="u"></param>
@@ -231,6 +245,15 @@ namespace CommunityLib
         public virtual bool interceptSettlementFallIntoRuin(Settlement set, string v, object killer = null)
         {
             return false;
+        }
+
+        /// <summary>
+        /// This hook fires each turn while a military unit is razing a settlement, after validating that the task is still valid. It recieves the military unit that is performing the task (um).
+        /// </summary>
+        /// <param name="um"></param>
+        public virtual void onRazeLocation_StartOfProcess(UM um)
+        {
+            
         }
 
         /// <summary>
