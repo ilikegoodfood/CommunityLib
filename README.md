@@ -29,7 +29,7 @@ Multiple mods can all manipulate the AI of a single agent that is making use of 
 ### UAEN Override AI
 The basse games UAEN (Deep Ones, Ghasts, Orc Upstarts, and Vampires) make use of hardcoded AI. All agents of those types now use the Universal Agent AI, which have been configured to closely, but not exactly, mimic their base game behaviour. The changes are small, resulting these agent types behaving slightly more intelligently.
 
-### Custom Hooks (Documention is WIP)
+### Custom Hooks
 Using the Harmony Library, the community library now implements a large, and rapidly growing, number of custom hooks. These hooks operate much like those already available in the ModKernal.
 
 To implement them in your mod, create aan instance of a class that inherits the `CommunityLib.Hooks` class, and call `RegisterHooks()` on the CommunityLib ModKernel. This must be done once when starting a new game, or when loading a game.
