@@ -35,7 +35,7 @@
       <HintPath>..\packages\Lib.Harmony.2.2.2\lib\net472\0Harmony.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp">
-      <HintPath>..\..\..\Game DLLs\0_13\Assembly-CSharp.dll</HintPath>
+      <HintPath>..\..\..\Game DLLs\1_0\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
@@ -47,11 +47,11 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>..\..\..\Game DLLs\0_13\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>..\..\..\Game DLLs\1_0\UnityEngine.CoreModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.UI">
-      <HintPath>..\..\..\Game DLLs\0_13\UnityEngine.UI.dll</HintPath>
+      <HintPath>..\..\..\Game DLLs\1_0\UnityEngine.UI.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
