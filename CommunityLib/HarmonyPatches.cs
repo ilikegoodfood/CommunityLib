@@ -1192,15 +1192,20 @@ namespace CommunityLib
 
             Label falseLabel = ilg.DefineLabel();
 
-            int targetIndex = 0;
+            int targetIndex = 1;
 
             for (int i = 0; i < instructionList.Count; i++)
             {
-                if (targetIndex == 0)
+                if (targetIndex > 0)
                 {
-                    if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i - 1].opcode == OpCodes.Ldloc_S)
+                    if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i - 1].opcode == OpCodes.Ldloc_S)
                     {
                         targetIndex++;
+                    }
+
+                    if (targetIndex == 2 && instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i - 1].opcode == OpCodes.Ldloc_S)
+                    {
+                        targetIndex = 0;
                         falseLabel = (Label)instructionList[i].operand;
 
                         yield return new CodeInstruction(OpCodes.Brfalse_S, falseLabel);
@@ -1529,7 +1534,7 @@ namespace CommunityLib
                 //Console.WriteLine("CommunityLib: Orcs have no locations");
                 return true;
             }
-            else if (ua.location.getNeighbours().FirstOrDefault(l => l.soc == orcSociety) != null)
+            else if (ua.location.getNeighbours().Any(l => l.soc == orcSociety))
             {
                 //Console.WriteLine("CommunityLib: Location neighbours orc society");
                 return true;

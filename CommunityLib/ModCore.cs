@@ -87,34 +87,6 @@ namespace CommunityLib
             cleanRandStore();
         }
 
-        public override void onTurnStart(Map map)
-        {
-            updateHolyTenetPowerSources(map);
-        }
-
-        public void updateHolyTenetPowerSources(Map map)
-        {
-            List<Type> tenetTypes = new List<Type>();
-            foreach (SocialGroup socialGroup in map.socialGroups)
-            {
-                if (socialGroup is HolyOrder order)
-                {
-                    foreach (HolyTenet tenet in order.tenets)
-                    {
-                        if (tenet is HolyTenet_PowerSource tenetPS && !tenetTypes.Contains(tenetPS.GetType()))
-                        {
-                            tenetTypes.Add(tenetPS.GetType());
-
-                            foreach (Power_Temporary powerTemp in tenetPS.getPowers())
-                            {
-                                powerTemp.updtateState();
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
         public override void onCheatEntered(string command)
         {
             string[] commandComps = command.Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries);

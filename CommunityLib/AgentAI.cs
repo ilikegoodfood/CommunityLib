@@ -923,6 +923,7 @@ namespace CommunityLib
             if (controlParams.respectDanger)
             {
                 double danger = getDangerUtility(challengeData, ua);
+                reasonMsgs?.Add(new ReasonMsg("Danger (vs my HP)", danger));
                 utility += danger;
             }
 
