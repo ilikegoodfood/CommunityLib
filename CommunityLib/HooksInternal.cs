@@ -14,6 +14,17 @@ namespace CommunityLib
             
         }
 
+        public override void onPlayerInfluenceTenet(HolyOrder order, HolyTenet tenet)
+        {
+            if (tenet is HolyTenet_PowerSource tenetPS)
+            {
+                foreach (Power_Temporary powerTemp in tenetPS.getPowers())
+                {
+                    powerTemp.updtateState();
+                }
+            }
+        }
+
         public override bool interceptGetVisibleUnits(UA ua, List<Unit> visibleUnits)
         {
             switch (ua)

@@ -21,44 +21,39 @@ namespace CommunityLib
         {
             this.map = map;
 
-            aiChallenges_DeepOne = new List<AIChallenge>();
-            aiChallenges_Ghast = new List<AIChallenge>();
-            aiChallenges_OrcUpstart = new List<AIChallenge>();
-            aiChallenges_Vampire = new List<AIChallenge>();
-
             populateDeepOne();
-            ModCore.core.GetAgentAI().RegisterAgentType(typeof(UAEN_DeepOne), AgentAI.ControlParameters.newDefault());
-            ModCore.core.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_DeepOne), aiChallenges_DeepOne);
-
             populateGhast();
-            ModCore.core.GetAgentAI().RegisterAgentType(typeof(UAEN_Ghast), AgentAI.ControlParameters.newDefault());
-            ModCore.core.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_Ghast), aiChallenges_Ghast);
-
             populateOrcUpstart();
-            ModCore.core.GetAgentAI().RegisterAgentType(typeof(UAEN_OrcUpstart), AgentAI.ControlParameters.newDefault());
-            ModCore.core.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_OrcUpstart), aiChallenges_OrcUpstart);
-
             populateVampire();
-            ModCore.core.GetAgentAI().RegisterAgentType(typeof(UAEN_Vampire), AgentAI.ControlParameters.newDefault());
-            ModCore.core.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_Vampire), aiChallenges_Vampire);
+            
         }
 
         private void populateDeepOne()
         {
-            AIChallenge challenge = new AIChallenge(typeof(Rt_DeepOneReproduce), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.Aquaphibious }, true);
-            challenge.delegates_Valid.Add(delegate_Valid_Rt_DeepOneReproduce);
-            challenge.delegates_Utility.Add(delegate_Utility_Rt_DeepOneReproduce);
-            aiChallenges_DeepOne.Add(challenge);
+            //Console.WriteLine("CommunityLibrary: Populating DeepOne Override AI");
+            aiChallenges_DeepOne = new List<AIChallenge>
+            {
+                new AIChallenge(typeof(Rt_DeepOneReproduce), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.Aquaphibious }, true),
+                new AIChallenge(typeof(Ch_DeepOnesHumanAppearance), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.Aquaphibious }, true),
+                new AIChallenge(typeof(Ch_ConcealDeepOnes), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.Aquaphibious }, true)
+            };
 
-            AIChallenge challenge1 = new AIChallenge(typeof(Ch_DeepOnesHumanAppearance), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.Aquaphibious }, true);
-            challenge1.delegates_Valid.Add(delegate_Valid_Ch_DeepOnesHumanAppearance);
-            challenge1.delegates_Utility.Add(delegate_Utility_Ch_DeepOnesHumanAppearance);
-            aiChallenges_DeepOne.Add(challenge1);
+            //Console.WriteLine("CommunityLibrary: Adding delegates to 0...");
+            aiChallenges_DeepOne[0].delegates_Valid.Add(delegate_Valid_Rt_DeepOneReproduce);
+            aiChallenges_DeepOne[0].delegates_Utility.Add(delegate_Utility_Rt_DeepOneReproduce);
 
-            AIChallenge challenge2 = new AIChallenge(typeof(Ch_ConcealDeepOnes), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.Aquaphibious }, true);
-            challenge2.delegates_Valid.Add(delegate_Valid_Ch_ConcealDeepOnes);
-            challenge2.delegates_Utility.Add(delegate_Utility_Ch_ConcealDeepOnes);
-            aiChallenges_DeepOne.Add(challenge2);
+            //Console.WriteLine("CommunityLibrary: Adding delegates to 1...");
+            aiChallenges_DeepOne[1].delegates_Valid.Add(delegate_Valid_Ch_DeepOnesHumanAppearance);
+            aiChallenges_DeepOne[1].delegates_Utility.Add(delegate_Utility_Ch_DeepOnesHumanAppearance);
+
+            //Console.WriteLine("CommunityLibrary: Adding delegates to 2...");
+            aiChallenges_DeepOne[2].delegates_Valid.Add(delegate_Valid_Ch_ConcealDeepOnes);
+            aiChallenges_DeepOne[2].delegates_Utility.Add(delegate_Utility_Ch_ConcealDeepOnes);
+
+            //Console.WriteLine("CommunityLibrary: Registering agent");
+            ModCore.core.GetAgentAI().RegisterAgentType(typeof(UAEN_DeepOne), AgentAI.ControlParameters.newDefault());
+            //Console.WriteLine("CommunityLibrary: Adding challenges to agent");
+            ModCore.core.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_DeepOne), aiChallenges_DeepOne);
         }
 
         private bool delegate_Valid_Rt_DeepOneReproduce(AgentAI.ChallengeData challengeData)
@@ -146,10 +141,16 @@ namespace CommunityLib
 
         private void populateGhast()
         {
-            AIChallenge challenge = new AIChallenge(typeof(Rt_GhastEnshadow), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.PreferLocal });
-            challenge.delegates_Valid.Add(delegate_Valid_Rt_GhastEnshadow);
-            challenge.delegates_Utility.Add(delegate_Utility_Rt_GhastEnshadow);
-            aiChallenges_Ghast.Add(challenge);
+            aiChallenges_Ghast = new List<AIChallenge>
+            {
+                new AIChallenge(typeof(Rt_GhastEnshadow), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.PreferLocal })
+            };
+
+            aiChallenges_Ghast[0].delegates_Valid.Add(delegate_Valid_Rt_GhastEnshadow);
+            aiChallenges_Ghast[0].delegates_Utility.Add(delegate_Utility_Rt_GhastEnshadow);
+
+            ModCore.core.GetAgentAI().RegisterAgentType(typeof(UAEN_Ghast), AgentAI.ControlParameters.newDefault());
+            ModCore.core.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_Ghast), aiChallenges_Ghast);
         }
 
         private bool delegate_Valid_Rt_GhastEnshadow(AgentAI.ChallengeData challengeData)
@@ -207,15 +208,19 @@ namespace CommunityLib
 
         private void populateOrcUpstart()
         {
-            AIChallenge challenge = new AIChallenge(typeof(Ch_OrcRaiding), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.BaseValid, AIChallenge.ChallengeTags.BaseValidFor, AIChallenge.ChallengeTags.RequiresOwnSociety });
-            challenge.delegates_Utility.Add(delegate_Utility_Ch_OrcRaiding);
-            aiChallenges_OrcUpstart.Add(challenge);
+            aiChallenges_OrcUpstart = new List<AIChallenge>
+            {
+                new AIChallenge(typeof(Ch_OrcRaiding), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.BaseValid, AIChallenge.ChallengeTags.BaseValidFor, AIChallenge.ChallengeTags.RequiresOwnSociety }),
+                new AIChallenge(typeof(Ch_RecruitMinion), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.RequiresOwnSociety, AIChallenge.ChallengeTags.RecruitsMinion }),
+                new AIChallenge(typeof(Ch_Rest_InOrcCamp), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.RequiresOwnSociety, AIChallenge.ChallengeTags.HealOrc, AIChallenge.ChallengeTags.Rest })
+            };
 
-            AIChallenge challenge1 = new AIChallenge(typeof(Ch_RecruitMinion), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.RequiresOwnSociety, AIChallenge.ChallengeTags.RecruitsMinion });
-            challenge1.delegates_Valid.Add(delegate_Valid_Ch_RecruitMinion);
-            aiChallenges_OrcUpstart.Add(challenge1);
+            aiChallenges_OrcUpstart[0].delegates_Utility.Add(delegate_Utility_Ch_OrcRaiding);
 
-            aiChallenges_OrcUpstart.Add(new AIChallenge(typeof(Ch_Rest_InOrcCamp), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.RequiresOwnSociety, AIChallenge.ChallengeTags.HealOrc, AIChallenge.ChallengeTags.Rest }));
+            aiChallenges_OrcUpstart[1].delegates_Valid.Add(delegate_Valid_Ch_RecruitMinion);
+
+            ModCore.core.GetAgentAI().RegisterAgentType(typeof(UAEN_OrcUpstart), AgentAI.ControlParameters.newDefault());
+            ModCore.core.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_OrcUpstart), aiChallenges_OrcUpstart);
         }
 
         private double delegate_Utility_Ch_OrcRaiding(AgentAI.ChallengeData challengeData, UA ua, double utility, List<ReasonMsg> reasonMsgs)
@@ -258,23 +263,26 @@ namespace CommunityLib
 
         private void populateVampire()
         {
-            AIChallenge challenge = new AIChallenge(typeof(Rt_Feed), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.PreferLocalRandomized });
-            challenge.delegates_ValidFor.Add(delegate_ValidFor_Rt_Feed);
-            challenge.delegates_Utility.Add(delegate_Utility_Rt_Feed);
-            aiChallenges_Vampire.Add(challenge);
+            aiChallenges_Vampire = new List<AIChallenge>
+            {
+                new AIChallenge(typeof(Rt_Feed), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.PreferLocalRandomized }),
+                new AIChallenge(typeof(Mg_DeathsShadow), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.PreferLocalRandomized }),
+                new AIChallenge(typeof(Ch_Desecrate), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.BaseValid, AIChallenge.ChallengeTags.BaseValidFor, AIChallenge.ChallengeTags.RequiresInfiltrated, AIChallenge.ChallengeTags.PreferLocalRandomized }),
+                new AIChallenge(typeof(Ch_Enshadow), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.Enshadows, AIChallenge.ChallengeTags.RequiresInfiltrated, AIChallenge.ChallengeTags.PreferLocalRandomized }),
+                new AIChallenge(typeof(Ch_WellOfShadows), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.BaseValid, AIChallenge.ChallengeTags.PushesShadow, AIChallenge.ChallengeTags.RequiresSociety, AIChallenge.ChallengeTags.PreferLocalRandomized }),
+                new AIChallenge(typeof(Ch_Rest_InOrcCamp), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.HealOrc, AIChallenge.ChallengeTags.PreferLocalRandomized })
+            };
 
-            AIChallenge challenge1 = new AIChallenge(typeof(Mg_DeathsShadow), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.PreferLocalRandomized });
-            challenge1.delegates_ValidFor.Add(delegate_ValidFor_Mg_DeathsShadow);
-            challenge1.delegates_Utility.Add(delegate_Utility_Mg_DeathsShadow);
-            aiChallenges_Vampire.Add(challenge1);
+            aiChallenges_Vampire[0].delegates_ValidFor.Add(delegate_ValidFor_Rt_Feed);
+            aiChallenges_Vampire[0].delegates_Utility.Add(delegate_Utility_Rt_Feed);
 
-            AIChallenge Challenge2 = new AIChallenge(typeof(Ch_Desecrate), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.BaseValid, AIChallenge.ChallengeTags.BaseValidFor, AIChallenge.ChallengeTags.RequiresInfiltrated, AIChallenge.ChallengeTags.PreferLocalRandomized });
-            Challenge2.delegates_Utility.Add(delegate_Utility_Ch_Desecrate);
-            aiChallenges_Vampire.Add(Challenge2);
+            aiChallenges_Vampire[1].delegates_ValidFor.Add(delegate_ValidFor_Mg_DeathsShadow);
+            aiChallenges_Vampire[1].delegates_Utility.Add(delegate_Utility_Mg_DeathsShadow);
 
-            aiChallenges_Vampire.Add(new AIChallenge(typeof(Ch_Enshadow), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.Enshadows, AIChallenge.ChallengeTags.RequiresInfiltrated, AIChallenge.ChallengeTags.PreferLocalRandomized }));
-            aiChallenges_Vampire.Add(new AIChallenge(typeof(Ch_WellOfShadows), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.BaseValid, AIChallenge.ChallengeTags.PushesShadow, AIChallenge.ChallengeTags.RequiresSociety, AIChallenge.ChallengeTags.PreferLocalRandomized }));
-            aiChallenges_Vampire.Add(new AIChallenge(typeof(Ch_Rest_InOrcCamp), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.HealOrc, AIChallenge.ChallengeTags.PreferLocalRandomized }));
+            aiChallenges_Vampire[2].delegates_Utility.Add(delegate_Utility_Ch_Desecrate);
+
+            ModCore.core.GetAgentAI().RegisterAgentType(typeof(UAEN_Vampire), AgentAI.ControlParameters.newDefault());
+            ModCore.core.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_Vampire), aiChallenges_Vampire);
         }
 
         private bool delegate_ValidFor_Rt_Feed(AgentAI.ChallengeData challengeData, UA ua)

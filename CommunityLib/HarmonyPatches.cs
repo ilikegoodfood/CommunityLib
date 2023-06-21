@@ -54,40 +54,42 @@ namespace CommunityLib
             // FIXES //
             // Assign Killer to Miscellaneous causes of death
             harmony.Patch(original: AccessTools.Method(typeof(UM_HumanArmy), nameof(UM_HumanArmy.turnTickInner)), transpiler: new HarmonyMethod(patchType, nameof(UM_HumanArmy_turnTickInner_Transpiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(Ch_SkirmishAttacking), nameof(Ch_SkirmishAttacking.skirmishDanger)), transpiler: new HarmonyMethod(patchType, nameof(Ch_SkirmishAttacking_skirmishDanger_Transpiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(Ch_SkirmishDefending), nameof(Ch_SkirmishDefending.skirmishDanger)), transpiler: new HarmonyMethod(patchType, nameof(Ch_SkirmishDefending_skirmishDanger_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_SkirmishAttacking), nameof(Ch_SkirmishAttacking.skirmishDanger), new Type[] { typeof(UA), typeof(int) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_SkirmishAttacking_skirmishDanger_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_SkirmishDefending), nameof(Ch_SkirmishDefending.skirmishDanger), new Type[] { typeof(UA), typeof(int) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_SkirmishDefending_skirmishDanger_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Mg_Volcano), nameof(Mg_Volcano.complete), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Mg_Volcano_Complete_Transpiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(God_Snake), nameof(God_Snake.awaken)), transpiler: new HarmonyMethod(patchType, nameof(God_Snake_Awaken_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(God_Snake), nameof(God_Snake.awaken), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(God_Snake_Awaken_Transpiler)));
 
             // HOOKS //
             // Unit death hooks
-            harmony.Patch(original: AccessTools.Method(typeof(Unit), nameof(Unit.die)), transpiler: new HarmonyMethod(patchType, nameof(Unit_die_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Unit), nameof(Unit.die), new Type[] { typeof(Map), typeof(string), typeof(Person) }), transpiler: new HarmonyMethod(patchType, nameof(Unit_die_Transpiler)));
             // Army Battle hooks
-            harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), nameof(BattleArmy.cycle)), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_cycle_Transpiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), nameof(BattleArmy.unitMovesFromLocation)), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_unitMovesFromLocation_Transpiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), nameof(BattleArmy.computeAdvantage)), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_computeAdvantage_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), nameof(BattleArmy.cycle), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_cycle_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), nameof(BattleArmy.unitMovesFromLocation), new Type[] { typeof(Unit), typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_unitMovesFromLocation_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), nameof(BattleArmy.computeAdvantage), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_computeAdvantage_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), "allocateDamage", new Type[] { typeof(List<UM>), typeof(int[]) }), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_allocateDamage_Transpiler)));
             // Raze Location Hooks
             harmony.Patch(original: AccessTools.Method(typeof(Task_RazeLocation), nameof(Task_RazeLocation.turnTick), new Type[] { typeof(Unit) }), transpiler: new HarmonyMethod(patchType, nameof(Task_RazeLocation_turnTick_Transpiler)));
             // Settlement destruction hooks
             harmony.Patch(original: AccessTools.Method(typeof(Settlement), nameof(Settlement.fallIntoRuin), new Type[] { typeof(string), typeof(object) }), transpiler: new HarmonyMethod(patchType, nameof(Settlement_FallIntoRuin_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIE_HolyTenet), nameof(UIE_HolyTenet.bInfluenceNegatively), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(UIE_HolyTenet_bInfluence_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIE_HolyTenet), nameof(UIE_HolyTenet.bInfluencePositively), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(UIE_HolyTenet_bInfluence_Postfix)));
             // Religion UI Screen hooks
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.setTo), new Type[] { typeof(HolyOrder), typeof(int) }), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_setTo_Transpiler)));
             // LevelUp Traits Hook
-            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getStartingTraits)), postfix: new HarmonyMethod(patchType, nameof(UA_getStartingTraits_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getStartingTraits), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(UA_getStartingTraits_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(Trait), nameof(Trait.getAvailableTraits), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Trait_getAvailableTraits_Postfix)));
             // Gain Item Hooks
             harmony.Patch(original: AccessTools.Method(typeof(Person), nameof(Person.gainItem), new Type[] { typeof(Item), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(Person_gainItem_Transpiler)));
             // Action Taking Monster Hooks
-            harmony.Patch(original: AccessTools.Method(typeof(SG_ActionTakingMonster), nameof(SG_ActionTakingMonster.turnTick), new Type[] { }), transpiler: new HarmonyMethod(patchType, nameof(SG_ActionTakingMonster_turnTick_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(SG_ActionTakingMonster), nameof(SG_ActionTakingMonster.turnTick), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(SG_ActionTakingMonster_turnTick_Transpiler)));
 
             // SYSTEM MODIFICATIONS //
             // Religion UI Screen modification
-            harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bPrev)), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bNext)), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bPrev), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bNext), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
 
             // Overmind modifications
-            harmony.Patch(original: AccessTools.Method(typeof(Overmind), nameof(Overmind.getThreats), new Type[] { }), transpiler: new HarmonyMethod(patchType, nameof(Overmind_getThreats_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Overmind), nameof(Overmind.getThreats), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Overmind_getThreats_Transpiler)));
 
             // Orc Expansion modifications
             harmony.Patch(original: AccessTools.Method(typeof(SG_Orc), nameof(SG_Orc.canSettle), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(SG_Orc_canSettle_Transpiler)));
@@ -100,15 +102,15 @@ namespace CommunityLib
 
             // UAEN OVERRIDE AI //
             // Negate unit interactions.
-            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getAttackUtility)), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)));
-            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getBodyguardUtility)), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)));
-            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getDisruptUtility)), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)));
-            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getVisibleUnits)), prefix: new HarmonyMethod(patchType, nameof(UA_getVisibleUnits_Prefix)), postfix: new HarmonyMethod(patchType, nameof(UA_getVisibleUnits_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getAttackUtility), new Type[] { typeof(Unit), typeof(List<ReasonMsg>), typeof(bool) }), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getBodyguardUtility), new Type[] { typeof(Unit), typeof(List<ReasonMsg>) }), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getDisruptUtility), new Type[] { typeof(Unit), typeof(List<ReasonMsg>) }), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getVisibleUnits), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UA_getVisibleUnits_Prefix)), postfix: new HarmonyMethod(patchType, nameof(UA_getVisibleUnits_Postfix)));
             // Override AI
-            harmony.Patch(original: AccessTools.Method(typeof(UAEN_DeepOne), nameof(UAEN_DeepOne.turnTickAI), new Type[] {  }), prefix: new HarmonyMethod(patchType, nameof(UAEN_DeepOne_turnTickAI_Prefix)));
-            harmony.Patch(original: AccessTools.Method(typeof(UAEN_Ghast), nameof(UAEN_Ghast.turnTickAI), new Type[] {  }), prefix: new HarmonyMethod(patchType, nameof(UAEN_Ghast_turnTickAI_Prefix)));
-            harmony.Patch(original: AccessTools.Method(typeof(UAEN_OrcUpstart), nameof(UAEN_OrcUpstart.turnTickAI), new Type[] {  }), prefix: new HarmonyMethod(patchType, nameof(UAEN_OrcUpstart_turnTickAI_Prefix)));
-            harmony.Patch(original: AccessTools.Method(typeof(UAEN_Vampire), nameof(UAEN_Vampire.turnTickAI), new Type[] {  }), prefix: new HarmonyMethod(patchType, nameof(UAEN_OrcUpstart_turnTickAI_Prefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UAEN_DeepOne), nameof(UAEN_DeepOne.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_DeepOne_turnTickAI_Prefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UAEN_Ghast), nameof(UAEN_Ghast.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_Ghast_turnTickAI_Prefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UAEN_OrcUpstart), nameof(UAEN_OrcUpstart.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_OrcUpstart_turnTickAI_Prefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UAEN_Vampire), nameof(UAEN_Vampire.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_OrcUpstart_turnTickAI_Prefix)));
             // Ch_Rest_InOrcCamp
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Rest_InOrcCamp), nameof(Ch_Rest_InOrcCamp.complete), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Ch_Rest_InOrcCamp_complete_Postfix)));
 
@@ -833,6 +835,14 @@ namespace CommunityLib
             }
         }
 
+        private static void UIE_HolyTenet_bInfluence_Postfix(UIE_HolyTenet __instance)
+        {
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            {
+                hook?.onPlayerInfluenceTenet(__instance.tenet.order, __instance.tenet);
+            }
+        }
+
         private static IEnumerable<CodeInstruction> PopupHolyOrder_setTo_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
@@ -1491,28 +1501,19 @@ namespace CommunityLib
                 //Console.WriteLine("CommunityLib: Testing Claim Territory against Permitted Settlements");
                 if (ModCore.core.getSettlementTypesForOrcExpanion().TryGetValue(ua.location.settlement.GetType(), out List<Type> subsettlementBlacklist))
                 {
-                    //Console.WriteLine("CommunityLib: Settlement of Type " + ua.location.settlement.GetType().Name + " may be expanded onto");
                     if (subsettlementBlacklist?.Count > 0)
                     {
-                        //Console.WriteLine("CommunityLibrary: Settlment has blacklisted subsettlements");
+                        //Console.WriteLine("CommunityLib: Settlement of Type " + ua.location.settlement.GetType().Name + " may be expanded onto");
                         foreach (Subsettlement sub in ua.location.settlement.subs)
                         {
                             //Console.WriteLine("CommunityLibrary: Testing subsettlement of Type " + sub.GetType().Name + " against blacklist.");
-                            foreach (Type t in subsettlementBlacklist)
+                            if (subsettlementBlacklist.Contains(sub.GetType()))
                             {
-                                //Console.WriteLine("CommunityLib: Blacklist Type " + t.Name);
-                                if (t == sub.GetType())
-                                {
-                                    //Console.WriteLine("CommunityLib: Blacklisted subsettlement found");
-                                    return false;
-                                }
+                                //Console.WriteLine("CommunityLib: Blacklisted subsettlement found");
+                                return false;
                             }
 
-                            /*if (subsettlementBlacklist.Contains(sub.GetType()))
-                            {
-                                Console.WriteLine("CommunityLib: Blacklisted subsettlement found");
-                                return false;
-                            }*/
+
                         }
                     }
                 }

@@ -234,6 +234,16 @@ namespace CommunityLib
         }
 
         /// <summary>
+        /// This hook fires just after a player influences a HolyTenet from the Holy Order UI. It recieves the holy order (order), and the holy tenet (tenet).
+        /// </summary>
+        /// <param name="order"></param>
+        /// <param name="tenet"></param>
+        public virtual void onPlayerInfluenceTenet(HolyOrder order, HolyTenet tenet)
+        {
+            return;
+        }
+
+        /// <summary>
         /// This hook fires when a settlement is destroyed. It recieves the settlement (set), a string representation of the cause (v), and the object, if applicable, that casued its destruction (killer).
         /// If this hook returns true, the rest of the ruin proccess will not happen. If you wish to keep the settlement intact and prevent this check being performed multiple times per turn, make sure that their cause of destruction has been removed. The process which initially instructed the settlement to fall into ruin will still continue, so if you wish to keep the settlement intact, make to sure to account for, and act in response to, the method of its destruction.
         /// <para>All instances of this hook will run whenever a settlemnt is instructed to fall into ruin, even those after one which has returned true.</para>
