@@ -15,7 +15,7 @@ namespace CommunityLib
 
         private Dictionary<Type, Tuple<List<AIChallenge>, ControlParameters>> ai;
 
-        private Map map;
+        public Map map;
 
         public struct DebugProperties
         {

@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -90,6 +89,11 @@ namespace CommunityLib
 
             // Overmind modifications
             harmony.Patch(original: AccessTools.Method(typeof(Overmind), nameof(Overmind.getThreats), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Overmind_getThreats_Transpiler)));
+
+            // Pathfinding modifications
+            harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.moveTowards), new Type[] { typeof(Unit), typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(Map_moveTowards_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.getPathTo), new Type[] { typeof(Location), typeof(Location), typeof(Unit), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(Map_getPathTo_Location_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.getPathTo), new Type[] { typeof(Location), typeof(SocialGroup), typeof(Unit), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(Map_getPathTo_SocialGroup_Transpiler)));
 
             // Orc Expansion modifications
             harmony.Patch(original: AccessTools.Method(typeof(SG_Orc), nameof(SG_Orc.canSettle), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(SG_Orc_canSettle_Transpiler)));
@@ -1201,22 +1205,23 @@ namespace CommunityLib
                     if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i - 1].opcode == OpCodes.Ldloc_S)
                     {
                         targetIndex++;
-                    }
 
-                    if (targetIndex == 2 && instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i - 1].opcode == OpCodes.Ldloc_S)
-                    {
-                        targetIndex = 0;
-                        falseLabel = (Label)instructionList[i].operand;
+                        if (targetIndex == 3)
+                        {
+                            targetIndex = 0;
+                            falseLabel = (Label)instructionList[i].operand;
 
-                        yield return new CodeInstruction(OpCodes.Brfalse_S, falseLabel);
-                        yield return new CodeInstruction(OpCodes.Ldarg_0);
-                        yield return new CodeInstruction(OpCodes.Dup);
-                        yield return new CodeInstruction(OpCodes.Ldfld, FI_Person_Items);
-                        yield return new CodeInstruction(OpCodes.Ldloc_S, 4);
-                        yield return new CodeInstruction(OpCodes.Ldelem_Ref);
-                        yield return new CodeInstruction(OpCodes.Ldarg_1);
-                        yield return new CodeInstruction(OpCodes.Ldarg_2);
-                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, falseLabel);
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Dup);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Person_Items);
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 4);
+                            yield return new CodeInstruction(OpCodes.Ldelem_Ref);
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Ldarg_2);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, falseLabel);
+                        }
                     }
                 }
 
@@ -1239,6 +1244,17 @@ namespace CommunityLib
             }
 
             return result;
+        }
+
+        private static IEnumerable<CodeInstruction> SG_ActionTakingMonster_turnTick_TranspilerWrapper(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            Console.WriteLine("CommunityLib: Transpiler Wrapper");
+
+            foreach (CodeInstruction instruction in SG_ActionTakingMonster_turnTick_Transpiler(codeInstructions))
+            {
+                Console.WriteLine(instruction);
+                yield return instruction;
+            }
         }
 
         private static IEnumerable<CodeInstruction> SG_ActionTakingMonster_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
@@ -1271,6 +1287,7 @@ namespace CommunityLib
                         yield return new CodeInstruction(OpCodes.Ldloc_S, 9);
                         yield return new CodeInstruction(OpCodes.Ldnull);
                         yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_getUtility);
+                        yield return new CodeInstruction(OpCodes.Stloc_S, 9);
                     }
                 }
                 
@@ -1286,12 +1303,16 @@ namespace CommunityLib
             }
         }
 
-        private static void SG_ActionTakingMonster_turnTick_TranspilerBody_getUtility(SG_ActionTakingMonster monster, MonsterAction action, double utility, List<ReasonMsg> reasonMsgs)
+        private static double SG_ActionTakingMonster_turnTick_TranspilerBody_getUtility(SG_ActionTakingMonster monster, MonsterAction action, double utility, List<ReasonMsg> reasonMsgs)
         {
+            double result = utility;
+
             foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
-                hook?.onActionTakingMonster_getUtility(monster, action, utility, reasonMsgs);
+                result = hook?.onActionTakingMonster_getUtility(monster, action, utility, reasonMsgs) ?? 0.0;
             }
+
+            return result;
         }
 
         // Religion UI Screen modification
@@ -1428,6 +1449,116 @@ namespace CommunityLib
             return order.isGone();
         }
 
+        // Pathfinding Modifications
+        private static IEnumerable<CodeInstruction> Map_getPathTo_Location_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Map_getPathTo_Location_TranspilerBody), new Type[] { typeof(Location), typeof(Location), typeof(Unit), typeof(bool) });
+
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            Label end = ilg.DefineLabel();
+
+            yield return new CodeInstruction(OpCodes.Nop);
+            yield return new CodeInstruction(OpCodes.Ldarg_1);
+            yield return new CodeInstruction(OpCodes.Ldarg_2);
+            yield return new CodeInstruction(OpCodes.Ldarg_3);
+            yield return new CodeInstruction(OpCodes.Ldarg_S, 4);
+            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+            yield return new CodeInstruction(OpCodes.Dup);
+            yield return new CodeInstruction(OpCodes.Ldnull);
+            yield return new CodeInstruction(OpCodes.Cgt_Un);
+            yield return new CodeInstruction(OpCodes.Brtrue_S, end);
+            yield return new CodeInstruction(OpCodes.Pop);
+
+            instructionList[instructionList.Count - 1].labels.Add(end);
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                yield return instructionList[i];
+            }
+        }
+
+        private static Location[] Map_getPathTo_Location_TranspilerBody(Location locA, Location locB, Unit u, bool safeMove)
+        {
+            Location[] path = null;
+
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            {
+                Location[] newPath = hook?.interceptGetPathTo_Location(locA, locB, u, safeMove) ?? null;
+
+                if (newPath != null)
+                {
+                    path = newPath;
+                }
+            }
+
+            return path;
+        }
+
+        private static IEnumerable<CodeInstruction> Map_getPathTo_SocialGroup_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Map_getPathTo_SocialGroup_TranspilerBody), new Type[] { typeof(Location), typeof(SocialGroup), typeof(Unit), typeof(bool) });
+
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            Label end = ilg.DefineLabel();
+
+            yield return new CodeInstruction(OpCodes.Nop);
+            yield return new CodeInstruction(OpCodes.Ldarg_1);
+            yield return new CodeInstruction(OpCodes.Ldarg_2);
+            yield return new CodeInstruction(OpCodes.Ldarg_3);
+            yield return new CodeInstruction(OpCodes.Ldarg_S, 4);
+            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+            yield return new CodeInstruction(OpCodes.Dup);
+            yield return new CodeInstruction(OpCodes.Ldnull);
+            yield return new CodeInstruction(OpCodes.Cgt_Un);
+            yield return new CodeInstruction(OpCodes.Brtrue_S, end);
+            yield return new CodeInstruction(OpCodes.Pop);
+
+            instructionList[instructionList.Count - 1].labels.Add(end);
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                yield return instructionList[i];
+            }
+        }
+
+        private static Location[] Map_getPathTo_SocialGroup_TranspilerBody(Location loc, SocialGroup sg, Unit u, bool safeMove)
+        {
+            Location[] path = null;
+
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            {
+                Location[] newPath = hook?.interceptGetPathTo_SocialGroup(loc, sg, u, safeMove) ?? null;
+
+                if (newPath != null)
+                {
+                    path = newPath;
+                }
+            }
+
+            return path;
+        }
+
+        private static IEnumerable<CodeInstruction> Map_moveTowards_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (instructionList[i].opcode == OpCodes.Ldnull)
+                    {
+                        targetIndex = 0;
+                        yield return new CodeInstruction(OpCodes.Ldarg_1);
+                        i++;
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+        }
+
         // Orc Expansion modifications
         private static IEnumerable<CodeInstruction> SG_Orc_canSettle_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
@@ -1556,6 +1687,7 @@ namespace CommunityLib
             return false;
         }
 
+        // Universal AI Patches
         private static void UIScroll_Unit_checkData_Prefix()
         {
             populatedUM = false;
@@ -1571,42 +1703,40 @@ namespace CommunityLib
 
             Label skip = ilg.DefineLabel();
 
-            bool found = false;
-            int counter = 0;
+            int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
             {
-                if (!found && i > 5)
+                if (targetIndex > 0)
                 {
-                    if (instructionList[i].opcode == OpCodes.Nop && instructionList[i - 1].opcode == OpCodes.Callvirt && instructionList[i + 1].opcode == OpCodes.Ldloc_0)
+                    if (targetIndex == 1 && i > 5)
                     {
-                        for (int j = i; j < instructionList.Count; j++)
+                        if (instructionList[i].opcode == OpCodes.Brfalse && instructionList[i - 3].opcode == OpCodes.Ceq && instructionList[i - 4].opcode == OpCodes.Ldc_I4_0)
                         {
-                            if (instructionList[j].opcode == OpCodes.Brfalse)
-                            {
-                                skip = (Label)instructionList[j].operand;
-                                break;
-                            }
+                            targetIndex++;
+
+                            skip = (Label)instructionList[i].operand;
+
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, skip);
+                            yield return new CodeInstruction(OpCodes.Nop);
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_UA);
+                        }
+                    }
+
+                    if (targetIndex > 1 && targetIndex < 5)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Callvirt && (MethodInfo)instructionList[i].operand == MI_Unit_isCommandable)
+                        {
+                            targetIndex++;
                         }
 
-                        yield return new CodeInstruction(OpCodes.Nop);
-                        yield return new CodeInstruction(OpCodes.Ldarg_0);
-                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_UA);
-                        yield return new CodeInstruction(OpCodes.Brtrue_S, skip);
-                        found = true;
-                    }
-                }
+                        if (targetIndex == 4 && instructionList[i].opcode == OpCodes.Ldloc_S)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_TranspilerBody_UM);
+                        }
 
-                if (found)
-                {
-                    if (instructionList[i].opcode == OpCodes.Callvirt && (MethodInfo)instructionList[i].operand == MI_Unit_isCommandable)
-                    {
-                        counter++;
-                    }
-
-                    if (counter == 3 && instructionList[i].opcode == OpCodes.Ldloc_S)
-                    {
-                        yield return new CodeInstruction(OpCodes.Ldarg_0);
-                        yield return new CodeInstruction(OpCodes.Callvirt, MI_TranspilerBody_UM);
+                        targetIndex = 0;
                     }
                 }
 
@@ -1653,7 +1783,7 @@ namespace CommunityLib
                     //Console.WriteLine("CommunityLib: Added " + challengeData.challenge.getName());
                 }
                 List<Unit> visibleUnits = ua.getVisibleUnits();
-                if (visibleUnits?.Count > 0)
+                if (visibleUnits != null)
                 {
                     foreach (Unit unit in visibleUnits)
                     {

@@ -24,6 +24,8 @@ namespace CommunityLib
 
         private Hooks hooks;
 
+        public Pathfinding pathfinding;
+
         private UAENOverrideAI overrideAI;
 
         private bool patched = false;
@@ -47,10 +49,12 @@ namespace CommunityLib
             //Initialize subclasses.
             core.agentAI = new AgentAI(map);
 
+            core.overrideAI = new UAENOverrideAI(map);
+
+            core.pathfinding = new Pathfinding();
+
             core.hooks = new HooksInternal(map);
             RegisterHooks(hooks);
-
-            core.overrideAI = new UAENOverrideAI(map);
 
             orcExpansionDefaults();
         }
@@ -65,13 +69,18 @@ namespace CommunityLib
                 core.randStore = new Dictionary<UA, Dictionary<ChallengeData, Dictionary<string, double>>>();
             }
 
+            if (core.pathfinding == null)
+            {
+                pathfinding = new Pathfinding();
+            }
+
             //Initialize subclasses.
             core.agentAI = new AgentAI(map);
 
+            core.overrideAI = new UAENOverrideAI(map);
+
             core.hooks = new HooksInternal(map);
             RegisterHooks(hooks);
-
-            core.overrideAI = new UAENOverrideAI(map);
 
             orcExpansionDefaults();
         }

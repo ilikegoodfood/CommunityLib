@@ -45,6 +45,36 @@ namespace CommunityLib
         }
 
         /// <summary>
+        /// This hook fires when a patch is requested between two locations. It recieves the location the path is from (locA), the location the path is aiming to reach (locB), the unit that is seeking the path (u), which is null if not applicable, and whether to consider safeMove (safeMove).
+        /// If this hook returns any Location[] other than null, the rest of the pathFinding process will not happen. Instead, the function will return the array returned by this hook.
+        /// <para>All instances of this hook will run whenever a pathfinding call, even those after one which has not returned null.</para>
+        /// </summary>
+        /// <param name="locA"></param>
+        /// <param name="locB"></param>
+        /// <param name="u"></param>
+        /// <param name="safeMove"></param>
+        /// <returns></returns>
+        public virtual Location[] interceptGetPathTo_Location(Location locA, Location locB, Unit u, bool safeMove)
+        {
+            return null;
+        }
+
+        /// <summary>
+        /// This hook fires when a patch is requested between a location and a social group. It recieves the location the path is from (loc), the social group the path is trying to reach (sg), the unit that is seeking the path (u), which is null if not applicable, and whether to consider safeMove (safeMove).
+        /// If this hook returns any Location[] other than null, the rest of the pathFinding process will not happen. Instead, the function will return the array returned by this hook.
+        /// <para>All instances of this hook will run whenever a pathfinding call, even those after one which has not returned null.</para>
+        /// </summary>
+        /// <param name="loc"></param>
+        /// <param name="sg"></param>
+        /// <param name="u"></param>
+        /// <param name="safeMove"></param>
+        /// <returns></returns>
+        public virtual Location[] interceptGetPathTo_SocialGroup(Location loc, SocialGroup sg, Unit u, bool safeMove)
+        {
+            return null;
+        }
+
+        /// <summary>
         /// This hook fires when a unit is instructed to die. It recieves the Unit (u), a string representation of the cause (v), and the person, if applicable, that casued their death (killer).
         /// If this hook returns true, the rest of the death proccess will not happen. If you wish to keep the unit alive and prevent this check being performed multiple times per turn, make sure that their health is greater than 0, or their cause of death has been removed. The process which initially instructed the unit to die will still continue, so if you wish to keep the unit alive, make to sure to account for, and act in response to, the method of its death.
         /// <para>All instances of this hook will run whenever a unit is instructed to die, even those after one which has returned true.</para>

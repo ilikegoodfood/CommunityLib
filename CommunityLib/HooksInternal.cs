@@ -14,6 +14,16 @@ namespace CommunityLib
             
         }
 
+        /*public override Location[] interceptGetPathTo_Location(Location locA, Location locB, Unit u, bool safeMove)
+        {
+            if (u is UM_FirstDaughter)
+            {
+                return ModCore.core.pathfinding.getPathTo(locA, locB, ModCore.core.pathfinding.delegate_LANDLOCKED, u);
+            }
+
+            return null;
+        }*/
+
         public override bool interceptGetVisibleUnits(UA ua, List<Unit> visibleUnits)
         {
             switch (ua)

@@ -64,6 +64,7 @@
     <Compile Include="HarmonyPatches.cs" />
     <Compile Include="Hooks.cs" />
     <Compile Include="HooksInternal.cs" />
+    <Compile Include="Pathfinding.cs" />
     <Compile Include="ReasonMsgMax.cs" />
     <Compile Include="Task_GoToPerformChallengeAtLocation.cs" />
     <Compile Include="UAENOverrideAI.cs" />
