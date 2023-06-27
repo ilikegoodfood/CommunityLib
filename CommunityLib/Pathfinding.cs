@@ -14,12 +14,12 @@ namespace CommunityLib
 
         }
 
-        public bool deligate_AQUAPHIBIOUS(Location[] currentPath, Location location, Unit u)
+        public bool delegate_AQUAPHIBIOUS(Location[] currentPath, Location location, Unit u)
         {
             return location.isOcean || location.isCoastal;
         }
 
-        public bool deligate_DESERT_ONLY (Location[] currentPath, Location location, Unit u)
+        public bool delegate_DESERT_ONLY (Location[] currentPath, Location location, Unit u)
         {
             return location.hex.terrain == Hex.terrainType.ARID || location.hex.terrain == Hex.terrainType.DESERT || location.hex.terrain == Hex.terrainType.DRY;
         }
@@ -29,12 +29,12 @@ namespace CommunityLib
             return !location.isOcean;
         }
 
-        public bool deligate_SAFE_MOVE (Location[] currentPath, Location location, Unit u)
+        public bool delegate_SAFE_MOVE (Location[] currentPath, Location location, Unit u)
         {
             return u == null || location.soc == null || !location.soc.hostileTo(u);
         }
 
-        public Location[] getPathTo(Location locA, Location locB, Func<Location[], Location, Unit, bool> deligate, Unit u = null)
+        public Location[] getPathTo(Location locA, Location locB, Func<Location[], Location, Unit, bool> pathfindingDelegate, Unit u = null)
         {
             HashSet<Location> locationHashes = new HashSet<Location> { locA };
             List<Location> locations = new List<Location> { locA };
@@ -54,7 +54,7 @@ namespace CommunityLib
                     {
                         if (!locationHashes.Contains(neighbour))
                         {
-                            if (!deligate(paths[j], neighbour, u))
+                            if (pathfindingDelegate != null && !pathfindingDelegate(paths[j], neighbour, u))
                             {
                                 if (neighbour == locB)
                                 {
@@ -91,7 +91,7 @@ namespace CommunityLib
             return null;
         }
 
-        public Location[] getPathTo(Location locA, SocialGroup sg, Func<Location, Unit, bool> deligate, Unit u = null)
+        public Location[] getPathTo(Location locA, SocialGroup sg, Func<Location[], Location, Unit, bool> pathfindingDelegate, Unit u = null)
         {
             HashSet<Location> locationHashes = new HashSet<Location> { locA };
             List<Location> locations = new List<Location> { locA };
@@ -111,7 +111,7 @@ namespace CommunityLib
                     {
                         if (!locationHashes.Contains(neighbour))
                         {
-                            if (!deligate(neighbour, u))
+                            if (!pathfindingDelegate(paths[j], neighbour, u))
                             {
                                 continue;
                             }

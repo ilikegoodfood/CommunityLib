@@ -84,22 +84,34 @@ namespace CommunityLib
 
         public struct ControlParameters
         {
+            public bool considerAllChallenges;
+            public bool forceSafeMove;
+
             public bool respectChallengeVisibility;
             public bool respectDanger;
             public bool respectChallengeAlignment;
             public bool valueTimeCost;
 
             public bool includeDangerousFoe;
+            public bool includeNotHolyTask;
+
+            public Func<Location[], Location, Unit, bool> pathfindingDeligate;
 
             public void setDefaults()
             {
+                considerAllChallenges = false;
+                forceSafeMove = false;
+
                 respectChallengeVisibility = false;
                 respectDanger = true;
                 respectChallengeAlignment = false;
                 valueTimeCost = false;
 
                 includeDangerousFoe = true;
-            }
+                includeNotHolyTask = false;
+
+                pathfindingDeligate = null;
+        }
 
             /// <summary>
             /// Returns a new instance of InputParams with the following default values: respectChallengeAlignment = false; respectUnitVisibility = false; respectDanger = true; respectChallengeAlignment = false; valueTimeCost = false;
@@ -432,43 +444,40 @@ namespace CommunityLib
                 List<Unit> targetGuards = new List<Unit>();
                 List<UA> targetDisrupts = new List<UA>();
 
-                if (aiChallenges.Count > 0)
+                foreach (ChallengeData cData in validChallengeData)
                 {
-                    foreach (ChallengeData cData in validChallengeData)
+                    if (cData.aiChallenge != null && !ModCore.core.randStore[ua].ContainsKey(cData))
                     {
-                        if (!ModCore.core.randStore[ua].ContainsKey(cData))
-                        {
-                            ModCore.core.randStore[ua].Add(cData, new Dictionary<string, double>());
-                        }
+                        ModCore.core.randStore[ua].Add(cData, new Dictionary<string, double>());
+                    }
 
-                        List<ReasonMsg> reasonMsgs = null;
-                        if (debug.outputUtility_ValidChallenges)
-                        {
-                            reasonMsgs = new List<ReasonMsg>();
-                        }
+                    List<ReasonMsg> reasonMsgs = null;
+                    if (debug.outputUtility_ValidChallenges)
+                    {
+                        reasonMsgs = new List<ReasonMsg>();
+                    }
 
-                        utility2 = getChallengeUtility(cData, ua, controlParams);
+                    utility2 = getChallengeUtility(cData, ua, controlParams);
 
-                        if (debug.outputUtility_ValidChallenges && reasonMsgs != null)
+                    if (debug.outputUtility_ValidChallenges && reasonMsgs != null)
+                    {
+                        Console.WriteLine("CommunityLib: Utility for " + cData.challenge.getName() + " at " + cData.challenge.location.getName() + " (" + (cData.challenge.location.soc?.getName() ?? "Wilderness") + ")");
+                        foreach (ReasonMsg reasonMsg in reasonMsgs)
                         {
-                            Console.WriteLine("CommunityLib: Utility for " + cData.challenge.getName() + " at " + cData.challenge.location.getName() + " (" + (cData.challenge.location.soc?.getName() ?? "Wilderness") + ")");
-                            foreach (ReasonMsg reasonMsg in reasonMsgs)
-                            {
-                                Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
-                            }
-                            Console.WriteLine("CommunityLib: Total: " + utility2);
+                            Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
                         }
+                        Console.WriteLine("CommunityLib: Total: " + utility2);
+                    }
 
-                        if (utility2 > utility)
-                        {
-                            utility = utility2;
-                            targetChallenges.Clear();
-                            targetChallenges.Add(cData);
-                        }
-                        else if (utility2 == utility)
-                        {
-                            targetChallenges.Add(cData);
-                        }
+                    if (utility2 > utility)
+                    {
+                        utility = utility2;
+                        targetChallenges.Clear();
+                        targetChallenges.Add(cData);
+                    }
+                    else if (utility2 == utility)
+                    {
+                        targetChallenges.Add(cData);
                     }
                 }
 
@@ -726,19 +735,23 @@ namespace CommunityLib
                     {
                         map.addUnifiedMessage(ua, null, "Beginning Quest", ua.getName() + " is beginning quest " + targetChallenge.challenge.getName() + " at location " + targetChallenge.location.getName(true), UnifiedMessage.messageType.BEGINNING_QUEST);
                     }
-                    if (!targetChallenge.challenge.allowMultipleUsers())
-                    {
-                        targetChallenge.challenge.claimedBy = ua;
-                    }
 
-                    bool safeMove = targetChallenge.aiChallenge.safeMove;
+                    bool safeMove = false;
+                    if (controlParams.forceSafeMove)
+                    {
+                        safeMove = true;
+                    }
+                    else if (targetChallenge.aiChallenge != null)
+                    {
+                        safeMove = targetChallenge.aiChallenge.safeMove;
+                    }
 
                     ua.task = new Task_GoToPerformChallengeAtLocation(targetChallenge.challenge, targetChallenge.location, safeMove);
                 }
 
                 foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
                 {
-                    hook.onAgentAI_EndOfProcess(ua, validChallengeData, controlParams);
+                    hook?.onAgentAI_EndOfProcess(ua, validChallengeData, controlParams);
                 }
             }
 
@@ -808,10 +821,21 @@ namespace CommunityLib
                         d.challenge = ritual;
                         ritualData.Add(d);
                     }
+                    else if (controlParams.considerAllChallenges)
+                    {
+                        ChallengeData d = new ChallengeData();
+                        d.aiChallenge = null;
+                        d.challenge = ritual;
+                        d.location = ua.location;
+                        if (getChallengeIsValid(ua, d, controlParams))
+                        {
+                            result.Add(d);
+                        }
+                    }
                 }
             }
 
-            if (aiChallenges.Count > 0 || aiRituals.Count > 0)
+            if (controlParams.considerAllChallenges || aiChallenges.Count > 0 || aiRituals.Count > 0)
             {
                 foreach (Location location in ua.map.locations)
                 {
@@ -819,20 +843,29 @@ namespace CommunityLib
 
                     foreach (Challenge challenge in challenges)
                     {
-                        if (challenge is Ritual)
+                        if (!(challenge is Ritual))
                         {
-                            continue;
-                        }
-
-                        if (aiChallenges.ContainsKey(challenge.GetType()))
-                        {
-                            ChallengeData d = new ChallengeData();
-                            d.aiChallenge = aiChallenges[challenge.GetType()];
-                            d.challenge = challenge;
-                            d.location = location;
-                            if (getChallengeIsValid(ua, d, controlParams))
+                            if (aiChallenges.ContainsKey(challenge.GetType()))
                             {
-                                result.Add(d);
+                                ChallengeData d = new ChallengeData();
+                                d.aiChallenge = aiChallenges[challenge.GetType()];
+                                d.challenge = challenge;
+                                d.location = location;
+                                if (getChallengeIsValid(ua, d, controlParams))
+                                {
+                                    result.Add(d);
+                                }
+                            }
+                            else if (controlParams.considerAllChallenges)
+                            {
+                                ChallengeData d = new ChallengeData();
+                                d.aiChallenge = null;
+                                d.challenge = challenge;
+                                d.location = location;
+                                if (getChallengeIsValid(ua, d, controlParams))
+                                {
+                                    result.Add(d);
+                                }
                             }
                         }
                     }
@@ -856,7 +889,7 @@ namespace CommunityLib
 
         public bool getChallengeIsValid(UA ua, ChallengeData challengeData, ControlParameters controlParams)
         {
-            if (challengeData.challenge.claimedBy?.isDead ?? false)
+            if (challengeData.challenge.claimedBy != null && challengeData.challenge.claimedBy.isDead)
             {
                 challengeData.challenge.claimedBy = null;
             }
@@ -866,7 +899,7 @@ namespace CommunityLib
                 Console.WriteLine("CommunityLib: Visibility and Validity for " + challengeData.challenge.getName() + " at " + challengeData.location.getName() + " (" + (challengeData.location.soc?.getName() ?? "Wilderness") + ") by " + ua.getName() + " (" + (ua.society?.getName() ?? "No Society") + ")");
             }
 
-            if (!controlParams.respectChallengeVisibility || challengeData.aiChallenge.checkChallengeVisibility(challengeData, ua))
+            if (!controlParams.respectChallengeVisibility || (challengeData.aiChallenge != null && challengeData.aiChallenge.checkChallengeVisibility(challengeData, ua)) || (controlParams.considerAllChallenges && ua.map.getStepDist(ua.location, challengeData.location) <= (challengeData.challenge.getProfile() / 10)))
             {
                 if (!controlParams.respectChallengeAlignment || !(challengeData.challenge.isGoodTernary() == -1 && ua is UAG && !ua.corrupted))
                 {
@@ -874,9 +907,13 @@ namespace CommunityLib
                     {
                         if (challengeData.challenge.allowMultipleUsers() || challengeData.challenge.claimedBy == null || challengeData.challenge.claimedBy == ua)
                         {
-                            if (challengeData.aiChallenge.checkChallengeIsValid(challengeData, ua))
+                            if ((challengeData.aiChallenge != null && challengeData.aiChallenge.checkChallengeIsValid(challengeData, ua, controlParams.pathfindingDeligate)) || (controlParams.considerAllChallenges && challengeData.challenge.valid() && challengeData.challenge.validFor(ua)))
                             {
                                 return true;
+                            }
+                            else if (debug.outputValidity_AllChallenges)
+                            {
+                                Console.WriteLine("CommunityLib: Invalid: Challenge Not Valid, or Not Valid For " + ua.getName());
                             }
                         }
                         else if (debug.outputValidity_AllChallenges)
@@ -918,7 +955,17 @@ namespace CommunityLib
                 return utility;
             }
 
-            utility += ua.person.getTagUtility(challengeData.challenge.getPositiveTags(), challengeData.challenge.getNegativeTags(), reasonMsgs);
+            Challenge challenge = challengeData.challenge;
+            if (controlParams.includeNotHolyTask)
+            {
+                if (!(challenge is ChallengeHoly) && !(challenge is Ch_RecruitMinion) && !(challenge is Ch_RecruitOgre) && !(challenge is Ch_LevelUp) && !(challenge is Ch_Rest) && !(challenge is Ch_Rest_InOrcCamp) && !(challenge is Ch_LayLow) && !(challenge is Ch_LayLowWilderness) && !(challenge is Ritual))
+                {
+                    utility += ua.map.param.holy_nonHolyTaskAversion;
+                    reasonMsgs?.Add(new ReasonMsg("Not Holy Task", ua.map.param.holy_nonHolyTaskAversion));
+                }
+            }
+
+            utility += ua.person.getTagUtility(challenge.getPositiveTags(), challenge.getNegativeTags(), reasonMsgs);
 
             if (controlParams.respectDanger)
             {
@@ -927,7 +974,14 @@ namespace CommunityLib
                 utility += danger;
             }
 
-            utility += challengeData.aiChallenge.checkChallengeUtility(challengeData, ua, reasonMsgs);
+            if (challengeData.aiChallenge != null)
+            {
+                utility += challengeData.aiChallenge.checkChallengeUtility(challengeData, ua, reasonMsgs);
+            }
+            else if (controlParams.considerAllChallenges)
+            {
+                utility += challenge.getUtility(ua, reasonMsgs);
+            }
 
             if (controlParams.valueTimeCost)
             {

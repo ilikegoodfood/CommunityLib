@@ -157,7 +157,7 @@ namespace CommunityLib
             return false;
         }
 
-        public bool checkChallengeIsValid(AgentAI.ChallengeData challengeData, UA ua)
+        public bool checkChallengeIsValid(AgentAI.ChallengeData challengeData, UA ua, Func<Location[], Location, Unit, bool> pathfindingDeligate = null)
         {
             if (challengeData.challenge.GetType() != challengeType)
             {
@@ -167,7 +167,16 @@ namespace CommunityLib
 
             if (challengeData.location != ua.location)
             {
-                Location[] pathTo = ua.location.map.getPathTo(ua.location, challengeData.location, ua, safeMove);
+                Location[] pathTo;
+                if (pathfindingDeligate == null)
+                {
+                    pathTo = ua.location.map.getPathTo(ua.location, challengeData.location, ua, safeMove);
+                }
+                else
+                {
+                    pathTo = ModCore.core.pathfinding.getPathTo(ua.location, challengeData.location, pathfindingDeligate, ua);
+                }
+
                 if (pathTo == null || pathTo.Length < 2)
                 {
                     if (AgentAI.debug.outputValidity_AllChallenges)

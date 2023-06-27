@@ -25,6 +25,9 @@ namespace CommunityLib
             populateGhast();
             populateOrcUpstart();
             populateVampire();
+
+            // Test Articles
+            //populateUAA();
             
         }
 
@@ -384,6 +387,33 @@ namespace CommunityLib
             utility += val;
 
             return utility;
+        }
+
+        private void populateUAA()
+        {
+            AgentAI.ControlParameters controlParams = new AgentAI.ControlParameters();
+            //Console.WriteLine("CommunityLib: Instantiated Control Params");
+            controlParams.considerAllChallenges = true;
+            //Console.WriteLine("CommunityLib: Set considerAllChallenges to true");
+            controlParams.forceSafeMove = false;
+            //Console.WriteLine("CommunityLib: Set forceSafeMove to false");
+            controlParams.respectChallengeVisibility = true;
+            //Console.WriteLine("CommunityLib: Set respectChallengeVisibility to true");
+            controlParams.respectDanger = true;
+            //Console.WriteLine("CommunityLib: Set respectDanger to true");
+            controlParams.respectChallengeAlignment = true;
+            //Console.WriteLine("CommunityLib: Set respectChallengeAlignment to true");
+            controlParams.valueTimeCost = true;
+            //Console.WriteLine("CommunityLib: Set valueTimeCost to true");
+            controlParams.includeDangerousFoe = true;
+            //Console.WriteLine("CommunityLib: Set includeDangerousFoe to true");
+            controlParams.includeNotHolyTask = true;
+            //Console.WriteLine("CommunityLib: Set includeNotHolyTask to true");
+            controlParams.pathfindingDeligate = ModCore.core.pathfinding.delegate_SAFE_MOVE;
+            //Console.WriteLine("CommunityLib: Set pathfindingDeligate to delegate_SAFE_MOVE");
+
+            ModCore.core.GetAgentAI().RegisterAgentType(typeof(UAA), controlParams);
+            //Console.WriteLine("CommunityLib: Registered Agent Type UAA");
         }
     }
 }

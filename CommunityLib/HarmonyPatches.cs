@@ -115,6 +115,8 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(UAEN_Ghast), nameof(UAEN_Ghast.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_Ghast_turnTickAI_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UAEN_OrcUpstart), nameof(UAEN_OrcUpstart.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_OrcUpstart_turnTickAI_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UAEN_Vampire), nameof(UAEN_Vampire.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_OrcUpstart_turnTickAI_Prefix)));
+            // TEST ARTICLE
+            //harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UA_turnTickAI_Prefix)));
             // Ch_Rest_InOrcCamp
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Rest_InOrcCamp), nameof(Ch_Rest_InOrcCamp.complete), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Ch_Rest_InOrcCamp_complete_Postfix)));
 
@@ -2239,6 +2241,16 @@ namespace CommunityLib
         private static bool UAEN_Vampire_turnTickAI_Prefix(UAEN_Vampire __instance)
         {
             if (ModCore.core.GetAgentAI().TryGetAgentType(typeof(UAEN_Vampire)))
+            {
+                ModCore.core.GetAgentAI().turnTickAI(__instance);
+                return false;
+            }
+            return true;
+        }
+
+        private static bool UA_turnTickAI_Prefix(UA __instance)
+        {
+            if (__instance is UAA && ModCore.core.GetAgentAI().TryGetAgentType(typeof(UAA)))
             {
                 ModCore.core.GetAgentAI().turnTickAI(__instance);
                 return false;

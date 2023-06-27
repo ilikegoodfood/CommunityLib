@@ -47,11 +47,11 @@ namespace CommunityLib
             core.randStore = new Dictionary<UA, Dictionary<ChallengeData, Dictionary<string, double>>>();
 
             //Initialize subclasses.
+            core.pathfinding = new Pathfinding();
+
             core.agentAI = new AgentAI(map);
 
             core.overrideAI = new UAENOverrideAI(map);
-
-            core.pathfinding = new Pathfinding();
 
             core.hooks = new HooksInternal(map);
             RegisterHooks(hooks);
@@ -298,7 +298,7 @@ namespace CommunityLib
             List<UA> deadAgents = new List<UA>();
             foreach (UA ua in core.randStore.Keys)
             {
-                if (ua.isDead)
+                if (ua.isDead || ua.homeLocation == -1)
                 {
                     deadAgents.Add(ua);
                 }
