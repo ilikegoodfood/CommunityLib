@@ -1712,20 +1712,27 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1 && i > 5)
                     {
-                        if (instructionList[i].opcode == OpCodes.Brfalse && instructionList[i - 3].opcode == OpCodes.Ceq && instructionList[i - 4].opcode == OpCodes.Ldc_I4_0)
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i - 1].opcode == OpCodes.Callvirt && instructionList[i + 1].opcode == OpCodes.Ldloc_0)
                         {
                             targetIndex++;
 
-                            skip = (Label)instructionList[i].operand;
+                            for (int j = i; j < instructionList.Count; j++)
+                            {
+                                if (instructionList[j].opcode == OpCodes.Brfalse)
+                                {
+                                    skip = (Label)instructionList[j].operand;
+                                    break;
+                                }
+                            }
 
-                            yield return new CodeInstruction(OpCodes.Brtrue_S, skip);
                             yield return new CodeInstruction(OpCodes.Nop);
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_UA);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, skip);
                         }
                     }
 
-                    if (targetIndex > 1 && targetIndex < 5)
+                    if (targetIndex > 2 && targetIndex < 6)
                     {
                         if (instructionList[i].opcode == OpCodes.Callvirt && (MethodInfo)instructionList[i].operand == MI_Unit_isCommandable)
                         {

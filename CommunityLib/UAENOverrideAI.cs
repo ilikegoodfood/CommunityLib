@@ -27,7 +27,7 @@ namespace CommunityLib
             populateVampire();
 
             // Test Articles
-            //populateUAA();
+            // populateUAA();
             
         }
 
@@ -409,7 +409,7 @@ namespace CommunityLib
             //Console.WriteLine("CommunityLib: Set includeDangerousFoe to true");
             controlParams.includeNotHolyTask = true;
             //Console.WriteLine("CommunityLib: Set includeNotHolyTask to true");
-            controlParams.pathfindingDeligate = ModCore.core.pathfinding.delegate_SAFE_MOVE;
+            controlParams.pathfindingDeligate = ModCore.core.pathfinding.delegate_LANDLOCKED;
             //Console.WriteLine("CommunityLib: Set pathfindingDeligate to delegate_SAFE_MOVE");
 
             ModCore.core.GetAgentAI().RegisterAgentType(typeof(UAA), controlParams);
