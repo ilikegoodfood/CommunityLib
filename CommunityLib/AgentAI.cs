@@ -97,6 +97,7 @@ namespace CommunityLib
             public bool respectArmyIntercept;
             public bool respectChallengeAlignment;
             public bool respectTags;
+            public bool respectTenets;
             public bool respectTraits;
             public bool valueTimeCost;
 
@@ -117,6 +118,7 @@ namespace CommunityLib
                 respectArmyIntercept = true;
                 respectChallengeAlignment = false;
                 respectTags = true;
+                respectTenets = true;
                 respectTraits = true;
                 valueTimeCost = false;
 
@@ -127,10 +129,6 @@ namespace CommunityLib
                 debugProperties = DebugProperties.newOff();
         }
 
-            /// <summary>
-            /// Returns a new instance of InputParams with the following default values: respectChallengeAlignment = false; respectUnitVisibility = false; respectDanger = true; respectChallengeAlignment = false; valueTimeCost = false;
-            /// </summary>
-            /// <returns></returns>
             public static ControlParameters newDefault()
             {
                 ControlParameters result = new ControlParameters();
@@ -993,7 +991,7 @@ namespace CommunityLib
             {
                 foreach (Unit unit in challengeData.location.units)
                 {
-                    if (unit is UM um && um.hostileTo(ua, false))
+                    if (unit is UM um && um.homeLocation != -1 && um.map.locations[um.homeLocation] == challengeData.location && um.hostileTo(ua, false))
                     {
                         double armyIntercept = -125.0;
                         reasonMsgs?.Add(new ReasonMsg("Army Blocking me", armyIntercept));
@@ -1008,6 +1006,14 @@ namespace CommunityLib
                 {
                     utility += ua.map.param.holy_nonHolyTaskAversion;
                     reasonMsgs?.Add(new ReasonMsg("Not Holy Task", ua.map.param.holy_nonHolyTaskAversion));
+                }
+            }
+
+            if (controlParams.respectTenets && ua.society is HolyOrder order)
+            {
+                foreach (HolyTenet tenet in order.tenets)
+                {
+                    utility += tenet.addUtility(challengeData.challenge, ua, reasonMsgs);
                 }
             }
 
