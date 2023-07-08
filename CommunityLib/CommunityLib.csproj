@@ -67,6 +67,7 @@
     <Compile Include="Pathfinding.cs" />
     <Compile Include="ReasonMsgMax.cs" />
     <Compile Include="Task_GoToPerformChallengeAtLocation.cs" />
+    <Compile Include="Task_GoToWilderness.cs" />
     <Compile Include="UAENOverrideAI.cs" />
     <Compile Include="ModCore.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -34,7 +34,7 @@ namespace CommunityLib
             return u == null || location.soc == null || !location.soc.hostileTo(u);
         }
 
-        public Location[] getPathTo(Location locA, Location locB, Func<Location[], Location, Unit, bool> pathfindingDelegate, Unit u = null)
+        public Location[] getPathTo(Location locA, Location locB, Func<Location[], Location, Unit, bool> pathfindingDelegate = null, Unit u = null)
         {
             HashSet<Location> locationHashes = new HashSet<Location> { locA };
             List<Location> locations = new List<Location> { locA };
@@ -49,22 +49,16 @@ namespace CommunityLib
 
                 for (int j = 0; j < locations.Count; j++)
                 {
-                    Location loc = locations[j];
-                    foreach (Location neighbour in loc.getNeighbours())
+                    foreach (Location neighbour in locations[j].getNeighbours())
                     {
                         if (!locationHashes.Contains(neighbour))
                         {
                             if (pathfindingDelegate != null && !pathfindingDelegate(paths[j], neighbour, u))
                             {
-                                if (neighbour == locB)
-                                {
-                                    return null;
-                                }
-
                                 continue;
                             }
 
-                            Location[] newPathArray = new Location[locations.Count + 1];
+                            Location[] newPathArray = new Location[paths[j].Length + 1];
                             for (int k = 0; k < paths[j].Length; k++)
                             {
                                 newPathArray[k] = paths[j][k];
@@ -91,7 +85,7 @@ namespace CommunityLib
             return null;
         }
 
-        public Location[] getPathTo(Location locA, SocialGroup sg, Func<Location[], Location, Unit, bool> pathfindingDelegate, Unit u = null)
+        public Location[] getPathTo(Location locA, SocialGroup sg, Func<Location[], Location, Unit, bool> pathfindingDelegate = null, Unit u = null)
         {
             HashSet<Location> locationHashes = new HashSet<Location> { locA };
             List<Location> locations = new List<Location> { locA };
@@ -106,16 +100,16 @@ namespace CommunityLib
 
                 for (int j = 0; j < locations.Count; j++)
                 {
-                    Location loc = locations[j];
-                    foreach (Location neighbour in loc.getNeighbours())
+                    foreach (Location neighbour in locations[j].getNeighbours())
                     {
                         if (!locationHashes.Contains(neighbour))
                         {
-                            if (!pathfindingDelegate(paths[j], neighbour, u))
+                            if (pathfindingDelegate != null && !pathfindingDelegate(paths[j], neighbour, u))
                             {
                                 continue;
                             }
-                            Location[] newPathArray = new Location[locations.Count + 1];
+
+                            Location[] newPathArray = new Location[paths[j].Length + 1];
                             for (int k = 0; k < paths[j].Length; k++)
                             {
                                 newPathArray[k] = paths[j][k];
@@ -144,7 +138,7 @@ namespace CommunityLib
 
         private void shuffle (List<Location> locations, List<Location[]> paths)
         {
-            if (Location.indexCounter > 0)
+            if (locations.Count > 0)
             {
                 for (int i = 0; i < locations.Count; i++)
                 {

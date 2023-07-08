@@ -297,6 +297,16 @@ namespace CommunityLib
         }
 
         /// <summary>
+        /// This hook fires each turn while a military unit is razing a settlement, after the task's turnTick has occured. It will not fire if the task becomes invalid. It recieves the military unit that is performing the task (um).
+        /// <para>If the settlement being razed was destroyed this turn, the task of the military unit (um) will equal null.</para>
+        /// </summary>
+        /// <param name="um"></param>
+        public virtual void onRazeLocation_EndOfProcess(UM um)
+        {
+
+        }
+
+        /// <summary>
         /// This hook fires when a settlement is destroyed, but after the interceptSettlementFallIntoRuin hook. It recieves the settlement (set), a string representation of the cause (v), and the object, if applicable, that casued its destruction (killer).
         /// </summary>
         /// <param name="set"></param>

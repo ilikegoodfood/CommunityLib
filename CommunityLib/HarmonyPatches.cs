@@ -22,6 +22,8 @@ namespace CommunityLib
 
         private static bool populatedUM;
 
+        private static bool razeIsValid;
+
         /// <summary>
         /// Initialises variables in this class that are required to perform patches, then executes harmony patches.
         /// </summary>
@@ -67,7 +69,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), nameof(BattleArmy.computeAdvantage), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_computeAdvantage_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), "allocateDamage", new Type[] { typeof(List<UM>), typeof(int[]) }), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_allocateDamage_Transpiler)));
             // Raze Location Hooks
-            harmony.Patch(original: AccessTools.Method(typeof(Task_RazeLocation), nameof(Task_RazeLocation.turnTick), new Type[] { typeof(Unit) }), transpiler: new HarmonyMethod(patchType, nameof(Task_RazeLocation_turnTick_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Task_RazeLocation), nameof(Task_RazeLocation.turnTick), new Type[] { typeof(Unit) }), prefix: new HarmonyMethod(patchType, nameof(Task_RazeLocation_turnTick_Prefix)), postfix: new HarmonyMethod(patchType, nameof(Task_RazeLocation_turnTick_Postfix)), transpiler: new HarmonyMethod(patchType, nameof(Task_RazeLocation_turnTick_Transpiler)));
             // Settlement destruction hooks
             harmony.Patch(original: AccessTools.Method(typeof(Settlement), nameof(Settlement.fallIntoRuin), new Type[] { typeof(string), typeof(object) }), transpiler: new HarmonyMethod(patchType, nameof(Settlement_FallIntoRuin_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(UIE_HolyTenet), nameof(UIE_HolyTenet.bInfluenceNegatively), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(UIE_HolyTenet_bInfluence_Postfix)));
@@ -81,6 +83,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Person), nameof(Person.gainItem), new Type[] { typeof(Item), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(Person_gainItem_Transpiler)));
             // Action Taking Monster Hooks
             harmony.Patch(original: AccessTools.Method(typeof(SG_ActionTakingMonster), nameof(SG_ActionTakingMonster.turnTick), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(SG_ActionTakingMonster_turnTick_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIScroll_Locs), nameof(UIScroll_Locs.checkData), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(UIScroll_Locs_checkData_Transpiler)));
 
             // SYSTEM MODIFICATIONS //
             // Religion UI Screen modification
@@ -736,6 +739,21 @@ namespace CommunityLib
         }
 
         // Raze Location Hooks
+        private static void Task_RazeLocation_turnTick_Prefix()
+        {
+            razeIsValid = false;
+        }
+
+        private static void Task_RazeLocation_turnTick_Postfix(Unit unit)
+        {
+            if (razeIsValid && unit is UM um)
+            {
+                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+                {
+                    hook?.onRazeLocation_EndOfProcess(um);
+                }
+            }
+        }
 
         private static IEnumerable<CodeInstruction> Task_RazeLocation_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
@@ -764,6 +782,8 @@ namespace CommunityLib
 
         private static void Task_RazeLocation_turnTick_TranspilerBody(Unit u)
         {
+            razeIsValid = true;
+
             if (u is UM um)
             {
                 foreach(Hooks hook in ModCore.core.GetRegisteredHooks())
@@ -1266,21 +1286,36 @@ namespace CommunityLib
             MethodInfo MI_TranspilerBody_populate = AccessTools.Method(patchType, nameof(SG_ActionTakingMonster_turnTick_TranspilerBody_populate), new Type[] { typeof(SG_ActionTakingMonster), typeof(List<MonsterAction>) });
             MethodInfo MI_TranspilerBody_getUtility = AccessTools.Method(patchType, nameof(SG_ActionTakingMonster_turnTick_TranspilerBody_getUtility), new Type[] { typeof(SG_ActionTakingMonster), typeof(MonsterAction), typeof(double), typeof(List<ReasonMsg>) });
 
+            MethodInfo MI_SG_ActionTakingMonster_getActions = AccessTools.Method(typeof(SG_ActionTakingMonster), nameof(SG_ActionTakingMonster.getActions), new Type[0]);
+
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
             {
                 if (targetIndex > 0)
                 {
-                    if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Ldc_R8 && instructionList[i-1].opcode == OpCodes.Stloc_S && instructionList[i-2].opcode == OpCodes.Callvirt)
+                    if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Callvirt && instructionList[i - 1].opcode == OpCodes.Ldarg_0)
                     {
                         targetIndex++;
 
                         yield return new CodeInstruction(OpCodes.Ldarg_0);
-                        yield return new CodeInstruction(OpCodes.Ldloc_S, 4);
+                        yield return new CodeInstruction(OpCodes.Callvirt, MI_SG_ActionTakingMonster_getActions);
                         yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_populate);
+
+                        i++;
                     }
 
-                    if (targetIndex == 2 && instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i-1].opcode == OpCodes.Stloc_S && instructionList[i-2].opcode == OpCodes.Callvirt)
+                    if (targetIndex == 2 && instructionList[i].opcode == OpCodes.Callvirt && instructionList[i - 1].opcode == OpCodes.Ldarg_0)
+                    {
+                        targetIndex++;
+
+                        yield return new CodeInstruction(OpCodes.Ldarg_0);
+                        yield return new CodeInstruction(OpCodes.Callvirt, MI_SG_ActionTakingMonster_getActions);
+                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_populate);
+
+                        i++;
+                    }
+
+                    if (targetIndex == 3 && instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i-1].opcode == OpCodes.Stloc_S && instructionList[i-2].opcode == OpCodes.Callvirt)
                     {
                         targetIndex = 0;
 
@@ -1297,12 +1332,67 @@ namespace CommunityLib
             }
         }
 
-        private static void SG_ActionTakingMonster_turnTick_TranspilerBody_populate(SG_ActionTakingMonster monster, List<MonsterAction> actions)
+        private static IEnumerable<CodeInstruction> UIScroll_Locs_checkData_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody_populate = AccessTools.Method(patchType, nameof(SG_ActionTakingMonster_turnTick_TranspilerBody_populate), new Type[] { typeof(SG_ActionTakingMonster), typeof(List<MonsterAction>) });
+            MethodInfo MI_TranspilerBody_getUtility = AccessTools.Method(patchType, nameof(SG_ActionTakingMonster_turnTick_TranspilerBody_getUtility), new Type[] { typeof(SG_ActionTakingMonster), typeof(MonsterAction), typeof(double), typeof(List<ReasonMsg>) });
+
+            MethodInfo MI_SG_ActionTakingMonster_getActions = AccessTools.Method(typeof(SG_ActionTakingMonster), nameof(SG_ActionTakingMonster.getActions), new Type[0]);
+            MethodInfo MI_MonsterAction_getUtility = AccessTools.Method(typeof(MonsterAction), nameof(MonsterAction.getUtility), new Type[] { typeof(List<ReasonMsg>) });
+
+            FieldInfo FI_SrtableAN_msgs = AccessTools.Field(typeof(UIScroll_Locs.SortableAN), nameof(UIScroll_Locs.SortableAN.msgs));
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Callvirt && instructionList[i - 1].opcode == OpCodes.Ldloc_S && instructionList[i + 1].opcode == OpCodes.Callvirt && instructionList[i + 2].opcode == OpCodes.Stloc_S)
+                    {
+                        targetIndex++;
+
+                        yield return new CodeInstruction(OpCodes.Ldloc_S, 80);
+                        yield return new CodeInstruction(OpCodes.Ldloc_S, 80);
+                        yield return new CodeInstruction(OpCodes.Callvirt, MI_SG_ActionTakingMonster_getActions);
+                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_populate);
+
+                        i++;
+                    }
+
+                    if (targetIndex == 2 && instructionList[i].opcode == OpCodes.Ldfld && instructionList[i + 1].opcode == OpCodes.Callvirt)
+                    {
+                        targetIndex = 0;
+
+                        yield return new CodeInstruction(OpCodes.Pop);
+                        yield return new CodeInstruction(OpCodes.Pop);
+                        yield return new CodeInstruction(OpCodes.Ldloc, 80);
+                        yield return new CodeInstruction(OpCodes.Ldloc_S, 85);
+                        yield return new CodeInstruction(OpCodes.Ldloc_S, 85);
+                        yield return new CodeInstruction(OpCodes.Ldloc_S, 86);
+                        yield return new CodeInstruction(OpCodes.Ldfld, FI_SrtableAN_msgs);
+                        yield return new CodeInstruction(OpCodes.Callvirt, MI_MonsterAction_getUtility);
+                        yield return new CodeInstruction(OpCodes.Ldloc_S, 86);
+                        yield return new CodeInstruction(OpCodes.Ldfld, FI_SrtableAN_msgs);
+                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_getUtility);
+
+                        i += 2;
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+        }
+
+        private static List<MonsterAction> SG_ActionTakingMonster_turnTick_TranspilerBody_populate(SG_ActionTakingMonster monster, List<MonsterAction> actions)
         {
             foreach(Hooks hook in ModCore.core.GetRegisteredHooks())
             {
                 hook?.populatingMonsterActions(monster, actions);
             }
+
+            return actions;
         }
 
         private static double SG_ActionTakingMonster_turnTick_TranspilerBody_getUtility(SG_ActionTakingMonster monster, MonsterAction action, double utility, List<ReasonMsg> reasonMsgs)
@@ -1311,7 +1401,7 @@ namespace CommunityLib
 
             foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
-                result = hook?.onActionTakingMonster_getUtility(monster, action, utility, reasonMsgs) ?? 0.0;
+                result = hook?.onActionTakingMonster_getUtility(monster, action, utility, reasonMsgs) ?? result;
             }
 
             return result;

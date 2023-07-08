@@ -1,4 +1,5 @@
 ﻿using Assets.Code;
+using System;
 
 namespace CommunityLib
 {
@@ -6,6 +7,7 @@ namespace CommunityLib
     {
         public Location target;
         public bool safeMove;
+        public Func<Location[], Location, Unit, bool> pathfindingDelegate;
 
         public Task_GoToPerformChallengeAtLocation(Challenge c, Location loc, bool safeMove = false)
             : base (c)
@@ -13,6 +15,14 @@ namespace CommunityLib
             target = loc;
             this.safeMove = safeMove;
             
+        }
+
+        public Task_GoToPerformChallengeAtLocation(Challenge c, Location loc, Func<Location[], Location, Unit, bool> pathfindingDelegate)
+            : base (c)
+        {
+            target = loc;
+            safeMove = false;
+            this.pathfindingDelegate = pathfindingDelegate;
         }
 
         public override string getLong()
@@ -39,7 +49,7 @@ namespace CommunityLib
                 }
             }
 
-            if (!challenge.allowMultipleUsers() && !(challenge.claimedBy == null || challenge.claimedBy == unit))
+            if (!challenge.allowMultipleUsers() && challenge.claimedBy != null && challenge.claimedBy != unit)
             {
                 unit.task = null;
             }
@@ -62,34 +72,41 @@ namespace CommunityLib
             if (unit.location == target)
             {
                 startChallenge(unit, challenge);
+                return;
             }
-            else
+
+            while (unit.movesTaken < unit.getMaxMoves())
             {
-                while (unit.movesTaken < unit.getMaxMoves())
+                Location[] pathTo;
+                if (pathfindingDelegate == null)
                 {
-                    Location[] pathTo = unit.location.map.getPathTo(unit.location, target, unit, safeMove);
+                    pathTo = unit.location.map.getPathTo(unit.location, target, unit, safeMove);
+                }
+                else
+                {
+                    pathTo = ModCore.core.pathfinding.getPathTo(unit.location, target, pathfindingDelegate, unit);
+                }
 
-                    if (pathTo == null || pathTo.Length < 2)
-                    {
-                        World.log("Path unavailable. Cancelling");
-                        unit.task = null;
-                        return;
-                    }
+                if (pathTo == null || pathTo.Length < 2)
+                {
+                    World.log("Path unavailable. Cancelling");
+                    unit.task = null;
+                    return;
+                }
 
-                    unit.map.adjacentMoveTo(unit, pathTo[1]);
-                    if (unit.location != pathTo[1])
-                    {
-                        World.log("Move unsuccessful. Cancelling");
-                        unit.task = null;
-                        break;
-                    }
-                    unit.movesTaken++;
+                unit.map.adjacentMoveTo(unit, pathTo[1]);
+                if (unit.location != pathTo[1])
+                {
+                    World.log("Move unsuccessful. Cancelling");
+                    unit.task = null;
+                    break;
+                }
+                unit.movesTaken++;
 
-                    if (unit.location == target)
-                    {
-                        startChallenge(unit, challenge);
-                        break;
-                    }
+                if (unit.location == target)
+                {
+                    startChallenge(unit, challenge);
+                    return;
                 }
             }
         }
