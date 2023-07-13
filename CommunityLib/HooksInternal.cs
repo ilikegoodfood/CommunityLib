@@ -1,8 +1,10 @@
 ﻿using Assets.Code;
 using System;
 using System.Collections.Generic;
-using static Assets.Code.Unit;
 using UnityEngine;
+using System.Reflection;
+using UnityEngine.UI;
+using System.Linq;
 
 namespace CommunityLib
 {
@@ -34,89 +36,54 @@ namespace CommunityLib
                     break;
             }
 
+            if (ModCore.core.data.tryGetModAssembly("Cordyceps", out ModData.ModIntegrationData intDataCord) && intDataCord.assembly != null)
+            {
+                if (intDataCord.typeDict.TryGetValue("Drone", out Type droneType) && droneType != null)
+                {
+                    if (ua.GetType() == droneType)
+                    {
+                        visibleUnits = new List<Unit>();
+                        return true;
+                    }
+                }
+
+            }
+
             return false;
         }
 
-        public override bool interceptAgentAI(UA ua, List<AgentAI.ChallengeData> challengeData, AgentAI.ControlParameters inputParamse)
+        public override bool interceptAgentAI(UA ua, List<AgentAI.ChallengeData> challengeData, List<AgentAI.TaskData> taskData, List<Unit> visibleUnits, AgentAI.ControlParameters inputParamse)
         {
             switch (ua)
             {
-                case UAEN_DeepOne deepOne:
-                    return interceptDeepOne(deepOne);
                 case UAEN_OrcUpstart upstart:
                     return interceptOrcUpstart(upstart);
                 default:
                     break;
             }
 
-            return false;
-        }
-
-        private bool interceptDeepOne(UAEN_DeepOne deepOne)
-        {
-            if (deepOne == null)
+            if (ModCore.core.data.tryGetModAssembly("Cordyceps", out ModData.ModIntegrationData intDataCord) && intDataCord.assembly != null)
             {
-                //Console.WriteLine("ERROR: DeepOne is not DeepOne");
-                return false;
-            }
-
-            if (deepOne.moveType == MoveType.NORMAL)
-            {
-                //Console.WriteLine("CommunityLib: MoveType is Normal");
-                if (deepOne.location.isOcean)
+                if (intDataCord.typeDict.TryGetValue("Drone", out Type droneType) && droneType != null)
                 {
-                    //Console.WriteLine("CommunityLib: DeepOne is at ocean location");
-                    deepOne.moveType = MoveType.AQUAPHIBIOUS;
-                    return false;
-                }
-
-                Location nearestOceanLocation = null;
-                List<Location> nearbyOceanLocations = new List<Location>();
-                int distance = 10000;
-                foreach(Location loc in map.locations)
-                {
-                    if (loc.isOcean)
+                    if (ua.GetType() == droneType)
                     {
-                        int stepDistance = map.getStepDist(deepOne.location, loc);
-                        if (stepDistance < distance)
+                        if (intDataCord.typeDict.TryGetValue("God", out Type godType) && godType != null && (ua.map.overmind.god.GetType() == godType || ua.map.overmind.god.GetType().IsSubclassOf(godType)))
                         {
-                            nearbyOceanLocations.Clear();
-                            nearbyOceanLocations.Add(loc);
-                            distance = stepDistance;
+                            return interceptCordycepsDrone(ua, intDataCord);
                         }
-                        else if (stepDistance == distance)
+                        else
                         {
-                            nearbyOceanLocations.Add(loc);
+                            ua.die(ua.map, "Died in Wilderness", null);
+                            return true;
                         }
                     }
                 }
-
-                if (nearbyOceanLocations.Count == 1)
-                {
-                    nearestOceanLocation = nearbyOceanLocations[0];
-                }
-                else if (nearbyOceanLocations.Count > 1)
-                {
-                    nearestOceanLocation = nearbyOceanLocations[Eleven.random.Next(nearbyOceanLocations.Count)];
-                }
-
-                if (nearestOceanLocation != null)
-                {
-                    Console.WriteLine("CommunityLib: Going to nearest ocean location");
-                    deepOne.task = new Task_GoToLocation(nearestOceanLocation);
-                }
-                else
-                {
-                    Console.WriteLine("CommunityLib: Unable to reach the ocean.");
-                    deepOne.die(map, "Unable to reach the ocean");
-                }
-
-                return true;
+                
             }
 
             return false;
         }
-
         private bool interceptOrcUpstart(UAEN_OrcUpstart upstart)
         {
             if (upstart.society.checkIsGone() || upstart.society.lastTurnLocs.Count == 0)
@@ -124,6 +91,28 @@ namespace CommunityLib
                 upstart.die(map, "Died in the wilderness", null);
                 return true;
             }
+            return false;
+        }
+
+        private bool interceptCordycepsDrone(UA ua, ModData.ModIntegrationData intData)
+        {
+            if (intData.typeDict.TryGetValue("Drone", out Type droneType) && droneType != null && intData.fieldInfoDict.TryGetValue("Drone.prey", out FieldInfo FI_Prey) && FI_Prey != null && intData.methodInfoDict.TryGetValue("God.eat", out MethodInfo MI_GodEat) && MI_GodEat != null)
+            {
+                if (intData.typeDict.TryGetValue("Hive", out Type hiveType) && hiveType != null && intData.typeDict.TryGetValue("LarvalMass", out Type larvalType) && larvalType != null)
+                {
+                    if (ua.location.settlement != null && (ua.location.settlement.GetType() == hiveType || ua.location.settlement.GetType().IsSubclassOf(hiveType)))
+                    {
+                        Property larvalMass = ua.location.properties.FirstOrDefault(pr => pr.GetType() == larvalType);
+                        if (larvalMass != null)
+                        {
+                            larvalMass.charge += (int)FI_Prey.GetValue(ua);
+                            MI_GodEat.Invoke(ua.map.overmind.god, new object[] { (int)FI_Prey.GetValue(ua) });
+                            FI_Prey.SetValue(ua, 0);
+                        }
+                    }
+                }
+            }
+
             return false;
         }
     }

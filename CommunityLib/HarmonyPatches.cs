@@ -52,7 +52,47 @@ namespace CommunityLib
                 return;
             }
 
-            // FIXES //
+            // HOOKS //
+            // Unit death hooks
+            harmony.Patch(original: AccessTools.Method(typeof(Unit), nameof(Unit.die), new Type[] { typeof(Map), typeof(string), typeof(Person) }), transpiler: new HarmonyMethod(patchType, nameof(Unit_die_Transpiler)));
+
+            // Army Battle hooks
+            harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), nameof(BattleArmy.cycle), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_cycle_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), nameof(BattleArmy.unitMovesFromLocation), new Type[] { typeof(Unit), typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_unitMovesFromLocation_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), nameof(BattleArmy.computeAdvantage), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_computeAdvantage_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), "allocateDamage", new Type[] { typeof(List<UM>), typeof(int[]) }), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_allocateDamage_Transpiler)));
+
+            // Raze Location Hooks
+            harmony.Patch(original: AccessTools.Method(typeof(Task_RazeLocation), nameof(Task_RazeLocation.turnTick), new Type[] { typeof(Unit) }), prefix: new HarmonyMethod(patchType, nameof(Task_RazeLocation_turnTick_Prefix)), postfix: new HarmonyMethod(patchType, nameof(Task_RazeLocation_turnTick_Postfix)), transpiler: new HarmonyMethod(patchType, nameof(Task_RazeLocation_turnTick_Transpiler)));
+
+            // Settlement destruction hooks
+            harmony.Patch(original: AccessTools.Method(typeof(Settlement), nameof(Settlement.fallIntoRuin), new Type[] { typeof(string), typeof(object) }), transpiler: new HarmonyMethod(patchType, nameof(Settlement_FallIntoRuin_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIE_HolyTenet), nameof(UIE_HolyTenet.bInfluenceNegatively), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(UIE_HolyTenet_bInfluence_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIE_HolyTenet), nameof(UIE_HolyTenet.bInfluencePositively), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(UIE_HolyTenet_bInfluence_Postfix)));
+
+            // Religion UI Screen hooks
+            harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.setTo), new Type[] { typeof(HolyOrder), typeof(int) }), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_setTo_Transpiler)));
+
+            // LevelUp Traits Hook
+            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getStartingTraits), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(UA_getStartingTraits_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(Trait), nameof(Trait.getAvailableTraits), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Trait_getAvailableTraits_Postfix)));
+
+            // Gain Item Hooks
+            harmony.Patch(original: AccessTools.Method(typeof(Person), nameof(Person.gainItem), new Type[] { typeof(Item), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(Person_gainItem_Transpiler)));
+
+            // Action Taking Monster Hooks
+            harmony.Patch(original: AccessTools.Method(typeof(SG_ActionTakingMonster), nameof(SG_ActionTakingMonster.turnTick), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(SG_ActionTakingMonster_turnTick_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIScroll_Locs), nameof(UIScroll_Locs.checkData), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(UIScroll_Locs_checkData_Transpiler)));
+
+            // onIsElderTomb Hooks
+            harmony.Patch(original: AccessTools.Method(typeof(Overmind_Automatic), nameof(Overmind_Automatic.ai_testDark), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Overmind_Automatic_ai_testDark_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Overmind_Automatic), nameof(Overmind_Automatic.ai_testMagic), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Overmind_Automatic_ai_testMagic_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Overmind_Automatic), nameof(Overmind_Automatic.checkSpawnAgent), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Overmind_Automatic_checkSpawnAgent_Transpiler)));
+
+            // Graphical Hex Hooks
+            //harmony.Patch(original: AccessTools.Method(typeof(GraphicalHex), nameof(GraphicalHex.checkData), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(GraphicalHex_checkData_Transpiler)));
+
+            // SYSTEM MODIFICATIONS //
             // Assign Killer to Miscellaneous causes of death
             harmony.Patch(original: AccessTools.Method(typeof(UM_HumanArmy), nameof(UM_HumanArmy.turnTickInner)), transpiler: new HarmonyMethod(patchType, nameof(UM_HumanArmy_turnTickInner_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Ch_SkirmishAttacking), nameof(Ch_SkirmishAttacking.skirmishDanger), new Type[] { typeof(UA), typeof(int) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_SkirmishAttacking_skirmishDanger_Transpiler)));
@@ -60,32 +100,6 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Mg_Volcano), nameof(Mg_Volcano.complete), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Mg_Volcano_Complete_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(God_Snake), nameof(God_Snake.awaken), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(God_Snake_Awaken_Transpiler)));
 
-            // HOOKS //
-            // Unit death hooks
-            harmony.Patch(original: AccessTools.Method(typeof(Unit), nameof(Unit.die), new Type[] { typeof(Map), typeof(string), typeof(Person) }), transpiler: new HarmonyMethod(patchType, nameof(Unit_die_Transpiler)));
-            // Army Battle hooks
-            harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), nameof(BattleArmy.cycle), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_cycle_Transpiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), nameof(BattleArmy.unitMovesFromLocation), new Type[] { typeof(Unit), typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_unitMovesFromLocation_Transpiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), nameof(BattleArmy.computeAdvantage), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_computeAdvantage_Transpiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), "allocateDamage", new Type[] { typeof(List<UM>), typeof(int[]) }), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_allocateDamage_Transpiler)));
-            // Raze Location Hooks
-            harmony.Patch(original: AccessTools.Method(typeof(Task_RazeLocation), nameof(Task_RazeLocation.turnTick), new Type[] { typeof(Unit) }), prefix: new HarmonyMethod(patchType, nameof(Task_RazeLocation_turnTick_Prefix)), postfix: new HarmonyMethod(patchType, nameof(Task_RazeLocation_turnTick_Postfix)), transpiler: new HarmonyMethod(patchType, nameof(Task_RazeLocation_turnTick_Transpiler)));
-            // Settlement destruction hooks
-            harmony.Patch(original: AccessTools.Method(typeof(Settlement), nameof(Settlement.fallIntoRuin), new Type[] { typeof(string), typeof(object) }), transpiler: new HarmonyMethod(patchType, nameof(Settlement_FallIntoRuin_Transpiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(UIE_HolyTenet), nameof(UIE_HolyTenet.bInfluenceNegatively), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(UIE_HolyTenet_bInfluence_Postfix)));
-            harmony.Patch(original: AccessTools.Method(typeof(UIE_HolyTenet), nameof(UIE_HolyTenet.bInfluencePositively), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(UIE_HolyTenet_bInfluence_Postfix)));
-            // Religion UI Screen hooks
-            harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.setTo), new Type[] { typeof(HolyOrder), typeof(int) }), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_setTo_Transpiler)));
-            // LevelUp Traits Hook
-            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getStartingTraits), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(UA_getStartingTraits_Postfix)));
-            harmony.Patch(original: AccessTools.Method(typeof(Trait), nameof(Trait.getAvailableTraits), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Trait_getAvailableTraits_Postfix)));
-            // Gain Item Hooks
-            harmony.Patch(original: AccessTools.Method(typeof(Person), nameof(Person.gainItem), new Type[] { typeof(Item), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(Person_gainItem_Transpiler)));
-            // Action Taking Monster Hooks
-            harmony.Patch(original: AccessTools.Method(typeof(SG_ActionTakingMonster), nameof(SG_ActionTakingMonster.turnTick), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(SG_ActionTakingMonster_turnTick_Transpiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(UIScroll_Locs), nameof(UIScroll_Locs.checkData), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(UIScroll_Locs_checkData_Transpiler)));
-
-            // SYSTEM MODIFICATIONS //
             // Religion UI Screen modification
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bPrev), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bNext), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
@@ -94,6 +108,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Overmind), nameof(Overmind.getThreats), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Overmind_getThreats_Transpiler)));
 
             // Pathfinding modifications
+            harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.adjacentMoveTo), new Type[] { typeof(Unit), typeof(Location) }), prefix: new HarmonyMethod(patchType, nameof(Map_adjacentMoveTo_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.moveTowards), new Type[] { typeof(Unit), typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(Map_moveTowards_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.getPathTo), new Type[] { typeof(Location), typeof(Location), typeof(Unit), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(Map_getPathTo_Location_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.getPathTo), new Type[] { typeof(Location), typeof(SocialGroup), typeof(Unit), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(Map_getPathTo_SocialGroup_Transpiler)));
@@ -107,19 +122,23 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(UIScroll_Unit), nameof(UIScroll_Unit.checkData), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UIScroll_Unit_checkData_Prefix)), transpiler: new HarmonyMethod(patchType, nameof(UIScroll_Unit_checkData_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(UIScroll_Unit), nameof(UIScroll_Unit.Update), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(UIScroll_Unit_Update_Transpiler)));
 
+
             // UAEN OVERRIDE AI //
             // Negate unit interactions.
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getAttackUtility), new Type[] { typeof(Unit), typeof(List<ReasonMsg>), typeof(bool) }), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getBodyguardUtility), new Type[] { typeof(Unit), typeof(List<ReasonMsg>) }), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getDisruptUtility), new Type[] { typeof(Unit), typeof(List<ReasonMsg>) }), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getVisibleUnits), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UA_getVisibleUnits_Prefix)), postfix: new HarmonyMethod(patchType, nameof(UA_getVisibleUnits_Postfix)));
+
             // Override AI
             harmony.Patch(original: AccessTools.Method(typeof(UAEN_DeepOne), nameof(UAEN_DeepOne.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_DeepOne_turnTickAI_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UAEN_Ghast), nameof(UAEN_Ghast.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_Ghast_turnTickAI_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UAEN_OrcUpstart), nameof(UAEN_OrcUpstart.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_OrcUpstart_turnTickAI_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UAEN_Vampire), nameof(UAEN_Vampire.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_OrcUpstart_turnTickAI_Prefix)));
+
             // TEST ARTICLE
             //harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UA_turnTickAI_Prefix)));
+
             // Ch_Rest_InOrcCamp
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Rest_InOrcCamp), nameof(Ch_Rest_InOrcCamp.complete), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Ch_Rest_InOrcCamp_complete_Postfix)));
 
@@ -1544,32 +1563,53 @@ namespace CommunityLib
         // Pathfinding Modifications
         private static IEnumerable<CodeInstruction> Map_getPathTo_Location_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
         {
-            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Map_getPathTo_Location_TranspilerBody), new Type[] { typeof(Location), typeof(Location), typeof(Unit), typeof(bool) });
+            MethodInfo MI_TranspilerBody_Intercept = AccessTools.Method(patchType, nameof(Map_getPathTo_Location_TranspilerBody_Intercept), new Type[] { typeof(Location), typeof(Location), typeof(Unit), typeof(bool) });
+            MethodInfo MI_TranspilerBody_EntranceWonder = AccessTools.Method(patchType, nameof(Map_getPathTo_TranspilerBody_EntranceWonder), new Type[] { typeof(Location), typeof(Unit) });
 
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
             Label end = ilg.DefineLabel();
-
-            yield return new CodeInstruction(OpCodes.Nop);
-            yield return new CodeInstruction(OpCodes.Ldarg_1);
-            yield return new CodeInstruction(OpCodes.Ldarg_2);
-            yield return new CodeInstruction(OpCodes.Ldarg_3);
-            yield return new CodeInstruction(OpCodes.Ldarg_S, 4);
-            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
-            yield return new CodeInstruction(OpCodes.Dup);
-            yield return new CodeInstruction(OpCodes.Ldnull);
-            yield return new CodeInstruction(OpCodes.Cgt_Un);
-            yield return new CodeInstruction(OpCodes.Brtrue_S, end);
-            yield return new CodeInstruction(OpCodes.Pop);
-
             instructionList[instructionList.Count - 1].labels.Add(end);
+
+            int targetIndex = 1;
+
             for (int i = 0; i < instructionList.Count; i++)
             {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1 && i == 0)
+                    {
+                        targetIndex++;
+
+                        yield return new CodeInstruction(OpCodes.Nop);
+                        yield return new CodeInstruction(OpCodes.Ldarg_1);
+                        yield return new CodeInstruction(OpCodes.Ldarg_2);
+                        yield return new CodeInstruction(OpCodes.Ldarg_3);
+                        yield return new CodeInstruction(OpCodes.Ldarg_S, 4);
+                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Intercept);
+                        yield return new CodeInstruction(OpCodes.Dup);
+                        yield return new CodeInstruction(OpCodes.Ldnull);
+                        yield return new CodeInstruction(OpCodes.Cgt_Un);
+                        yield return new CodeInstruction(OpCodes.Brtrue_S, end);
+                        yield return new CodeInstruction(OpCodes.Pop);
+                    }
+
+                    if (targetIndex == 2 && instructionList[i].opcode == OpCodes.Call && instructionList[i+1].opcode == OpCodes.Callvirt)
+                    {
+                        targetIndex = 0;
+                        i++;
+
+                        yield return new CodeInstruction(OpCodes.Ldarg_3);
+                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_EntranceWonder);
+                    }
+                }
+
+            
                 yield return instructionList[i];
             }
         }
 
-        private static Location[] Map_getPathTo_Location_TranspilerBody(Location locA, Location locB, Unit u, bool safeMove)
+        private static Location[] Map_getPathTo_Location_TranspilerBody_Intercept(Location locA, Location locB, Unit u, bool safeMove)
         {
             Location[] path = null;
 
@@ -1588,32 +1628,52 @@ namespace CommunityLib
 
         private static IEnumerable<CodeInstruction> Map_getPathTo_SocialGroup_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
         {
-            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Map_getPathTo_SocialGroup_TranspilerBody), new Type[] { typeof(Location), typeof(SocialGroup), typeof(Unit), typeof(bool) });
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Map_getPathTo_SocialGroup_TranspilerBody_Intercept), new Type[] { typeof(Location), typeof(SocialGroup), typeof(Unit), typeof(bool) });
+            MethodInfo MI_TranspilerBody_EntranceWonder = AccessTools.Method(patchType, nameof(Map_getPathTo_TranspilerBody_EntranceWonder), new Type[] { typeof(Location), typeof(Unit) });
 
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
             Label end = ilg.DefineLabel();
-
-            yield return new CodeInstruction(OpCodes.Nop);
-            yield return new CodeInstruction(OpCodes.Ldarg_1);
-            yield return new CodeInstruction(OpCodes.Ldarg_2);
-            yield return new CodeInstruction(OpCodes.Ldarg_3);
-            yield return new CodeInstruction(OpCodes.Ldarg_S, 4);
-            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
-            yield return new CodeInstruction(OpCodes.Dup);
-            yield return new CodeInstruction(OpCodes.Ldnull);
-            yield return new CodeInstruction(OpCodes.Cgt_Un);
-            yield return new CodeInstruction(OpCodes.Brtrue_S, end);
-            yield return new CodeInstruction(OpCodes.Pop);
-
             instructionList[instructionList.Count - 1].labels.Add(end);
+
+            int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
             {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1 && i == 0)
+                    {
+                        targetIndex++;
+
+                        yield return new CodeInstruction(OpCodes.Nop);
+                        yield return new CodeInstruction(OpCodes.Ldarg_1);
+                        yield return new CodeInstruction(OpCodes.Ldarg_2);
+                        yield return new CodeInstruction(OpCodes.Ldarg_3);
+                        yield return new CodeInstruction(OpCodes.Ldarg_S, 4);
+                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                        yield return new CodeInstruction(OpCodes.Dup);
+                        yield return new CodeInstruction(OpCodes.Ldnull);
+                        yield return new CodeInstruction(OpCodes.Cgt_Un);
+                        yield return new CodeInstruction(OpCodes.Brtrue_S, end);
+                        yield return new CodeInstruction(OpCodes.Pop);
+                    }
+
+                    if (targetIndex == 2 && instructionList[i].opcode == OpCodes.Call && instructionList[i + 1].opcode == OpCodes.Callvirt)
+                    {
+                        targetIndex = 0;
+                        i++;
+
+                        yield return new CodeInstruction(OpCodes.Ldarg_3);
+                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_EntranceWonder);
+                    }
+                }
+            
+            
                 yield return instructionList[i];
             }
         }
 
-        private static Location[] Map_getPathTo_SocialGroup_TranspilerBody(Location loc, SocialGroup sg, Unit u, bool safeMove)
+        private static Location[] Map_getPathTo_SocialGroup_TranspilerBody_Intercept(Location loc, SocialGroup sg, Unit u, bool safeMove)
         {
             Location[] path = null;
 
@@ -1628,6 +1688,64 @@ namespace CommunityLib
             }
 
             return path;
+        }
+
+        private static List<Location> Map_getPathTo_TranspilerBody_EntranceWonder(Location loc, Unit u)
+        {
+            List<Location> result = loc.getNeighbours();
+
+            if (u != null && u.isCommandable() && u is UA ua)
+            {
+                if (loc.settlement is Set_MinorOther && loc.settlement.subs.Any(sub => sub is Sub_Wonder_Doorway))
+                {
+                    Location tomb = u.map.locations.FirstOrDefault(l => l.settlement is Set_TombOfGods);
+                    if (tomb != null)
+                    {
+                        result.Add(tomb);
+                    }
+
+                    if (u.homeLocation != -1)
+                    {
+                        result.Add(u.map.locations[u.homeLocation]);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private static void Map_adjacentMoveTo_Prefix(Map __instance, Unit u, Location loc)
+        {
+            bool theEntrance = false;
+            if (u != null && u.isCommandable() && u is UA ua)
+            {
+                if (u.location.settlement is Set_MinorOther && u.location.settlement.subs.Any(sub => sub is Sub_Wonder_Doorway))
+                {
+                    Location tomb = __instance.locations.FirstOrDefault(l => l.settlement is Set_TombOfGods);
+                    if (tomb != null && loc == tomb)
+                    {
+                        theEntrance = true;
+                    }
+
+                    if (u.homeLocation != -1 && loc == __instance.locations[u.homeLocation])
+                    {
+                        theEntrance = true;
+                    }
+                }
+            }
+
+            if (theEntrance)
+            {
+                u.movesTaken--;
+
+                foreach(Unit unit in __instance.units)
+                {
+                    if ((unit.task is Task_AttackUnit attack && attack.target == u) || (unit.task is Task_DisruptUA disrupt && disrupt.other == u) || (unit.task is Task_AttackUnitWithEscort attackEscort && attackEscort.target == u))
+                    {
+                        unit.task = null;
+                    }
+                }
+            }
         }
 
         private static IEnumerable<CodeInstruction> Map_moveTowards_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
@@ -1779,6 +1897,179 @@ namespace CommunityLib
             return false;
         }
 
+        // Overmind_Automatic onIsElderTomb hooks
+        private static IEnumerable<CodeInstruction> Overmind_Automatic_ai_testDark_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_checkIsElderTomb = AccessTools.Method(patchType, nameof(checkIsElderTomb_TranspilerBody), new Type[] { typeof(Location) });
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Ldfld && instructionList[i - 1].opcode == OpCodes.Ldloc_3)
+                    {
+                        targetIndex++;
+
+                        yield return new CodeInstruction(OpCodes.Call, MI_checkIsElderTomb);
+
+                        i += 4;
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> Overmind_Automatic_ai_testMagic_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_checkIsElderTomb = AccessTools.Method(patchType, nameof(checkIsElderTomb_TranspilerBody), new Type[] { typeof(Location) });
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Ldfld && instructionList[i - 1].opcode == OpCodes.Ldloc_3)
+                    {
+                        targetIndex++;
+
+                        yield return new CodeInstruction(OpCodes.Call, MI_checkIsElderTomb);
+
+                        i += 4;
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> Overmind_Automatic_checkSpawnAgent_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_checkIsElderTomb = AccessTools.Method(patchType, nameof(checkIsElderTomb_TranspilerBody), new Type[] { typeof(Location) });
+
+            int targetIndex = 1;
+            bool returnLines = true;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Ldfld && instructionList[i - 1].opcode == OpCodes.Ldloc_S && instructionList[i + 1].opcode == OpCodes.Isinst)
+                    {
+                        targetIndex++;
+
+                        yield return new CodeInstruction(OpCodes.Call, MI_checkIsElderTomb);
+
+                        returnLines = false;
+                    }
+
+                    if (targetIndex == 2 && instructionList[i].opcode == OpCodes.Stloc_S)
+                    {
+                        targetIndex = 0;
+                        returnLines = true;
+                    }
+                }
+
+                if (returnLines)
+                {
+                    yield return instructionList[i];
+                }
+            }
+        }
+
+        private static bool checkIsElderTomb_TranspilerBody(Location location)
+        {
+            return ModCore.core.checkIsElderTomb(location);
+        }
+
+        // Graphical Hex Hooks
+        /*private static IEnumerable<CodeInstruction> GraphicalHex_checkData_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(GraphicalHex_checkData_TranspilerBody), new Type[] { typeof(GraphicalHex) });
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i-1].opcode == OpCodes.Ldsfld && instructionList[i-2].opcode == OpCodes.Brfalse_S)
+                    {
+                        targetIndex = 0;
+
+                        Label skip = (Label)instructionList[i].operand;
+
+                        yield return new CodeInstruction(OpCodes.Brfalse_S, skip);
+                        yield return new CodeInstruction(OpCodes.Ldarg_0);
+                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+        }
+
+        private static bool GraphicalHex_checkData_TranspilerBody(GraphicalHex hex)
+        {
+            bool result = true;
+            List<Property> priorityProperties = new List<Property>();
+
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            {
+                bool retValue = hook.onGraphicalHexUpdate_interceptDisplayPropertyOverlay(hex.hex.location, out List<Property> newPriorityProperties);
+
+                if (retValue)
+                {
+                    result = false;
+                }
+
+                if (result)
+                {
+                    if (newPriorityProperties != null)
+                    {
+                        foreach (Property priorityProperty in newPriorityProperties)
+                        {
+                            if (priorityProperty.hasHexView() && priorityProperty.charge >= 45.0)
+                            {
+                                priorityProperties.Add(priorityProperty);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (result && priorityProperties.Count > 0)
+            {
+                Property priorityProperty = null;
+                double charge = 0.0;
+
+                foreach (Property property in priorityProperties)
+                {
+                    if (property.charge > charge)
+                    {
+                        priorityProperty = property;
+                        charge = property.charge;
+                    }
+                }
+
+                if (priorityProperty != null)
+                {
+                    result = false;
+                    hex.cloudLayer.sprite = priorityProperty.hexViewSprite();
+                    hex.cloudLayer.enabled = true;
+                }
+            }
+
+            return result;
+        }*/
+
         // Universal AI Patches
         private static void UIScroll_Unit_checkData_Prefix()
         {
@@ -1854,32 +2145,63 @@ namespace CommunityLib
                 return false;
             }
 
-            if (ModCore.core.GetAgentAI().TryGetAgentType(ua.GetType(), out List<AIChallenge> _, out AgentAI.ControlParameters? control))
+            if (ModCore.core.GetAgentAI().TryGetAgentType(ua.GetType(), out AgentAI.AIData? aiData) && aiData is AgentAI.AIData data)
             {
-                //Console.WriteLine("CommunityLib: Got registered AI");
-                if (control == null)
+                if (data.controlParameters.hideThoughts)
                 {
-                    //Console.WriteLine("CommunityLib: cotnrol is null");
-                    return false;
+                    return true;
                 }
-                AgentAI.ControlParameters controlParams = (AgentAI.ControlParameters)control;
 
                 List<UIScroll_Unit.SortableTaskBlock> blocks = new List<UIScroll_Unit.SortableTaskBlock>();
-                Dictionary<UIScroll_Unit.SortableTaskBlock, Location> ritualLocDict = new Dictionary<UIScroll_Unit.SortableTaskBlock, Location>();
                 //Console.WriteLine("CommunityLib: Got valid challenges and rituals");
                 foreach (AgentAI.ChallengeData challengeData in ModCore.core.GetAgentAI().getAllValidChallengesAndRituals(ua))
                 {
                     //Console.WriteLine("CommunityLib: Iterating " + challengeData.challenge.getName());
-                    UIScroll_Unit.SortableTaskBlock block = new UIScroll_Unit.SortableTaskBlock();
+                    SortableTaskBlock_Advanced block = new SortableTaskBlock_Advanced();
                     block.challenge = challengeData.challenge;
-                    block.utility = ModCore.core.GetAgentAI().getChallengeUtility(challengeData, ua, controlParams, block.msgs);
+                    block.utility = ModCore.core.GetAgentAI().getChallengeUtility(challengeData, ua, data.controlParameters, block.msgs);
+                    block.challengeData = challengeData;
                     blocks.Add(block);
 
                     if (challengeData.challenge is Ritual)
                     {
-                        ritualLocDict.Add(block, challengeData.location);
+                        block.location = challengeData.location;
                     }
                     //Console.WriteLine("CommunityLib: Added " + challengeData.challenge.getName());
+                }
+                foreach (AgentAI.TaskData taskData in ModCore.core.GetAgentAI().getAllValidTasks(ua))
+                {
+                    SortableTaskBlock_Advanced blockTask = new SortableTaskBlock_Advanced();
+                    blockTask.challenge = null;
+                    blockTask.taskType = taskData.aiTask.taskType;
+                    blockTask.utility = ModCore.core.GetAgentAI().checkTaskUtility(taskData, ua, data.controlParameters, blockTask.msgs);
+                    blockTask.taskData = taskData;
+
+                    switch(taskData.targetCategory)
+                    {
+                        case AITask.TargetCategory.Location:
+                            if (taskData.targetLocation != null)
+                            {
+                                blockTask.location = taskData.targetLocation;
+                            }
+                            break;
+                        case AITask.TargetCategory.SocialGroup:
+                            if (taskData.targetSocialGroup != null)
+                            {
+                                blockTask.socialGroup = taskData.targetSocialGroup;
+                            }
+                            break;
+                        case AITask.TargetCategory.Unit:
+                            if (taskData.targetUnit != null)
+                            {
+                                blockTask.unit = taskData.targetUnit;
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+
+                    blocks.Add(blockTask);
                 }
                 List<Unit> visibleUnits = ua.getVisibleUnits();
                 if (visibleUnits != null)
@@ -1892,7 +2214,7 @@ namespace CommunityLib
                             //Console.WriteLine("CommunityLib: Unit is UA");
                             UIScroll_Unit.SortableTaskBlock blockAttack = new UIScroll_Unit.SortableTaskBlock();
                             blockAttack.unitToAttack = unit;
-                            blockAttack.utility = ua.getAttackUtility(unit, blockAttack.msgs, controlParams.includeDangerousFoe);
+                            blockAttack.utility = ua.getAttackUtility(unit, blockAttack.msgs, data.controlParameters.includeDangerousFoe);
                             if (blockAttack.utility >= -1000)
                             {
                                 blocks.Add(blockAttack);
@@ -1931,24 +2253,96 @@ namespace CommunityLib
                 foreach (UIScroll_Unit.SortableTaskBlock block in blocks)
                 {
                     bool compression = ui.tHeroCompression.isOn;
-                    if (compression && block.challenge != null)
-                    {
-                        if (hashSet.Contains(block.challenge.GetType()))
-                        {
-                            continue;
-                        }
-                        hashSet.Add(block.challenge.GetType());
-                    }
-                    GameObject gO = UnityEngine.Object.Instantiate<GameObject>(ui.master.world.prefabStore.uieChallengePerceptionBox, ui.listContent);
-                    gO.GetComponent<UIE_ChallengePerception>().setTo(ui.master.world, block);
                     
-                    if (block.challenge is Ritual)
+                    if (block is SortableTaskBlock_Advanced advBlock)
                     {
-                        UIE_ChallengePerception perception = gO.GetComponentInChildren<UIE_ChallengePerception>();
-                        if (perception != null && ritualLocDict.TryGetValue(block, out Location loc) && loc != null)
+                        if (compression)
                         {
-                            perception.tLoc.text = loc.getName(true);
+                            if (advBlock.challenge != null)
+                            {
+                                if (hashSet.Contains(block.challenge.GetType()))
+                                {
+                                    continue;
+                                }
+                                hashSet.Add(block.challenge.GetType());
+                            }
+                            else if (advBlock.taskType != null)
+                            {
+                                if (hashSet.Contains(advBlock.taskType))
+                                {
+                                    continue;
+                                }
+                                hashSet.Add(advBlock.taskType);
+                            }
                         }
+
+                        GameObject gO = UnityEngine.Object.Instantiate(ui.master.world.prefabStore.uieChallengePerceptionBox, ui.listContent);
+                        if (advBlock.taskType != null)
+                        {
+                            UIE_ChallengeTask task = gO.AddComponent<UIE_ChallengeTask>();
+                            UIE_ChallengePerception perception = gO.GetComponent<UIE_ChallengePerception>();
+
+                            task.transform.position = perception.transform.position;
+                            task.transform.localScale = perception.transform.localScale;
+
+                            task.title = perception.title;
+                            //Console.WriteLine("CommunityLib: " + perception.title.transform.parent.name);
+                            perception.title.transform.SetParent(task.transform);
+                            //Console.WriteLine("CommunityLib: " + perception.title.transform.parent.name);
+                            perception.title = null;
+
+                            task.backColour = perception.backColour;
+                            perception.backColour.transform.SetParent(task.transform);
+                            perception.backColour = null;
+
+                            task.iconBack = perception.iconBack;
+                            perception.iconBack.transform.SetParent(task.transform);
+                            perception.iconBack = null;
+
+                            task.icon = perception.icon;
+                            perception.icon.transform.SetParent(task.transform);
+                            perception.icon = null;
+
+                            task.button = perception.button;
+                            perception.button.transform.SetParent(task.transform);
+                            task.button.onClick.RemoveListener(perception.clickGOTO);
+                            task.button.onClick.AddListener(task.clickGOTO);
+                            perception.button = null;
+
+                            task.tUtility = perception.tUtility;
+                            perception.tUtility.transform.SetParent(task.transform);
+                            perception.tUtility = null;
+
+                            task.tLoc = perception.tLoc;
+                            perception.tLoc.transform.SetParent(task.transform);
+                            perception.tLoc = null;
+
+                            UnityEngine.Object.Destroy(perception);
+                            task.setTo(ui.master.world, advBlock, ua);
+                        }
+                        else
+                        {
+                            gO.GetComponent<UIE_ChallengePerception>().setTo(ui.master.world, block);
+                        }
+
+                        if (advBlock.challenge is Ritual)
+                        {
+                            UIE_ChallengePerception perception = gO.GetComponentInChildren<UIE_ChallengePerception>();
+                            perception.tLoc.text = advBlock.location.getName();
+                        }
+                    }
+                    else
+                    {
+                        if (compression && block.challenge != null)
+                        {
+                            if (hashSet.Contains(block.challenge.GetType()))
+                            {
+                                continue;
+                            }
+                            hashSet.Add(block.challenge.GetType());
+                        }
+                        GameObject gO = UnityEngine.Object.Instantiate<GameObject>(ui.master.world.prefabStore.uieChallengePerceptionBox, ui.listContent);
+                        gO.GetComponent<UIE_ChallengePerception>().setTo(ui.master.world, block);
                     }
                     num--;
                 }
@@ -2056,41 +2450,45 @@ namespace CommunityLib
             FieldInfo FI_UIMaster_World = AccessTools.Field(typeof(UIMaster), nameof(UIMaster.world));
             FieldInfo FI_UIScorll_challengePopout = AccessTools.Field(typeof(UIScroll_Unit), nameof(UIScroll_Unit.challengePopout));
 
-            Label intercept = ilg.DefineLabel();
+            Label interceptUA = ilg.DefineLabel();
+            Label interceptUM = ilg.DefineLabel();
 
-            int targetIndex = 0;
+            int targetIndex = 1;
             int popoutCounter = 0;
             for (int i = 0; i < instructionList.Count; i++)
             {
-                if (targetIndex == 1)
+                if (targetIndex > 1)
                 {
-                    if (instructionList[i].opcode == OpCodes.Ldfld && (FieldInfo)instructionList[i].operand == FI_UIScorll_challengePopout)
+                    if (targetIndex == 2)
                     {
-                        popoutCounter++;
+                        if (instructionList[i].opcode == OpCodes.Ldfld && (FieldInfo)instructionList[i].operand == FI_UIScorll_challengePopout)
+                        {
+                            popoutCounter++;
+                        }
+
+                        if (popoutCounter == 4)
+                        {
+                            targetIndex++;
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 5);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Popout);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, interceptUM);
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                        }
                     }
 
-                    if (popoutCounter == 4)
+                    if (targetIndex == 3)
                     {
-                        targetIndex++;
-                        yield return new CodeInstruction(OpCodes.Ldloc_S, 5);
-                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Popout);
-                        yield return new CodeInstruction(OpCodes.Brtrue_S, intercept);
-                        yield return new CodeInstruction(OpCodes.Ldarg_0);
-                    }
-                }
-
-                if (targetIndex == 2)
-                {
-                    if (instructionList[i].opcode == OpCodes.Br)
-                    {
-                        targetIndex++;
-                        instructionList[i].labels.Add(intercept);
+                        if (instructionList[i].opcode == OpCodes.Br)
+                        {
+                            targetIndex = 0;
+                            instructionList[i].labels.Add(interceptUM);
+                        }
                     }
                 }
 
                 yield return instructionList[i];
 
-                if (targetIndex == 0)
+                if (targetIndex == 1)
                 {
                     if (instructionList[i].opcode == OpCodes.Brfalse && instructionList[i - 1].opcode == OpCodes.Ldloc_S)
                     {
@@ -2110,15 +2508,9 @@ namespace CommunityLib
 
         private static bool UIScroll_Unit_Update_TranspilerBody_TimeStats()
         {
-            if (GraphicalMap.selectedUnit is UA ua && ModCore.core.GetAgentAI().TryGetAgentType(ua.GetType(), out List<AIChallenge> _, out AgentAI.ControlParameters? control))
+            if (GraphicalMap.selectedUnit is UA ua && ModCore.core.GetAgentAI().TryGetAgentType(ua.GetType(), out AgentAI.AIData? aiData) && aiData is AgentAI.AIData data)
             {
-                if (control == null)
-                {
-                    return false;
-                }
-                AgentAI.ControlParameters controlParams = (AgentAI.ControlParameters)control;
-
-                if (!controlParams.valueTimeCost)
+                if (!data.controlParameters.valueTimeCost)
                 {
                     return true;
                 }
@@ -2139,7 +2531,7 @@ namespace CommunityLib
             UM um = GraphicalMap.selectedUnit as UM;
             if (um == null)
             {
-                return false;
+                return result;
             }
 
             // Partially reconstruct TaskData
@@ -2307,7 +2699,7 @@ namespace CommunityLib
 
         private static bool UAEN_DeepOne_turnTickAI_Prefix(UAEN_DeepOne __instance)
         {
-            if (ModCore.core.GetAgentAI().TryGetAgentType(typeof(UAEN_DeepOne)))
+            if (ModCore.core.GetAgentAI().ContainsAgentType(typeof(UAEN_DeepOne)))
             {
                 ModCore.core.GetAgentAI().turnTickAI(__instance);
                 return false;
@@ -2317,7 +2709,7 @@ namespace CommunityLib
 
         private static bool UAEN_Ghast_turnTickAI_Prefix(UAEN_Ghast __instance)
         {
-            if (ModCore.core.GetAgentAI().TryGetAgentType(typeof(UAEN_Ghast)))
+            if (ModCore.core.GetAgentAI().ContainsAgentType(typeof(UAEN_Ghast)))
             {
                 ModCore.core.GetAgentAI().turnTickAI(__instance);
                 return false;
@@ -2327,7 +2719,7 @@ namespace CommunityLib
 
         private static bool UAEN_OrcUpstart_turnTickAI_Prefix(UAEN_OrcUpstart __instance)
         {
-            if (ModCore.core.GetAgentAI().TryGetAgentType(typeof(UAEN_OrcUpstart)))
+            if (ModCore.core.GetAgentAI().ContainsAgentType(typeof(UAEN_OrcUpstart)))
             {
                 ModCore.core.GetAgentAI().turnTickAI(__instance);
                 return false;
@@ -2337,7 +2729,7 @@ namespace CommunityLib
 
         private static bool UAEN_Vampire_turnTickAI_Prefix(UAEN_Vampire __instance)
         {
-            if (ModCore.core.GetAgentAI().TryGetAgentType(typeof(UAEN_Vampire)))
+            if (ModCore.core.GetAgentAI().ContainsAgentType(typeof(UAEN_Vampire)))
             {
                 ModCore.core.GetAgentAI().turnTickAI(__instance);
                 return false;
@@ -2347,7 +2739,7 @@ namespace CommunityLib
 
         private static bool UA_turnTickAI_Prefix(UA __instance)
         {
-            if (__instance is UAA && ModCore.core.GetAgentAI().TryGetAgentType(typeof(UAA)))
+            if (__instance is UAA && ModCore.core.GetAgentAI().ContainsAgentType(typeof(UAA)))
             {
                 ModCore.core.GetAgentAI().turnTickAI(__instance);
                 return false;

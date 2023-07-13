@@ -75,7 +75,8 @@ namespace CommunityLib
                 }
                 else if (targetLocations.Count > 1)
                 {
-                    targetLocation = targetLocations[Eleven.random.Next(targetLocations.Count)];
+                    targetLocation = targetLocations[
+                        (targetLocations.Count)];
                 }
             }
 

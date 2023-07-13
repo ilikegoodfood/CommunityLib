@@ -1,20 +1,21 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Assets.Code;
-using static Assets.Code.RelObj;
-using static CommunityLib.AgentAI;
+using Assets.Code.Modding;
+using HarmonyLib;
 
 namespace CommunityLib
 {
-    public class ModCore : Assets.Code.Modding.ModKernel
+    public class ModCore : ModKernel
     {
         public static ModCore core;
 
+        public ModData data;
+
         public static double versionID;
 
-        public Dictionary<UA, Dictionary<ChallengeData, Dictionary<string, double>>> randStore;
+        public Dictionary<UA, Dictionary<object, Dictionary<string, double>>> randStore;
 
         private List<Hooks> registeredHooks = new List<Hooks>();
 
@@ -44,9 +45,13 @@ namespace CommunityLib
         public override void beforeMapGen(Map map)
         {
             // Set local variables;
-            core.randStore = new Dictionary<UA, Dictionary<ChallengeData, Dictionary<string, double>>>();
+            core.randStore = new Dictionary<UA, Dictionary<object, Dictionary<string, double>>>();
 
             //Initialize subclasses.
+            data = new ModData(map);
+            getModKernels(map);
+            HarmonyPatches_Conditional.PatchingInit();
+
             core.pathfinding = new Pathfinding();
 
             core.agentAI = new AgentAI(map);
@@ -57,24 +62,33 @@ namespace CommunityLib
             RegisterHooks(hooks);
 
             orcExpansionDefaults();
+            eventModifications();
         }
 
         public override void afterLoading(Map map)
         {
             core = this;
 
+            if (core.data == null)
+            {
+                core.data = new ModData(map);
+            }
+            core.data.onLoad(map);
+            getModKernels(map);
+            HarmonyPatches_Conditional.PatchingInit();
+
             // Set local variables
             if (core.randStore == null)
             {
-                core.randStore = new Dictionary<UA, Dictionary<ChallengeData, Dictionary<string, double>>>();
+                core.randStore = new Dictionary<UA, Dictionary<object, Dictionary<string, double>>>();
             }
 
+            //Initialize subclasses.
             if (core.pathfinding == null)
             {
                 pathfinding = new Pathfinding();
             }
 
-            //Initialize subclasses.
             core.agentAI = new AgentAI(map);
 
             core.overrideAI = new UAENOverrideAI(map);
@@ -85,10 +99,136 @@ namespace CommunityLib
             orcExpansionDefaults();
         }
 
+        private void getModKernels (Map map)
+        {
+            foreach (ModKernel kernel in map.mods)
+            {
+                switch (kernel.GetType().Namespace)
+                {
+                    case "ShadowsInsectGod.Code":
+                        core.data.addModAssembly("Cordyceps", new ModData.ModIntegrationData(kernel.GetType().Assembly));
+
+                        if (core.data.tryGetModAssembly("Cordyceps", out ModData.ModIntegrationData intDataCord) && intDataCord.assembly != null)
+                        {
+                            Type godType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.God_Insect", false);
+                            if (godType != null)
+                            {
+                                intDataCord.typeDict.Add("God", godType);
+                                intDataCord.methodInfoDict.Add("God.eat", AccessTools.Method(godType, "eat", new Type[] { typeof(int) }));
+                                intDataCord.fieldInfoDict.Add("God.phHome", AccessTools.Field(godType, "phHome"));
+                            }
+
+                            Type droneType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.UAEN_Drone", false);
+                            if (droneType != null)
+                            {
+                                intDataCord.typeDict.Add("Drone", droneType);
+                                intDataCord.methodInfoDict.Add("Drone.turnTickAI", AccessTools.Method(droneType, "turnTickAI", new Type[0]));
+                                intDataCord.fieldInfoDict.Add("Drone.prey", AccessTools.Field(droneType, "prey"));
+                            }
+
+                            Type hiveType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.Set_Hive", false);
+                            if (hiveType != null)
+                            {
+                                intDataCord.typeDict.Add("Hive", hiveType);
+                            }
+
+                            Type larvalType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.Pr_LarvalMass", false);
+                            if (larvalType != null)
+                            {
+                                intDataCord.typeDict.Add("LarvalMass", larvalType);
+                            }
+
+                            Type phFeedType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.Pr_Pheromone_Feeding", false);
+                            if (phFeedType != null)
+                            {
+                                intDataCord.typeDict.Add("phFeed", phFeedType);
+                            }
+
+                            Type seekType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.Task_SeekPrey", false);
+                            if (seekType != null)
+                            {
+                                intDataCord.typeDict.Add("SeekTask", seekType);
+                            }
+
+                            Type exploreType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.Task_Explore", false);
+                            if (exploreType != null)
+                            {
+                                intDataCord.typeDict.Add("ExploreTask", exploreType);
+                            }
+
+                            Type homeType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.Task_GoHome", false);
+                            if (homeType != null)
+                            {
+                                intDataCord.typeDict.Add("GoHomeTask", homeType);
+                            }
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+
         public void orcExpansionDefaults()
         {
             registerSettlementTypeForOrcExpansion(typeof(Set_CityRuins));
             registerSettlementTypeForOrcExpansion(typeof(Set_MinorOther), new Type[] { typeof(Sub_WitchCoven), typeof(Sub_Wonder_DeathIsland), typeof(Sub_Wonder_Doorway), typeof(Sub_Wonder_PrimalFont), typeof(Sub_Temple) });
+        }
+
+        public void eventModifications()
+        {
+            Dictionary<string, EventRuntime.Field> fields = EventRuntime.fields;
+            Dictionary<string, EventRuntime.Property> properties = EventRuntime.properties;
+
+            if (fields.ContainsKey("is_elder_tomb"))
+            {
+                fields["is_elder_tomb"] = new EventRuntime.TypedField<bool>((EventContext c) => checkIsElderTomb(c.location));
+            }
+
+            if (properties.ContainsKey("TELEPORT_TO_ELDER_TOMB"))
+            {
+                properties["TELEPORT_TO_ELDER_TOMB"] = new EventRuntime.TypedProperty<string>(delegate (EventContext c, string v)
+                {
+                    Location location = null;
+
+                    foreach (Location loc in c.map.locations)
+                    {
+                        if (checkIsElderTomb(loc))
+                        {
+                            location = loc;
+                            break;
+                        }
+                    }
+
+                    if (location == null)
+                    {
+                        List<Location> locations = new List<Location>();
+                        foreach (Location loc in c.map.locations)
+                        {
+                            if (!loc.isOcean)
+                            {
+                                locations.Add(loc);
+                            }
+                        }
+
+                        if (locations.Count == 1)
+                        {
+                            location = locations[0];
+                        }
+                        if (locations.Count > 1)
+                        {
+                            location = locations[Eleven.random.Next(locations.Count)];
+                        }
+                    }
+
+                    if (location != null)
+                    {
+                        c.unit.location.units.Remove(c.unit);
+                        c.unit.location = location;
+                        location.units.Add(c.unit);
+                    }
+                });
+            }
         }
 
         public override void onTurnEnd(Map map)
@@ -239,11 +379,11 @@ namespace CommunityLib
         /// Safely checks for a value in randStore. If none exists, it sets the value to the new value.
         /// </summary>
         /// <param name="ua"></param>
-        /// <param name="challengeData"></param>
+        /// <param name="object"></param>
         /// <param name="key"></param>
         /// <param name="newValue"></param>
         /// <returns></returns>
-        public double tryGetRand(UA ua, ChallengeData challengeData, string key, double newValue)
+        public double tryGetRand(UA ua, object @object, string key, double newValue)
         {
             if (ua == null || key == null)
             {
@@ -252,44 +392,44 @@ namespace CommunityLib
 
             if (!core.randStore.ContainsKey(ua))
             {
-                core.randStore.Add(ua, new Dictionary<AgentAI.ChallengeData, Dictionary<string, double>>());
+                core.randStore.Add(ua, new Dictionary<object, Dictionary<string, double>>());
             }
-            if (!core.randStore[ua].ContainsKey(challengeData))
+            if (!core.randStore[ua].ContainsKey(@object))
             {
-                core.randStore[ua].Add(challengeData, new Dictionary<string, double>());
+                core.randStore[ua].Add(@object, new Dictionary<string, double>());
             }
-            if (!core.randStore[ua][challengeData].ContainsKey(key))
+            if (!core.randStore[ua][@object].ContainsKey(key))
             {
-                core.randStore[ua][challengeData].Add(key, newValue);
+                core.randStore[ua][@object].Add(key, newValue);
             }
 
-            return core.randStore[ua][challengeData][key];
+            return core.randStore[ua][@object][key];
         }
 
         /// <summary>
         /// Safely sets the value to randStore.
         /// </summary>
         /// <param name="ua"></param>
-        /// <param name="challengeData"></param>
+        /// <param name="obj"></param>
         /// <param name="key"></param>
         /// <param name="value"></param>
-        public void setRand(UA ua, ChallengeData challengeData, string key, double value)
+        public void setRand(UA ua, object obj, string key, double value)
         {
             if (!core.randStore.ContainsKey(ua))
             {
-                core.randStore.Add(ua, new Dictionary<AgentAI.ChallengeData, Dictionary<string, double>>());
+                core.randStore.Add(ua, new Dictionary<object, Dictionary<string, double>>());
             }
-            if (!core.randStore[ua].ContainsKey(challengeData))
+            if (!core.randStore[ua].ContainsKey(obj))
             {
-                core.randStore[ua].Add(challengeData, new Dictionary<string, double>());
+                core.randStore[ua].Add(obj, new Dictionary<string, double>());
             }
-            if (!core.randStore[ua][challengeData].ContainsKey(key))
+            if (!core.randStore[ua][obj].ContainsKey(key))
             {
-                core.randStore[ua][challengeData].Add(key, value);
+                core.randStore[ua][obj].Add(key, value);
             }
             else
             {
-                core.randStore[ua][challengeData][key] = value;
+                core.randStore[ua][obj][key] = value;
             }
         }
 
@@ -367,6 +507,25 @@ namespace CommunityLib
             }
 
             subsettlementBlacklist = null;
+            return false;
+        }
+
+        public bool checkIsElderTomb(Location location)
+        {
+            if (location.settlement is Set_TombOfGods)
+            {
+                return true;
+            }
+
+            foreach (Hooks hook in core.GetRegisteredHooks())
+            {
+                bool retValue = hook.onIsElderTomb(location);
+                if (retValue)
+                {
+                    return true;
+                }
+            }
+
             return false;
         }
     }

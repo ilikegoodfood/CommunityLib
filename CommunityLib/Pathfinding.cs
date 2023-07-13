@@ -14,22 +14,22 @@ namespace CommunityLib
 
         }
 
-        public bool delegate_AQUAPHIBIOUS(Location[] currentPath, Location location, Unit u)
+        public static bool delegate_AQUAPHIBIOUS(Location[] currentPath, Location location, Unit u)
         {
             return location.isOcean || location.isCoastal;
         }
 
-        public bool delegate_DESERT_ONLY (Location[] currentPath, Location location, Unit u)
+        public static bool delegate_DESERT_ONLY (Location[] currentPath, Location location, Unit u)
         {
             return location.hex.terrain == Hex.terrainType.ARID || location.hex.terrain == Hex.terrainType.DESERT || location.hex.terrain == Hex.terrainType.DRY;
         }
 
-        public bool delegate_LANDLOCKED(Location[] currentPath, Location location, Unit u)
+        public static bool delegate_LANDLOCKED(Location[] currentPath, Location location, Unit u)
         {
             return !location.isOcean;
         }
 
-        public bool delegate_SAFE_MOVE (Location[] currentPath, Location location, Unit u)
+        public static bool delegate_SAFE_MOVE (Location[] currentPath, Location location, Unit u)
         {
             return u == null || location.soc == null || !location.soc.hostileTo(u);
         }
@@ -49,7 +49,7 @@ namespace CommunityLib
 
                 for (int j = 0; j < locations.Count; j++)
                 {
-                    foreach (Location neighbour in locations[j].getNeighbours())
+                    foreach (Location neighbour in getNeighboursConditional(locations[j], u))
                     {
                         if (!locationHashes.Contains(neighbour))
                         {
@@ -100,7 +100,7 @@ namespace CommunityLib
 
                 for (int j = 0; j < locations.Count; j++)
                 {
-                    foreach (Location neighbour in locations[j].getNeighbours())
+                    foreach (Location neighbour in getNeighboursConditional(locations[j], u))
                     {
                         if (!locationHashes.Contains(neighbour))
                         {
@@ -134,6 +134,38 @@ namespace CommunityLib
             }
 
             return null;
+        }
+
+        private List<Location> getNeighboursConditional(Location loc, Unit u)
+        {
+            List<Location> result = loc.getNeighbours();
+
+            if (u != null && u.isCommandable() && u is UA ua)
+            {
+                if (loc.settlement is Set_MinorOther && loc.settlement.subs.Any(sub => sub is Sub_Wonder_Doorway))
+                {
+                    Location tomb = null;
+                    foreach (Location location in u.map.locations)
+                    {
+                        if (ModCore.core.checkIsElderTomb(location))
+                        {
+                            tomb = location;
+                        }
+                    }
+
+                    if (tomb != null)
+                    {
+                        result.Add(tomb);
+                    }
+
+                    if (u.homeLocation != -1)
+                    {
+                        result.Add(u.map.locations[u.homeLocation]);
+                    }
+                }
+            }
+
+            return result;
         }
 
         private void shuffle (List<Location> locations, List<Location[]> paths)

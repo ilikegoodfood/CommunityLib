@@ -22,6 +22,7 @@ namespace CommunityLib
             public int special;
             public UA targetUA;
             public UM targetUM;
+            public Location targetLocation;
         }
 
         public struct TaskData_Popout
@@ -329,7 +330,7 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when the Community Library's Agent AI beings processing an agent. It recieves the agent (ua), a list of AgentAI.ChallengeData structs (validChallengeData), and the boolean control values within an 'AgentAI.ControlParameters' struct (controlParams).
+        /// This hook fires when the Community Library's Agent AI beings processing an agent. It recieves the agent (ua), a list of AgentAI.ChallengeData structs (validChallengeData), a list of AgentAI.TaskData structs (validTaskData), a list of Units (visibleUnits), and the boolean control values within an 'AgentAI.ControlParameters' struct (controlParams).
         /// If this hook returns true, the rest of the AI process will not happen.
         /// <para>All instances of this hook will run whenever an AgentAI runs, even those after one which has returned true.</para>
         /// </summary>
@@ -337,18 +338,18 @@ namespace CommunityLib
         /// <param name="validChallengeData"></param>
         /// <param name="inputParams"</param>
         /// <returns></returns>
-        public virtual bool interceptAgentAI(UA ua, List<AgentAI.ChallengeData> validChallengeData, AgentAI.ControlParameters controlParams)
+        public virtual bool interceptAgentAI(UA ua, List<AgentAI.ChallengeData> validChallengeData, List<AgentAI.TaskData> validTaskData, List<Unit> visibleUnits, AgentAI.ControlParameters controlParams)
         {
             return false;
         }
 
         /// <summary>
-        /// This hook fires when the Community Library's Agent AI has started processing an agent, immediately after the 'interceptAgentAI' hook. It recieves the agent (ua), a list of AgentAI.ChallengeData structs (validChallengeData), and the boolean control values within an 'AgentAI.ControlParameters' struct (controlParams).
+        /// This hook fires when the Community Library's Agent AI has started processing an agent, immediately after the 'interceptAgentAI' hook. It recieves the agent (ua), a list of AgentAI.ChallengeData structs (validChallengeData), a list of AgentAI.TaskData structs (validTaskData), a list of Units (visibleUnits) and the boolean control values within an 'AgentAI.ControlParameters' struct (controlParams).
         /// </summary>
         /// <param name="ua"></param>
         /// <param name="validChallengeData"></param>
         /// <param name="controlParams"></param>
-        public virtual void onAgentAI_StartOfProcess(UA ua, List<AgentAI.ChallengeData> validChallengeData, AgentAI.ControlParameters controlParams)
+        public virtual void onAgentAI_StartOfProcess(UA ua, List<AgentAI.ChallengeData> validChallengeData, List<AgentAI.TaskData> validTaskData, List<Unit> visibleUnits, AgentAI.ControlParameters controlParams)
         {
             return;
         }
@@ -454,7 +455,6 @@ namespace CommunityLib
             return null;
         }
 
-
         /// <summary>
         /// This hook fires when you hover your mouse over an action button in the UIScroll_Unit interface (the panel on the right that shows challenges and tasks available to the selected unit), excluding buttons for challenges, for a commandable military unit. It receives the military unit (um), a partial reconstruction of the TaskData object that could have been used to create it, not the original object. It does not include the onClick delegate, profile gain, or menace gain
         /// <para>If the partially reconstructed TaskData matches a task that your mod adds, populate the popoutData (TaskData_Popout) and return true. Otherwise, return false to allow another mod or the base game to handle the challenge popout screen for that action button.</para>
@@ -491,5 +491,32 @@ namespace CommunityLib
         {
             return utility;
         }
+
+        /// <summary>
+        /// This hook fires when an event checks if a location is the location of the Elder Tomb. It only fires if the location's settlement is not an instance of `Set_TombOfGods`, or a subclass thereof. It recieves the Location beibng checked (location) and returns whether the location should be considered to be the elder tomb.
+        /// <para>This hook is not called to determine whether a graphical hex should display a property overlay for an atypical Elder Tomb. If you wish your atypical Elder Tomb to not display a property overlay, of if you wish it to display a speciifc property overlay, use the base game's `onGraphicalHexUpdated` hook instead.</para>
+        /// <para>No hook after the first hook to return true will be called.</para>
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        public virtual bool onIsElderTomb(Location location)
+        {
+            return false;
+        }
+
+        /*
+        /// <summary>
+        /// This hook fires when a graphical hex is determining whether it should display a property overlay for the location on the hex. It only fires for hexes that have a location on them. It recieves the Location (location), and outputs a property
+        /// If this hook returns true, the location will not display a property overlay. If the hook returns false and outputs a priorityProperty that is not null, and that property has a hex overlay (`hasHexView()` returns true), the hex will only display property overlays from priority properties, determined by property charge. The minimum required charge for an overlay to display is 45.
+        /// <para>All instances of this hook will run whenever a hex checkes if it should display a property overlay, even those after one which has returned true.</para>
+        /// </summary>
+        /// <param name="location"></param>
+        /// <param name="priorityPropertyOverlay"></param>
+        /// <returns></returns>
+        public virtual bool onGraphicalHexUpdate_interceptDisplayPropertyOverlay(Location location, out List<Property> priorityProperties)
+        {
+            priorityProperties = null;
+            return false;
+        }*/
     }
 }

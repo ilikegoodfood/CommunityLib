@@ -57,13 +57,19 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AIChallenge.cs" />
+    <Compile Include="AITask.cs" />
     <Compile Include="ArmyBattleData.cs" />
     <Compile Include="AgentAI.cs" />
+    <Compile Include="SortableTaskBlock_Advanced.cs" />
+    <Compile Include="Task_ReturnToTheDeep.cs" />
+    <Compile Include="UIE_ChallengeTask.cs" />
     <None Include="packages.config" />
     <None Include="Storage %28NotCompiled%29.cs" />
     <Compile Include="HarmonyPatches.cs" />
+    <Compile Include="HarmonyPatches_Conditional.cs" />
     <Compile Include="Hooks.cs" />
     <Compile Include="HooksInternal.cs" />
+    <Compile Include="ModData.cs" />
     <Compile Include="Pathfinding.cs" />
     <Compile Include="ReasonMsgMax.cs" />
     <Compile Include="Task_GoToPerformChallengeAtLocation.cs" />
