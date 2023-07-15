@@ -499,7 +499,7 @@ namespace CommunityLib
         /// </summary>
         /// <param name="context"></param>
         /// <returns></returns>
-        public virtual bool onIsElderTomb(Location location)
+        public virtual bool onEvent_IsLocationElderTomb(Location location)
         {
             return false;
         }

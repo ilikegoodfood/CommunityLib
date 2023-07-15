@@ -15,7 +15,7 @@ namespace CommunityLib
 
         public static double versionID;
 
-        public Dictionary<UA, Dictionary<object, Dictionary<string, double>>> randStore;
+        public Dictionary<Unit, Dictionary<object, Dictionary<string, double>>> randStore;
 
         private List<Hooks> registeredHooks = new List<Hooks>();
 
@@ -45,7 +45,7 @@ namespace CommunityLib
         public override void beforeMapGen(Map map)
         {
             // Set local variables;
-            core.randStore = new Dictionary<UA, Dictionary<object, Dictionary<string, double>>>();
+            core.randStore = new Dictionary<Unit, Dictionary<object, Dictionary<string, double>>>();
 
             //Initialize subclasses.
             data = new ModData(map);
@@ -80,7 +80,7 @@ namespace CommunityLib
             // Set local variables
             if (core.randStore == null)
             {
-                core.randStore = new Dictionary<UA, Dictionary<object, Dictionary<string, double>>>();
+                core.randStore = new Dictionary<Unit, Dictionary<object, Dictionary<string, double>>>();
             }
 
             //Initialize subclasses.
@@ -233,7 +233,7 @@ namespace CommunityLib
 
         public override void onTurnEnd(Map map)
         {
-            cleanRandStore();
+            cleanRandStore(map);
         }
 
         public override void onCheatEntered(string command)
@@ -379,74 +379,95 @@ namespace CommunityLib
         /// Safely checks for a value in randStore. If none exists, it sets the value to the new value.
         /// </summary>
         /// <param name="ua"></param>
-        /// <param name="object"></param>
-        /// <param name="key"></param>
+        /// <param name="innerKey"></param>
+        /// <param name="stringKey"></param>
         /// <param name="newValue"></param>
         /// <returns></returns>
-        public double tryGetRand(UA ua, object @object, string key, double newValue)
+        public double tryGetRand(Unit outerKey, object innerKey, string stringKey, double newValue)
         {
-            if (ua == null || key == null)
+            if (outerKey == null || innerKey == null || stringKey == null || stringKey == "")
             {
                 return -1.0;
             }
 
-            if (!core.randStore.ContainsKey(ua))
+            if (!core.randStore.ContainsKey(outerKey))
             {
-                core.randStore.Add(ua, new Dictionary<object, Dictionary<string, double>>());
+                core.randStore.Add(outerKey, new Dictionary<object, Dictionary<string, double>>());
             }
-            if (!core.randStore[ua].ContainsKey(@object))
+            if (!core.randStore[outerKey].ContainsKey(innerKey))
             {
-                core.randStore[ua].Add(@object, new Dictionary<string, double>());
+                core.randStore[outerKey].Add(innerKey, new Dictionary<string, double>());
             }
-            if (!core.randStore[ua][@object].ContainsKey(key))
+            if (!core.randStore[outerKey][innerKey].ContainsKey(stringKey))
             {
-                core.randStore[ua][@object].Add(key, newValue);
+                core.randStore[outerKey][innerKey].Add(stringKey, newValue);
             }
 
-            return core.randStore[ua][@object][key];
+            return core.randStore[outerKey][innerKey][stringKey];
         }
 
         /// <summary>
         /// Safely sets the value to randStore.
         /// </summary>
-        /// <param name="ua"></param>
-        /// <param name="obj"></param>
-        /// <param name="key"></param>
+        /// <param name="outerKey"></param>
+        /// <param name="innerKey"></param>
+        /// <param name="stringKey"></param>
         /// <param name="value"></param>
-        public void setRand(UA ua, object obj, string key, double value)
+        public void setRand(Unit outerKey, object innerKey, string stringKey, double value)
         {
-            if (!core.randStore.ContainsKey(ua))
+            if (outerKey == null || innerKey == null || stringKey == null || stringKey == "")
             {
-                core.randStore.Add(ua, new Dictionary<object, Dictionary<string, double>>());
+                return;
             }
-            if (!core.randStore[ua].ContainsKey(obj))
+
+            if (!core.randStore.ContainsKey(outerKey))
             {
-                core.randStore[ua].Add(obj, new Dictionary<string, double>());
+                core.randStore.Add(outerKey, new Dictionary<object, Dictionary<string, double>>());
             }
-            if (!core.randStore[ua][obj].ContainsKey(key))
+            if (!core.randStore[outerKey].ContainsKey(innerKey))
             {
-                core.randStore[ua][obj].Add(key, value);
+                core.randStore[outerKey].Add(innerKey, new Dictionary<string, double>());
+            }
+            if (!core.randStore[outerKey][innerKey].ContainsKey(stringKey))
+            {
+                core.randStore[outerKey][innerKey].Add(stringKey, value);
             }
             else
             {
-                core.randStore[ua][obj][key] = value;
+                core.randStore[outerKey][innerKey][stringKey] = value;
             }
         }
 
-        internal void cleanRandStore()
+        internal void cleanRandStore(Map map)
         {
-            List<UA> deadAgents = new List<UA>();
-            foreach (UA ua in core.randStore.Keys)
+            List<Unit> outerKeys = new List<Unit>();
+            List<Tuple<Unit, Unit>> innerKeys = new List<Tuple<Unit, Unit>>();
+            foreach (Unit outerKey in core.randStore.Keys)
             {
-                if (ua.isDead || ua.homeLocation == -1)
+                if (outerKey.isDead || !map.units.Contains(outerKey))
                 {
-                    deadAgents.Add(ua);
+                    outerKeys.Add(outerKey);
+                }
+                else
+                {
+                    foreach (object innerKey in core.randStore[outerKey])
+                    {
+                        if (innerKey is Unit unit && (unit.isDead || !map.units.Contains(outerKey)))
+                        {
+                            innerKeys.Add(new Tuple<Unit, Unit>(outerKey, unit));
+                        }
+                    }
                 }
             }
 
-            foreach (UA ua in deadAgents)
+            foreach (Unit unit in outerKeys)
             {
-                core.randStore.Remove(ua);
+                core.randStore.Remove(unit);
+            }
+
+            foreach (Tuple<Unit, Unit> tuple in innerKeys)
+            {
+                core.randStore[tuple.Item1].Remove(tuple.Item2);
             }
         }
 
@@ -519,7 +540,7 @@ namespace CommunityLib
 
             foreach (Hooks hook in core.GetRegisteredHooks())
             {
-                bool retValue = hook.onIsElderTomb(location);
+                bool retValue = hook.onEvent_IsLocationElderTomb(location);
                 if (retValue)
                 {
                     return true;

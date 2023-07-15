@@ -102,9 +102,9 @@ namespace CommunityLib
                     outputUtility_VisibleAgentsAttack = true;
                     outputUtility_VisibleAgentsBodyguard = true;
                     outputUtility_VisibleAgentsDisrupt = true;
-                    outputValidity_AllTasks = false;
-                    outputValidity_ValidTasks = false;
-                    outputUtility_ValidTasks = false;
+                    outputValidity_AllTasks = true;
+                    outputValidity_ValidTasks = true;
+                    outputUtility_ValidTasks = true;
                     outputUtility_ChosenAction = true;
                 }
                 else
@@ -251,7 +251,30 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// Registers the agent type (tAgent) to be controlled by the AgentAI, along with the control parameters (control) for that agent type. Returns false if the agent type t is not a subtype of UA, or it has already been registered.
+        /// Registers the agent type (tAgent) to be controlled by the AgentAI, along with the AIData (aiData) for that agent type. Returns false if the agent type (tAgent) is not a subtype of UA, or it has already been registered.
+        /// <para>NOTE: Registering the AI does not run it. You still need to call 'AgentAI.turnTickAI' from the agent type's 'onTurnTickAI', or in the 'onAgentAIDecision' hook in your ModKernel if overriding an existing built-in Agent AI. This is neccesary both to ensure that the AI is called appropriately, and so that you can control the paramters for the 'AgentAI.turnTickAI' function.</para>
+        /// </summary>
+        /// <param name="tAgent"></param>
+        /// /// <param name="aiData"></param>
+        /// <returns></returns>
+        public bool RegisterAgentType(Type tAgent, AIData aiData)
+        {
+            if (!tAgent.IsSubclassOf(typeof(UA)))
+            {
+                return false;
+            }
+
+            if (!ai.ContainsKey(tAgent))
+            {
+                ai.Add(tAgent, aiData);
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Registers the agent type (tAgent) to be controlled by the AgentAI, along with the control parameters (control) for that agent type. Returns false if the agent type (tAgent) is not a subtype of UA, or it has already been registered.
         /// <para>NOTE: Registering the AI does not run it. You still need to call 'AgentAI.turnTickAI' from the agent type's 'onTurnTickAI', or in the 'onAgentAIDecision' hook in your ModKernel if overriding an existing built-in Agent AI. This is neccesary both to ensure that the AI is called appropriately, and so that you can control the paramters for the 'AgentAI.turnTickAI' function.</para>
         /// </summary>
         /// <param name="tAgent"></param>
@@ -825,10 +848,6 @@ namespace CommunityLib
             else
             {
                 aiRunning = true;
-                if (!ModCore.core.randStore.ContainsKey(ua))
-                {
-                    ModCore.core.randStore.Add(ua, new Dictionary<object, Dictionary<string, double>>());
-                }
 
                 double utility = 0.01;
                 double utility2;
@@ -1007,11 +1026,6 @@ namespace CommunityLib
 
                 foreach (TaskData taskData in validTasks)
                 {
-                    if (taskData.aiTask != null && !ModCore.core.randStore[ua].ContainsKey(taskData))
-                    {
-                        ModCore.core.randStore[ua].Add(taskData, new Dictionary<string, double>());
-                    }
-
                     List<ReasonMsg> reasonMsgs = null;
                     if (debugInternal.outputUtility_ValidTasks)
                     {
