@@ -330,67 +330,103 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when the Community Library's Agent AI beings processing an agent. It recieves the agent (ua), a list of AgentAI.ChallengeData structs (validChallengeData), a list of AgentAI.TaskData structs (validTaskData), a list of Units (visibleUnits), and the boolean control values within an 'AgentAI.ControlParameters' struct (controlParams).
+        /// This hook fires when the Community Library's Agent AI beings processing an agent. It recieves the agent (ua), the AIData for its Agent AI (aiData), a list of AgentAI.ChallengeData structs (validChallengeData), a list of AgentAI.TaskData structs (validTaskData), and a list of Units (visibleUnits).
         /// If this hook returns true, the rest of the AI process will not happen.
         /// <para>All instances of this hook will run whenever an AgentAI runs, even those after one which has returned true.</para>
         /// </summary>
         /// <param name="ua"></param>
+        /// <param name="aiData"></param>
         /// <param name="validChallengeData"></param>
-        /// <param name="inputParams"</param>
+        /// <param name="validTaskData"></param>
+        /// <param name="visibleUnits"></param>
         /// <returns></returns>
-        public virtual bool interceptAgentAI(UA ua, List<AgentAI.ChallengeData> validChallengeData, List<AgentAI.TaskData> validTaskData, List<Unit> visibleUnits, AgentAI.ControlParameters controlParams)
+        public virtual bool interceptAgentAI(UA ua, AgentAI.AIData aiData, List<AgentAI.ChallengeData> validChallengeData, List<AgentAI.TaskData> validTaskData, List<Unit> visibleUnits)
         {
             return false;
         }
 
         /// <summary>
-        /// This hook fires when the Community Library's Agent AI has started processing an agent, immediately after the 'interceptAgentAI' hook. It recieves the agent (ua), a list of AgentAI.ChallengeData structs (validChallengeData), a list of AgentAI.TaskData structs (validTaskData), a list of Units (visibleUnits) and the boolean control values within an 'AgentAI.ControlParameters' struct (controlParams).
+        /// This hook fires when the Community Library's Agent AI has started processing an agent, immediately after the 'interceptAgentAI' hook. It recieves the agent (ua), the AIData for its Agent AI (aiData), a list of AgentAI.ChallengeData structs (validChallengeData), a list of AgentAI.TaskData structs (validTaskData), and a list of Units (visibleUnits).
         /// </summary>
         /// <param name="ua"></param>
+        /// <param name="aiData"></param>
         /// <param name="validChallengeData"></param>
-        /// <param name="controlParams"></param>
-        public virtual void onAgentAI_StartOfProcess(UA ua, List<AgentAI.ChallengeData> validChallengeData, List<AgentAI.TaskData> validTaskData, List<Unit> visibleUnits, AgentAI.ControlParameters controlParams)
+        /// <param name="validTaskData"></param>
+        /// <param name="visibleUnits"></param>
+        public virtual void onAgentAI_StartOfProcess(UA ua, AgentAI.AIData aiData, List<AgentAI.ChallengeData> validChallengeData, List<AgentAI.TaskData> validTaskData, List<Unit> visibleUnits)
         {
             return;
         }
 
         /// <summary>
-        /// This hook fires when the Community Library's Agent AI has finished processing an agent. It recieves the agent (ua), a list of AgentAI.ChallengeData structs (validChallengeData), and the boolean control values within an 'AgentAI.ControlParameters' struct (controlParams).
+        /// This hook fires when the Community Library's Agent AI has finished processing an agent. It recieves the agent (ua), the AIData for its Agent AI (aiData), a list of AgentAI.ChallengeData structs (validChallengeData), a list of AgentAI.TaskData structs (validTaskData), and a list of Units (visibleUnits).
         /// </summary>
         /// <param name="ua"></param>
+        /// <param name="aiData"></param>
         /// <param name="validChallengeData"></param>
-        /// <param name="inputParams"></param>
-        public virtual void onAgentAI_EndOfProcess(UA ua, List<AgentAI.ChallengeData> validChallengeData, AgentAI.ControlParameters controlParams)
+        /// <param name="validTaskData"></param>
+        /// <param name="visibleUnits"></param>
+        public virtual void onAgentAI_EndOfProcess(UA ua, AgentAI.AIData aiData, List<AgentAI.ChallengeData> validChallengeData, List<AgentAI.TaskData> validTaskData, List<Unit> visibleUnits)
         {
             return;
         }
 
         /// <summary>
-        /// This hook fires when the Community Library's Agent AI beings processing processing the utility of a challenge for an agent. It recieves the agent (ua), the AgentAI.ChallengeData (challengeData), the boolean control values within an 'AgentAI.ControlParameters' struct (controlParams), the utility (utility), and a list of ReasonMsgs (reasonMsgs).
-        /// If this hook returns true, the rest of the getChallengeutility process will not happen.
+        /// This hook fires when the Community Library's Agent AI beings processing processing the utility of a challenge for an agent. It recieves the agent (ua), the AIData for its Agent AI (aiData), the AgentAI.ChallengeData (challengeData), the utility (utility), and a list of ReasonMsgs (reasonMsgs).
+        /// If this hook returns true, the rest of the getChallengeUtility process will not happen.
         /// <para>All instances of this hook will run whenever an AgentAI runs, even those after one which has returned true.</para>
         /// </summary>
         /// <param name="ua"></param>
+        /// <param name="aiData"></param>
         /// <param name="challengeData"></param>
-        /// <param name="controlParams"></param>
         /// <param name="utility"></param>
         /// <param name="reasonMsgs"></param>
         /// <returns></returns>
-        public virtual bool interceptAgentAI_GetChallengeUtility(UA ua, AgentAI.ChallengeData challengeData, AgentAI.ControlParameters controlParams, ref double utility, List<ReasonMsg> reasonMsgs)
+        public virtual bool interceptAgentAI_GetChallengeUtility(UA ua, AgentAI.AIData aiData, AgentAI.ChallengeData challengeData, ref double utility, List<ReasonMsg> reasonMsgs)
         {
             return false;
         }
 
         /// <summary>
-        /// This hook fires when the Community Library's Agent AI has finished processing the utility of a challenge for an agent. It recieves the agent (ua), the AgentAI.ChallengeData (challengeData), the boolean control values within an 'AgentAI.ControlParameters' struct (controlParams), the utility (utility), and a list of ReasonMsgs (reasonMsgs), which may be null.
+        /// This hook fires when the Community Library's Agent AI has finished processing the utility of a challenge for an agent. It recieves the agent (ua), the AIData for its Agent AI (aiData), the AgentAI.ChallengeData (challengeData), the utility (utility), and a list of ReasonMsgs (reasonMsgs), which may be null.
         /// </summary>
         /// <param name="ua"></param>
+        /// <param name="aiData"></param>
         /// <param name="challengeData"></param>
-        /// <param name="controlParams"></param>
         /// <param name="utility"></param>
         /// <param name="reasonMsgs"></param>
         /// <returns></returns>
-        public virtual double onAgentAI_GetChallengeUtility(UA ua, AgentAI.ChallengeData challengeData, AgentAI.ControlParameters controlParams, double utility, List<ReasonMsg> reasonMsgs)
+        public virtual double onAgentAI_GetChallengeUtility(UA ua, AgentAI.AIData aiData, AgentAI.ChallengeData challengeData, double utility, List<ReasonMsg> reasonMsgs)
+        {
+            return utility;
+        }
+
+        /// <summary>
+        /// This hook fires when the Community Library's Agent AI beings processing processing the utility of a task for an agent. It recieves the agent (ua), the AIData for its Agent AI (aiData), the AgentAI.TaskData (taskData), the utility (utility), and a list of ReasonMsgs (reasonMsgs).
+        /// If this hook returns true, the rest of the getTaskUtility process will not happen.
+        /// <para>All instances of this hook will run whenever an AgentAI runs, even those after one which has returned true.</para>
+        /// </summary>
+        /// <param name="ua"></param>
+        /// <param name="aiData"></param>
+        /// <param name="taskData"></param>
+        /// <param name="utility"></param>
+        /// <param name="reasonMsgs"></param>
+        /// <returns></returns>
+        public virtual bool interceptAgentAI_GetTaskUtility(UA ua, AgentAI.AIData aiData, AgentAI.TaskData taskData, ref double utility, List<ReasonMsg> reasonMsgs)
+        {
+            return false;
+        }
+
+        /// <summary>
+        /// This hook fires when the Community Library's Agent AI has finished processing processing the utility of a task for an agent. It recieves the agent (ua), the AIData for its Agent AI (aiData), the AgentAI.TaskData (taskData), the utility (utility), and a list of ReasonMsgs (reasonMsgs).
+        /// </summary>
+        /// <param name="ua"></param>
+        /// <param name="aiData"></param>
+        /// <param name="taskData"></param>
+        /// <param name="utility"></param>
+        /// <param name="reasonMsgs"></param>
+        /// <returns></returns>
+        public virtual double onAgentAI_GetTaskUtility(UA ua, AgentAI.AIData aiData, AgentAI.TaskData taskData, double utility, List<ReasonMsg> reasonMsgs)
         {
             return utility;
         }

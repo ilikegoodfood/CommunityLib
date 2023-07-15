@@ -52,7 +52,7 @@ namespace CommunityLib
             return false;
         }
 
-        public override bool interceptAgentAI(UA ua, List<AgentAI.ChallengeData> challengeData, List<AgentAI.TaskData> taskData, List<Unit> visibleUnits, AgentAI.ControlParameters inputParamse)
+        public override bool interceptAgentAI(UA ua, AgentAI.AIData aiData, List<AgentAI.ChallengeData> challengeData, List<AgentAI.TaskData> taskData, List<Unit> visibleUnits)
         {
             switch (ua)
             {

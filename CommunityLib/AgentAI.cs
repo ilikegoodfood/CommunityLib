@@ -5,6 +5,8 @@ using Assets.Code;
 using System.Linq;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using DuloGames.UI;
+using static CommunityLib.AgentAI;
 
 namespace CommunityLib
 {
@@ -821,7 +823,7 @@ namespace CommunityLib
             bool result = false;
             foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
-                bool retValue = hook.interceptAgentAI(ua, validChallengeData, validTasks, visibleUnits, data.controlParameters);
+                bool retValue = hook.interceptAgentAI(ua, data, validChallengeData, validTasks, visibleUnits);
                 if (retValue)
                 {
                     result = true;
@@ -838,7 +840,7 @@ namespace CommunityLib
 
             foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
-                hook.onAgentAI_StartOfProcess(ua, validChallengeData, validTasks, visibleUnits, data.controlParameters);
+                hook.onAgentAI_StartOfProcess(ua, data, validChallengeData, validTasks, visibleUnits);
             }
 
             if (ua.isCommandable() && map.automatic)
@@ -870,7 +872,7 @@ namespace CommunityLib
                         reasonMsgs = new List<ReasonMsg>();
                     }
 
-                    utility2 = getChallengeUtility(cData, ua, data.controlParameters);
+                    utility2 = getChallengeUtility(cData, ua, data, data.controlParameters, reasonMsgs);
 
                     if (debugInternal.outputValidity_ValidChallenges && reasonMsgs != null)
                     {
@@ -1032,7 +1034,7 @@ namespace CommunityLib
                         reasonMsgs = new List<ReasonMsg>();
                     }
 
-                    utility2 = checkTaskUtility(taskData, ua, data.controlParameters, reasonMsgs);
+                    utility2 = checkTaskUtility(taskData, ua, data, data.controlParameters, reasonMsgs);
 
                     if (debugInternal.outputUtility_ValidTasks && reasonMsgs != null)
                     {
@@ -1190,7 +1192,7 @@ namespace CommunityLib
                         Console.WriteLine("CommunityLib: " + ua.getName() + " is going to perform challenge " + targetChallenge.challenge.getName() + " at " + targetChallenge.location.getName() + " (" + (targetChallenge.location.soc?.getName() ?? "No Society") + ")");
 
                         List<ReasonMsg> reasonMsgs = new List<ReasonMsg>();
-                        getChallengeUtility(targetChallenge, ua, data.controlParameters, reasonMsgs);
+                        getChallengeUtility(targetChallenge, ua,data, data.controlParameters, reasonMsgs);
 
                         foreach (ReasonMsg reasonMsg in reasonMsgs)
                         {
@@ -1219,7 +1221,7 @@ namespace CommunityLib
 
                 foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
                 {
-                    hook.onAgentAI_EndOfProcess(ua, validChallengeData, data.controlParameters);
+                    hook.onAgentAI_EndOfProcess(ua, data, validChallengeData, validTasks, visibleUnits);
                 }
             }
 
@@ -1405,14 +1407,14 @@ namespace CommunityLib
             return false;
         }
 
-        public double getChallengeUtility(ChallengeData challengeData, UA ua, ControlParameters controlParams, List<ReasonMsg> reasonMsgs = null)
+        public double getChallengeUtility(ChallengeData challengeData, UA ua, AIData aiData, ControlParameters controlParams, List<ReasonMsg> reasonMsgs = null)
         {
             double utility = 0.0;
 
             bool intercept = false;
             foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
-                bool retValue = hook?.interceptAgentAI_GetChallengeUtility(ua, challengeData, controlParams, ref utility, reasonMsgs) ?? false;
+                bool retValue = hook.interceptAgentAI_GetChallengeUtility(ua, aiData, challengeData, ref utility, reasonMsgs);
 
                 if (retValue)
                 {
@@ -1491,7 +1493,7 @@ namespace CommunityLib
 
             foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
-                utility = hook?.onAgentAI_GetChallengeUtility(ua, challengeData, controlParams, utility, reasonMsgs) ?? utility;
+                utility = hook.onAgentAI_GetChallengeUtility(ua, aiData, challengeData, utility, reasonMsgs);
             }
 
             return utility;
@@ -1656,9 +1658,32 @@ namespace CommunityLib
             }
         }
 
-        public double checkTaskUtility(TaskData taskData, UA ua, ControlParameters controlParams, List<ReasonMsg> reasonMsgs = null)
+        public double checkTaskUtility(TaskData taskData, UA ua, AIData aiData, ControlParameters controlParams, List<ReasonMsg> reasonMsgs = null)
         {
-            return taskData.aiTask.checkTaskUtility(taskData, ua, controlParams, reasonMsgs);
+            double utility = 0.0;
+
+            bool intercept = false;
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            {
+                bool retValue = hook.interceptAgentAI_GetTaskUtility(ua, aiData, taskData, ref utility, reasonMsgs);
+                if (retValue)
+                {
+                    intercept = true;
+                }
+            }
+            if (intercept)
+            {
+                return utility;
+            }
+
+            utility = taskData.aiTask.checkTaskUtility(taskData, ua, controlParams, reasonMsgs);
+
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            {
+                utility = hook.onAgentAI_GetTaskUtility(ua, aiData, taskData, utility, reasonMsgs);
+            }
+
+            return utility;
         }
     }
 }

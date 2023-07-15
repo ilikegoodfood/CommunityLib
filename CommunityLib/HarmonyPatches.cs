@@ -2159,7 +2159,7 @@ namespace CommunityLib
                     //Console.WriteLine("CommunityLib: Iterating " + challengeData.challenge.getName());
                     SortableTaskBlock_Advanced block = new SortableTaskBlock_Advanced();
                     block.challenge = challengeData.challenge;
-                    block.utility = ModCore.core.GetAgentAI().getChallengeUtility(challengeData, ua, data.controlParameters, block.msgs);
+                    block.utility = ModCore.core.GetAgentAI().getChallengeUtility(challengeData, ua, data, data.controlParameters, block.msgs);
                     block.challengeData = challengeData;
                     blocks.Add(block);
 
@@ -2174,7 +2174,7 @@ namespace CommunityLib
                     SortableTaskBlock_Advanced blockTask = new SortableTaskBlock_Advanced();
                     blockTask.challenge = null;
                     blockTask.taskType = taskData.aiTask.taskType;
-                    blockTask.utility = ModCore.core.GetAgentAI().checkTaskUtility(taskData, ua, data.controlParameters, blockTask.msgs);
+                    blockTask.utility = ModCore.core.GetAgentAI().checkTaskUtility(taskData, ua, data, data.controlParameters, blockTask.msgs);
                     blockTask.taskData = taskData;
 
                     switch(taskData.targetCategory)
