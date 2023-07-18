@@ -115,5 +115,15 @@ namespace CommunityLib
 
             return false;
         }
+
+        /*public override bool onAgentIsRecruitable(UA ua, bool result)
+        {
+            if (ua is UAEN_OrcUpstart)
+            {
+                return true;
+            }
+
+            return result;
+        }*/
     }
 }

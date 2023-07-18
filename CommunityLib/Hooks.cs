@@ -540,6 +540,17 @@ namespace CommunityLib
             return false;
         }
 
+        /// <summary>
+        /// This hook fires when the Recruit Agent button is being populated, once for each agent on the map that is not already commandable. It recieves the agent being considered (ua), and the current determination on if it should be recruitable, including the base game's output and all previous instances of this hook (result), and returns if the should be reqruitable.
+        /// <para>If you do not wish to change the value for a given agent, simply return result.</para>
+        /// </summary>
+        /// <param name="ua"></param>
+        /// <returns></returns>
+        public virtual bool onAgentIsRecruitable(UA ua, bool result)
+        {
+            return result;
+        }
+
         /*
         /// <summary>
         /// This hook fires when a graphical hex is determining whether it should display a property overlay for the location on the hex. It only fires for hexes that have a location on them. It recieves the Location (location), and outputs a property

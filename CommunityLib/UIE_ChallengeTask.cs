@@ -17,6 +17,17 @@ namespace CommunityLib
             this.srt = srt;
             //Console.WriteLine("CommunityLib: Got block");
 
+            if (srt.challenge != null || srt.unitToAttack != null || srt.unitToDisrupt != null || srt.unitToGuard != null)
+            {
+                base.setTo(world, srt);
+
+                if (srt.challenge is Ritual && srt.location != null)
+                {
+                    tLoc.text = srt.location.getName();
+                }
+                return;
+            }
+
             title.text = "ERROR: Task Not Found";
             tLoc.text = "ERROR: Location Not Found";
             //Console.WriteLine("CommunityLib: Set default text.");
@@ -68,7 +79,7 @@ namespace CommunityLib
 
         new public void clickGOTO()
         {
-            if (srt is SortableTaskBlock_Advanced advBlock && advBlock.taskType != null)
+            if (srt is SortableTaskBlock_Advanced advBlock)
             {
                 if (advBlock.location != null)
                 {
@@ -85,6 +96,12 @@ namespace CommunityLib
                 if (advBlock.unit != null)
                 {
                     GraphicalMap.panTo(advBlock.unit.location.hex);
+                    return;
+                }
+
+                if (srt.challenge != null || srt.unitToAttack != null || srt.unitToDisrupt != null || srt.unitToGuard != null)
+                {
+                    base.clickGOTO();
                     return;
                 }
 

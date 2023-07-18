@@ -861,11 +861,6 @@ namespace CommunityLib
 
                 foreach (ChallengeData cData in validChallengeData)
                 {
-                    if (cData.aiChallenge != null && !ModCore.core.randStore[ua].ContainsKey(cData))
-                    {
-                        ModCore.core.randStore[ua].Add(cData, new Dictionary<string, double>());
-                    }
-
                     List<ReasonMsg> reasonMsgs = null;
                     if (debugInternal.outputValidity_ValidChallenges)
                     {
