@@ -44,11 +44,13 @@ namespace CommunityLib
 
         public override void beforeMapGen(Map map)
         {
+            core = this;
+
             // Set local variables;
             core.randStore = new Dictionary<Unit, Dictionary<object, Dictionary<string, double>>>();
 
             //Initialize subclasses.
-            data = new ModData(map);
+            core.data = new ModData(map);
             getModKernels(map);
             HarmonyPatches_Conditional.PatchingInit();
 

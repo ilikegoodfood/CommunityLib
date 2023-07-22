@@ -15,8 +15,6 @@ namespace CommunityLib
     {
         private static readonly Type patchType = typeof(HarmonyPatches);
 
-        private static bool patched = false;
-
         public static ArmyBattleData armyBattleData_StartOfCycle;
 
         public static Text budgetLabels = null;
@@ -31,24 +29,16 @@ namespace CommunityLib
         /// <param name="core"></param>
         public static void PatchingInit()
         {
-            if (patched)
-            {
-                return;
-            }
-            else
-            {
-                patched = true;
-            }
-
             Patching();
         }
 
         private static void Patching()
         {
             Harmony.DEBUG = false;
-            Harmony harmony = new Harmony("ILikeGoodFood.SOFG.CommunityLib");
+            string harmonyID = "ILikeGoodFood.SOFG.CommunityLib";
+            Harmony harmony = new Harmony(harmonyID);
 
-            if (Harmony.HasAnyPatches(harmony.Id))
+            if (Harmony.HasAnyPatches(harmonyID))
             {
                 return;
             }
