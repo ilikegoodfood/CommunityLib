@@ -19,7 +19,7 @@ namespace CommunityLib
 
             if (srt.challenge != null || srt.unitToAttack != null || srt.unitToDisrupt != null || srt.unitToGuard != null)
             {
-                base.setTo(world, srt);
+                setTo(world, srt);
 
                 if (srt.challenge is Ritual && srt.location != null)
                 {

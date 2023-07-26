@@ -321,9 +321,10 @@ namespace CommunityLib
         {
             bool result = false;
 
+            //Console.WriteLine("CommunityLib: Intercept Unit Death");
             foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
-                bool retValue = hook?.interceptUnitDeath(u, v, killer) ?? false;
+                bool retValue = hook.interceptUnitDeath(u, v, killer);
 
                 if (retValue)
                 {
@@ -336,9 +337,10 @@ namespace CommunityLib
 
         private static void Unit_die_TranspilerBody_StartOfProcess(Unit u, string v, Person killer = null)
         {
+            //Console.WriteLine("CommunityLib: onUnitDeath_StartOfProcess");
             foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
-                hook?.onUnitDeath_StartOfProcess(u, v, killer);
+                hook.onUnitDeath_StartOfProcess(u, v, killer);
             }
         }
 
@@ -764,6 +766,7 @@ namespace CommunityLib
         {
             if (razeIsValid && unit is UM um)
             {
+                //Console.WriteLine("CommunityLib: onRazeLocationEndOfProcess");
                 foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
                 {
                     hook?.onRazeLocation_EndOfProcess(um);
@@ -802,7 +805,8 @@ namespace CommunityLib
 
             if (u is UM um)
             {
-                foreach(Hooks hook in ModCore.core.GetRegisteredHooks())
+                //Console.WriteLine("CommunityLib: onRazeLocation_StartOfProcess");
+                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
                 {
                     hook?.onRazeLocation_StartOfProcess(um);
                 }
@@ -813,6 +817,7 @@ namespace CommunityLib
         {
             bool result = true;
 
+            //Console.WriteLine("CommunityLib: interceptSettlementFallIntoRuin");
             foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
                 bool retValue = hook.interceptSettlementFallIntoRuin(__instance, v, killer);
@@ -829,6 +834,7 @@ namespace CommunityLib
                 return result;
             }
 
+            //Console.WriteLine("CommunityLib: onSettlementFallIntoRuin_StartOfProcess");
             foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
                 hook.onSettlementFallIntoRuin_StartOfProcess(__instance, v, killer);
@@ -841,6 +847,7 @@ namespace CommunityLib
         {
             if (__state)
             {
+                //Console.WriteLine("CommunityLib: onSettlementFallIntoRuin_EndOfProcess");
                 foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
                 {
                     hook.onSettlementFallIntoRuin_EndOfProcess(__instance, v, killer);
@@ -1337,11 +1344,11 @@ namespace CommunityLib
 
         private static IEnumerable<CodeInstruction> SG_ActionTakingMonster_turnTick_TranspilerWrapper(IEnumerable<CodeInstruction> codeInstructions)
         {
-            Console.WriteLine("CommunityLib: Transpiler Wrapper");
+            //Console.WriteLine("CommunityLib: Transpiler Wrapper");
 
             foreach (CodeInstruction instruction in SG_ActionTakingMonster_turnTick_Transpiler(codeInstructions))
             {
-                Console.WriteLine(instruction);
+                //Console.WriteLine(instruction);
                 yield return instruction;
             }
         }
@@ -1895,7 +1902,7 @@ namespace CommunityLib
                 //Console.WriteLine("CommunityLib: Testing Claim Territory against Permitted Settlements");
                 if (ModCore.core.getSettlementTypesForOrcExpanion().TryGetValue(ua.location.settlement.GetType(), out List<Type> subsettlementBlacklist))
                 {
-                    if (subsettlementBlacklist?.Count > 0)
+                    if (subsettlementBlacklist!= null && subsettlementBlacklist.Count > 0)
                     {
                         //Console.WriteLine("CommunityLib: Settlement of Type " + ua.location.settlement.GetType().Name + " may be expanded onto");
                         foreach (Subsettlement sub in ua.location.settlement.subs)
@@ -1906,8 +1913,6 @@ namespace CommunityLib
                                 //Console.WriteLine("CommunityLib: Blacklisted subsettlement found");
                                 return false;
                             }
-
-
                         }
                     }
                 }

@@ -71,7 +71,7 @@ namespace CommunityLib
             {
                 //Console.WriteLine("CommunityLib: Colour is null.");
                 this.colour = new Color(0.5f, 0.5f, 0.5f);
-                Console.WriteLine("CommunityLib: Assigned colour to default");
+                //Console.WriteLine("CommunityLib: Assigned colour to default");
             }
             else
             {
