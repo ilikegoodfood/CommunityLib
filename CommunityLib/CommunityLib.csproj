@@ -60,7 +60,14 @@
     <Compile Include="AITask.cs" />
     <Compile Include="ArmyBattleData.cs" />
     <Compile Include="AgentAI.cs" />
+    <Compile Include="Cheats.cs" />
+    <Compile Include="Ch_DestroyShipwreck.cs" />
+    <Compile Include="Ch_PlunderShipwreck.cs" />
+    <Compile Include="Ch_RecoverShipwreck.cs" />
+    <Compile Include="OnChallengeComplete.cs" />
+    <Compile Include="Set_Shipwreck.cs" />
     <Compile Include="SortableTaskBlock_Advanced.cs" />
+    <Compile Include="Sub_Shipwreck.cs" />
     <Compile Include="Task_ReturnToTheDeep.cs" />
     <Compile Include="UIE_ChallengeTask.cs" />
     <None Include="packages.config" />

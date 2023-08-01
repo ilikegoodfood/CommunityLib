@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using Assets.Code;
 using Assets.Code.Modding;
 using HarmonyLib;
@@ -31,6 +32,10 @@ namespace CommunityLib
 
         private bool patched = false;
 
+        public static bool opt_SpawnShipwrecks = false;
+
+        public static bool opt_forceShipwrecks = false;
+
         public override void onModsInitiallyLoaded()
         {
             core = this;
@@ -42,9 +47,22 @@ namespace CommunityLib
             }
         }
 
+        public override void receiveModConfigOpts_bool(string optName, bool value)
+        {
+            switch(optName)
+            {
+                case "Spawn Shipwrecks":
+                    opt_SpawnShipwrecks = value;
+                    break;
+                default:
+                    break;
+            }
+        }
+
         public override void beforeMapGen(Map map)
         {
             core = this;
+            opt_forceShipwrecks = false;
 
             // Set local variables;
             core.randStore = new Dictionary<Unit, Dictionary<object, Dictionary<string, double>>>();
@@ -165,6 +183,21 @@ namespace CommunityLib
                             }
                         }
                         break;
+                    case "Wonderblunder_DeepOnes":
+                        ModData.ModIntegrationData intDataDOPlus = new ModData.ModIntegrationData(kernel.GetType().Assembly);
+                        core.data.addModAssembly("DeepOnesPlus", intDataDOPlus);
+
+                        if (core.data.tryGetModAssembly("DeepOnesPlus", out intDataDOPlus))
+                        {
+                            Type kernelType = intDataDOPlus.assembly.GetType("Wonderblunder_DeepOnes.Modcore", false);
+                            if (kernelType != null)
+                            {
+                                intDataDOPlus.typeDict.Add("Kernel", kernelType);
+                            }
+
+                            intDataDOPlus.methodInfoDict.Add("getAbyssalItem", AccessTools.Method(kernelType, "getItemFromAbyssalPool", new Type[] { typeof(Map), typeof(UA) }));
+                        }
+                        break;
                     default:
                         break;
                 }
@@ -174,6 +207,7 @@ namespace CommunityLib
         public void orcExpansionDefaults()
         {
             registerSettlementTypeForOrcExpansion(typeof(Set_CityRuins));
+            registerSettlementTypeForOrcExpansion(typeof(Set_Shipwreck));
             registerSettlementTypeForOrcExpansion(typeof(Set_MinorOther), new Type[] { typeof(Sub_WitchCoven), typeof(Sub_Wonder_DeathIsland), typeof(Sub_Wonder_Doorway), typeof(Sub_Wonder_PrimalFont), typeof(Sub_Temple) });
         }
 
@@ -185,6 +219,11 @@ namespace CommunityLib
             if (fields.ContainsKey("is_elder_tomb"))
             {
                 fields["is_elder_tomb"] = new EventRuntime.TypedField<bool>((EventContext c) => checkIsElderTomb(c.location));
+            }
+
+            if (fields.ContainsKey("is_city_ruins"))
+            {
+                fields["is_city_ruins"] = new EventRuntime.TypedField<bool>((EventContext c) => c.location != null && c.location.settlement != null && c.location.settlement is Set_CityRuins && !(c.location.settlement is Set_Shipwreck));
             }
 
             if (properties.ContainsKey("TELEPORT_TO_ELDER_TOMB"))
@@ -231,6 +270,83 @@ namespace CommunityLib
                     }
                 });
             }
+
+            properties.Add(
+                    "CREATE_SHIPWRECK",
+                    new EventRuntime.TypedProperty<string>(delegate (EventContext c, string _)
+                    {
+                        spawnShipwreck(c.location);
+                    })
+                );
+
+            properties.Add(
+                    "PLUNDER_SHIPWRECK",
+                    new EventRuntime.TypedProperty<int>(delegate (EventContext c, int v)
+                    {
+                        if (c.location.settlement != null)
+                        {
+                            Sub_Shipwreck wreck = (Sub_Shipwreck)c.location.settlement.subs.FirstOrDefault(sub => sub is Sub_Shipwreck);
+                            if (wreck != null)
+                            {
+                                wreck.integrity -= v * wreck.integrityLossPlunder;
+                                if (wreck.integrity <= 0.0)
+                                {
+                                    wreck.removeWreck();
+                                }
+                            }
+                        }
+                    })
+                );
+
+            properties.Add(
+                    "INCREASE_SHIPWRECK_ALLURE",
+                    new EventRuntime.TypedProperty<int>(delegate (EventContext c, int v)
+                    {
+                        if (c.location.settlement != null)
+                        {
+                            Sub_Shipwreck wreck = (Sub_Shipwreck)c.location.settlement.subs.FirstOrDefault(sub => sub is Sub_Shipwreck);
+                            if (wreck != null)
+                            {
+                                wreck.allure += v;
+                            }
+                        }
+                    })
+                );
+
+            properties.Add(
+                    "REINFORCE_SHIPRECK",
+                    new EventRuntime.TypedProperty<bool>(delegate (EventContext c, bool v)
+                    {
+                        if (c.location.settlement != null)
+                        {
+                            Sub_Shipwreck wreck = (Sub_Shipwreck)c.location.settlement.subs.FirstOrDefault(sub => sub is Sub_Shipwreck);
+                            if (wreck != null)
+                            {
+                                wreck.reinforced = v;
+                            }
+                        }
+                    })
+                );
+
+            properties.Add(
+                    "DESTROY_SHIPWRECK",
+                    new EventRuntime.TypedProperty<string>(delegate (EventContext c, string v)
+                    {
+                        if (v == "")
+                        {
+                            v = "Shipwreck Destroyed by Event Outcome";
+                        }
+
+                        if (c.location.settlement != null)
+                        {
+                            Sub_Shipwreck wreck = (Sub_Shipwreck)c.location.settlement.subs.FirstOrDefault(sub => sub is Sub_Shipwreck);
+                            if (wreck != null)
+                            {
+                                wreck.removeWreck(v);
+                            }
+                        }
+                    })
+                );
         }
 
         public override void onTurnEnd(Map map)
@@ -238,117 +354,14 @@ namespace CommunityLib
             cleanRandStore(map);
         }
 
-        public override void onCheatEntered(string command)
+        public override void onChallengeComplete(Challenge challenge, UA ua, Task_PerformChallenge task_PerformChallenge)
         {
-            string[] commandComps = command.Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries);
-
-            if (commandComps.Length > 0)
-            {
-                switch (commandComps[0])
-                {
-                    case "influenceElder":
-                        if (commandComps.Length == 1)
-                        {
-                            cheat_InfluenceHolyOrder(0, true);
-                        }
-                        else if (commandComps.Length == 2 && int.TryParse(commandComps[1], out int val))
-                        {
-                            cheat_InfluenceHolyOrder(val, true);
-                        }
-                        break;
-                    case "influenceHuman":
-                        if (commandComps.Length == 1)
-                        {
-                            cheat_InfluenceHolyOrder(0);
-                        }
-                        else if (commandComps.Length == 2 && int.TryParse(commandComps[1], out int val2))
-                        {
-                            cheat_InfluenceHolyOrder(val2);
-                        }
-                        break;
-                    default:
-                        break;
-                }
-            }
+            OnChallengeComplete.processChallenge(challenge, ua, task_PerformChallenge);
         }
 
-        public void cheat_InfluenceHolyOrder(int value, bool isElder = false)
+        public override void onCheatEntered(string command)
         {
-            HolyOrder order = null;
-
-            if (GraphicalMap.selectedUnit != null)
-            {
-                Unit unit = GraphicalMap.selectedUnit;
-                order = unit.society as HolyOrder;
-            }
-            else if (GraphicalMap.selectedHex != null && GraphicalMap.selectedHex.location != null)
-            {
-                Location loc = GraphicalMap.selectedHex.location;
-                order = loc.soc as HolyOrder;
-
-                if (order == null && loc.settlement != null)
-                {
-                    if (loc.settlement is SettlementHuman settlementHuman)
-                    {
-                        order = settlementHuman.order;
-                    }
-
-                    if (order == null)
-                    {
-                        foreach (Subsettlement sub in loc.settlement.subs)
-                        {
-                            if (sub is Sub_Temple temple)
-                            {
-                                order = temple.order;
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (order != null)
-            {
-                if (isElder)
-                {
-                    if (value == 0)
-                    {
-                        order.influenceElder = order.influenceElderReq;
-                    }
-                    else
-                    {
-                        order.influenceElder += value;
-
-                        if (order.influenceElder < 0)
-                        {
-                            order.influenceElder = 0;
-                        }
-                        else if (order.influenceElder > order.influenceElderReq)
-                        {
-                            order.influenceElder = order.influenceElderReq;
-                        }
-                    }
-                }
-                else
-                {
-                    if (value == 0)
-                    {
-                        order.influenceHuman = order.influenceHumanReq;
-                    }
-                    else
-                    {
-                        order.influenceHuman += value;
-
-                        if (order.influenceHuman < 0)
-                        {
-                            order.influenceHuman = 0;
-                        }
-                        else if (order.influenceHuman > order.influenceHumanReq)
-                        {
-                            order.influenceHuman = order.influenceHumanReq;
-                        }
-                    }
-                }
-            }
+            Cheats.parseCheat(command);
         }
 
         /// <summary>
@@ -550,6 +563,35 @@ namespace CommunityLib
             }
 
             return false;
+        }
+
+        public void forceShipwrecks()
+        {
+            opt_forceShipwrecks = true;
+        }
+
+        public void spawnShipwreck(Location location)
+        {
+            Sub_Shipwreck wreck = null;
+
+            if (location.settlement == null)
+            {
+                location.settlement = new Set_Shipwreck(location);
+            }
+            else
+            {
+                wreck = location.settlement.subs.OfType<Sub_Shipwreck>().FirstOrDefault();
+            }
+
+            if (wreck == null)
+            {
+                wreck = new Sub_Shipwreck(location.settlement, location);
+                location.settlement.subs.Add(wreck);
+            }
+            else
+            {
+                wreck.integrity += Eleven.random.Next(6) + Eleven.random.Next(6);
+            }
         }
     }
 }

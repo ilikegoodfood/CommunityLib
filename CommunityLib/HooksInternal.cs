@@ -16,6 +16,37 @@ namespace CommunityLib
             
         }
 
+        public override void onUnitDeath_StartOfProcess(Unit u, string v, Person killer)
+        {
+            if (ModCore.opt_forceShipwrecks || ModCore.opt_SpawnShipwrecks)
+            {
+                if (u.location.isOcean)
+                {
+                    //Console.WriteLine("Orcs_Plus: Unit died in ocean");
+                    int wreckRoll = Eleven.random.Next(10);
+
+                    if (wreckRoll == 0)
+                    {
+                        ModCore.core.spawnShipwreck(u.location);
+                    }
+                }
+            }
+        }
+
+        public override void onSettlementFallIntoRuin_StartOfProcess(Settlement set, string v, object killer = null)
+        {
+            if (ModCore.opt_forceShipwrecks || ModCore.opt_SpawnShipwrecks)
+            {
+                if (set is SettlementHuman settlementHuman && settlementHuman.subs.Count > 0)
+                {
+                    if (set.subs.Any(sub => sub is Sub_Docks))
+                    {
+                        ModCore.core.spawnShipwreck(set.location);
+                    }
+                }
+            }
+        }
+
         public override bool interceptGetVisibleUnits(UA ua, List<Unit> visibleUnits)
         {
             switch (ua)
