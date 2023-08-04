@@ -572,25 +572,23 @@ namespace CommunityLib
 
         public void spawnShipwreck(Location location)
         {
-            Sub_Shipwreck wreck = null;
-
             if (location.settlement == null)
             {
                 location.settlement = new Set_Shipwreck(location);
             }
             else
             {
-                wreck = location.settlement.subs.OfType<Sub_Shipwreck>().FirstOrDefault();
-            }
+                Sub_Shipwreck wreck = location.settlement.subs.OfType<Sub_Shipwreck>().FirstOrDefault();
 
-            if (wreck == null)
-            {
-                wreck = new Sub_Shipwreck(location.settlement, location);
-                location.settlement.subs.Add(wreck);
-            }
-            else
-            {
-                wreck.integrity += Eleven.random.Next(6) + Eleven.random.Next(6);
+                if (wreck == null)
+                {
+                    wreck = new Sub_Shipwreck(location.settlement, location);
+                    location.settlement.subs.Add(wreck);
+                }
+                else
+                {
+                    wreck.integrity += Eleven.random.Next(6) + Eleven.random.Next(6);
+                }
             }
         }
     }

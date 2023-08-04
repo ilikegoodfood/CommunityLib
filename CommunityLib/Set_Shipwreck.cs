@@ -13,7 +13,9 @@ namespace CommunityLib
         public Set_Shipwreck(Location location)
             : base(location)
         {
-            name =  "Wreck of " + location.shortName;
+            name = "Wreck of " + location.shortName;
+
+            subs.Add(new Sub_Shipwreck(this, location));
         }
 
         public override Sprite getSprite()

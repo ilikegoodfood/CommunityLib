@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using static HarmonyLib.Code;
 
 namespace CommunityLib
 {
@@ -138,7 +139,7 @@ namespace CommunityLib
             {
                 location.settlement.subs.Remove(this);
 
-                if (location.settlement is Set_Shipwreck && location.settlement.subs.Count == 0)
+                if (location.settlement is Set_Shipwreck)
                 {
                     location.settlement.fallIntoRuin(v, killer);
                     location.settlement = null;
