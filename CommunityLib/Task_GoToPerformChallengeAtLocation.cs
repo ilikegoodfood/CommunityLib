@@ -52,6 +52,7 @@ namespace CommunityLib
             if (!challenge.allowMultipleUsers() && challenge.claimedBy != null && challenge.claimedBy != unit)
             {
                 unit.task = null;
+                return;
             }
 
             if (unit.map.automatic && (challenge is Ch_FulfillTheProphecy || challenge is Ch_ReforgeTheSeals))
