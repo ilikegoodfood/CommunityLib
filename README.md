@@ -16,20 +16,39 @@ You should only have CommunityLib enabled if you have a mod enabled that is depe
 ## Features
 It currently contains the follwoing features:
 
-### Helper Functions
-The Community Library includes a number of helper classes and functions which can be used by other mods.
-#### Task_GoPerformChallengeAtLocation
-This class operates in the same way as the base game's `Task_GoPerformChallenge`, but it can also handle performing rituals at locations other than the agent's current location, and it can make use of safeMove.
-
-### Universal Agent AI (Documention is WIP)
-The Community Library now features its very own universal agent AI. By making use of a data class called AIChallenge, it is possible to introduce new challenges and rituals to agent types that are using this AI, along with custom profile, validity, and utility functions just for them. The AIChallenge also allows the use of tags (`AIChallenge.challengeTags`) to access a large collection of pre-built validity and utility checks, removing the need to repeeatedly clone common code chunks from the core game.
-
-Multiple mods can all manipulate the AI of a single agent that is making use of this AI.
-
-### UAEN Override AI
-The basse games UAEN (Deep Ones, Ghasts, Orc Upstarts, and Vampires) make use of hardcoded AI. All agents of those types now use the Universal Agent AI, which have been configured to closely, but not exactly, mimic their base game behaviour. The changes are small, resulting these agent types behaving slightly more intelligently.
-
 ### Custom Hooks
 Using the Harmony Library, the community library now implements a large, and rapidly growing, number of custom hooks. These hooks operate much like those already available in the ModKernal.
 
 To implement them in your mod, create aan instance of a class that inherits the `CommunityLib.Hooks` class, and call `RegisterHooks()` on the CommunityLib ModKernel. This must be done once when starting a new game, or when loading a game.
+
+### Arbitrary Pathfinding
+The Community Library contains a pathfinding solution that uses a delegate to determine location validity. This allows for arbitrary new pathing limitations to be implemented.
+
+### Universal Agent AI
+The Community Library now features its very own universal agent AI. By making use of intermediate data classes `AIChallenge` and `AiTask`, it is possible to introduce new challenges and rituals to agent types that are using this AI, along with custom profile, validity, and utility functions just for them. The `These classes also contain pre-built logical snippets, which can be individually enabled through the addition of Tags. This removes the need to repeatedly duplicate code for common base-game validity or utility checks.
+
+Multiple mods can all manipulate the AI of a single agent that is making use of this AI.
+
+#### UAEN Override AI
+The basse games UAEN (Cordyceps' Drones, Deep Ones, Ghasts, Orc Upstarts, and Vampires) make use of hardcoded AI. All agents of those types now use the Universal Agent AI, which have been configured to closely, but not exactly, mimic their base game behaviour. The changes are small, resulting these agent types behaving slightly more intelligently.
+
+#### randStore
+The randStore is a method for generating, storing, and using random values within the Universal Agent AI for profile, utility and validity values, and ensuring they remain consistent within the UI. It can also be used for other purposes.
+
+### Orcs Expannsion Control
+A registry that allows control over which settlement types orcs can expand onto. This is useful for mods that add new settlement types, such as a new type of ruin, which orcs should reasonable be able to colonise.
+
+### Shipwrecks
+Shipwrecks are Subsettlements that act much like ruins. They can be plundered (explored) multiple times, and can spawn when a city with a Dock is destroyed, or occasionally when a unit dies at sea, or The Bucanneer conduct naval actions. Unlike ruins, shipwrecks degrade over time, and whenever they are plundered, unless specific event outcomes are chosen.
+
+By default, these are disabled through the mod configuration menu. Mods can force-enable them if they make specific use of shipwrecks. This means that different dependent mods can all use the same shipwreck subsettlement, event system, and spawn code, and thus aren't individually creating multiple unique shipwrecks for the same occurance.
+
+### Utilities
+The Community Library includes a number of helper classes and functions which can be used by other mods.
+
+#### Task_GoPerformChallengeAtLocation
+This class operates in the same way as the base game's `Task_GoPerformChallenge`, but it can also handle performing rituals at locations other than the agent's current location, and it can make use of safeMove.
+
+
+
+
