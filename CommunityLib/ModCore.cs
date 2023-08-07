@@ -271,34 +271,42 @@ namespace CommunityLib
                 });
             }
 
-            properties.Add(
-                    "CREATE_SHIPWRECK",
-                    new EventRuntime.TypedProperty<string>(delegate (EventContext c, string _)
-                    {
-                        spawnShipwreck(c.location);
-                    })
-                );
-
-            properties.Add(
-                    "PLUNDER_SHIPWRECK",
-                    new EventRuntime.TypedProperty<int>(delegate (EventContext c, int v)
-                    {
-                        if (c.location.settlement != null)
+            if (!properties.ContainsKey("CREATE_SHIPWRECK"))
+            {
+                properties.Add(
+                        "CREATE_SHIPWRECK",
+                        new EventRuntime.TypedProperty<string>(delegate (EventContext c, string _)
                         {
-                            Sub_Shipwreck wreck = (Sub_Shipwreck)c.location.settlement.subs.FirstOrDefault(sub => sub is Sub_Shipwreck);
-                            if (wreck != null)
+                            spawnShipwreck(c.location);
+                        })
+                    );
+            }
+
+            if (!properties.ContainsKey("PLUNDER_SHIPWRECK"))
+            {
+                properties.Add(
+                        "PLUNDER_SHIPWRECK",
+                        new EventRuntime.TypedProperty<int>(delegate (EventContext c, int v)
+                        {
+                            if (c.location.settlement != null)
                             {
-                                wreck.integrity -= v * wreck.integrityLossPlunder;
-                                if (wreck.integrity <= 0.0)
+                                Sub_Shipwreck wreck = (Sub_Shipwreck)c.location.settlement.subs.FirstOrDefault(sub => sub is Sub_Shipwreck);
+                                if (wreck != null)
                                 {
-                                    wreck.removeWreck();
+                                    wreck.integrity -= v * wreck.integrityLossPlunder;
+                                    if (wreck.integrity <= 0.0)
+                                    {
+                                        wreck.removeWreck();
+                                    }
                                 }
                             }
-                        }
-                    })
-                );
+                        })
+                    );
+            }
 
-            properties.Add(
+            if (!properties.ContainsKey("INCREASE_SHIPWRECK_ALLURE"))
+            {
+                properties.Add(
                     "INCREASE_SHIPWRECK_ALLURE",
                     new EventRuntime.TypedProperty<int>(delegate (EventContext c, int v)
                     {
@@ -312,8 +320,11 @@ namespace CommunityLib
                         }
                     })
                 );
+            }
 
-            properties.Add(
+            if (!properties.ContainsKey("REINFORCE_SHIPRECK"))
+            {
+                properties.Add(
                     "REINFORCE_SHIPRECK",
                     new EventRuntime.TypedProperty<bool>(delegate (EventContext c, bool v)
                     {
@@ -327,8 +338,11 @@ namespace CommunityLib
                         }
                     })
                 );
+            }
 
-            properties.Add(
+            if (!properties.ContainsKey("DESTROY_SHIPWRECK"))
+            {
+                properties.Add(
                     "DESTROY_SHIPWRECK",
                     new EventRuntime.TypedProperty<string>(delegate (EventContext c, string v)
                     {
@@ -347,6 +361,7 @@ namespace CommunityLib
                         }
                     })
                 );
+            }
         }
 
         public override void onTurnEnd(Map map)
