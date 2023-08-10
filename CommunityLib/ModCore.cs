@@ -117,6 +117,7 @@ namespace CommunityLib
             RegisterHooks(hooks);
 
             orcExpansionDefaults();
+            eventModifications();
         }
 
         private void getModKernels (Map map)
