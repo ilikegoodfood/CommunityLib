@@ -10,7 +10,7 @@ namespace CommunityLib
 {
     public class Ch_DestroyShipwreck : Challenge
     {
-        Sub_Shipwreck wreck;
+        public Sub_Shipwreck wreck;
 
         public Ch_DestroyShipwreck( Sub_Shipwreck wreck)
             : base (wreck.settlement.location)
