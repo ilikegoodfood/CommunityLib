@@ -315,6 +315,7 @@ namespace CommunityLib
         private double delegate_Utility_Ch_Rest_InOrcCamp(AgentAI.ChallengeData challengeData, UA ua, double utility, List<ReasonMsg> reasonMsgs)
         {
             utility -= map.param.ch_rest_parameterValue1;
+            utility += 1.0;
 
             if (reasonMsgs != null)
             {
