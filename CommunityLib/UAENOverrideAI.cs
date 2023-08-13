@@ -272,6 +272,8 @@ namespace CommunityLib
 
             aiChallenges_OrcUpstart[1].delegates_Valid.Add(delegate_Valid_Ch_RecruitMinion);
 
+            aiChallenges_OrcUpstart[2].delegates_Utility.Add(delegate_Utility_Ch_Rest_InOrcCamp);
+
             ModCore.core.GetAgentAI().RegisterAgentType(typeof(UAEN_OrcUpstart), new AgentAI.ControlParameters(true));
             ModCore.core.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_OrcUpstart), aiChallenges_OrcUpstart);
         }
@@ -308,6 +310,23 @@ namespace CommunityLib
             }
 
             return true;
+        }
+
+        private double delegate_Utility_Ch_Rest_InOrcCamp(AgentAI.ChallengeData challengeData, UA ua, double utility, List<ReasonMsg> reasonMsgs)
+        {
+            utility -= map.param.ch_rest_parameterValue1;
+
+            if (reasonMsgs != null)
+            {
+                ReasonMsg msg = reasonMsgs.FirstOrDefault(m => m.msg == "Base");
+
+                if (msg != null)
+                {
+                    msg.value = 0.0;
+                }
+            }
+
+            return utility;
         }
 
         private void populateVampire()
