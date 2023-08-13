@@ -38,7 +38,13 @@ namespace CommunityLib
                         }
                         break;
                     case "shipwreck":
-                        shipwreck();
+                        cheat_Shipwreck();
+                        break;
+                    case "gold":
+                        if (commandComps.Length == 2 && int.TryParse(commandComps[1], out int val3))
+                        {
+                            cheat_Gold(val3);
+                        }
                         break;
                     default:
                         break;
@@ -125,13 +131,42 @@ namespace CommunityLib
             }
         }
 
-        public static void shipwreck()
+        public static void cheat_Shipwreck()
         {
             Hex hex = GraphicalMap.selectedHex;
 
-            if (hex != null && hex.location != null && hex.location.isOcean)
+            if (hex != null && hex.location != null && (hex.location.isOcean || hex.location.isCoastal))
             {
                 ModCore.core.spawnShipwreck(hex.location);
+            }
+        }
+
+        public static void cheat_Gold(int gold)
+        {
+            Hex hex = GraphicalMap.selectedHex;
+
+            if (hex != null && hex.location != null)
+            {
+                if (hex.location.settlement is SettlementHuman settlementHuman && settlementHuman.ruler != null)
+                {
+                    settlementHuman.ruler.gold += gold;
+                    if (settlementHuman.ruler.gold < 0)
+                    {
+                        settlementHuman.ruler.gold = 0;
+                    }
+                    return;
+                }
+            }
+
+            Unit u = GraphicalMap.selectedUnit;
+            if (u != null && u is UA ua && ua.person != null)
+            {
+                ua.person.gold += gold;
+                if (ua.person.gold < 0)
+                {
+                    ua.person.gold = 0;
+                }
+                return;
             }
         }
     }

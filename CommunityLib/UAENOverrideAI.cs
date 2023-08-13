@@ -322,7 +322,7 @@ namespace CommunityLib
 
                 if (msg != null)
                 {
-                    msg.value = 0.0;
+                    msg.value = 1.0;
                 }
             }
 
