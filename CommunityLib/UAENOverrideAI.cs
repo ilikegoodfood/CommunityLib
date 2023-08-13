@@ -35,7 +35,7 @@ namespace CommunityLib
 
             // Test Articles
             // populateUAA();
-            
+
         }
 
         private void populateDeepOne()
@@ -272,6 +272,8 @@ namespace CommunityLib
 
             aiChallenges_OrcUpstart[1].delegates_Valid.Add(delegate_Valid_Ch_RecruitMinion);
 
+            aiChallenges_OrcUpstart[2].delegates_Utility.Add(delegate_Utility_Ch_Rest_InOrcCamp);
+
             ModCore.core.GetAgentAI().RegisterAgentType(typeof(UAEN_OrcUpstart), new AgentAI.ControlParameters(true));
             ModCore.core.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_OrcUpstart), aiChallenges_OrcUpstart);
         }
@@ -310,6 +312,23 @@ namespace CommunityLib
             return true;
         }
 
+        private double delegate_Utility_Ch_Rest_InOrcCamp(AgentAI.ChallengeData challengeData, UA ua, double utility, List<ReasonMsg> reasonMsgs)
+        {
+            utility -= map.param.ch_rest_parameterValue1;
+
+            if (reasonMsgs != null)
+            {
+                ReasonMsg msg = reasonMsgs.FirstOrDefault(m => m.msg == "Base");
+
+                if (msg != null)
+                {
+                    msg.value = 0.0;
+                }
+            }
+
+            return utility;
+        }
+
         private void populateVampire()
         {
             aiChallenges_Vampire = new List<AIChallenge>
@@ -337,7 +356,7 @@ namespace CommunityLib
         private bool delegate_ValidFor_Rt_Feed(AgentAI.ChallengeData challengeData, UA ua)
         {
             UAEN_Vampire vampire = ua as UAEN_Vampire;
-            
+
             if (vampire == null || vampire.call.strength <= 50.0)
             {
                 return false;
@@ -418,7 +437,7 @@ namespace CommunityLib
                 utility += val;
             }
             else
-            { 
+            {
                 reasonMsgs?.Add(new ReasonMsg("Requires " + map.param.mg_deathsShadowDeathModifierReq + " Death", -1000.0));
                 return -1000;
             }
