@@ -35,7 +35,7 @@ namespace CommunityLib
 
             // Test Articles
             // populateUAA();
-
+            
         }
 
         private void populateDeepOne()
@@ -315,6 +315,7 @@ namespace CommunityLib
         private double delegate_Utility_Ch_Rest_InOrcCamp(AgentAI.ChallengeData challengeData, UA ua, double utility, List<ReasonMsg> reasonMsgs)
         {
             utility -= map.param.ch_rest_parameterValue1;
+            utility += 1.0;
 
             if (reasonMsgs != null)
             {
@@ -356,7 +357,7 @@ namespace CommunityLib
         private bool delegate_ValidFor_Rt_Feed(AgentAI.ChallengeData challengeData, UA ua)
         {
             UAEN_Vampire vampire = ua as UAEN_Vampire;
-
+            
             if (vampire == null || vampire.call.strength <= 50.0)
             {
                 return false;
@@ -437,7 +438,7 @@ namespace CommunityLib
                 utility += val;
             }
             else
-            {
+            { 
                 reasonMsgs?.Add(new ReasonMsg("Requires " + map.param.mg_deathsShadowDeathModifierReq + " Death", -1000.0));
                 return -1000;
             }
