@@ -278,26 +278,22 @@ namespace CommunityLib
 
         private double delegate_Utility_Ch_OrcRaiding(AgentAI.ChallengeData challengeData, UA ua, double utility, List<ReasonMsg> reasonMsgs)
         {
-            double potentialDevastation = 0.0;
-            int neighbourCount = 0;
+            int gold = 0;
             foreach (Location loc in challengeData.location.getNeighbours())
             {
-                if (loc.settlement is SettlementHuman && (ua.society == null || ua.society != loc.soc))
+                if (loc.settlement is SettlementHuman settlementHuman && settlementHuman.ruler != null)
                 {
-                    Pr_Devastation devastation = loc.properties.OfType<Pr_Devastation>().FirstOrDefault();
-                    double charge = devastation?.charge ?? 0.0;
-                    potentialDevastation += Math.Max(250 - charge, 0.0) / 5;
-                    if (potentialDevastation > 0)
+                    if (settlementHuman.ruler.gold > gold)
                     {
-                        neighbourCount++;
+                        gold = settlementHuman.ruler.gold;
                     }
                 }
             }
 
-            if (neighbourCount > 0)
+            if (gold > 0)
             {
-                double val = potentialDevastation / neighbourCount;
-                reasonMsgs?.Add(new ReasonMsg("Potential Devastation", val));
+                double val = gold * map.param.ch_orcRaidingGoldGain;
+                reasonMsgs?.Add(new ReasonMsg("Potential Gold Gain", val));
                 utility += val;
             }
 
