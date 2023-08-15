@@ -2,7 +2,6 @@
 using HarmonyLib;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -17,7 +16,9 @@ namespace CommunityLib
 
         public static ArmyBattleData armyBattleData_StartOfCycle;
 
-        public static Text budgetLabels = null;
+        public static string[] popupHolyOrder_DefaultPageText = new string[6];
+
+        public static Text popupHolyOrder_PageText;
 
         private static bool populatedUM;
 
@@ -58,9 +59,10 @@ namespace CommunityLib
 
             // Settlement destruction hooks
             harmony.Patch(original: AccessTools.Method(typeof(Settlement), nameof(Settlement.fallIntoRuin), new Type[] { typeof(string), typeof(object) }), prefix: new HarmonyMethod(patchType, nameof(Settlement_FallIntoRuin_Prefix)), postfix: new HarmonyMethod(patchType, nameof(Settlement_FallIntoRuin_Postfix)));
-            
+
             // Religion UI Screen hooks
-            harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.setTo), new Type[] { typeof(HolyOrder), typeof(int) }), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_setTo_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(PrefabStore), nameof(PrefabStore.popHolyOrder), new Type[] { typeof(HolyOrder) }), prefix: new HarmonyMethod(patchType, nameof(PrefabStore_popHolyOrder_Prefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.setTo), new Type[] { typeof(HolyOrder), typeof(int) }), prefix: new HarmonyMethod(patchType, nameof(PopupHolyOrder_setTo_Prefix)), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_setTo_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(UIE_HolyTenet), nameof(UIE_HolyTenet.bInfluenceNegatively), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(UIE_HolyTenet_bInfluence_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(UIE_HolyTenet), nameof(UIE_HolyTenet.bInfluencePositively), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(UIE_HolyTenet_bInfluence_Postfix)));
 
@@ -118,7 +120,11 @@ namespace CommunityLib
 
             // RECRUITABILITY //
             // Unit
-            harmony.Patch(original: AccessTools.Method(typeof(Unit), nameof(Unit.isCommandable), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Unit_isCommandable_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.isCommandable), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(UA_isCommandable_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UAEN_DeepOne), nameof(UAEN_DeepOne.isCommandable), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Unit_isCommandable_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UAEN_Ghast), nameof(UAEN_Ghast.isCommandable), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Unit_isCommandable_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UAEN_OrcUpstart), nameof(UAEN_OrcUpstart.isCommandable), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Unit_isCommandable_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UAEN_Vampire), nameof(UAEN_Vampire.isCommandable), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Unit_isCommandable_Postfix)));
 
             // UAEN OVERRIDE AI //
             // Negate unit interactions.
@@ -943,6 +949,50 @@ namespace CommunityLib
             }
         }
 
+        private static void PrefabStore_popHolyOrder_Prefix()
+        {
+            popupHolyOrder_PageText = null;
+        }
+
+        private static void PopupHolyOrder_setTo_Prefix(PopupHolyOrder __instance, HolyOrder soc, int page)
+        {
+            if (popupHolyOrder_PageText != null)
+            {
+                //Console.WriteLine("CommunityLib: Has page text for previous page (" + __instance.currentPage + ")");
+                if (!popupHolyOrder_PageText.text.Equals(popupHolyOrder_DefaultPageText[__instance.currentPage]))
+                {
+                    //Console.WriteLine("CommunityLib: Resetting page text for previous page (" + __instance.currentPage + ")");
+                    popupHolyOrder_PageText.text = string.Copy(popupHolyOrder_DefaultPageText[__instance.currentPage]);
+                }
+            }
+
+            Text text = (Text)__instance.pages[page].gameObject.GetComponentsInChildren(typeof(Text), false).FirstOrDefault(tC => tC is Text t &&
+                    (
+                        t.text.StartsWith("Holy Orders' behaviours are determined by the") ||
+                        t.text.StartsWith("These are the moral tenets of this Holy Order.") ||
+                        t.text.StartsWith("Holy Orders gain gold from their agents,") ||
+                        t.text.StartsWith("Holy Orders can have prophecies about")
+                    )
+                );
+
+            if (text != null)
+            {
+                popupHolyOrder_PageText = text;
+
+                if (popupHolyOrder_DefaultPageText[page] == null)
+                {
+                    //Console.WriteLine("CommunityLib: Storing default page text for page " + page);
+                    popupHolyOrder_DefaultPageText[page] = string.Copy(text.text);
+                }
+
+                //Console.WriteLine("CommunityLib: Running hooks for page " + page);
+                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+                {
+                    text.text = hook.onPopupHolyOrder_DisplayPageText(soc, text.text, page);
+                }
+            }
+        }
+
         private static IEnumerable<CodeInstruction> PopupHolyOrder_setTo_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
@@ -1110,24 +1160,13 @@ namespace CommunityLib
                 hook?.onPopupHolyOrder_DisplayBudget(order, msgs);
             }
 
-            Text text;
-            Component[] comps = popupOrder.pages[popupOrder.currentPage].gameObject.GetComponentsInChildren(typeof(Text), false);
+            Text text = (Text)popupOrder.pages[popupOrder.currentPage].gameObject.GetComponentsInChildren(typeof(Text), false).FirstOrDefault(tC => tC is Text t && t.text.StartsWith("Income:"));
 
-            foreach (Component comp in comps)
+            if (text != null)
             {
-                text = comp as Text;
-
-                if (text != null && text.text.Contains("Income:"))
-                {
-                    budgetLabels = text;
-                    break;
-                }
+                text.text = "";
             }
 
-            if (budgetLabels != null)
-            {
-                budgetLabels.text = "";
-            }
             foreach (ReasonMsg msg in msgs)
             {
                 ReasonMsgMax msgMax = msg as ReasonMsgMax;
@@ -1152,10 +1191,10 @@ namespace CommunityLib
                     });
                 }
 
-                if (budgetLabels != null)
+                if (text != null)
                 {
-                    budgetLabels.text = string.Concat(new string[] {
-                        budgetLabels.text,
+                    text.text = string.Concat(new string[] {
+                        text.text,
                         msg.msg,
                         ":",
                         "\n"
@@ -2131,7 +2170,6 @@ namespace CommunityLib
             return result;
         }
 
-
         // Graphical Hex Hooks
         /*private static IEnumerable<CodeInstruction> GraphicalHex_checkData_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
@@ -2779,14 +2817,49 @@ namespace CommunityLib
 
         // RECRUITABILITY //
         // Unit
-        private static bool Unit_isCommandable_Postfix(bool __result, Unit __instance)
+        private static bool Unit_isCommandable_Postfix(bool result, UAEN __instance)
         {
-            if (__instance is UA ua)
+            result = __instance.corrupted;
+
+            if (!result)
             {
-                return ua.corrupted;
+                foreach (Trait trait in __instance.person.traits)
+                {
+                    if (trait.grantsCommand())
+                    {
+                        result = true;
+                        break;
+                    }
+                }
             }
 
-            return __result;
+            return result;
+        }
+
+        // UA
+        private static bool UA_isCommandable_Postfix(bool result, UA __instance)
+        {
+            if (ModCore.core.data.tryGetModAssembly("Cordyceps", out ModData.ModIntegrationData intDataCord) && intDataCord.assembly != null && intDataCord.typeDict.TryGetValue("Drone", out Type droneType) && droneType != null)
+            {
+                if (__instance.GetType() == droneType)
+                {
+                    result = __instance.corrupted;
+
+                    if (!result)
+                    {
+                        foreach (Trait trait in __instance.person.traits)
+                        {
+                            if (trait.grantsCommand())
+                            {
+                                result = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return result;
         }
 
         // UAEN OVERRIDE AI //

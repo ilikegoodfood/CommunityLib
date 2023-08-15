@@ -264,6 +264,20 @@ namespace CommunityLib
             return s;
         }
 
+
+        /// <summary>
+        /// This hook fires when a religion is viewed in the religion screen. It recieves the holy order (order), the string (s) that will be displayed in the large central text box, and the index of the page that is being viewed (pageIndex). It returns the string that will be displayed in the large central text box for that page.
+        /// <para>If any other mods have already mdofiied the string prior to yours, those changes will already be present in the argument s.</para>
+        /// </summary>
+        /// <param name="order"></param>
+        /// <param name="s"></param>
+        /// <param name="pageIndex"></param>
+        /// <returns></returns>
+        public virtual string onPopupHolyOrder_DisplayPageText(HolyOrder order, string s, int pageIndex)
+        {
+            return s;
+        }
+
         /// <summary>
         /// This hook fires just after a player influences a HolyTenet from the Holy Order UI. It recieves the holy order (order), and the holy tenet (tenet).
         /// </summary>
@@ -541,7 +555,7 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when the Recruit Agent button is being populated, once for each agent on the map that is not already commandable. It recieves the agent being considered (ua), and the current determination on if it should be recruitable, including the base game's output and all previous instances of this hook (result), and returns if the should be reqruitable.
+        /// This hook fires when the Recruit Agent menu is being populated, once for each agent on the map that is not already commandable. It recieves the agent being considered (ua), and the current determination on if it should be recruitable, including the base game's output and all previous instances of this hook (result), and returns if the should be reqruitable.
         /// <para>If you do not wish to change the value for a given agent, simply return result.</para>
         /// </summary>
         /// <param name="ua"></param>
