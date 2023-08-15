@@ -147,6 +147,18 @@ namespace CommunityLib
             return false;
         }
 
+        // Test items.
+
+        /*public override string onPopupHolyOrder_DisplayPageText(HolyOrder order, string s, int pageIndex)
+        {
+            if (order is HolyOrder_Witches && pageIndex == 0)
+            {
+                return "Witches are fickle things.";
+            }
+
+            return s;
+        }*/
+
         /*public override bool onAgentIsRecruitable(UA ua, bool result)
         {
             if (ua is UAEN_OrcUpstart)
