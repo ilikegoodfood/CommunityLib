@@ -1,0 +1,28 @@
+[h1]Introduction[/h1]
+Most of the Community Library's features are designed to extend the game's modability and mod compatibility. Outside of the UI-compatible and slightly improved AI for Deep Ones, Ghasts, Orc Upstarts, and Vampires, this mod will not do anything by itself.
+
+[b]IMPORTANT:[/b] The Community Library must be loaded [b]before (above)[/b] all dependant mods. It is recommended to place it first (at the top) in the load order.
+
+[h1]Details[/h1]
+The community Library offers the following features:
+[list]
+[*][b]Custom Hooks[/b] - Hooks that mods can use to access parts of the code not currently accessible in the base game. These will be expanded as needed.
+[*][b]Pathfinding[/b] - A pathfinding solution that uses a delegate to determine location validity. This allows for arbitrary new pathing limitations to be implemented.
+[*][b]Universal Agent AI[/b] - A pre-built AI that can handle all base-game behaviours, as well testing rituals against all map locations. It's also hooked into the Unit UI, so you can always see what challenges and unit interactions they are considering, and their utility scores. This AI can have challenges added to or removed from it by multiple mods at once, allowing for cross-mod compatibility.
+[*][b]Shipwrecks[/b] - The Community Library now offers SHipwrecks as an option. These are off by default in the mod config menu, but can be enabled by the user and by a dependent mod if desired. They currently only contain 7 generic exploration events, but they can safely be added to by other mods.
+[*][b]randStore[/b] - The randStore is a method for generating and using random values within the Universal Agent AI for profile, utility and validity values, that ensures they remain consistent within the UI.
+[*]The ability to add new tasks and challenges to commandable military units, and have them show up properly in the unit UI.
+[*]The ability to change the Religion screen, and the values there-on.
+[*]A registry that allows control over which settlement types orcs can expand onto.
+[*]A task that lets you send a unit to a different location to perform rituals, which can also handle safe movement, and gives greater message detail compared to the base game.
+[/list]
+
+For documentation of it's features, please visit the github project's wiki:
+https://github.com/ilikegoodfood/CommunityLib/wiki
+
+For non-Steam use, please visit the github project's releases page:
+https://github.com/ilikegoodfood/CommunityLib/releases
+
+[h1]Orcs Plus[/h1]
+This library was initially created as a means of generalising changes required for my in-development Orcs Plus mod, which seeks to radically expand Orc game play.
+Orcs Plus is now live on Steam.
