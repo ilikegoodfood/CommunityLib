@@ -1,5 +1,9 @@
-﻿using Assets.Code;
-using System;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Assets.Code;
 
 namespace CommunityLib
 {
@@ -7,22 +11,33 @@ namespace CommunityLib
     {
         public Location target;
         public bool safeMove;
-        public Func<Location[], Location, Unit, bool> pathfindingDelegate;
+        public List<Func<Location[], Location, Unit, bool>> pathfindingDelegates;
 
         public Task_GoToPerformChallengeAtLocation(Challenge c, Location loc, bool safeMove = false)
-            : base (c)
+            : base(c)
         {
             target = loc;
             this.safeMove = safeMove;
-            
+
         }
 
         public Task_GoToPerformChallengeAtLocation(Challenge c, Location loc, Func<Location[], Location, Unit, bool> pathfindingDelegate)
-            : base (c)
+            : base(c)
         {
             target = loc;
             safeMove = false;
-            this.pathfindingDelegate = pathfindingDelegate;
+            if (pathfindingDelegate != null)
+            {
+                pathfindingDelegates = new List<Func<Location[], Location, Unit, bool>> { pathfindingDelegate };
+            }
+        }
+
+        public Task_GoToPerformChallengeAtLocation(Challenge c, Location loc, List<Func<Location[], Location, Unit, bool>> pathfindingDelegates)
+            : base(c)
+        {
+            target = loc;
+            safeMove = false;
+            this.pathfindingDelegates = pathfindingDelegates;
         }
 
         public override string getLong()
@@ -79,13 +94,13 @@ namespace CommunityLib
             while (unit.movesTaken < unit.getMaxMoves())
             {
                 Location[] pathTo;
-                if (pathfindingDelegate == null)
+                if (pathfindingDelegates == null)
                 {
                     pathTo = unit.location.map.getPathTo(unit.location, target, unit, safeMove);
                 }
                 else
                 {
-                    pathTo = ModCore.core.pathfinding.getPathTo(unit.location, target, pathfindingDelegate, unit);
+                    pathTo = ModCore.core.pathfinding.getPathTo(unit.location, target, pathfindingDelegates, unit, safeMove);
                 }
 
                 if (pathTo == null || pathTo.Length < 2)
