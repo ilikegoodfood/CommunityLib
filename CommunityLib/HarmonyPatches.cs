@@ -1815,7 +1815,26 @@ namespace CommunityLib
             {
                 if (u.location.settlement is Set_MinorOther && u.location.settlement.subs.Any(sub => sub is Sub_Wonder_Doorway))
                 {
-                    Location tomb = __instance.locations.FirstOrDefault(l => l.settlement is Set_TombOfGods);
+                    Location tomb = null;
+
+                    foreach (Location location in __instance.locations)
+                    {
+                        if (location.settlement is Set_TombOfGods)
+                        {
+                            tomb = location;
+                            break;
+                        }
+
+                        foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+                        {
+                            if (hook.onEvent_IsLocationElderTomb(location))
+                            {
+                                tomb = location;
+                                break;
+                            }
+                        }
+                    }
+
                     if (tomb != null && loc == tomb)
                     {
                         theEntrance = true;

@@ -76,6 +76,32 @@ namespace CommunityLib
         }
 
         /// <summary>
+        /// This hook fires when the Community Library's pathfiding algorithm is called. It recieves the location the path is from (locA), the location the path is aiming to reach (locB), the unit that is seeking the path (u), which is null if not applicable, and the list of pathfinding delegates that have alsready been assigned to the path (pathfindingDelegates), including the unit's movement type and safemove requirements.
+        /// In order to modify how the path is calculated, add one or more new pathfinding delegates to the pathfindingDelegates variable.
+        /// </summary>
+        /// <param name="locA"></param>
+        /// <param name="locB"></param>
+        /// <param name="u"></param>
+        /// <param name="pathfindingDelegates"></param>
+        public virtual void onPopulatingPathfindingDelegates_Location(Location locA, Location locB, Unit u, List<Func<Location[], Location, Unit, bool>> pathfindingDelegates)
+        {
+            return;
+        }
+
+        /// <summary>
+        /// This hook fires when the Community Library's pathfiding algorithm is called. It recieves the location the path is from (loc), the social group the path is trying to reach (sg), the unit that is seeking the path (u), which is null if not applicable, and the list of pathfinding delegates that have alsready been assigned to the path (pathfindingDelegates), including the unit's movement type and safemove requirements.
+        /// In order to modify how the path is calculated, add one or more new pathfinding delegates to the pathfindingDelegates variable.
+        /// </summary>
+        /// <param name="loc"></param>
+        /// <param name="sg"></param>
+        /// <param name="u"></param>
+        /// <param name="pathfindingDelegates"></param>
+        public virtual void onPopulatingPathfindingDelegates_SocialGroup(Location loc, SocialGroup sg, Unit u, List<Func<Location[], Location, Unit, bool>> pathfindingDelegates)
+        {
+            return;
+        }
+
+        /// <summary>
         /// This hook fires when a unit is instructed to die. It recieves the Unit (u), a string representation of the cause (v), and the person, if applicable, that casued their death (killer).
         /// If this hook returns true, the rest of the death proccess will not happen. If you wish to keep the unit alive and prevent this check being performed multiple times per turn, make sure that their health is greater than 0, or their cause of death has been removed. The process which initially instructed the unit to die will still continue, so if you wish to keep the unit alive, make to sure to account for, and act in response to, the method of its death.
         /// <para>All instances of this hook will run whenever a unit is instructed to die, even those after one which has returned true.</para>

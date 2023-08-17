@@ -34,8 +34,50 @@ namespace CommunityLib
             return u == null || location.soc == null || !location.soc.hostileTo(u);
         }
 
-        public Location[] getPathTo(Location locA, Location locB, Func<Location[], Location, Unit, bool> pathfindingDelegate = null, Unit u = null)
+        public Location[] getPathTo(Location locA, Location locB, Func<Location[], Location, Unit, bool> pathfindingDelegate = null, Unit u = null, bool safeMove = false)
         {
+            List<Func<Location[], Location, Unit, bool>> pathfindingDelegates = new List<Func<Location[], Location, Unit, bool>>();
+
+            if (pathfindingDelegate != null)
+            {
+                pathfindingDelegates.Add(pathfindingDelegate);
+            }
+
+            return getPathTo(locA, locB, pathfindingDelegates, u, safeMove);
+        }
+
+        public Location[] getPathTo(Location locA, Location locB, List<Func<Location[], Location, Unit, bool>> pathfindingDelegates = null, Unit u = null, bool safeMove = false)
+        {
+            if (pathfindingDelegates == null)
+            {
+                pathfindingDelegates = new List<Func<Location[], Location, Unit, bool>>();
+            }
+
+            if (u != null)
+            {
+                if (u.moveType == Unit.MoveType.AQUAPHIBIOUS)
+                {
+                    //Console.WriteLine("CommunityLib: Added Aquaphibious delegate");
+                    pathfindingDelegates.Add(delegate_AQUAPHIBIOUS);
+                }
+                else if (u.moveType == Unit.MoveType.DESERT_ONLY)
+                {
+                    //Console.WriteLine("CommunityLib: Added Desert only delegate");
+                    pathfindingDelegates.Add(delegate_DESERT_ONLY);
+                }
+
+                if (safeMove)
+                {
+                    //Console.WriteLine("CommunityLib: Added safe move delegate");
+                    pathfindingDelegates.Add(delegate_SAFE_MOVE);
+                }
+            }
+
+            foreach(Hooks hook in ModCore.core.GetRegisteredHooks())
+            {
+                hook.onPopulatingPathfindingDelegates_Location(locA, locB, u, pathfindingDelegates);
+            }
+
             HashSet<Location> locationHashes = new HashSet<Location> { locA };
             List<Location> locations = new List<Location> { locA };
             List<Location[]> paths = new List<Location[]> { new Location[] { locA } };
@@ -53,7 +95,17 @@ namespace CommunityLib
                     {
                         if (!locationHashes.Contains(neighbour))
                         {
-                            if (pathfindingDelegate != null && !pathfindingDelegate(paths[j], neighbour, u))
+                            bool valid = true;
+                            foreach (Func<Location[], Location, Unit, bool> pathfindingDelegate in pathfindingDelegates)
+                            {
+                                if (!pathfindingDelegate(paths[j], neighbour, u))
+                                {
+                                    valid = false;
+                                    break;
+                                }
+                            }
+
+                            if (!valid)
                             {
                                 continue;
                             }
@@ -85,8 +137,47 @@ namespace CommunityLib
             return null;
         }
 
-        public Location[] getPathTo(Location locA, SocialGroup sg, Func<Location[], Location, Unit, bool> pathfindingDelegate = null, Unit u = null)
+        public Location[] getPathTo(Location loc, SocialGroup sg, Func<Location[], Location, Unit, bool> pathfindingDelegate = null, Unit u = null, bool safeMove = false)
         {
+            List<Func<Location[], Location, Unit, bool>> pathfindingDelegates = new List<Func<Location[], Location, Unit, bool>>();
+
+            if (pathfindingDelegate != null)
+            {
+                pathfindingDelegates.Add(pathfindingDelegate);
+            }
+
+            return getPathTo(loc, sg, pathfindingDelegates, u, safeMove);
+        }
+
+        public Location[] getPathTo(Location locA, SocialGroup sg, List<Func<Location[], Location, Unit, bool>> pathfindingDelegates = null, Unit u = null, bool safeMove = false)
+        {
+            if (pathfindingDelegates == null)
+            {
+                pathfindingDelegates = new List<Func<Location[], Location, Unit, bool>>();
+            }
+
+            if (u != null)
+            {
+                if (u.moveType == Unit.MoveType.AQUAPHIBIOUS)
+                {
+                    pathfindingDelegates.Add(delegate_AQUAPHIBIOUS);
+                }
+                else if (u.moveType == Unit.MoveType.DESERT_ONLY)
+                {
+                    pathfindingDelegates.Add(delegate_DESERT_ONLY);
+                }
+
+                if (safeMove)
+                {
+                    pathfindingDelegates.Add(delegate_SAFE_MOVE);
+                }
+            }
+
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            {
+                hook.onPopulatingPathfindingDelegates_SocialGroup(locA, sg, u, pathfindingDelegates);
+            }
+
             HashSet<Location> locationHashes = new HashSet<Location> { locA };
             List<Location> locations = new List<Location> { locA };
             List<Location[]> paths = new List<Location[]> { new Location[] { locA } };
@@ -104,7 +195,17 @@ namespace CommunityLib
                     {
                         if (!locationHashes.Contains(neighbour))
                         {
-                            if (pathfindingDelegate != null && !pathfindingDelegate(paths[j], neighbour, u))
+                            bool valid = true;
+                            foreach (Func<Location[], Location, Unit, bool> pathfindingDelegate in pathfindingDelegates)
+                            {
+                                if (!pathfindingDelegate(paths[j], neighbour, u))
+                                {
+                                    valid = false;
+                                    break;
+                                }
+                            }
+
+                            if (!valid)
                             {
                                 continue;
                             }
