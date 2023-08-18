@@ -13,19 +13,10 @@ namespace CommunityLib
 
         public bool safeMove;
 
-        public Func<Location[], Location, Unit, bool> pathfindingDelegate;
-
         public Task_GoToWilderness(bool goToLand = false, bool safeMove = false)
         {
             this.goToLand = goToLand;
             this.safeMove = safeMove;
-        }
-
-        public Task_GoToWilderness(Func<Location[], Location, Unit, bool> pathfindingDelegate, bool goToLand = false)
-        {
-            this.pathfindingDelegate = pathfindingDelegate;
-            this.goToLand = goToLand;
-            safeMove = false;
         }
 
         public override string getShort()
