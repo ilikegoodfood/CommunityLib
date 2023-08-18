@@ -1709,11 +1709,12 @@ namespace CommunityLib
 
             foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
-                Location[] newPath = hook?.interceptGetPathTo_Location(locA, locB, u, safeMove) ?? null;
+                Location[] newPath = hook.interceptGetPathTo_Location(locA, locB, u, safeMove) ?? null;
 
                 if (newPath != null)
                 {
                     path = newPath;
+                    break;
                 }
             }
 
@@ -1773,11 +1774,12 @@ namespace CommunityLib
 
             foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
-                Location[] newPath = hook?.interceptGetPathTo_SocialGroup(loc, sg, u, safeMove) ?? null;
+                Location[] newPath = hook.interceptGetPathTo_SocialGroup(loc, sg, u, safeMove) ?? null;
 
                 if (newPath != null)
                 {
                     path = newPath;
+                    break;
                 }
             }
 

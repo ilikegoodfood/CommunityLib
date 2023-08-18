@@ -149,14 +149,14 @@ namespace CommunityLib
 
         // Test items.
 
-        /*public override Location[] interceptGetPathTo_Location(Location locA, Location locB, Unit u, bool safeMove)
+        /*
+        public override Location[] interceptGetPathTo_Location(Location locA, Location locB, Unit u, bool safeMove)
         {
             if (u is UM_FirstDaughter)
             {
                 Console.WriteLine("CommunityLib: intercepted get path to for First Daughter");
                 return ModCore.core.pathfinding.getPathTo(locA, locB, new List<Func<Location[], Location, Unit, bool>>(), u);
             }
-
             return null;
         }
 
@@ -168,6 +168,7 @@ namespace CommunityLib
                 pathfindingDelegates.Add(Pathfinding.delegate_LANDLOCKED);
             }
         }*/
+
 
         /*public override string onPopupHolyOrder_DisplayPageText(HolyOrder order, string s, int pageIndex)
         {

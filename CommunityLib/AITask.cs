@@ -134,14 +134,7 @@ namespace CommunityLib
                     if (taskData.targetLocation != null && taskData.targetLocation != ua.location)
                     {
                         Location[] pathTo;
-                        if (controlParams.pathfindingDeligate == null)
-                        {
-                            pathTo = ua.location.map.getPathTo(ua.location, taskData.targetLocation, ua);
-                        }
-                        else
-                        {
-                            pathTo = ModCore.core.pathfinding.getPathTo(ua.location, taskData.targetLocation, controlParams.pathfindingDeligate, ua);
-                        }
+                        pathTo = ua.location.map.getPathTo(ua.location, taskData.targetLocation, ua);
                         if (pathTo == null || pathTo.Length < 2)
                         {
                             reasonMsgs?.Add(new ReasonMsg("Cannot find path to target location", -10000.0));
@@ -152,15 +145,7 @@ namespace CommunityLib
                 case TargetCategory.SocialGroup:
                     if (taskData.targetSocialGroup != null && ua.location.soc != taskData.targetSocialGroup)
                     {
-                        Location[] pathTo;
-                        if (controlParams.pathfindingDeligate == null)
-                        {
-                            pathTo = ua.location.map.getPathTo(ua.location, taskData.targetSocialGroup, ua);
-                        }
-                        else
-                        {
-                            pathTo = ModCore.core.pathfinding.getPathTo(ua.location, taskData.targetSocialGroup, controlParams.pathfindingDeligate, ua);
-                        }
+                        Location[] pathTo = ua.location.map.getPathTo(ua.location, taskData.targetSocialGroup, ua);
                         if (pathTo == null || pathTo.Length < 2)
                         {
                             reasonMsgs?.Add(new ReasonMsg("Cannot find path to target social group", -10000.0));
@@ -171,15 +156,7 @@ namespace CommunityLib
                 case TargetCategory.Unit:
                     if (taskData.targetUnit != null && ! ua.location.units.Contains(taskData.targetUnit))
                     {
-                        Location[] pathTo;
-                        if (controlParams.pathfindingDeligate == null)
-                        {
-                            pathTo = ua.location.map.getPathTo(ua.location, taskData.targetUnit.location, ua);
-                        }
-                        else
-                        {
-                            pathTo = ModCore.core.pathfinding.getPathTo(ua.location, taskData.targetUnit.location, controlParams.pathfindingDeligate, ua);
-                        }
+                        Location[] pathTo = ua.location.map.getPathTo(ua.location, taskData.targetUnit.location, ua);
                         if (pathTo == null || pathTo.Length < 2)
                         {
                             reasonMsgs?.Add(new ReasonMsg("Cannot find path to target location", -10000.0));

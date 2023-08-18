@@ -173,14 +173,7 @@ namespace CommunityLib
             if (challengeData.location != ua.location)
             {
                 Location[] pathTo;
-                if (controlParams.pathfindingDeligate == null)
-                {
-                    pathTo = ua.location.map.getPathTo(ua.location, challengeData.location, ua, safeMove);
-                }
-                else
-                {
-                    pathTo = ModCore.core.pathfinding.getPathTo(ua.location, challengeData.location, controlParams.pathfindingDeligate, ua);
-                }
+                pathTo = ua.location.map.getPathTo(ua.location, challengeData.location, ua, safeMove);
 
                 if (pathTo == null || pathTo.Length < 2)
                 {
@@ -652,14 +645,7 @@ namespace CommunityLib
             if (challengeData.location != ua.location)
             {
                 Location[] pathTo;
-                if (controlParams.pathfindingDeligate == null)
-                {
-                    pathTo = ua.location.map.getPathTo(ua.location, challengeData.location, ua, safeMove);
-                }
-                else
-                {
-                    pathTo = ModCore.core.pathfinding.getPathTo(ua.location, challengeData.location, controlParams.pathfindingDeligate, ua);
-                }
+                pathTo = ua.location.map.getPathTo(ua.location, challengeData.location, ua, safeMove);
                 if (pathTo == null || pathTo.Length < 2)
                 {
                     reasonMsgs?.Add(new ReasonMsg("Cannot find path to challenge", -10000.0));

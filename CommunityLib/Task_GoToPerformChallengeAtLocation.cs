@@ -11,33 +11,13 @@ namespace CommunityLib
     {
         public Location target;
         public bool safeMove;
-        public List<Func<Location[], Location, Unit, bool>> pathfindingDelegates;
 
         public Task_GoToPerformChallengeAtLocation(Challenge c, Location loc, bool safeMove = false)
-            : base (c)
-        {
-            target = loc;
-            this.safeMove = safeMove;
-            
-        }
-
-        public Task_GoToPerformChallengeAtLocation(Challenge c, Location loc, Func<Location[], Location, Unit, bool> pathfindingDelegate)
-            : base (c)
-        {
-            target = loc;
-            safeMove = false;
-            if (pathfindingDelegate != null)
-            {
-                pathfindingDelegates = new List<Func<Location[], Location, Unit, bool>> { pathfindingDelegate };
-            }
-        }
-
-        public Task_GoToPerformChallengeAtLocation(Challenge c, Location loc, List<Func<Location[], Location, Unit, bool>> pathfindingDelegates)
             : base(c)
         {
             target = loc;
-            safeMove = false;
-            this.pathfindingDelegates = pathfindingDelegates;
+            this.safeMove = safeMove;
+
         }
 
         public override string getLong()
@@ -93,16 +73,7 @@ namespace CommunityLib
 
             while (unit.movesTaken < unit.getMaxMoves())
             {
-                Location[] pathTo;
-                if (pathfindingDelegates == null)
-                {
-                    pathTo = unit.location.map.getPathTo(unit.location, target, unit, safeMove);
-                }
-                else
-                {
-                    pathTo = ModCore.core.pathfinding.getPathTo(unit.location, target, pathfindingDelegates, unit, safeMove);
-                }
-
+                Location[] pathTo = unit.location.map.getPathTo(unit.location, target, unit, safeMove);
                 if (pathTo == null || pathTo.Length < 2)
                 {
                     World.log("Path unavailable. Cancelling");
