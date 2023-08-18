@@ -83,27 +83,13 @@ namespace CommunityLib
             while (unit.movesTaken < unit.getMaxMoves())
             {
                 Location[] pathTo;
-                if (pathfindingDelegate == null)
+                if (targetLocation == null)
                 {
-                    if (targetLocation == null)
-                    {
-                        pathTo = unit.map.getPathTo(unit.location, (SocialGroup)null, unit, safeMove);
-                    }
-                    else
-                    {
-                        pathTo = unit.map.getPathTo(unit.location, targetLocation, unit, safeMove);
-                    }
+                    pathTo = unit.map.getPathTo(unit.location, (SocialGroup)null, unit, safeMove);
                 }
                 else
                 {
-                    if (targetLocation == null)
-                    {
-                        pathTo = ModCore.core.pathfinding.getPathTo(unit.location, (SocialGroup)null, pathfindingDelegate, unit);
-                    }
-                    else
-                    {
-                        pathTo = ModCore.core.pathfinding.getPathTo(unit.location, targetLocation, pathfindingDelegate, unit);
-                    }
+                    pathTo = unit.map.getPathTo(unit.location, targetLocation, unit, safeMove);
                 }
 
                 if (pathTo == null || pathTo.Length < 2)

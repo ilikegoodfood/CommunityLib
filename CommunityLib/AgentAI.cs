@@ -148,8 +148,6 @@ namespace CommunityLib
             public bool includeDangerousFoe;
             public bool includeNotHolyTask;
 
-            public Func<Location[], Location, Unit, bool> pathfindingDeligate;
-
             public bool hideThoughts;
             public DebugProperties debugProperties;
 
@@ -173,7 +171,6 @@ namespace CommunityLib
                         includeDangerousFoe = true;
                         includeNotHolyTask = false;
 
-                        pathfindingDeligate = null;
                         hideThoughts = false;
                         debugProperties = new DebugProperties(false);
                     }
@@ -196,7 +193,6 @@ namespace CommunityLib
                         includeDangerousFoe = true;
                         includeNotHolyTask = false;
 
-                        pathfindingDeligate = null;
                         hideThoughts = false;
                         debugProperties = new DebugProperties(false);
                     }

@@ -93,16 +93,7 @@ namespace CommunityLib
 
             while (unit.movesTaken < unit.getMaxMoves())
             {
-                Location[] pathTo;
-                if (pathfindingDelegates == null)
-                {
-                    pathTo = unit.location.map.getPathTo(unit.location, target, unit, safeMove);
-                }
-                else
-                {
-                    pathTo = ModCore.core.pathfinding.getPathTo(unit.location, target, pathfindingDelegates, unit, safeMove);
-                }
-
+                Location[] pathTo = unit.location.map.getPathTo(unit.location, target, unit, safeMove);
                 if (pathTo == null || pathTo.Length < 2)
                 {
                     World.log("Path unavailable. Cancelling");

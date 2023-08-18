@@ -34,8 +34,6 @@ namespace CommunityLib
             }
 
             // Test Articles
-            // populateUAA();
-            
         }
 
         private void populateDeepOne()
@@ -582,16 +580,6 @@ namespace CommunityLib
             reasonMsgs?.Add(new ReasonMsg("Base", utility));
 
             return utility;
-        }
-
-        private void populateUAA()
-        {
-            AgentAI.ControlParameters controlParams = new AgentAI.ControlParameters(false);
-            controlParams.pathfindingDeligate = Pathfinding.delegate_LANDLOCKED;
-            //Console.WriteLine("CommunityLib: Set pathfindingDeligate to delegate_SAFE_MOVE");
-
-            ModCore.core.GetAgentAI().RegisterAgentType(typeof(UAA), controlParams);
-            //Console.WriteLine("CommunityLib: Registered Agent Type UAA");
         }
     }
 }

@@ -19,6 +19,11 @@ namespace CommunityLib
             return location.isOcean || location.isCoastal;
         }
 
+        public static bool delegate_AQUATIC(Location[] currentPath, Location location, Unit u)
+        {
+            return location.isOcean;
+        }
+
         public static bool delegate_DESERT_ONLY(Location[] currentPath, Location location, Unit u)
         {
             return location.hex.terrain == Hex.terrainType.ARID || location.hex.terrain == Hex.terrainType.DESERT || location.hex.terrain == Hex.terrainType.DRY;
@@ -34,24 +39,37 @@ namespace CommunityLib
             return u == null || location.soc == null || !location.soc.hostileTo(u);
         }
 
-        public Location[] getPathTo(Location locA, Location locB, Func<Location[], Location, Unit, bool> pathfindingDelegate = null, Unit u = null, bool safeMove = false)
+        public static bool delegate_SHADOWBOUND(Location[] currentPath, Location location, Unit u)
         {
-            List<Func<Location[], Location, Unit, bool>> pathfindingDelegates = new List<Func<Location[], Location, Unit, bool>>();
+            int hp = 0;
 
-            if (pathfindingDelegate != null)
+            if (u != null)
             {
-                pathfindingDelegates.Add(pathfindingDelegate);
+                hp = u.hp;
             }
 
-            return getPathTo(locA, locB, pathfindingDelegates, u, safeMove);
+            if (u != null && location.getShadow() < 0.5)
+            {
+                if (currentPath.Where(l => l.getShadow() < 0.5).Count() + 1 < hp)
+                {
+                    return true;
+                }
+
+                return false;
+            }
+
+            return true;
         }
 
-        public Location[] getPathTo(Location locA, Location locB, List<Func<Location[], Location, Unit, bool>> pathfindingDelegates = null, Unit u = null, bool safeMove = false)
+        public static bool delegate_SHADOW_ONLY(Location[] currentPath, Location location, Unit u)
         {
-            if (pathfindingDelegates == null)
-            {
-                pathfindingDelegates = new List<Func<Location[], Location, Unit, bool>>();
-            }
+            return location.getShadow() >= 0.5;
+        }
+
+        public Location[] getPathTo(Location locA, Location locB, Unit u = null, bool safeMove = false)
+        {
+
+            List<Func<Location[], Location, Unit, bool>>  pathfindingDelegates = new List<Func<Location[], Location, Unit, bool>>();
 
             if (u != null)
             {
@@ -137,24 +155,9 @@ namespace CommunityLib
             return null;
         }
 
-        public Location[] getPathTo(Location loc, SocialGroup sg, Func<Location[], Location, Unit, bool> pathfindingDelegate = null, Unit u = null, bool safeMove = false)
+        public Location[] getPathTo(Location locA, SocialGroup sg, Unit u = null, bool safeMove = false)
         {
             List<Func<Location[], Location, Unit, bool>> pathfindingDelegates = new List<Func<Location[], Location, Unit, bool>>();
-
-            if (pathfindingDelegate != null)
-            {
-                pathfindingDelegates.Add(pathfindingDelegate);
-            }
-
-            return getPathTo(loc, sg, pathfindingDelegates, u, safeMove);
-        }
-
-        public Location[] getPathTo(Location locA, SocialGroup sg, List<Func<Location[], Location, Unit, bool>> pathfindingDelegates = null, Unit u = null, bool safeMove = false)
-        {
-            if (pathfindingDelegates == null)
-            {
-                pathfindingDelegates = new List<Func<Location[], Location, Unit, bool>>();
-            }
 
             if (u != null)
             {
