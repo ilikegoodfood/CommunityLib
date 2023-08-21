@@ -46,7 +46,7 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when a patch is requested between two locations. It recieves the location the path is from (locA), the location the path is aiming to reach (locB), the unit that is seeking the path (u), which is null if not applicable, and whether to consider safeMove (safeMove).
+        /// This hook fires when a patch is requested between two locations. It recieves the location the path is from (locA), the location the path is aiming to reach (locB), the unit that is seeking the path (u), which is null if not applicable, and whether to consider safeMove (safeMove). <br></br>
         /// If this hook returns any Location[] other than null, the rest of the pathFinding process will not happen. Instead, the function will return the array returned by this hook.
         /// <para>No instances of this hook will run after one which has not returned null.</para>
         /// </summary>
@@ -61,7 +61,7 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when a patch is requested between a location and a social group. It recieves the location the path is from (loc), the social group the path is trying to reach (sg), the unit that is seeking the path (u), which is null if not applicable, and whether to consider safeMove (safeMove).
+        /// This hook fires when a patch is requested between a location and a social group. It recieves the location the path is from (loc), the social group the path is trying to reach (sg), the unit that is seeking the path (u), which is null if not applicable, and whether to consider safeMove (safeMove). <br></br>
         /// If this hook returns any Location[] other than null, the rest of the pathFinding process will not happen. Instead, the function will return the array returned by this hook.
         /// <para>No instances of this hook will run after one which has not returned null.</para>
         /// </summary>
@@ -76,7 +76,7 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when the Community Library's pathfiding algorithm is called. It recieves the location the path is from (locA), the location the path is aiming to reach (locB), the unit that is seeking the path (u), which is null if not applicable, and the list of pathfinding delegates that have alsready been assigned to the path (pathfindingDelegates), including the unit's movement type and safemove requirements.
+        /// This hook fires when the Community Library's pathfiding algorithm is called. It recieves the location the path is from (locA), the location the path is aiming to reach (locB), the unit that is seeking the path (u), which is null if not applicable, and the list of pathfinding delegates that have alsready been assigned to the path (pathfindingDelegates), including the unit's movement type and safemove requirements. <br></br>
         /// In order to modify how the path is calculated, add one or more new pathfinding delegates to the pathfindingDelegates variable.
         /// </summary>
         /// <param name="locA"></param>
@@ -89,7 +89,7 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when the Community Library's pathfiding algorithm is called. It recieves the location the path is from (loc), the social group the path is trying to reach (sg), the unit that is seeking the path (u), which is null if not applicable, and the list of pathfinding delegates that have alsready been assigned to the path (pathfindingDelegates), including the unit's movement type and safemove requirements.
+        /// This hook fires when the Community Library's pathfiding algorithm is called. It recieves the location the path is from (loc), the social group the path is trying to reach (sg), the unit that is seeking the path (u), which is null if not applicable, and the list of pathfinding delegates that have alsready been assigned to the path (pathfindingDelegates), including the unit's movement type and safemove requirements. <br></br>
         /// In order to modify how the path is calculated, add one or more new pathfinding delegates to the pathfindingDelegates variable.
         /// </summary>
         /// <param name="loc"></param>
@@ -101,9 +101,33 @@ namespace CommunityLib
             return;
         }
 
+        /// <summary>
+        /// This hook fires when a unit is taking a step to a new location. All base-game movement processing has already been completed, except for moving the unit from it's current location to it's next location. It receives the unit moving (u), the unit's current location (locA), and the unit's new location (locB).
+        /// </summary>
+        /// <param name="u"></param>
+        /// <param name="locA"></param>
+        /// <param name="locB"></param>
+        public virtual void onMoveTaken(Unit u, Location locA, Location locB)
+        {
+            return;
+        }
 
         /// <summary>
-        /// This hook fires when a unit is instructed to die. It recieves the Unit (u), a string representation of the cause (v), and the person, if applicable, that casued their death (killer).
+        /// This hook fires when an agent's AI checks the distance to a challenge for the purposes of the distance divisor component of it's utility calculation for that challenge. It receives the agent (ua), the challenge (challenge), and the calculated distance (stepDistance). It returns the distance to the challenge as the number of turns required to reach it (typically equal to the step distance).
+        /// <para>If another mod has already returned a modified value, the distance as time value (stepDistance) that you recieve will already include that alteration.</para>
+        /// <para>This hook does not fire if the agent is already at the challenge.</para>
+        /// </summary>
+        /// <param name="ua"></param>
+        /// <param name="c"></param>
+        /// <param name="stepDistance"></param>
+        /// <returns></returns>
+        public virtual int unitAgentAI_getChallengeUtility_getDistanceForDivisor(UA ua, Challenge c, int stepDistance)
+        {
+            return stepDistance;
+        }
+
+        /// <summary>
+        /// This hook fires when a unit is instructed to die. It recieves the Unit (u), a string representation of the cause (v), and the person, if applicable, that casued their death (killer). <br></br>
         /// If this hook returns true, the rest of the death proccess will not happen. If you wish to keep the unit alive and prevent this check being performed multiple times per turn, make sure that their health is greater than 0, or their cause of death has been removed. The process which initially instructed the unit to die will still continue, so if you wish to keep the unit alive, make to sure to account for, and act in response to, the method of its death.
         /// <para>All instances of this hook will run whenever a unit is instructed to die, even those after one which has returned true.</para>
         /// </summary>
@@ -128,7 +152,7 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires at the beginning of a cycle of an army battle. It recieves the battle (battle) that is about to undergo its cycle and returns a boolean.
+        /// This hook fires at the beginning of a cycle of an army battle. It recieves the battle (battle) that is about to undergo its cycle and returns a boolean. <br></br>
         /// <para>If this hook returns true, the rest of the battle cycle proccess will not happen. This will not prevent processing in the AI of any units that are in the battle, or the player from ordering a controllable unit out of the battle. If you wish to do so, you will need to account for and act in response to those interactions.</para>
         /// <para>All instances of this hook will run whenever an army battle begins its cycle, even those after one which has returned true.</para>
         /// </summary>
@@ -193,9 +217,9 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when an army battle has been won, by one side having zero remaining units. It recieves the battle (battle) that has just been won, a list of surviving military units on the winning side (victorUnits), a list of surviving agents commanding the winning side (victorComs), a list of military units of the defeated side that were alive and in battle at the start of the battle cycle (defeatedUnits), and a list of the agents commanding the defeated side that were alive and in battle at the start of the battle cycle (defeatedComs).
-        /// <para>If a battle is won as a consequence of units being killed, or retreating, between cycles, the defeatedUnits and defeatedComs lists will be empty.</para>
-        /// <para>If neither side has any surviving units, the lists of surviving victorious units and agents (victorUnits and victorComs) will all be empty, and the list of defeated units and agents (defeatedUnits and defeatedComs) will contain all units and agents that were alive and in battle at the start of the battle cycle.</para>
+        /// This hook fires when an army battle has been won, by one side having zero remaining units. It recieves the battle (battle) that has just been won, a list of surviving military units on the winning side (victorUnits), a list of surviving agents commanding the winning side (victorComs), a list of military units of the defeated side that were alive and in battle at the start of the battle cycle (defeatedUnits), and a list of the agents commanding the defeated side that were alive and in battle at the start of the battle cycle (defeatedComs).<br></br>
+        /// If a battle is won as a consequence of units being killed, or retreating, between cycles, the defeatedUnits and defeatedComs lists will be empty. <br></br>
+        /// If neither side has any surviving units, the lists of surviving victorious units and agents (victorUnits and victorComs) will all be empty, and the list of defeated units and agents (defeatedUnits and defeatedComs) will contain all units and agents that were alive and in battle at the start of the battle cycle.
         /// </summary>
         /// <param name="battle"></param>
         /// <param name="victorUnits"></param>
@@ -208,8 +232,8 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when a battle is ended as a consequence of the last military unit on one of the sides moving out of the battle, after the unit is removed from the battle's data. It recieves the battle (battle) that has just been terminated, a list of remaining military units (victorUnits), a list of remaining agents commanding the remaining side (victorComs), and the military unit who fled the battle (u).
-        /// <para>If neither side has any surviving units, an error has occured, and the lists of surviving victorious units and agents (victorUnits and victorComs) will both be empty.</para>
+        /// This hook fires when a battle is ended as a consequence of the last military unit on one of the sides moving out of the battle, after the unit is removed from the battle's data. It recieves the battle (battle) that has just been terminated, a list of remaining military units (victorUnits), a list of remaining agents commanding the remaining side (victorComs), and the military unit who fled the battle (u). <br></br>
+        /// If neither side has any surviving units, an error has occured, and the lists of surviving victorious units and agents (victorUnits and victorComs) will both be empty.
         /// </summary>
         /// <param name="battle"></param>
         /// <param name="victorUnits"></param>
@@ -231,6 +255,40 @@ namespace CommunityLib
         }
 
         /// <summary>
+        /// This hook fires when a minion in a minion battle is about to make an attack. It receives the Minion that is about to attack (attacker), the enemy Agent (other), the Battle Popup Window (battle), the damage that it si about to deal (dmg), and the row that it is attick down (row). It returns the damage that the minion will do.<br></br>
+        /// The Row directly corrisponds to the index of the minions on both agents. If "other.minions[row]" is equal to null, then the damage will be dealt to the enemy agent.
+        /// <para>If another mod has already modified the damage value using this hook, that change will be in the damage value that you receive.</para>
+        /// </summary>
+        /// <param name="attacker"></param>
+        /// <param name="other"></param>
+        /// <param name="battle"></param>
+        /// <param name="dmg"></param>
+        /// <param name="row"></param>
+        /// <returns></returns>
+        public virtual int onMinionAttackAboutToBePerformed(Minion attacker, UA other, PopupBattleAgent battle, int dmg, int row)
+        {
+            //Console.WriteLine("CommunityLib: Minion attack about to be performed");
+            return dmg;
+        }
+
+        /// <summary>
+        /// This hook fires when an agent or one of their minions is about to take attack damage in an agent battle. It receives the popup battle window (battle), the agent whom the attack is directed towards (defender), the minion that is about to recieve the damge in the agent's stead (minion) if any, the damage they are about to receive (dmg), and the row that the attack is made down (row). It returns the damage that the victim will receive.<br></br>
+        /// The Row directly corrisponds to the index of the minions on both agents. If minion is not null, it is stored in "defender.minion[row]".
+        /// <para>If another mod has already modified the damage value using this hook, that change will be in the damage value that you receive.</para>
+        /// </summary>
+        /// <param name="battle"></param>
+        /// <param name="defender"></param>
+        /// <param name="minion"></param>
+        /// <param name="dmg"></param>
+        /// <param name="row"></param>
+        /// <returns></returns>
+        public virtual int onAgentBattle_ReceiveDamage(PopupBattleAgent battle, UA defender, Minion minion, int dmg, int row)
+        {
+            //Console.WriteLine("CommunityLib: Agent battle damage About to be received.");
+            return dmg;
+        }
+
+        /// <summary>
         /// This hook fires when a military unit is about to recieve damage in an army battle. It recieves the army battle (battle), the military unit (u), and the total damage it is about to recieve (dmg). It returns the damage the unit is about to recieve as an int.
         /// <para>The damage that the unit is about to recieve is the total of all damage sources being applied to that unit in that battle cycle. This hook does not fire for each individual damage source. If you wish to modify the damage sources individually, use the 'onArmyBattleCycle_DamageCalculated' hook</para>
         /// </summary>
@@ -244,9 +302,9 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when a religion is viewed in the religion screen. It recieves the holy order (order), and the list of reason messages (msgs) that is used to compile the output.
-        /// <para>The list of reason message can contain both 'ReasonMsg' and 'CommunityLib.ReasonMsgMax'. If you want to display a singular value, as with 'Income', use a 'reasonMsg'. If you wish to dipslay a value out of a maximum value, as with 'Gold for Acolytes', use a 'CommunityLib.ReasonMsgMax'.</para>
-        /// <para>The message is displayed in the left hand panel of the budget screen, and the value and/or max value is displayed in the value column, in the same line as the message.</para>
+        /// This hook fires when a religion is viewed in the religion screen. It recieves the holy order (order), and the list of reason messages (msgs) that is used to compile the output. <br></br>
+        /// The list of reason message can contain both 'ReasonMsg' and 'CommunityLib.ReasonMsgMax'. If you want to display a singular value, as with 'Income', use a 'reasonMsg'. If you wish to dipslay a value out of a maximum value, as with 'Gold for Acolytes', use a 'CommunityLib.ReasonMsgMax'. <br></br>
+        /// The message is displayed in the left hand panel of the budget screen, and the value and/or max value is displayed in the value column, in the same line as the message.
         /// </summary>
         /// <param name="order"></param>
         /// <param name="msgs"></param>
@@ -316,7 +374,7 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when a settlement is destroyed. It recieves the settlement (set), a string representation of the cause (v), and the object, if applicable, that casued its destruction (killer).
+        /// This hook fires when a settlement is destroyed. It recieves the settlement (set), a string representation of the cause (v), and the object, if applicable, that casued its destruction (killer). <br></br>
         /// If this hook returns true, the rest of the ruin proccess will not happen. If you wish to keep the settlement intact and prevent this check being performed multiple times per turn, make sure that their cause of destruction has been removed. The process which initially instructed the settlement to fall into ruin will still continue, so if you wish to keep the settlement intact, make to sure to account for, and act in response to, the method of its destruction.
         /// <para>All instances of this hook will run whenever a settlemnt is instructed to fall into ruin, even those after one which has returned true.</para>
         /// </summary>
@@ -371,7 +429,7 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when the Community Library's Agent AI beings processing an agent. It recieves the agent (ua), the AIData for its Agent AI (aiData), a list of AgentAI.ChallengeData structs (validChallengeData), a list of AgentAI.TaskData structs (validTaskData), and a list of Units (visibleUnits).
+        /// This hook fires when the Community Library's Agent AI beings processing an agent. It recieves the agent (ua), the AIData for its Agent AI (aiData), a list of AgentAI.ChallengeData structs (validChallengeData), a list of AgentAI.TaskData structs (validTaskData), and a list of Units (visibleUnits).<br></br>
         /// If this hook returns true, the rest of the AI process will not happen.
         /// <para>All instances of this hook will run whenever an AgentAI runs, even those after one which has returned true.</para>
         /// </summary>
@@ -413,7 +471,7 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when the Community Library's Agent AI beings processing processing the utility of a challenge for an agent. It recieves the agent (ua), the AIData for its Agent AI (aiData), the AgentAI.ChallengeData (challengeData), the utility (utility), and a list of ReasonMsgs (reasonMsgs).
+        /// This hook fires when the Community Library's Agent AI beings processing processing the utility of a challenge for an agent. It recieves the agent (ua), the AIData for its Agent AI (aiData), the AgentAI.ChallengeData (challengeData), the utility (utility), and a list of ReasonMsgs (reasonMsgs).<br></br>
         /// If this hook returns true, the rest of the getChallengeUtility process will not happen.
         /// <para>All instances of this hook will run whenever an AgentAI runs, even those after one which has returned true.</para>
         /// </summary>
@@ -443,7 +501,23 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when the Community Library's Agent AI beings processing processing the utility of a task for an agent. It recieves the agent (ua), the AIData for its Agent AI (aiData), the AgentAI.TaskData (taskData), the utility (utility), and a list of ReasonMsgs (reasonMsgs).
+        /// This hook fires when the Community Library's AGent AI checks the distance to a challenge for the purposes of the distance divisor component of it's utility calculation for that challenge. It recieves the agent (ua), the AIData for its Agent AI (aiData), the AgentAI.ChallengeData (challengeData), and the calculated distance (stepDistance). It returns the distance to the challenge as the number of turns required to reach it (typically equal to the step distance).
+        /// <para>If another mod has already returned a modified value, the distance as time value (stepDistance) that you recieve will already include that alteration.</para>
+        /// <para>This hook does not fire if the agent is already at the challenge.</para>
+        /// </summary>
+        /// <param name="ua"></param>
+        /// <param name="aiData"></param>
+        /// <param name="challengeData"></param>
+        /// <param name="c"></param>
+        /// <param name="stepDistance"></param>
+        /// <returns></returns>
+        public virtual int onAgentAI_GetChallengeUtility_GetDistanceForDivisor(UA ua, AgentAI.AIData aiData, AgentAI.ChallengeData challengeData, int stepDistance)
+        {
+            return stepDistance;
+        }
+
+        /// <summary>
+        /// This hook fires when the Community Library's Agent AI beings processing processing the utility of a task for an agent. It recieves the agent (ua), the AIData for its Agent AI (aiData), the AgentAI.TaskData (taskData), the utility (utility), and a list of ReasonMsgs (reasonMsgs).<br></br>
         /// If this hook returns true, the rest of the getTaskUtility process will not happen.
         /// <para>All instances of this hook will run whenever an AgentAI runs, even those after one which has returned true.</para>
         /// </summary>
@@ -485,7 +559,7 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when an agent tries to get visible units to test for unit interactions. It recieves the agent (ua), and the list of units that it considers visible (visibleUnits).
+        /// This hook fires when an agent tries to get visible units to test for unit interactions. It recieves the agent (ua), and the list of units that it considers visible (visibleUnits). <br></br>
         /// If this hook returns true, the base game's getVisibleUnits function will not run.
         /// <para>All instances of this hook will run whenever an AgentAI runs, even those after one which has returned true.</para>
         /// </summary>
@@ -508,7 +582,7 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when a non-commandable Agent is considering whether to swap an item in their inventory with a new item of higher level. It recieves the person (person) who is about to make the swap, the item (item) that they are about to get rid of, the item (newItem) that they are about to gain, and a boolean that determines if they must take the new item (obligateHold).
+        /// This hook fires when a non-commandable Agent is considering whether to swap an item in their inventory with a new item of higher level. It recieves the person (person) who is about to make the swap, the item (item) that they are about to get rid of, the item (newItem) that they are about to gain, and a boolean that determines if they must take the new item (obligateHold). <br></br>
         /// If this hook returns true, the person will not swap the item for the new item, and will instead test against the following item slots.
         /// <para>All instances of this hook will run whenever a non-commandable agent, even those after one which has returned true.</para>
         /// </summary>
@@ -533,9 +607,9 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when you hover your mouse over an action button in the UIScroll_Unit interface (the panel on the right that shows challenges and tasks available to the selected unit), excluding buttons for challenges, for a commandable military unit. It receives the military unit (um), a partial reconstruction of the TaskData object that could have been used to create it, not the original object. It does not include the onClick delegate, profile gain, or menace gain
-        /// <para>If the partially reconstructed TaskData matches a task that your mod adds, populate the popoutData (TaskData_Popout) and return true. Otherwise, return false to allow another mod or the base game to handle the challenge popout screen for that action button.</para>
-        /// <para>The title, icon and icon background are pre-set in popoutData when it is passed into the hook, and the progressReasonMsgs are set to an empty list of ReasonMsg</para>
+        /// This hook fires when you hover your mouse over an action button in the UIScroll_Unit interface (the panel on the right that shows challenges and tasks available to the selected unit), excluding buttons for challenges, for a commandable military unit. It receives the military unit (um), a partial reconstruction of the TaskData object that could have been used to create it, not the original object. It does not include the onClick delegate, profile gain, or menace gain. <br></br>
+        /// If the partially reconstructed TaskData matches a task that your mod adds, populate the popoutData (TaskData_Popout) and return true. Otherwise, return false to allow another mod or the base game to handle the challenge popout screen for that action button.
+        /// <br></br>The title, icon and icon background are pre-set in popoutData when it is passed into the hook, and the progressReasonMsgs are set to an empty list of ReasonMsg.
         /// <para>No hook after the first hook to return true will be called.</para>
         /// </summary>
         /// <param name="um"></param>
@@ -570,8 +644,8 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when an event checks if a location is the location of the Elder Tomb. It only fires if the location's settlement is not an instance of `Set_TombOfGods`, or a subclass thereof. It recieves the Location beibng checked (location) and returns whether the location should be considered to be the elder tomb.
-        /// <para>This hook is not called to determine whether a graphical hex should display a property overlay for an atypical Elder Tomb. If you wish your atypical Elder Tomb to not display a property overlay, of if you wish it to display a speciifc property overlay, use the base game's `onGraphicalHexUpdated` hook instead.</para>
+        /// This hook fires when an event checks if a location is the location of the Elder Tomb. It only fires if the location's settlement is not an instance of `Set_TombOfGods`, or a subclass thereof. It recieves the Location beibng checked (location) and returns whether the location should be considered to be the elder tomb. <br></br>
+        /// This hook is not called to determine whether a graphical hex should display a property overlay for an atypical Elder Tomb. If you wish your atypical Elder Tomb to not display a property overlay, of if you wish it to display a speciifc property overlay, use the base game's `onGraphicalHexUpdated` hook instead.
         /// <para>No hook after the first hook to return true will be called.</para>
         /// </summary>
         /// <param name="context"></param>
@@ -591,20 +665,5 @@ namespace CommunityLib
         {
             return result;
         }
-
-        /*
-        /// <summary>
-        /// This hook fires when a graphical hex is determining whether it should display a property overlay for the location on the hex. It only fires for hexes that have a location on them. It recieves the Location (location), and outputs a property
-        /// If this hook returns true, the location will not display a property overlay. If the hook returns false and outputs a priorityProperty that is not null, and that property has a hex overlay (`hasHexView()` returns true), the hex will only display property overlays from priority properties, determined by property charge. The minimum required charge for an overlay to display is 45.
-        /// <para>All instances of this hook will run whenever a hex checkes if it should display a property overlay, even those after one which has returned true.</para>
-        /// </summary>
-        /// <param name="location"></param>
-        /// <param name="priorityPropertyOverlay"></param>
-        /// <returns></returns>
-        public virtual bool onGraphicalHexUpdate_interceptDisplayPropertyOverlay(Location location, out List<Property> priorityProperties)
-        {
-            priorityProperties = null;
-            return false;
-        }*/
     }
 }

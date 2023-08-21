@@ -1479,7 +1479,7 @@ namespace CommunityLib
             if (controlParams.valueTimeCost)
             {
                 //Console.WriteLine("CommunityLib: distance Divisor is " + getDistanceDivisor(challengeData, ua).ToString());
-                utility /= getDistanceDivisor(challengeData, ua);
+                utility /= getDistanceDivisor(challengeData, aiData, ua);
             }
 
             foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
@@ -1532,10 +1532,16 @@ namespace CommunityLib
             return result;
         }
 
-        private double getDistanceDivisor(ChallengeData challengeData, UA ua)
+        private double getDistanceDivisor(ChallengeData challengeData, AIData aiData, UA ua)
         {
             double distance = map.getStepDist(ua.location, challengeData.location) / ua.getMaxMoves();
             distance = Math.Ceiling(distance);
+
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            {
+                distance = hook.onAgentAI_GetChallengeUtility_GetDistanceForDivisor(ua, aiData, challengeData, (int)distance);
+            }
+
             int duration = (int)Math.Max(1.0, Math.Ceiling(challengeData.challenge.getCompletionMenaceAfterDifficulty() / challengeData.challenge.getProgressPerTurn(ua, null)));
             return (map.param.ua_flatTimeCostUtility + distance + duration) / 10.0;
         }

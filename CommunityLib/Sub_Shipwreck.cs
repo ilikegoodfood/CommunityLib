@@ -75,7 +75,7 @@ namespace CommunityLib
 
         public override Sprite getLocationSprite(World world)
         {
-            return EventManager.getImg("CLib.loc_Shipwreck.png");
+            return EventManager.getImg("CLib.Loc_Shipwreck.png");
         }
 
         public override string generateParentName()
@@ -102,7 +102,7 @@ namespace CommunityLib
 
         public override Sprite getIcon()
         {
-            return EventManager.getImg("CLib.Shipwreck.png");
+            return EventManager.getImg("CLib.Icon_Shipwreck.png");
         }
 
         public override bool canBeInfiltrated()

@@ -20,7 +20,7 @@ namespace CommunityLib
 
         public override Sprite getSprite()
         {
-            return EventManager.getImg("CLib.loc_Shipwreck.png");
+            return EventManager.getImg("CLib.Loc_Shipwreck.png");
         }
     }
 }

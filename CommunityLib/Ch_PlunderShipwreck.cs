@@ -75,7 +75,7 @@ namespace CommunityLib
 
         public override Sprite getSprite()
         {
-            return EventManager.getImg("CLib.Shipwreck.png");
+            return EventManager.getImg("CLib.Icon_Shipwreck.png");
         }
 
         public override challengeStat getChallengeType()
@@ -193,7 +193,10 @@ namespace CommunityLib
                 ua.defence = ua.getMaxDefence();
                 foreach (Minion minion in ua.minions)
                 {
-                    minion.defence = minion.getMaxDefence();
+                    if (minion != null)
+                    {
+                        minion.defence = minion.getMaxDefence();
+                    }
                 }
 
                 int i = 0;
