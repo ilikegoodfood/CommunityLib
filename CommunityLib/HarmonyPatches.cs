@@ -834,18 +834,21 @@ namespace CommunityLib
 
         private static int BattleAgents_AttackDownRow_Minion_TranspilerBody_MinionAttack(PopupBattleAgent battle, UA me, int dmg, int row)
         {
-            //Console.WriteLine("CommunityLib: Minion about to attack");
-            UA other = battle.battle.att;
-            if (battle.battle.att == me)
+            if (me.minions[row] != null)
             {
-                //Console.WriteLine("CommunityLib: other is defender");
-                other = battle.battle.def;
-            }
+                //Console.WriteLine("CommunityLib: Minion about to attack");
+                UA other = battle.battle.att;
+                if (battle.battle.att == me)
+                {
+                    //Console.WriteLine("CommunityLib: other is defender");
+                    other = battle.battle.def;
+                }
 
-            //Console.WriteLine("CommunityLib: Callning hooks");
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
-            {
-                dmg = hook.onMinionAttackAboutToBePerformed(me.minions[row], other, battle, dmg, row);
+                //Console.WriteLine("CommunityLib: Callning hooks");
+                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+                {
+                    dmg = hook.onMinionAttackAboutToBePerformed(me.minions[row], other, battle, dmg, row);
+                }
             }
 
             return dmg;
@@ -855,7 +858,7 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_TranspilerBody_ReceiveDamage = AccessTools.Method(patchType, nameof(BattleAgents_AttackDownRow_TranspilerBody_ReceiveDamage), new Type[] { typeof(BattleAgents), typeof(PopupBattleAgent), typeof(UA), typeof(int), typeof(int) });
+            MethodInfo MI_TranspilerBody_ReceiveDamage = AccessTools.Method(patchType, nameof(BattleAgents_AttackDownRow_TranspilerBody_ReceiveDamage), new Type[] { typeof(PopupBattleAgent), typeof(UA), typeof(int), typeof(int) });
 
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
