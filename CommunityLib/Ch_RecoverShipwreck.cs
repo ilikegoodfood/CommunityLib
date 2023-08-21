@@ -60,7 +60,7 @@ namespace CommunityLib
 
         public override Sprite getSprite()
         {
-            return EventManager.getImg("CLib.Shipwreck.png");
+            return EventManager.getImg("CLib.Icon_Shipwreck.png");
         }
 
         public override challengeStat getChallengeType()

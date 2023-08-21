@@ -54,7 +54,11 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), nameof(BattleArmy.computeAdvantage), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_computeAdvantage_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), "allocateDamage", new Type[] { typeof(List<UM>), typeof(int[]) }), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_allocateDamage_Transpiler)));
 
-            // Raze Location Hooks
+            // Agent Battle hooks
+            harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.attackDownRow), new Type[] { typeof(int), typeof (UA), typeof(UA), typeof(PopupBattleAgent) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_AttackDownRow_Minion_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.attackDownRow), new Type[] { typeof(int), typeof (int), typeof(AgentCombatInterface), typeof(UA), typeof(UA), typeof(PopupBattleAgent) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_AttackDownRow_Agent_Transpiler)));
+
+            // Raze Location hooks
             harmony.Patch(original: AccessTools.Method(typeof(Task_RazeLocation), nameof(Task_RazeLocation.turnTick), new Type[] { typeof(Unit) }), prefix: new HarmonyMethod(patchType, nameof(Task_RazeLocation_turnTick_Prefix)), postfix: new HarmonyMethod(patchType, nameof(Task_RazeLocation_turnTick_Postfix)), transpiler: new HarmonyMethod(patchType, nameof(Task_RazeLocation_turnTick_Transpiler)));
 
             // Settlement destruction hooks
@@ -85,6 +89,9 @@ namespace CommunityLib
             // OnAgentIsRecruitable
             harmony.Patch(original: AccessTools.Method(typeof(PopupAgentCreation), nameof(PopupAgentCreation.populate), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(PopupAgentCreation_populate_Transpiler)));
 
+            // DistanceDivisor hooks
+            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.distanceDivisor), new Type[] { typeof(Challenge) }), transpiler: new HarmonyMethod(patchType, nameof(UA_distanceDivisor_Transpiler)));
+
             // Graphical Hex Hooks
             //harmony.Patch(original: AccessTools.Method(typeof(GraphicalHex), nameof(GraphicalHex.checkData), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(GraphicalHex_checkData_Transpiler)));
 
@@ -104,7 +111,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Overmind), nameof(Overmind.getThreats), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Overmind_getThreats_Transpiler)));
 
             // Pathfinding modifications
-            harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.adjacentMoveTo), new Type[] { typeof(Unit), typeof(Location) }), prefix: new HarmonyMethod(patchType, nameof(Map_adjacentMoveTo_Prefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.adjacentMoveTo), new Type[] { typeof(Unit), typeof(Location) }), prefix: new HarmonyMethod(patchType, nameof(Map_adjacentMoveTo_Prefix)), transpiler: new HarmonyMethod(patchType, nameof(Map_adjacentMoveTo_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.moveTowards), new Type[] { typeof(Unit), typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(Map_moveTowards_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.getPathTo), new Type[] { typeof(Location), typeof(Location), typeof(Unit), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(Map_getPathTo_Location_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.getPathTo), new Type[] { typeof(Location), typeof(SocialGroup), typeof(Unit), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(Map_getPathTo_SocialGroup_Transpiler)));
@@ -754,12 +761,141 @@ namespace CommunityLib
             }
         }
 
-        private static void BattleArmy_allocateDamage_TranspilerBody_receivesDamage(BattleArmy battle, List<UM> units, int[] dmgs, int i)
+        private static void BattleArmy_allocateDamage_TranspilerBody_receivesDamage(BattleArmy battle, List<UM> units, int[] dmgs, int index)
         {
             foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
-                dmgs[i] = hook?.onUnitReceivesArmyBattleDamage(battle, units[i], dmgs[i]) ?? dmgs[i];
+                dmgs[index] = hook?.onUnitReceivesArmyBattleDamage(battle, units[index], dmgs[index]) ?? dmgs[index];
             }
+        }
+
+        // Agent Battle Hooks BattleAgents_AttackDownRow_Minion_Transpiler
+        private static IEnumerable<CodeInstruction> BattleAgents_AttackDownRow_Minion_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody_MinionAttack = AccessTools.Method(patchType, nameof(BattleAgents_AttackDownRow_Minion_TranspilerBody_MinionAttack), new Type[] { typeof(PopupBattleAgent), typeof(UA), typeof(int), typeof(int) });
+            MethodInfo MI_TranspilerBody_ReceiveDamage = AccessTools.Method(patchType, nameof(BattleAgents_AttackDownRow_TranspilerBody_ReceiveDamage), new Type[] { typeof(PopupBattleAgent), typeof(UA), typeof(int), typeof(int) });
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Ldloc_3 && instructionList[i-1].opcode == OpCodes.Endfinally)
+                    {
+                        targetIndex++;
+
+                        // Call Minion Attack hook
+                        yield return new CodeInstruction(OpCodes.Ldarg, 4);
+                        yield return new CodeInstruction(OpCodes.Ldarg_2);
+                        yield return new CodeInstruction(OpCodes.Ldloc, 4);
+                        yield return new CodeInstruction(OpCodes.Ldarg_1);
+                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_MinionAttack);
+                        yield return new CodeInstruction(OpCodes.Stloc, 4);
+
+                        // Call Recieve Damage hook. Minion belonging to agent b is getting attacked
+                        yield return new CodeInstruction(OpCodes.Ldarg, 4);
+                        yield return new CodeInstruction(OpCodes.Ldarg_3);
+                        yield return new CodeInstruction(OpCodes.Ldloc, 4);
+                        yield return new CodeInstruction(OpCodes.Ldarg_1);
+                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_ReceiveDamage);
+                        yield return new CodeInstruction(OpCodes.Stloc, 4);
+                    }
+                    else if (targetIndex == 2 && instructionList[i].opcode == OpCodes.Endfinally)
+                    {
+                        targetIndex++;
+                    }
+                    else if (targetIndex == 3 && instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i-1].opcode == OpCodes.Endfinally)
+                    {
+                        targetIndex = 0;
+
+                        // Call Minion Attack hook
+                        yield return new CodeInstruction(OpCodes.Ldarg, 4);
+                        yield return new CodeInstruction(OpCodes.Ldarg_3);
+                        yield return new CodeInstruction(OpCodes.Ldloc, 19);
+                        yield return new CodeInstruction(OpCodes.Ldarg_1);
+                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_MinionAttack);
+                        yield return new CodeInstruction(OpCodes.Stloc, 4);
+
+                        // Call Recieve Damage hook. Minion belonging to agent b is getting attacked
+                        yield return new CodeInstruction(OpCodes.Ldarg, 4);
+                        yield return new CodeInstruction(OpCodes.Ldarg_2);
+                        yield return new CodeInstruction(OpCodes.Ldloc, 19);
+                        yield return new CodeInstruction(OpCodes.Ldarg_1);
+                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_ReceiveDamage);
+                        yield return new CodeInstruction(OpCodes.Stloc, 4);
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+        }
+
+        private static int BattleAgents_AttackDownRow_Minion_TranspilerBody_MinionAttack(PopupBattleAgent battle, UA me, int dmg, int row)
+        {
+            //Console.WriteLine("CommunityLib: Minion about to attack");
+            UA other = battle.battle.att;
+            if (battle.battle.att == me)
+            {
+                //Console.WriteLine("CommunityLib: other is defender");
+                other = battle.battle.def;
+            }
+
+            //Console.WriteLine("CommunityLib: Callning hooks");
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            {
+                dmg = hook.onMinionAttackAboutToBePerformed(me.minions[row], other, battle, dmg, row);
+            }
+
+            return dmg;
+        }
+
+        private static IEnumerable<CodeInstruction> BattleAgents_AttackDownRow_Agent_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody_ReceiveDamage = AccessTools.Method(patchType, nameof(BattleAgents_AttackDownRow_TranspilerBody_ReceiveDamage), new Type[] { typeof(BattleAgents), typeof(PopupBattleAgent), typeof(UA), typeof(int), typeof(int) });
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Ldarg_S && instructionList[i-1].opcode == OpCodes.Endfinally)
+                    {
+                        targetIndex = 0;
+
+                        yield return new CodeInstruction(OpCodes.Ldarg, 6);
+                        yield return new CodeInstruction(OpCodes.Ldarg_S, 5);
+                        yield return new CodeInstruction(OpCodes.Ldarg_S, 2);
+                        yield return new CodeInstruction(OpCodes.Ldarg_1);
+                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_ReceiveDamage);
+                        yield return new CodeInstruction(OpCodes.Starg_S, 2);
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+        }
+
+        private static int BattleAgents_AttackDownRow_TranspilerBody_ReceiveDamage(PopupBattleAgent battle, UA defender, int dmg, int row)
+        {
+            //Console.WriteLine("CommunityLib: About to receive damage");
+            Minion minion = defender.minions[row];
+            if (minion != null && minion.isDead)
+            {
+                //Console.WriteLine("CommunityLib: minion is dead");
+                minion = null;
+            }
+
+            //Console.WriteLine("CommunityLib: Calling hooks");
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            {
+                dmg = hook.onAgentBattle_ReceiveDamage(battle, defender, minion, dmg, row);
+            }
+
+            return dmg;
         }
 
         // Raze Location Hooks
@@ -1863,6 +1999,38 @@ namespace CommunityLib
             }
         }
 
+        private static IEnumerable<CodeInstruction> Map_adjacentMoveTo_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranpilerBody = AccessTools.Method(patchType, nameof(Map_adjacentMoveTo_TranspilerBody), new Type[] { typeof(Unit), typeof(Location) });
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Ldarg_1 && instructionList[i-1].opcode == OpCodes.Endfinally)
+                    {
+                        targetIndex = 0;
+                        yield return new CodeInstruction(OpCodes.Ldarg_1);
+                        yield return new CodeInstruction(OpCodes.Ldarg_2);
+                        yield return new CodeInstruction(OpCodes.Call, MI_TranpilerBody);
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+        }
+
+        private static void Map_adjacentMoveTo_TranspilerBody(Unit u, Location loc)
+        {
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            {
+                hook.onMoveTaken(u, u.location, loc);
+            }
+        }
+
         private static IEnumerable<CodeInstruction> Map_moveTowards_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
@@ -1872,7 +2040,7 @@ namespace CommunityLib
             {
                 if (targetIndex > 0)
                 {
-                    if (instructionList[i].opcode == OpCodes.Ldnull)
+                    if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Ldnull)
                     {
                         targetIndex = 0;
                         yield return new CodeInstruction(OpCodes.Ldarg_1);
@@ -2191,27 +2359,29 @@ namespace CommunityLib
             return result;
         }
 
-        // Graphical Hex Hooks
-        /*private static IEnumerable<CodeInstruction> GraphicalHex_checkData_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        private static IEnumerable<CodeInstruction> UA_distanceDivisor_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(GraphicalHex_checkData_TranspilerBody), new Type[] { typeof(GraphicalHex) });
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(UA_distanceDivisor_TranspilerBody), new Type[] { typeof(UA), typeof(Challenge), typeof(int) });
 
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
             {
                 if (targetIndex > 0)
                 {
-                    if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i-1].opcode == OpCodes.Ldsfld && instructionList[i-2].opcode == OpCodes.Brfalse_S)
+                    if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Ldc_R8)
                     {
                         targetIndex = 0;
 
-                        Label skip = (Label)instructionList[i].operand;
-
-                        yield return new CodeInstruction(OpCodes.Brfalse_S, skip);
-                        yield return new CodeInstruction(OpCodes.Ldarg_0);
+                        CodeInstruction code = new CodeInstruction(OpCodes.Ldarg_0);
+                        code.labels.AddRange(instructionList[i].labels);
+                        instructionList[i].labels.Clear();
+                        yield return code;
+                        yield return new CodeInstruction(OpCodes.Ldarg_1);
+                        yield return new CodeInstruction(OpCodes.Ldloc_0);
                         yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                        yield return new CodeInstruction(OpCodes.Stloc_0);
                     }
                 }
 
@@ -2219,59 +2389,20 @@ namespace CommunityLib
             }
         }
 
-        private static bool GraphicalHex_checkData_TranspilerBody(GraphicalHex hex)
+        private static int UA_distanceDivisor_TranspilerBody(UA ua, Challenge c, int distance)
         {
-            bool result = true;
-            List<Property> priorityProperties = new List<Property>();
-
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            if (distance > 0)
             {
-                bool retValue = hook.onGraphicalHexUpdate_interceptDisplayPropertyOverlay(hex.hex.location, out List<Property> newPriorityProperties);
+                distance = (int)Math.Ceiling((double)distance / ua.getMaxMoves());
 
-                if (retValue)
+                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
                 {
-                    result = false;
-                }
-
-                if (result)
-                {
-                    if (newPriorityProperties != null)
-                    {
-                        foreach (Property priorityProperty in newPriorityProperties)
-                        {
-                            if (priorityProperty.hasHexView() && priorityProperty.charge >= 45.0)
-                            {
-                                priorityProperties.Add(priorityProperty);
-                            }
-                        }
-                    }
+                    distance = hook.unitAgentAI_getChallengeUtility_getDistanceForDivisor(ua, c, distance);
                 }
             }
 
-            if (result && priorityProperties.Count > 0)
-            {
-                Property priorityProperty = null;
-                double charge = 0.0;
-
-                foreach (Property property in priorityProperties)
-                {
-                    if (property.charge > charge)
-                    {
-                        priorityProperty = property;
-                        charge = property.charge;
-                    }
-                }
-
-                if (priorityProperty != null)
-                {
-                    result = false;
-                    hex.cloudLayer.sprite = priorityProperty.hexViewSprite();
-                    hex.cloudLayer.enabled = true;
-                }
-            }
-
-            return result;
-        }*/
+            return distance;
+        }
 
         // Universal AI Patches
         private static void UIScroll_Unit_checkData_Prefix()
