@@ -92,6 +92,9 @@ namespace CommunityLib
             // DistanceDivisor hooks
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.distanceDivisor), new Type[] { typeof(Challenge) }), transpiler: new HarmonyMethod(patchType, nameof(UA_distanceDivisor_Transpiler)));
 
+            // Prefab Store hooks
+            harmony.Patch(original: AccessTools.Method(typeof(PrefabStore), nameof(PrefabStore.popHolyOrder), new Type[] { typeof(HolyOrder) }), prefix: new HarmonyMethod(patchType, nameof(Prefab_popHolyOrder_Prefix)));
+
             // Graphical Hex Hooks
             //harmony.Patch(original: AccessTools.Method(typeof(GraphicalHex), nameof(GraphicalHex.checkData), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(GraphicalHex_checkData_Transpiler)));
 
@@ -787,17 +790,21 @@ namespace CommunityLib
                         targetIndex++;
 
                         // Call Minion Attack hook
-                        yield return new CodeInstruction(OpCodes.Ldarg, 4);
+                        CodeInstruction code = new CodeInstruction(OpCodes.Ldarg, 4);
+                        code.labels.AddRange(instructionList[i].labels);
+                        instructionList[i].labels.Clear();
+                        yield return code;
                         yield return new CodeInstruction(OpCodes.Ldarg_2);
-                        yield return new CodeInstruction(OpCodes.Ldloc, 4);
+                        yield return new CodeInstruction(OpCodes.Ldloc_S, 4);
                         yield return new CodeInstruction(OpCodes.Ldarg_1);
                         yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_MinionAttack);
                         yield return new CodeInstruction(OpCodes.Stloc, 4);
+                        yield return new CodeInstruction(OpCodes.Nop);
 
                         // Call Recieve Damage hook. Minion belonging to agent b is getting attacked
                         yield return new CodeInstruction(OpCodes.Ldarg, 4);
                         yield return new CodeInstruction(OpCodes.Ldarg_3);
-                        yield return new CodeInstruction(OpCodes.Ldloc, 4);
+                        yield return new CodeInstruction(OpCodes.Ldloc_S, 4);
                         yield return new CodeInstruction(OpCodes.Ldarg_1);
                         yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_ReceiveDamage);
                         yield return new CodeInstruction(OpCodes.Stloc, 4);
@@ -811,17 +818,21 @@ namespace CommunityLib
                         targetIndex = 0;
 
                         // Call Minion Attack hook
-                        yield return new CodeInstruction(OpCodes.Ldarg, 4);
+                        CodeInstruction code = new CodeInstruction(OpCodes.Ldarg, 4);
+                        code.labels.AddRange(instructionList[i].labels);
+                        instructionList[i].labels.Clear();
+                        yield return code;
                         yield return new CodeInstruction(OpCodes.Ldarg_3);
-                        yield return new CodeInstruction(OpCodes.Ldloc, 19);
+                        yield return new CodeInstruction(OpCodes.Ldloc_S, 19);
                         yield return new CodeInstruction(OpCodes.Ldarg_1);
                         yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_MinionAttack);
                         yield return new CodeInstruction(OpCodes.Stloc, 4);
+                        yield return new CodeInstruction(OpCodes.Nop);
 
                         // Call Recieve Damage hook. Minion belonging to agent b is getting attacked
                         yield return new CodeInstruction(OpCodes.Ldarg, 4);
                         yield return new CodeInstruction(OpCodes.Ldarg_2);
-                        yield return new CodeInstruction(OpCodes.Ldloc, 19);
+                        yield return new CodeInstruction(OpCodes.Ldloc_S, 19);
                         yield return new CodeInstruction(OpCodes.Ldarg_1);
                         yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_ReceiveDamage);
                         yield return new CodeInstruction(OpCodes.Stloc, 4);
@@ -834,17 +845,17 @@ namespace CommunityLib
 
         private static int BattleAgents_AttackDownRow_Minion_TranspilerBody_MinionAttack(PopupBattleAgent battle, UA me, int dmg, int row)
         {
-            if (me.minions[row] != null)
+            if (me != null && me.minions[row] != null)
             {
-                //Console.WriteLine("CommunityLib: Minion about to attack");
+                Console.WriteLine("CommunityLib: Minion about to attack");
                 UA other = battle.battle.att;
                 if (battle.battle.att == me)
                 {
-                    //Console.WriteLine("CommunityLib: other is defender");
+                    Console.WriteLine("CommunityLib: other is defender");
                     other = battle.battle.def;
                 }
 
-                //Console.WriteLine("CommunityLib: Callning hooks");
+                Console.WriteLine("CommunityLib: Callning hooks");
                 foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
                 {
                     dmg = hook.onMinionAttackAboutToBePerformed(me.minions[row], other, battle, dmg, row);
@@ -869,7 +880,10 @@ namespace CommunityLib
                     {
                         targetIndex = 0;
 
-                        yield return new CodeInstruction(OpCodes.Ldarg, 6);
+                        CodeInstruction code = new CodeInstruction(OpCodes.Ldarg, 6);
+                        code.labels.AddRange(instructionList[i].labels);
+                        instructionList[i].labels.Clear();
+                        yield return code;
                         yield return new CodeInstruction(OpCodes.Ldarg_S, 5);
                         yield return new CodeInstruction(OpCodes.Ldarg_S, 2);
                         yield return new CodeInstruction(OpCodes.Ldarg_1);
@@ -2405,6 +2419,15 @@ namespace CommunityLib
             }
 
             return distance;
+        }
+
+        // Prefab Store hooks
+        private static void Prefab_popHolyOrder_Prefix(HolyOrder order)
+        {
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            {
+                hook.onPlayerOpensReligionUI(order);
+            }
         }
 
         // Universal AI Patches
