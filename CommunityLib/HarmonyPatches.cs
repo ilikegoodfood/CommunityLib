@@ -847,15 +847,15 @@ namespace CommunityLib
         {
             if (me != null && me.minions[row] != null)
             {
-                Console.WriteLine("CommunityLib: Minion about to attack");
+                //Console.WriteLine("CommunityLib: Minion about to attack");
                 UA other = battle.battle.att;
                 if (battle.battle.att == me)
                 {
-                    Console.WriteLine("CommunityLib: other is defender");
+                    //Console.WriteLine("CommunityLib: other is defender");
                     other = battle.battle.def;
                 }
 
-                Console.WriteLine("CommunityLib: Callning hooks");
+                //Console.WriteLine("CommunityLib: Callning hooks");
                 foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
                 {
                     dmg = hook.onMinionAttackAboutToBePerformed(me.minions[row], other, battle, dmg, row);
