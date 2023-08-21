@@ -46,6 +46,15 @@ namespace CommunityLib
         }
 
         /// <summary>
+        /// This hook fires when the relgion UI is openned. It recieves the holy order that the ui has opened to. This hook does not fire when a player switched which religion they are viewing.
+        /// </summary>
+        /// <param name="order"></param>
+        public virtual void onPlayerOpensReligionUI(HolyOrder order)
+        {
+            return;
+        }
+
+        /// <summary>
         /// This hook fires when a patch is requested between two locations. It recieves the location the path is from (locA), the location the path is aiming to reach (locB), the unit that is seeking the path (u), which is null if not applicable, and whether to consider safeMove (safeMove). <br></br>
         /// If this hook returns any Location[] other than null, the rest of the pathFinding process will not happen. Instead, the function will return the array returned by this hook.
         /// <para>No instances of this hook will run after one which has not returned null.</para>
