@@ -760,8 +760,8 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_TranspilerBody_MinionAttack = AccessTools.Method(patchType, nameof(BattleAgents_AttackDownRow_Minion_TranspilerBody_MinionAttack), new Type[] { typeof(PopupBattleAgent), typeof(UA), typeof(int), typeof(int) });
-            MethodInfo MI_TranspilerBody_ReceiveDamage = AccessTools.Method(patchType, nameof(BattleAgents_AttackDownRow_TranspilerBody_ReceiveDamage), new Type[] { typeof(PopupBattleAgent), typeof(UA), typeof(int), typeof(int) });
+            MethodInfo MI_TranspilerBody_MinionAttack = AccessTools.Method(patchType, nameof(BattleAgents_AttackDownRow_Minion_TranspilerBody_MinionAttack), new Type[] { typeof(BattleAgents), typeof(PopupBattleAgent), typeof(UA), typeof(int), typeof(int) });
+            MethodInfo MI_TranspilerBody_ReceiveDamage = AccessTools.Method(patchType, nameof(BattleAgents_AttackDownRow_TranspilerBody_ReceiveDamage), new Type[] { typeof(BattleAgents), typeof(PopupBattleAgent), typeof(UA), typeof(int), typeof(int) });
 
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
@@ -773,10 +773,11 @@ namespace CommunityLib
                         targetIndex++;
 
                         // Call Minion Attack hook
-                        CodeInstruction code = new CodeInstruction(OpCodes.Ldarg, 4);
+                        CodeInstruction code = new CodeInstruction(OpCodes.Ldarg_0);
                         code.labels.AddRange(instructionList[i].labels);
                         instructionList[i].labels.Clear();
                         yield return code;
+                        yield return new CodeInstruction(OpCodes.Ldarg, 4);
                         yield return new CodeInstruction(OpCodes.Ldarg_2);
                         yield return new CodeInstruction(OpCodes.Ldloc_2);
                         yield return new CodeInstruction(OpCodes.Ldarg_1);
@@ -788,10 +789,11 @@ namespace CommunityLib
                         targetIndex = 0;
 
                         // Call Minion Attack hook
-                        CodeInstruction code = new CodeInstruction(OpCodes.Ldarg, 4);
+                        CodeInstruction code = new CodeInstruction(OpCodes.Ldarg_0);
                         code.labels.AddRange(instructionList[i].labels);
                         instructionList[i].labels.Clear();
                         yield return code;
+                        yield return new CodeInstruction(OpCodes.Ldarg, 4);
                         yield return new CodeInstruction(OpCodes.Ldarg_3);
                         yield return new CodeInstruction(OpCodes.Ldloc_S, 10);
                         yield return new CodeInstruction(OpCodes.Ldarg_1);
@@ -804,26 +806,28 @@ namespace CommunityLib
             }
         }
 
-        private static int BattleAgents_AttackDownRow_Minion_TranspilerBody_MinionAttack(PopupBattleAgent battle, UA me, int dmg, int row)
+        private static int BattleAgents_AttackDownRow_Minion_TranspilerBody_MinionAttack(BattleAgents battle, PopupBattleAgent popup, UA me, int dmg, int row)
         {
             if (me != null && me.minions[row] != null)
             {
                 //Console.WriteLine("CommunityLib: Minion about to attack");
-                UA other = battle.battle.att;
-                if (battle.battle.att == me)
+
+                UA other = battle.att;
+                if (battle.att == me)
                 {
                     //Console.WriteLine("CommunityLib: other is defender");
-                    other = battle.battle.def;
+                    other = battle.def;
                 }
 
-                //Console.WriteLine("CommunityLib: Callning hooks");
+                //Console.WriteLine("CommunityLib: Calling minion attack hooks");
                 foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
                 {
-                    dmg = hook.onMinionAttackAboutToBePerformed(me.minions[row], other, battle, dmg, row);
+                    dmg = hook.onMinionAttackAboutToBePerformed(me.minions[row], other, popup, battle, dmg, row);
                 }
 
                 // Minion attack is imnmediately followed by target being damaged.
-                dmg = BattleAgents_AttackDownRow_TranspilerBody_ReceiveDamage(battle, other, dmg, row);
+                //Console.WriteLine("CommunityLib: Calling damage hooks");
+                dmg = BattleAgents_AttackDownRow_TranspilerBody_ReceiveDamage(battle, popup, other, dmg, row);
             }
 
             return dmg;
@@ -833,7 +837,7 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_TranspilerBody_ReceiveDamage = AccessTools.Method(patchType, nameof(BattleAgents_AttackDownRow_TranspilerBody_ReceiveDamage), new Type[] { typeof(PopupBattleAgent), typeof(UA), typeof(int), typeof(int) });
+            MethodInfo MI_TranspilerBody_ReceiveDamage = AccessTools.Method(patchType, nameof(BattleAgents_AttackDownRow_TranspilerBody_ReceiveDamage), new Type[] { typeof(BattleAgents), typeof(PopupBattleAgent), typeof(UA), typeof(int), typeof(int) });
 
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
@@ -844,10 +848,11 @@ namespace CommunityLib
                     {
                         targetIndex = 0;
 
-                        CodeInstruction code = new CodeInstruction(OpCodes.Ldarg, 6);
+                        CodeInstruction code = new CodeInstruction(OpCodes.Ldarg_0);
                         code.labels.AddRange(instructionList[i].labels);
                         instructionList[i].labels.Clear();
                         yield return code;
+                        yield return new CodeInstruction(OpCodes.Ldarg, 6);
                         yield return new CodeInstruction(OpCodes.Ldarg, 5);
                         yield return new CodeInstruction(OpCodes.Ldarg, 2);
                         yield return new CodeInstruction(OpCodes.Ldarg_1);
@@ -860,7 +865,7 @@ namespace CommunityLib
             }
         }
 
-        private static int BattleAgents_AttackDownRow_TranspilerBody_ReceiveDamage(PopupBattleAgent battle, UA defender, int dmg, int row)
+        private static int BattleAgents_AttackDownRow_TranspilerBody_ReceiveDamage(BattleAgents battle, PopupBattleAgent popup, UA defender, int dmg, int row)
         {
             //Console.WriteLine("CommunityLib: About to receive damage");
             Minion minion = defender.minions[row];
@@ -873,7 +878,7 @@ namespace CommunityLib
             //Console.WriteLine("CommunityLib: Calling hooks");
             foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
-                dmg = hook.onAgentBattle_ReceiveDamage(battle, defender, minion, dmg, row);
+                dmg = hook.onAgentBattle_ReceiveDamage(popup, battle, defender, minion, dmg, row);
             }
 
             return dmg;

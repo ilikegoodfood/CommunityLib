@@ -264,34 +264,36 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when a minion in a minion battle is about to make an attack. It receives the Minion that is about to attack (attacker), the enemy Agent (other), the Battle Popup Window (battle), the damage that it si about to deal (dmg), and the row that it is attick down (row). It returns the damage that the minion will do.<br></br>
+        /// This hook fires when a minion in a minion battle is about to make an attack. It receives the Minion that is about to attack (attacker), the enemy Agent (other), the Battle Popup Window (popup), which is null if the history is running or popups are disabled, the agent battle (battle), the damage that it si about to deal (dmg), and the row that it is attick down (row). It returns the damage that the minion will do.<br></br>
         /// The Row directly corrisponds to the index of the minions on both agents. If "other.minions[row]" is equal to null, then the damage will be dealt to the enemy agent.
         /// <para>If another mod has already modified the damage value using this hook, that change will be in the damage value that you receive.</para>
         /// </summary>
         /// <param name="attacker"></param>
         /// <param name="other"></param>
+        /// <param name="popup"></param>
         /// <param name="battle"></param>
         /// <param name="dmg"></param>
         /// <param name="row"></param>
         /// <returns></returns>
-        public virtual int onMinionAttackAboutToBePerformed(Minion attacker, UA other, PopupBattleAgent battle, int dmg, int row)
+        public virtual int onMinionAttackAboutToBePerformed(Minion attacker, UA other, PopupBattleAgent popup, BattleAgents battle, int dmg, int row)
         {
             //Console.WriteLine("CommunityLib: Minion attack about to be performed");
             return dmg;
         }
 
         /// <summary>
-        /// This hook fires when an agent or one of their minions is about to take attack damage in an agent battle. It receives the popup battle window (battle), the agent whom the attack is directed towards (defender), the minion that is about to recieve the damge in the agent's stead (minion) if any, the damage they are about to receive (dmg), and the row that the attack is made down (row). It returns the damage that the victim will receive.<br></br>
+        /// This hook fires when an agent or one of their minions is about to take attack damage in an agent battle. It receives the popup battle window (popup), which is null if the history is running or popups are disabled, the agent battle (battle), the agent whom the attack is directed towards (defender), the minion that is about to recieve the damge in the agent's stead (minion) if any, the damage they are about to receive (dmg), and the row that the attack is made down (row). It returns the damage that the victim will receive.<br></br>
         /// The Row directly corrisponds to the index of the minions on both agents. If minion is not null, it is stored in "defender.minion[row]".
         /// <para>If another mod has already modified the damage value using this hook, that change will be in the damage value that you receive.</para>
         /// </summary>
+        /// <param name="popup"></param>
         /// <param name="battle"></param>
         /// <param name="defender"></param>
         /// <param name="minion"></param>
         /// <param name="dmg"></param>
         /// <param name="row"></param>
         /// <returns></returns>
-        public virtual int onAgentBattle_ReceiveDamage(PopupBattleAgent battle, UA defender, Minion minion, int dmg, int row)
+        public virtual int onAgentBattle_ReceiveDamage(PopupBattleAgent popup, BattleAgents battle, UA defender, Minion minion, int dmg, int row)
         {
             //Console.WriteLine("CommunityLib: Agent battle damage About to be received.");
             return dmg;
