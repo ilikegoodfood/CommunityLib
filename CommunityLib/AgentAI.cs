@@ -1374,7 +1374,7 @@ namespace CommunityLib
                             {
                                 return true;
                             }
-                            else if ( debugInternal.outputValidity_AllChallenges)
+                            else if (debugInternal.outputValidity_AllChallenges)
                             {
                                 Console.WriteLine("CommunityLib: Invalid: Challenge Not Valid, or Not Valid For " + ua.getName());
                             }
@@ -1559,7 +1559,7 @@ namespace CommunityLib
 
             if (data.aiTasks != null)
             {
-                if (debugInternal.debug || data.controlParameters.debugProperties.debug)
+                if (debugInternal.debug)
                 {
                     Console.WriteLine("CommunityLib: Agent AI for type " + ua.GetType() + " has " + data.aiTasks.Count + " assigned tasks.");
                 }
@@ -1572,7 +1572,7 @@ namespace CommunityLib
                         targetCategory = AITask.TargetCategory.None
                     };
 
-                    if ((debugInternal.debug && (debugInternal.outputValidity_AllTasks || debugInternal.outputValidity_ValidTasks)) || (data.controlParameters.debugProperties.debug && (data.controlParameters.debugProperties.outputValidity_AllTasks || data.controlParameters.debugProperties.outputValidity_ValidTasks)))
+                    if (debugInternal.debug && (debugInternal.outputValidity_AllTasks || debugInternal.outputValidity_ValidTasks))
                     {
                         Console.WriteLine("CommunityLib: Validity for " + aiTask.taskType + " by " + ua.getName() + " (" + (ua.society?.getName() ?? "No Society)") + " at " + ua.location.getName() + " (" + (ua.location.soc?.getName() ?? "Wilderness") + ")");
                     }
@@ -1644,11 +1644,11 @@ namespace CommunityLib
         {
             if (debugInternal.debug || data.controlParameters.debugProperties.debug)
             {
-                if (valid && (debugInternal.outputValidity_AllTasks || data.controlParameters.debugProperties.outputValidity_AllTasks) || (data.controlParameters.debugProperties.outputUtility_ValidTasks || data.controlParameters.debugProperties.outputValidity_ValidTasks))
+                if (valid && debugInternal.debug && (debugInternal.outputValidity_AllTasks || debugInternal.outputUtility_ValidTasks))
                 {
                     Console.WriteLine("CommunityLib: Valid");
                 }
-                else if (!valid && (debugInternal.outputValidity_AllTasks || data.controlParameters.debugProperties.outputValidity_AllTasks))
+                else if (!valid && debugInternal.outputValidity_AllTasks)
                 {
                     Console.WriteLine("CommunityLib: Invalid");
                 }
