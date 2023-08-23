@@ -1119,13 +1119,13 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_TranspilerBody_ProcessIncome = AccessTools.Method(patchType, nameof(PopupHolyOrder_setTo_TranspilerBody_ProcessIncome));
-            MethodInfo MI_TranspilerBody_DisplayBudget = AccessTools.Method(patchType, nameof(PopupHolyOrder_setTo_TranspilerBody_DisplayBudget));
-            MethodInfo MI_TranspilerBody_ComputeInfluenceDark = AccessTools.Method(patchType, nameof(PopupHolyOrder_setTo_TranspilerBody_ComputeInfluenceDark));
-            MethodInfo MI_TranspilerBody_ComputeInfluenceHuman = AccessTools.Method(patchType, nameof(PopupHolyOrder_setTo_TranspilerBody_ComputeInfluenceHuman));
-            MethodInfo MI_TranspilerBody_DisplayStats = AccessTools.Method(patchType, nameof(PopUpHolyOrder_setTo_TranspilerBody_DisplayStats));
-            MethodInfo MI_TranspilerBody_DisplayInfluenceElder = AccessTools.Method(patchType, nameof(PopupHolyOrder_setTo_TranspilerBody_DisplayInfluenceElder));
-            MethodInfo MI_TranspilerBody_DisplayInfluenceHuman = AccessTools.Method(patchType, nameof(PopupHolyOrder_setTo_TranspilerBody_DisplayInfluenceHuman));
+            MethodInfo MI_TranspilerBody_ProcessIncome = AccessTools.Method(patchType, nameof(PopupHolyOrder_setTo_TranspilerBody_ProcessIncome), new Type[] { typeof(HolyOrder), typeof(List<ReasonMsg>) });
+            MethodInfo MI_TranspilerBody_DisplayBudget = AccessTools.Method(patchType, nameof(PopupHolyOrder_setTo_TranspilerBody_DisplayBudget), new Type[] { typeof(int), typeof(PopupHolyOrder), typeof(HolyOrder) });
+            MethodInfo MI_TranspilerBody_ComputeInfluenceDark = AccessTools.Method(patchType, nameof(PopupHolyOrder_setTo_TranspilerBody_ComputeInfluenceDark), new Type[] { typeof(HolyOrder), typeof(List<ReasonMsg>) });
+            MethodInfo MI_TranspilerBody_ComputeInfluenceHuman = AccessTools.Method(patchType, nameof(PopupHolyOrder_setTo_TranspilerBody_ComputeInfluenceHuman), new Type[] { typeof(HolyOrder), typeof(List<ReasonMsg>) });
+            MethodInfo MI_TranspilerBody_DisplayStats = AccessTools.Method(patchType, nameof(PopUpHolyOrder_setTo_TranspilerBody_DisplayStats), new Type[] { typeof(HolyOrder) });
+            MethodInfo MI_TranspilerBody_DisplayInfluenceElder = AccessTools.Method(patchType, nameof(PopupHolyOrder_setTo_TranspilerBody_DisplayInfluenceElder), new Type[] { typeof(HolyOrder), typeof(int) });
+            MethodInfo MI_TranspilerBody_DisplayInfluenceHuman = AccessTools.Method(patchType, nameof(PopupHolyOrder_setTo_TranspilerBody_DisplayInfluenceHuman), new Type[] { typeof(HolyOrder), typeof(int) });
 
             // Influence Dark and Influence Good Summaries
             FieldInfo FI_PopupHolyOrder_BudgetIncome = AccessTools.Field(typeof(PopupHolyOrder), nameof(PopupHolyOrder.budgetIncome));
@@ -1135,121 +1135,162 @@ namespace CommunityLib
             FieldInfo FI_PopupHolyOrder_influenceGood = AccessTools.Field(typeof(PopupHolyOrder), nameof(PopupHolyOrder.influenceGood));
             FieldInfo FI_PopupHolyOrder_influenceGoodp0 = AccessTools.Field(typeof(PopupHolyOrder), nameof(PopupHolyOrder.influenceGoodp0));
 
-            int targetIndex = -5;
+            int targetIndex = 1;
+            bool returnCode = true;
 
             for (int i = 0; i < instructionList.Count; i++)
             {
-                if (targetIndex != 0)
+                if (targetIndex > 0)
                 {
-                    if (targetIndex == -5 && instructionList[i].opcode == OpCodes.Callvirt && instructionList[i - 1].opcode == OpCodes.Ldloc_1 && instructionList[i - 2].opcode == OpCodes.Ldarg_1)
+                    if (targetIndex == 1)
                     {
-                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_ProcessIncome);
-                        yield return new CodeInstruction(OpCodes.Ldarg_0);
-                        yield return new CodeInstruction(OpCodes.Ldarg_1);
-                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_DisplayBudget);
-                        targetIndex = 1;
-                        i++;
-                    }
-
-                    if (targetIndex == -4 && instructionList[i].opcode == OpCodes.Callvirt && instructionList[i - 1].opcode == OpCodes.Ldloc_3)
-                    {
-                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_ComputeInfluenceDark);
-                        targetIndex++;
-                        i++;
-                    }
-
-                    if (targetIndex == -3 && instructionList[i].opcode == OpCodes.Callvirt && instructionList[i - 1].opcode == OpCodes.Ldloc_2)
-                    {
-                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_ComputeInfluenceHuman);
-                        targetIndex++;
-                        i++;
-                    }
-
-                    if (targetIndex == -2 && instructionList[i].opcode == OpCodes.Ldc_I4_6 && instructionList[i-1].opcode == OpCodes.Ldfld && (instructionList[i-1].operand as FieldInfo) == FI_PopupHolyOrder_stats)
-                    {
-                        yield return new CodeInstruction(OpCodes.Ldarg_1);
-                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_DisplayStats);
-                        targetIndex = 2;
-                    }
-
-                    if (targetIndex == -1 && instructionList[i].opcode == OpCodes.Ldfld)
-                    {
-                        switch (instructionList[i].operand)
+                        if (instructionList[i].opcode == OpCodes.Callvirt && instructionList[i - 1].opcode == OpCodes.Ldloc_1 && instructionList[i - 2].opcode == OpCodes.Ldarg_1)
                         {
-                            case FieldInfo fi when fi == FI_PopupHolyOrder_influenceDark:
-                                //Console.WriteLine("CommunityLib: Found start of target " + targetIndex + " at line " + i + ".");
-                                yield return new CodeInstruction(OpCodes.Ldfld, FI_PopupHolyOrder_influenceDark);
-                                yield return new CodeInstruction(OpCodes.Ldarg_1);
-                                yield return new CodeInstruction(OpCodes.Ldloc_S, 4);
-                                yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_DisplayInfluenceElder);
-                                targetIndex = 3;
-                                break;
-                            case FieldInfo fi when fi == FI_PopupHolyOrder_influenceGood:
-                                //Console.WriteLine("CommunityLib: Found start of target " + targetIndex + " at line " + i + ".");
-                                yield return new CodeInstruction(OpCodes.Ldfld, FI_PopupHolyOrder_influenceGood);
-                                yield return new CodeInstruction(OpCodes.Ldarg_1);
-                                yield return new CodeInstruction(OpCodes.Ldloc_S, 5);
-                                yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_DisplayInfluenceHuman);
-                                targetIndex = 4;
-                                break;
-                            case FieldInfo fi when fi == FI_PopupHolyOrder_influenceDarkp0:
-                                //Console.WriteLine("CommunityLib: Found start of target " + targetIndex + " at line " + i + ".");
-                                yield return new CodeInstruction(OpCodes.Ldfld, FI_PopupHolyOrder_influenceDarkp0);
-                                yield return new CodeInstruction(OpCodes.Ldarg_1);
-                                yield return new CodeInstruction(OpCodes.Ldloc_S, 4);
-                                yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_DisplayInfluenceElder);
-                                targetIndex = 5;
-                                break;
-                            case FieldInfo fi when fi == FI_PopupHolyOrder_influenceGoodp0:
-                                //Console.WriteLine("CommunityLib: Found start of target " + targetIndex + " at line " + i + ".");
-                                yield return new CodeInstruction(OpCodes.Ldfld, FI_PopupHolyOrder_influenceGoodp0);
-                                yield return new CodeInstruction(OpCodes.Ldarg_1);
-                                yield return new CodeInstruction(OpCodes.Ldloc_S, 5);
-                                yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_DisplayInfluenceHuman);
-                                targetIndex = 6;
-                                break;
-                            default:
-                                break;
+                            targetIndex++;
+                            returnCode = false;
+
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_ProcessIncome);
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_DisplayBudget);
                         }
                     }
-
-                    if (targetIndex > 0)
+                    else if (targetIndex == 2)
                     {
-                        if (targetIndex == 1)
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i+1].opcode == OpCodes.Ldfld && (instructionList[i+1].operand as FieldInfo) == FI_PopupHolyOrder_BudgetIncome)
                         {
-                            if (instructionList[i].opcode == OpCodes.Ldfld && (instructionList[i].operand as FieldInfo) == FI_PopupHolyOrder_BudgetIncome)
-                            {
-                                i -= 3;
-                                targetIndex = -4;
-                            }
-                        }
-                        else if (targetIndex == 2)
-                        {
-                            if (instructionList[i].opcode == OpCodes.Callvirt)
-                            {
-                                targetIndex = -1;
-                            }
-                        }
-                        else if (instructionList[i].opcode == OpCodes.Callvirt && instructionList[i - 1].opcode == OpCodes.Call && instructionList[i - 2].opcode == OpCodes.Stelem_Ref)
-                        {
-                            //Console.WriteLine("CommunityLib: Found end of target " + targetIndex + " at line " + i + ".");
-                            if (targetIndex == 6)
-                            {
-                                targetIndex = 0;
-                            }
-                            else
-                            {
-                                targetIndex = -1;
-                            }
+                            targetIndex++;
+                            returnCode = true;
                         }
                     }
-
-                    if (targetIndex < 1)
+                    else if (targetIndex == 3)
                     {
-                        yield return instructionList[i];
+                        if (instructionList[i].opcode == OpCodes.Callvirt && instructionList[i - 1].opcode == OpCodes.Ldloc_3)
+                        {
+                            targetIndex++;
+
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_ComputeInfluenceDark);
+
+                            i++;
+                        }
+                    }
+                    else if (targetIndex == 4)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Callvirt && instructionList[i - 1].opcode == OpCodes.Ldloc_2)
+                        {
+                            targetIndex++;
+
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_ComputeInfluenceHuman);
+
+                            i++;
+                        }
+                    }
+                    else if (targetIndex == 5)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldc_I4_6 && instructionList[i - 1].opcode == OpCodes.Ldfld && (instructionList[i - 1].operand as FieldInfo) == FI_PopupHolyOrder_stats)
+                        {
+                            targetIndex++;
+                            returnCode = false;
+
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_DisplayStats);
+                        }
+                    }
+                    else if (targetIndex == 6)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Callvirt)
+                        {
+                            targetIndex++;
+                            returnCode = true;
+                        }
+                    }
+                    else if (targetIndex == 7)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldfld && (FieldInfo)instructionList[i].operand == FI_PopupHolyOrder_influenceDark)
+                        {
+                            targetIndex++;
+                            returnCode = false;
+
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_PopupHolyOrder_influenceDark);
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 4);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_DisplayInfluenceElder);
+                        }
+                    }
+                    else if (targetIndex == 8)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Callvirt && instructionList[i - 1].opcode == OpCodes.Call && instructionList[i - 2].opcode == OpCodes.Stelem_Ref)
+                        {
+                            targetIndex++;
+                            returnCode = true;
+                        }
+                    }
+                    else if (targetIndex == 9)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldfld && (FieldInfo)instructionList[i].operand == FI_PopupHolyOrder_influenceGood)
+                        {
+                            targetIndex++;
+                            returnCode = false;
+
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_PopupHolyOrder_influenceGood);
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 5);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_DisplayInfluenceHuman);
+                        }
+                    }
+                    else if (targetIndex == 10)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Callvirt && instructionList[i - 1].opcode == OpCodes.Call && instructionList[i - 2].opcode == OpCodes.Stelem_Ref)
+                        {
+                            targetIndex++;
+                            returnCode = true;
+                        }
+                    }
+                    else if (targetIndex == 11)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldfld && (FieldInfo)instructionList[i].operand == FI_PopupHolyOrder_influenceDarkp0)
+                        {
+                            targetIndex++;
+                            returnCode = false;
+
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_PopupHolyOrder_influenceDarkp0);
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 4);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_DisplayInfluenceElder);
+                        }
+                    }
+                    else if (targetIndex == 12)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Callvirt && instructionList[i - 1].opcode == OpCodes.Call && instructionList[i - 2].opcode == OpCodes.Stelem_Ref)
+                        {
+                            targetIndex++;
+                            returnCode = true;
+                        }
+                    }
+                    else if (targetIndex == 13)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldfld && (FieldInfo)instructionList[i].operand == FI_PopupHolyOrder_influenceGoodp0)
+                        {
+                            targetIndex++;
+                            returnCode = false;
+
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_PopupHolyOrder_influenceGoodp0);
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 5);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_DisplayInfluenceHuman);
+                        }
+                    }
+                    else if (targetIndex == 14)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Callvirt && instructionList[i - 1].opcode == OpCodes.Call && instructionList[i - 2].opcode == OpCodes.Stelem_Ref)
+                        {
+                            targetIndex = 0;
+                            returnCode = true;
+                        }
                     }
                 }
-                else
+
+                if (returnCode)
                 {
                     yield return instructionList[i];
                 }
