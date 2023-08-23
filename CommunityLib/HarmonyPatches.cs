@@ -2653,25 +2653,17 @@ namespace CommunityLib
             {
                 if (targetIndex > 0)
                 {
-                    if (targetIndex == 1 && i > 5)
+                    if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Brtrue && instructionList[i - 1].opcode == OpCodes.Callvirt && instructionList[i - 2].opcode == OpCodes.Ldfld)
+                        if (instructionList[i].opcode == OpCodes.Brtrue && instructionList[i-1].opcode == OpCodes.Callvirt && (MethodInfo)instructionList[i-1].operand == MI_Unit_isCommandable && instructionList[i-2].opcode == OpCodes.Ldfld)
                         {
                             targetIndex++;
 
-                            for (int j = i; j < instructionList.Count; j++)
-                            {
-                                if (instructionList[j].opcode == OpCodes.Brfalse)
-                                {
-                                    skip = (Label)instructionList[j].operand;
-                                    break;
-                                }
-                            }
+                            skip = (Label)instructionList[i].operand;
 
-                            yield return new CodeInstruction(OpCodes.Nop);
+                            yield return new CodeInstruction(OpCodes.Brtrue, skip);
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_UA);
-                            yield return new CodeInstruction(OpCodes.Brtrue_S, skip);
                         }
                     }
                     else if (targetIndex < 5)
@@ -2683,13 +2675,13 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 5)
                     { 
-                        if (targetIndex == 4 && instructionList[i].opcode == OpCodes.Ldloc_S)
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S)
                         {
+                            targetIndex = 0;
+
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Callvirt, MI_TranspilerBody_UM);
                         }
-
-                        targetIndex = 0;
                     }
                 }
 
