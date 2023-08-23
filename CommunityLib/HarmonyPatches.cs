@@ -2524,7 +2524,7 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 5)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i-1].opcode == OpCodes.Brtrue_S)
+                        if (instructionList[i].opcode == OpCodes.Brtrue_S && instructionList[i+1].opcode == OpCodes.Ldarg_0)
                         {
                             targetIndex = 0;
                             returnCode = true;
