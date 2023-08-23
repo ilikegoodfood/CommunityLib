@@ -1,5 +1,6 @@
 ﻿using Assets.Code;
 using HarmonyLib;
+using JetBrains.Annotations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -164,13 +165,13 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            bool found = false;
+            int targetIndex = 1;
 
             for (int i = 0; i < instructionList.Count; i++)
             {
-                if (!found && instructionList[i].opcode == OpCodes.Ldnull && instructionList[i-1].opcode == OpCodes.Call && instructionList[i+1].opcode == OpCodes.Callvirt)
+                if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Ldnull && instructionList[i-1].opcode == OpCodes.Call && instructionList[i+1].opcode == OpCodes.Callvirt)
                 {
-                    found = true;
+                    targetIndex = 0;
 
                     yield return new CodeInstruction(OpCodes.Ldarg_0);
 
@@ -178,6 +179,12 @@ namespace CommunityLib
                 }
 
                 yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed UM_HumanArmy_turnTickInner_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
@@ -187,13 +194,13 @@ namespace CommunityLib
 
             FieldInfo FI_Battle = AccessTools.Field(typeof(Ch_SkirmishAttacking), nameof(Ch_SkirmishAttacking.battle));
 
-            bool found = false;
+            int targetIndex = 1;
 
             for (int i = 0; i < instructionList.Count; i++)
             {
-                if (!found && instructionList[i].opcode == OpCodes.Ldnull && instructionList[i - 1].opcode == OpCodes.Call && instructionList[i + 1].opcode == OpCodes.Callvirt)
+                if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Ldnull && instructionList[i - 1].opcode == OpCodes.Call && instructionList[i + 1].opcode == OpCodes.Callvirt)
                 {
-                    found = true;
+                    targetIndex = 0;
 
                     yield return new CodeInstruction(OpCodes.Ldarg_0);
                     yield return new CodeInstruction(OpCodes.Ldfld, FI_Battle);
@@ -203,6 +210,12 @@ namespace CommunityLib
 
                 yield return instructionList[i];
             }
+
+            Console.WriteLine("CommunityLib: Completed Ch_SkirmishAttacking_skirmishDanger_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
         }
 
         private static IEnumerable<CodeInstruction> Ch_SkirmishDefending_skirmishDanger_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
@@ -211,13 +224,13 @@ namespace CommunityLib
 
             FieldInfo FI_Battle = AccessTools.Field(typeof(Ch_SkirmishDefending), nameof(Ch_SkirmishDefending.battle));
 
-            bool found = false;
+            int targetIndex = 1;
 
             for (int i = 0; i < instructionList.Count; i++)
             {
-                if (!found && instructionList[i].opcode == OpCodes.Ldnull && instructionList[i - 1].opcode == OpCodes.Call && instructionList[i + 1].opcode == OpCodes.Callvirt)
+                if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Ldnull && instructionList[i - 1].opcode == OpCodes.Call && instructionList[i + 1].opcode == OpCodes.Callvirt)
                 {
-                    found = true;
+                    targetIndex = 0;
 
                     yield return new CodeInstruction(OpCodes.Ldarg_0);
                     yield return new CodeInstruction(OpCodes.Ldfld, FI_Battle);
@@ -226,6 +239,12 @@ namespace CommunityLib
                 }
 
                 yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Ch_SkirmishDefending_skirmishDanger_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
@@ -236,32 +255,38 @@ namespace CommunityLib
 
             MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Mg_Volcano_Complete_TranspilerBody));
 
-            int targetCount = -2;
+            int targetIndex = 1;
 
             for (int i = 0; i < instructionList.Count; i++)
             {
-                if (targetCount < 0)
+                if (targetIndex > 0)
                 {
                     if (instructionList[i].opcode == OpCodes.Ldnull && instructionList[i - 1].opcode == OpCodes.Ldstr && instructionList[i + 1].opcode == OpCodes.Callvirt)
                     {
-                        if (targetCount == -2)
+                        if (targetIndex == 1)
                         {
                             yield return new CodeInstruction(OpCodes.Ldarg_1);
                             yield return new CodeInstruction(OpCodes.Callvirt, MI_TranspilerBody);
-                            targetCount++;
+                            targetIndex++;
                             i++;
                         }
-                        else if (targetCount == -1)
+                        else if (targetIndex == 2)
                         {
                             yield return new CodeInstruction(OpCodes.Ldarg_1);
                             yield return new CodeInstruction(OpCodes.Callvirt, MI_TranspilerBody);
-                            targetCount++;
+                            targetIndex = 0;
                             i++;
                         }
                     }
                 }
 
                 yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Mg_Volcano_Complete_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
@@ -274,27 +299,32 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            int targetCount = 0;
-            bool found = false;
+            int targetIndex = 1;
 
             for (int i = 0; i < instructionList.Count; i++)
             {
-                if (!found)
+                if (targetIndex > 0)
                 {
                     if (instructionList[i].opcode == OpCodes.Ldnull && instructionList[i - 1].opcode == OpCodes.Ldstr && instructionList[i + 1].opcode == OpCodes.Callvirt)
                     {
-                        targetCount++;
+                        targetIndex++;
 
-                        if (targetCount == 2)
+                        if (targetIndex == 3)
                         {
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
-                            found = true;
+                            targetIndex = 0;
                             i++;
                         }
                     }
                 }
 
                 yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed God_Snake_Awaken_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
@@ -307,14 +337,15 @@ namespace CommunityLib
             MethodInfo MI_TranspilerBody_StartOfProcess = AccessTools.Method(patchType, nameof(Unit_die_TranspilerBody_StartOfProcess), new Type[] { typeof(Unit), typeof(string), typeof(Person) });
 
             Label retLabel = instructionList[instructionList.Count - 1].labels[0];
+            instructionList[instructionList.Count - 1].labels.Add(retLabel);
 
-            bool hookIntercept = false;
+            int targetIndex = 1;
 
             for (int i = 0; i < instructionList.Count; i++)
             {
-                if (!hookIntercept && i == 1 && instructionList[i-1].opcode == OpCodes.Nop)
+                if (targetIndex == 1 && i == 0)
                 {
-                    hookIntercept = true;
+                    targetIndex = 0;
 
                     // Implements interceptUnitDeath hook
                     yield return new CodeInstruction(OpCodes.Ldarg_0);
@@ -330,6 +361,12 @@ namespace CommunityLib
                 }
 
                 yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Unit_die_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
@@ -383,7 +420,7 @@ namespace CommunityLib
             {
                 if (targetIndex > 0)
                 {
-                    if (targetIndex == 1 && i > 3 && instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i - 1].opcode == OpCodes.Nop && instructionList[i - 2].opcode == OpCodes.Nop)
+                    if (targetIndex == 1 && i > 3 && instructionList[i - 1].opcode == OpCodes.Stloc_S)
                     {
                         targetIndex++;
                         // Gathers armyBattleData_StartOfCycle and implements intercept hook
@@ -394,54 +431,45 @@ namespace CommunityLib
                         yield return new CodeInstruction(OpCodes.Ldarg_0);
                         yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_StartOfProcess);
                     }
-                    else if (targetIndex == 2 && instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i-1].opcode == OpCodes.Callvirt)
-                    {
-                        targetIndex++;
-                        
-                    }
-                    else if (targetIndex == 3 && instructionList[i].opcode == OpCodes.Nop && instructionList[i-1].opcode == OpCodes.Brfalse)
+                    else if (targetIndex == 2 && instructionList[i].opcode == OpCodes.Ret)
                     {
                         targetIndex++;
                         // Implements call victory in 1st location.
                         yield return new CodeInstruction(OpCodes.Ldarg_0);
                         yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Victory);
                     }
+                    else if (targetIndex == 3 && instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i - 1].opcode == OpCodes.Stloc_S && instructionList[i - 2].opcode == OpCodes.Conv_I4)
+                    {
+                        targetIndex++;
+
+                        yield return new CodeInstruction(OpCodes.Ldarg_0);
+                        yield return new CodeInstruction(OpCodes.Ldloc, 23);
+                        yield return new CodeInstruction(OpCodes.Ldloc, 20);
+                        yield return new CodeInstruction(OpCodes.Ldloc, 21);
+                        yield return new CodeInstruction(OpCodes.Ldc_I4_1);
+                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_DamageCalc);
+                        yield return new CodeInstruction(OpCodes.Stloc, 23);
+                    }
                     else if (targetIndex == 4 && instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i - 1].opcode == OpCodes.Stloc_S && instructionList[i - 2].opcode == OpCodes.Conv_I4)
                     {
                         targetIndex++;
 
                         yield return new CodeInstruction(OpCodes.Ldarg_0);
-                        yield return new CodeInstruction(OpCodes.Ldloc, 48);
-                        yield return new CodeInstruction(OpCodes.Ldloc, 45);
-                        yield return new CodeInstruction(OpCodes.Ldloc, 46);
-                        yield return new CodeInstruction(OpCodes.Ldc_I4_1);
-                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_DamageCalc);
-                        yield return new CodeInstruction(OpCodes.Stloc, 48);
-                    }
-                    else if (targetIndex == 5 && instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i - 1].opcode == OpCodes.Stloc_S && instructionList[i - 2].opcode == OpCodes.Conv_I4)
-                    {
-                        targetIndex++;
-
-                        yield return new CodeInstruction(OpCodes.Ldarg_0);
-                        yield return new CodeInstruction(OpCodes.Ldloc, 56);
-                        yield return new CodeInstruction(OpCodes.Ldloc, 53);
-                        yield return new CodeInstruction(OpCodes.Ldloc, 54);
+                        yield return new CodeInstruction(OpCodes.Ldloc, 27);
+                        yield return new CodeInstruction(OpCodes.Ldloc, 24);
+                        yield return new CodeInstruction(OpCodes.Ldloc, 25);
                         yield return new CodeInstruction(OpCodes.Ldc_I4_0);
                         yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_DamageCalc);
-                        yield return new CodeInstruction(OpCodes.Stloc, 56);
+                        yield return new CodeInstruction(OpCodes.Stloc, 27);
                     }
-                    else if (targetIndex == 6 && instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i - 1].opcode == OpCodes.Callvirt)
-                    {
-                        targetIndex++;
-                    }
-                    else if (targetIndex == 7 && instructionList[i].opcode == OpCodes.Nop && instructionList[i - 1].opcode == OpCodes.Brfalse)
+                    else if (targetIndex == 5 && instructionList[i].opcode == OpCodes.Ret)
                     {
                         targetIndex++;
                         // Implements call victory in 2nd location.
                         yield return new CodeInstruction(OpCodes.Ldarg_0);
                         yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Victory);
                     }
-                    else if (targetIndex == 8 && i == instructionList.Count - 1 && instructionList[i].opcode == OpCodes.Ret)
+                    else if (targetIndex == 6 && i == instructionList.Count - 1 && instructionList[i].opcode == OpCodes.Ret)
                     {
                         targetIndex = 0;
                         // Implements onArmyBattleCycle_EndOfproccess
@@ -450,10 +478,17 @@ namespace CommunityLib
                         yield return new CodeInstruction(OpCodes.Brfalse_S, retLabel);
                         yield return new CodeInstruction(OpCodes.Ldarg_0);
                         yield return new CodeInstruction(OpCodes.Callvirt, MI_TranspilerBody_EndOfProcess);
+                        instructionList[i].labels.Add(retLabel);
                     }
                 }
 
                 yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed BattleArmy_cycle_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
@@ -613,34 +648,42 @@ namespace CommunityLib
             MethodInfo MI_TransplilerBody_onArmyBattleTerminated = AccessTools.Method(patchType, nameof(BattleArmy_unitMovesFromLocation_TranspilerBody_onArmyBattleTerminated), new Type[] { typeof(BattleArmy), typeof(UM) });
             MethodInfo MI_BattleArmy_endBattle = AccessTools.Method(typeof(BattleArmy), nameof(BattleArmy.endBattle), new Type[] { });
 
-            List<int> targetIndexesA = new List<int>();
-
+            int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
             {
-                if (instructionList[i].opcode == OpCodes.Pop && instructionList[i-1].opcode == OpCodes.Callvirt && instructionList[i-4].opcode == OpCodes.Ldarg_0)
+                if (targetIndex > 0)
                 {
-                    targetIndexesA.Add(i - 4);
-                }
-            }
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i+3].opcode == OpCodes.Callvirt && instructionList[i+4].opcode == OpCodes.Pop)
+                        {
+                            targetIndex++;
 
-            for (int i = 0; i < instructionList.Count; i++)
-            {
-                if (targetIndexesA.Count > 0 && i == targetIndexesA[0])
-                {
-                    targetIndexesA.RemoveAt(0);
-                    yield return new CodeInstruction(OpCodes.Ldarg_0);
-                    yield return new CodeInstruction(OpCodes.Ldarg_1);
-                    yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_onArmyBattleRetreatOrFlee);
-                }
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_onArmyBattleRetreatOrFlee);
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Call && instructionList[i].operand as MethodInfo == MI_BattleArmy_endBattle)
+                        {
+                            targetIndex = 0;
 
-                if (instructionList[i].opcode == OpCodes.Call && instructionList[i].operand as MethodInfo == MI_BattleArmy_endBattle)
-                {
-                    yield return new CodeInstruction(OpCodes.Ldloc_0);
-                    yield return new CodeInstruction(OpCodes.Call, MI_TransplilerBody_onArmyBattleTerminated);
-                    yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldloc_0);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TransplilerBody_onArmyBattleTerminated);
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                        }
+                    }
                 }
 
                 yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed BattleArmy_unitMovesFromLocation_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
@@ -680,20 +723,32 @@ namespace CommunityLib
 
             MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(BattleArmy_computeAdvantage_TranspilerBody), new Type[] { typeof(BattleArmy), typeof(double) });
 
-            bool hook = false;
+            int targetIndex = 1;
 
             for (int i = 0; i < instructionList.Count; i++)
             {
-                if (!hook && instructionList[i].opcode == OpCodes.Ldloc_0 && instructionList[i + 1].opcode == OpCodes.Ldc_R8)
+                if (targetIndex > 0)
                 {
-                    hook = true;
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_0 && instructionList[i + 1].opcode == OpCodes.Ldc_R8)
+                        {
+                            targetIndex = 0;
 
-                    yield return new CodeInstruction(OpCodes.Ldarg_0);
-                    yield return new CodeInstruction(OpCodes.Ldloc_0);
-                    yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldloc_0);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                        }
+                    }
                 }
 
                 yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed BattleArmy_computeAdvantage_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
@@ -712,30 +767,46 @@ namespace CommunityLib
             MethodInfo MI_TranspilerBody_allocateDamage = AccessTools.Method(patchType, nameof(BattleArmy_allocateDamage_TranspilerBody_allocateDamage), new Type[] { typeof(BattleArmy), typeof(List<UM>), typeof(int[]) });
             MethodInfo MI_TranspilerBody_receivesDamage = AccessTools.Method(patchType, nameof(BattleArmy_allocateDamage_TranspilerBody_receivesDamage), new Type[] { typeof(BattleArmy), typeof(List<UM>), typeof(int[]), typeof(int) });
 
-            bool hookOnUnitDamage = false;
+            int targetIndex = 1;
 
             for (int i = 0; i < instructionList.Count; i++)
             {
-                if (i == 1 && instructionList[i].opcode == OpCodes.Ldc_I4_0)
+                if (targetIndex > 0)
                 {
-                    yield return new CodeInstruction(OpCodes.Ldarg_0);
-                    yield return new CodeInstruction(OpCodes.Ldarg_1);
-                    yield return new CodeInstruction(OpCodes.Ldarg_2);
-                    yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_allocateDamage);
-                }
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldc_I4_0)
+                        {
+                            targetIndex++;
 
-                if (!hookOnUnitDamage && instructionList[i].opcode == OpCodes.Ldarg_1 && instructionList[i-1].opcode == OpCodes.Nop)
-                {
-                    hookOnUnitDamage = true;
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Ldarg_2);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_allocateDamage);
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_1)
+                        {
+                            targetIndex = 0;
 
-                    yield return new CodeInstruction(OpCodes.Ldarg_0);
-                    yield return new CodeInstruction(OpCodes.Ldarg_1);
-                    yield return new CodeInstruction(OpCodes.Ldarg_2);
-                    yield return new CodeInstruction(OpCodes.Ldloc_0);
-                    yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_receivesDamage);
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Ldarg_2);
+                            yield return new CodeInstruction(OpCodes.Ldloc_0);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_receivesDamage);
+                        }
+                    }
                 }
 
                 yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed BattleArmy_allocateDamage_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
@@ -804,6 +875,12 @@ namespace CommunityLib
 
                 yield return instructionList[i];
             }
+
+            Console.WriteLine("CommunityLib: Completed BattleAgents_AttackDownRow_Minion_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
         }
 
         private static int BattleAgents_AttackDownRow_Minion_TranspilerBody_MinionAttack(BattleAgents battle, PopupBattleAgent popup, UA me, int dmg, int row)
@@ -863,6 +940,12 @@ namespace CommunityLib
 
                 yield return instructionList[i];
             }
+
+            Console.WriteLine("CommunityLib: Completed BattleAgents_AttackDownRow_Agent_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
         }
 
         private static int BattleAgents_AttackDownRow_TranspilerBody_ReceiveDamage(BattleAgents battle, PopupBattleAgent popup, UA defender, int dmg, int row)
@@ -906,38 +989,41 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Task_RazeLocation_turnTick_TranspilerBody), new Type[] { typeof(Unit) });
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Task_RazeLocation_turnTick_TranspilerBody), new Type[] { typeof(UM) });
 
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
             {
                 if (targetIndex > 0)
                 {
-                    if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Nop && instructionList[i+1].opcode == OpCodes.Ldarg_1 && instructionList[i + 2].opcode == OpCodes.Ldfld)
+                    if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Ldloc_0 && instructionList[i-1].opcode == OpCodes.Brfalse && instructionList[i + 1].opcode == OpCodes.Callvirt)
                     {
                         targetIndex = 0;
 
                         yield return new CodeInstruction(OpCodes.Nop);
-                        yield return new CodeInstruction(OpCodes.Ldarg_1);
+                        yield return new CodeInstruction(OpCodes.Ldloc_0);
                         yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
                     }
                 }
 
                 yield return instructionList[i];
             }
+
+            Console.WriteLine("CommunityLib: Completed Task_RazeLocation_turnTick_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
         }
 
-        private static void Task_RazeLocation_turnTick_TranspilerBody(Unit u)
+        private static void Task_RazeLocation_turnTick_TranspilerBody(UM um)
         {
             razeIsValid = true;
 
-            if (u is UM um)
+            //Console.WriteLine("CommunityLib: onRazeLocation_StartOfProcess");
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
-                //Console.WriteLine("CommunityLib: onRazeLocation_StartOfProcess");
-                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
-                {
-                    hook?.onRazeLocation_StartOfProcess(um);
-                }
+                hook?.onRazeLocation_StartOfProcess(um);
             }
         }
 
@@ -1025,6 +1111,12 @@ namespace CommunityLib
                 }
 
                 yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Settlement_FallIntoRuin_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
@@ -1295,6 +1387,12 @@ namespace CommunityLib
                     yield return instructionList[i];
                 }
             }
+
+            Console.WriteLine("CommunityLib: Completed PopupHolyOrder_setTo_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
         }
 
         private static int PopupHolyOrder_setTo_TranspilerBody_ProcessIncome(HolyOrder order, List<ReasonMsg> msgs)
@@ -1500,20 +1598,32 @@ namespace CommunityLib
             {
                 if (targetIndex > 0)
                 {
-                    if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i - 1].opcode == OpCodes.Ldloc_S)
+                    if (targetIndex == 1)
                     {
-                        targetIndex++;
+                        if (instructionList[i].opcode == OpCodes.Ret)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Bge_S)
+                        {
+                            targetIndex++;
 
-                        if (targetIndex == 3)
+                            falseLabel = (Label)instructionList[i].operand;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0)
                         {
                             targetIndex = 0;
-                            falseLabel = (Label)instructionList[i].operand;
 
-                            yield return new CodeInstruction(OpCodes.Brfalse_S, falseLabel);
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Dup);
                             yield return new CodeInstruction(OpCodes.Ldfld, FI_Person_Items);
-                            yield return new CodeInstruction(OpCodes.Ldloc_S, 4);
+                            yield return new CodeInstruction(OpCodes.Ldloc_1);
                             yield return new CodeInstruction(OpCodes.Ldelem_Ref);
                             yield return new CodeInstruction(OpCodes.Ldarg_1);
                             yield return new CodeInstruction(OpCodes.Ldarg_2);
@@ -1524,6 +1634,12 @@ namespace CommunityLib
                 }
 
                 yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Person_gainItem_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
@@ -1542,17 +1658,6 @@ namespace CommunityLib
             }
 
             return result;
-        }
-
-        private static IEnumerable<CodeInstruction> SG_ActionTakingMonster_turnTick_TranspilerWrapper(IEnumerable<CodeInstruction> codeInstructions)
-        {
-            //Console.WriteLine("CommunityLib: Transpiler Wrapper");
-
-            foreach (CodeInstruction instruction in SG_ActionTakingMonster_turnTick_Transpiler(codeInstructions))
-            {
-                //Console.WriteLine(instruction);
-                yield return instruction;
-            }
         }
 
         private static IEnumerable<CodeInstruction> SG_ActionTakingMonster_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
@@ -1593,6 +1698,12 @@ namespace CommunityLib
                 }
                 
                 yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed SG_ActionTakingMonster_turnTick_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
@@ -1646,6 +1757,12 @@ namespace CommunityLib
 
                 yield return instructionList[i];
             }
+
+            Console.WriteLine("CommunityLib: Completed UIScroll_Locs_checkData_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
         }
 
         private static List<MonsterAction> SG_ActionTakingMonster_turnTick_TranspilerBody_populate(SG_ActionTakingMonster monster, List<MonsterAction> actions)
@@ -1675,7 +1792,7 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_HolyOrder_isGone = AccessTools.Method(typeof(HolyOrder), nameof(HolyOrder.isGone));
+            MethodInfo MI_HolyOrder_isGone = AccessTools.Method(typeof(HolyOrder), nameof(HolyOrder.isGone), new Type[0]);
 
             FieldInfo FI_PopupHolyOrder_us = AccessTools.Field(typeof(PopupHolyOrder), nameof(PopupHolyOrder.us));
 
@@ -1683,44 +1800,61 @@ namespace CommunityLib
             Label isDeadLabel = ilg.DefineLabel();
             Label isAliveLabel = ilg.DefineLabel();
 
-            int targetIndex = 0;
+            int targetIndex = 1;
 
             for (int i = 0; i < instructionList.Count; i++)
             {
-
-                if (targetIndex == 0 && i > 0 && instructionList[i - 1].opcode == OpCodes.Brfalse_S && instructionList[i].opcode == OpCodes.Nop)
+                if (targetIndex > 0)
                 {
-                    targetIndex = 1;
-                    continueLabel = (Label)instructionList[i - 1].operand;
+                    if (targetIndex == 1 && i > 0)
+                    {
+                        if (instructionList[i - 1].opcode == OpCodes.Brfalse_S && instructionList[i].opcode == OpCodes.Ldloc_0)
+                        {
+                            targetIndex++;
+                            continueLabel = (Label)instructionList[i - 1].operand;
 
-                    yield return new CodeInstruction(OpCodes.Ldloc_S, 4);
-                    yield return new CodeInstruction(OpCodes.Callvirt, MI_HolyOrder_isGone);
-                    yield return new CodeInstruction(OpCodes.Brtrue_S, continueLabel);
-                }
+                            yield return new CodeInstruction(OpCodes.Ldloc_3);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_HolyOrder_isGone);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, continueLabel);
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_0 && instructionList[i+1].opcode == OpCodes.Ldarg_0)
+                        {
+                            targetIndex++;
 
-                if (targetIndex == 2 && instructionList[i - 1].opcode == OpCodes.Stloc_1 && instructionList[i].opcode == OpCodes.Ldarg_0)
-                {
-                    targetIndex = 3;
-                    instructionList[i].labels.Add(isDeadLabel);
-                }
+                            CodeInstruction code = new CodeInstruction(OpCodes.Ldarg_0);
+                            code.labels.AddRange(instructionList[i].labels);
+                            instructionList[i].labels.Clear();
+                            yield return code;
 
-                if (targetIndex == 1 && instructionList[i - 1].opcode == OpCodes.Ldloc_0 && instructionList[i].opcode == OpCodes.Ldarg_0)
-                {
-                    targetIndex = 2;
-                    yield return new CodeInstruction(OpCodes.Pop);
-                    yield return new CodeInstruction(OpCodes.Ldarg_0);
-                    yield return new CodeInstruction(OpCodes.Ldfld, FI_PopupHolyOrder_us);
-                    yield return new CodeInstruction(OpCodes.Callvirt, MI_HolyOrder_isGone);
-                    yield return new CodeInstruction(OpCodes.Brfalse_S, isAliveLabel);
-                    yield return new CodeInstruction(OpCodes.Ldc_I4_0);
-                    yield return new CodeInstruction(OpCodes.Stloc_1);
-                    yield return new CodeInstruction(OpCodes.Br_S, isDeadLabel);
-                    CodeInstruction code = new CodeInstruction(OpCodes.Ldloc_0);
-                    code.labels.Add(isAliveLabel);
-                    yield return code;
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_PopupHolyOrder_us);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_HolyOrder_isGone);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, isAliveLabel);
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_0);
+                            yield return new CodeInstruction(OpCodes.Stloc_1);
+                            yield return new CodeInstruction(OpCodes.Br_S, isDeadLabel);
+                            instructionList[i].labels.Add(isAliveLabel);
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i - 1].opcode == OpCodes.Stloc_1 && instructionList[i].opcode == OpCodes.Ldarg_0)
+                        {
+                            targetIndex = 0;
+                            instructionList[i].labels.Add(isDeadLabel);
+                        }
+                    }
                 }
 
                 yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed PopupHolyOrder_bPrevNext_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
@@ -1752,6 +1886,12 @@ namespace CommunityLib
                 }
 
                 yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Overmind_getThreats_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
@@ -1789,6 +1929,12 @@ namespace CommunityLib
                 }
 
                 yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed DivineEntity_turnTick_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
@@ -1842,8 +1988,13 @@ namespace CommunityLib
                     }
                 }
 
-            
                 yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Map_getPathTo_Location_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
@@ -1907,8 +2058,13 @@ namespace CommunityLib
                     }
                 }
             
-            
                 yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Map_getPathTo_SocialGroup_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
@@ -2033,6 +2189,12 @@ namespace CommunityLib
 
                 yield return instructionList[i];
             }
+
+            Console.WriteLine("CommunityLib: Completed Map_adjacentMoveTo_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
         }
 
         private static void Map_adjacentMoveTo_TranspilerBody(Unit u, Location loc)
@@ -2062,6 +2224,12 @@ namespace CommunityLib
 
                 yield return instructionList[i];
             }
+
+            Console.WriteLine("CommunityLib: Completed Map_moveTowards_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
         }
 
         // Orc Expansion modifications
@@ -2073,6 +2241,8 @@ namespace CommunityLib
             yield return new CodeInstruction(OpCodes.Ldarg_1);
             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
             yield return new CodeInstruction(OpCodes.Ret);
+
+            Console.WriteLine("CommunityLib: Completed SG_Orc_canSettle_Transpiler");
         }
 
         private static bool SG_Orc_canSettle_TranspilerBody(Location location)
@@ -2117,6 +2287,8 @@ namespace CommunityLib
             yield return new CodeInstruction(OpCodes.Ldarg_1);
             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
             yield return new CodeInstruction(OpCodes.Ret);
+
+            Console.WriteLine("CommunityLib: Completed Rt_Orcs_ClaimTerritory_validFor_Transpiler");
         }
 
         private static bool Rt_Orcs_ClaimTerritory_validFor_TranspilerBody(UA ua)
@@ -2202,17 +2374,26 @@ namespace CommunityLib
             {
                 if (targetIndex > 0)
                 {
-                    if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Ldfld && instructionList[i - 1].opcode == OpCodes.Ldloc_3)
+                    if (targetIndex == 1)
                     {
-                        targetIndex++;
+                        if (instructionList[i].opcode == OpCodes.Ldfld && instructionList[i - 1].opcode == OpCodes.Ldloc_3)
+                        {
+                            targetIndex = 0;
 
-                        yield return new CodeInstruction(OpCodes.Call, MI_checkIsElderTomb);
+                            yield return new CodeInstruction(OpCodes.Call, MI_checkIsElderTomb);
 
-                        i += 2;
+                            i += 2;
+                        }
                     }
                 }
 
                 yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Overmind_Automatic_ai_testDark_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
@@ -2227,17 +2408,26 @@ namespace CommunityLib
             {
                 if (targetIndex > 0)
                 {
-                    if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Ldfld && instructionList[i - 1].opcode == OpCodes.Ldloc_3)
+                    if (targetIndex == 1)
                     {
-                        targetIndex++;
+                        if (instructionList[i].opcode == OpCodes.Ldfld && instructionList[i - 1].opcode == OpCodes.Ldloc_3)
+                        {
+                            targetIndex = 0;
 
-                        yield return new CodeInstruction(OpCodes.Call, MI_checkIsElderTomb);
+                            yield return new CodeInstruction(OpCodes.Call, MI_checkIsElderTomb);
 
-                        i += 2;
+                            i += 2;
+                        }
                     }
                 }
 
                 yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Overmind_Automatic_ai_testMagic_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
@@ -2264,6 +2454,12 @@ namespace CommunityLib
 
                 yield return instructionList[i];
             }
+
+            Console.WriteLine("CommunityLib: Completed Overmind_Automatic_checkSpawnAgent_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
         }
 
         private static bool checkIsElderTomb_TranspilerBody(Location location)
@@ -2282,40 +2478,70 @@ namespace CommunityLib
             Label nextUnit = ilg.DefineLabel();
 
             int targetIndex = 1;
+            bool returnCode = true;
             for (int i = 0; i < instructionList.Count; i++)
             {
                 if (targetIndex > 0)
                 {
-                    if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Isinst)
+                    if (targetIndex == 1)
                     {
-                        targetIndex++;
+                        if (instructionList[i].opcode == OpCodes.Isinst)
+                        {
+                            targetIndex++;
+                        }
                     }
-                    else if (targetIndex == 2 && instructionList[i].opcode == OpCodes.Brfalse)
+                    else if (targetIndex == 2)
                     {
-                        nextUnit = (Label)instructionList[i].operand;
-                    }
-                    else if (targetIndex == 3 && instructionList[i].opcode == OpCodes.Brfalse && instructionList[i-1].opcode == OpCodes.Isinst)
-                    {
-                        targetIndex++;
+                        if (instructionList[i].opcode == OpCodes.Brfalse)
+                        {
+                            targetIndex++;
 
-                        instructionList[i].operand = afterChosenCheck;
+                            nextUnit = (Label)instructionList[i].operand;
+                        }
                     }
-                    else if (targetIndex == 4 && instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i-1].opcode == OpCodes.Brtrue_S && instructionList[i+1].opcode == OpCodes.Callvirt)
+                    else if (targetIndex == 3)
                     {
-                        targetIndex++;
+                        if (instructionList[i].opcode == OpCodes.Brfalse && instructionList[i - 1].opcode == OpCodes.Isinst)
+                        {
+                            targetIndex++;
 
-                        instructionList[i].labels.Add(afterChosenCheck);
+                            instructionList[i].operand = afterChosenCheck;
+                        }
                     }
-                    else if (targetIndex == 5 && instructionList[i].opcode == OpCodes.Brtrue_S)
+                    else if (targetIndex == 4)
                     {
-                        targetIndex = 0;
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i - 1].opcode == OpCodes.Brtrue_S && instructionList[i + 1].opcode == OpCodes.Callvirt)
+                        {
+                            targetIndex++;
+                            returnCode = false;
 
-                        yield return new CodeInstruction(OpCodes.Ldloc_S, 4);
-                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                            CodeInstruction code = new CodeInstruction(OpCodes.Ldloc_S, 4);
+                            code.labels.Add(afterChosenCheck);
+                            yield return code;
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+
+                        }
+                    }
+                    else if (targetIndex == 5)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i-1].opcode == OpCodes.Brtrue_S)
+                        {
+                            targetIndex = 0;
+                            returnCode = true;
+                        }
                     }
                 }
 
-                yield return instructionList[i];
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
+            }
+
+            Console.WriteLine("CommunityLib: Completed PopupAgentCreation_populate_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
@@ -2374,6 +2600,12 @@ namespace CommunityLib
 
                 yield return instructionList[i];
             }
+
+            Console.WriteLine("CommunityLib: Completed UA_distanceDivisor_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
         }
 
         private static int UA_distanceDivisor_TranspilerBody(UA ua, Challenge c, int distance)
@@ -2423,7 +2655,7 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1 && i > 5)
                     {
-                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i - 1].opcode == OpCodes.Callvirt && instructionList[i + 1].opcode == OpCodes.Ldloc_0)
+                        if (instructionList[i].opcode == OpCodes.Brtrue && instructionList[i - 1].opcode == OpCodes.Callvirt && instructionList[i - 2].opcode == OpCodes.Ldfld)
                         {
                             targetIndex++;
 
@@ -2442,14 +2674,15 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Brtrue_S, skip);
                         }
                     }
-
-                    if (targetIndex > 2 && targetIndex < 6)
+                    else if (targetIndex < 5)
                     {
                         if (instructionList[i].opcode == OpCodes.Callvirt && (MethodInfo)instructionList[i].operand == MI_Unit_isCommandable)
                         {
                             targetIndex++;
                         }
-
+                    }
+                    else if (targetIndex == 5)
+                    { 
                         if (targetIndex == 4 && instructionList[i].opcode == OpCodes.Ldloc_S)
                         {
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
@@ -2461,6 +2694,12 @@ namespace CommunityLib
                 }
 
                 yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed UIScroll_Unit_checkData_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
@@ -2787,7 +3026,7 @@ namespace CommunityLib
                         if (popoutCounter == 4)
                         {
                             targetIndex++;
-                            yield return new CodeInstruction(OpCodes.Ldloc_S, 5);
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 4);
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Popout);
                             yield return new CodeInstruction(OpCodes.Brtrue_S, interceptUM);
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
@@ -2808,11 +3047,11 @@ namespace CommunityLib
 
                 if (targetIndex == 1)
                 {
-                    if (instructionList[i].opcode == OpCodes.Brfalse && instructionList[i - 1].opcode == OpCodes.Ldloc_S)
+                    if (instructionList[i].opcode == OpCodes.Brfalse && instructionList[i - 1].opcode == OpCodes.Ldfld)
                     {
-                        if (instructionList[i + 3].opcode == OpCodes.Ldfld && instructionList[i + 3].operand as FieldInfo == FI_UIScroll_Unit_Master)
+                        if (instructionList[i + 3].opcode == OpCodes.Ldfld && instructionList[i + 2].operand as FieldInfo == FI_UIScroll_Unit_Master)
                         {
-                            if (instructionList[i + 4].opcode == OpCodes.Ldfld && instructionList[i + 4].operand as FieldInfo == FI_UIMaster_World)
+                            if (instructionList[i + 4].opcode == OpCodes.Ldfld && instructionList[i + 3].operand as FieldInfo == FI_UIMaster_World)
                             {
                                 yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_TimeStats);
                                 yield return new CodeInstruction(OpCodes.Brtrue, instructionList[i].operand);
@@ -2821,6 +3060,12 @@ namespace CommunityLib
                         }
                     }
                 }
+            }
+
+            Console.WriteLine("CommunityLib: Completed UIScroll_Unit_Update_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
