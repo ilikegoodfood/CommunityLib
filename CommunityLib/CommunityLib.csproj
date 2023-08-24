@@ -61,6 +61,7 @@
     <Compile Include="ArmyBattleData.cs" />
     <Compile Include="AgentAI.cs" />
     <Compile Include="Cheats.cs" />
+    <Compile Include="Rt_DeepOnes_TravelBeneath.cs" />
     <Compile Include="Ch_DestroyShipwreck.cs" />
     <Compile Include="Ch_PlunderShipwreck.cs" />
     <Compile Include="Ch_RecoverShipwreck.cs" />

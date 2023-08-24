@@ -146,6 +146,7 @@ namespace CommunityLib
 
             // Override AI
             harmony.Patch(original: AccessTools.Method(typeof(UAEN_DeepOne), nameof(UAEN_DeepOne.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_DeepOne_turnTickAI_Prefix)));
+            harmony.Patch(original: AccessTools.Constructor(typeof(UAEN_DeepOne), new Type[] { typeof(Location), typeof(Society), typeof(Person) }), postfix: new HarmonyMethod(patchType, nameof(UAEN_DeepOne_ctor_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(UAEN_Ghast), nameof(UAEN_Ghast.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_Ghast_turnTickAI_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UAEN_OrcUpstart), nameof(UAEN_OrcUpstart.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_OrcUpstart_turnTickAI_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UAEN_Vampire), nameof(UAEN_Vampire.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_OrcUpstart_turnTickAI_Prefix)));
@@ -2242,7 +2243,7 @@ namespace CommunityLib
             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
             yield return new CodeInstruction(OpCodes.Ret);
 
-            Console.WriteLine("CommunityLib: Completed SG_Orc_canSettle_Transpiler");
+            Console.WriteLine("CommunityLib: Completed complete function replacement transpiler SG_Orc_canSettle_Transpiler");
         }
 
         private static bool SG_Orc_canSettle_TranspilerBody(Location location)
@@ -2288,7 +2289,7 @@ namespace CommunityLib
             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
             yield return new CodeInstruction(OpCodes.Ret);
 
-            Console.WriteLine("CommunityLib: Completed Rt_Orcs_ClaimTerritory_validFor_Transpiler");
+            Console.WriteLine("CommunityLib: Completed complete function replacement transpiler Completed Rt_Orcs_ClaimTerritory_validFor_Transpiler");
         }
 
         private static bool Rt_Orcs_ClaimTerritory_validFor_TranspilerBody(UA ua)
@@ -3309,6 +3310,17 @@ namespace CommunityLib
                 return false;
             }
             return true;
+        }
+
+        private static void UAEN_DeepOne_ctor_Postfix(UAEN_DeepOne __instance)
+        {
+            Location location = __instance.map.locations[0];
+            if (__instance.homeLocation != -1)
+            {
+                location = __instance.map.locations[__instance.homeLocation];
+            }
+
+            __instance.rituals.Add(new Rt_DeepOnes_TravelBeneath(location));
         }
 
         private static bool UAEN_Ghast_turnTickAI_Prefix(UAEN_Ghast __instance)
