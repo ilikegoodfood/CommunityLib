@@ -65,6 +65,7 @@
     <Compile Include="Ch_PlunderShipwreck.cs" />
     <Compile Include="Ch_RecoverShipwreck.cs" />
     <Compile Include="OnChallengeComplete.cs" />
+    <Compile Include="Rt_DeepOnes_TravelBeneath.cs" />
     <Compile Include="Set_Shipwreck.cs" />
     <Compile Include="SortableTaskBlock_Advanced.cs" />
     <Compile Include="Sub_Shipwreck.cs" />
