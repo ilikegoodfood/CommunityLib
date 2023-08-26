@@ -1,3 +1,15 @@
+[h1]News[/h1]
+[h2]Downtime on 29th August[/h2]
+After a discussion with the developer of Shadows of Forbidden Gods, it has been determined that, on Tuesday 29th of August, corresponding with an update to be released on that day, both the Community Library and Orcs Plus will once again not operate for game version 1.0.
+
+I have been given information that will allow me to preemptively update both mods, so this outage should last no more than a few hours.
+
+Depending on when the game update for version 1.0 is released, I will either release updates for both mods shortly before, or shortly after. If you launch the game in the interval while either the base game has been updated but the mods haven't yet, or the mods have been updated but the base game hasn't yet, they will not operate.
+
+This should be the last outage of this kind, as it is being performed specifically to limit future instances.
+
+Sorry for any inconvenience caused and thank you for you patience and support.
+
 [h1]Introduction[/h1]
 Most of the Community Library's features are designed to extend the game's modability and mod compatibility. Outside of the UI-compatible and slightly improved AI for Deep Ones, Ghasts, Orc Upstarts, and Vampires, this mod will not do anything by itself.
 
