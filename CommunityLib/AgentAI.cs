@@ -1534,12 +1534,11 @@ namespace CommunityLib
 
         private double getDistanceDivisor(ChallengeData challengeData, AIData aiData, UA ua)
         {
-            double distance = map.getStepDist(ua.location, challengeData.location) / ua.getMaxMoves();
-            distance = Math.Ceiling(distance);
+            int distance = (int)Math.Ceiling((double)map.getStepDist(ua.location, challengeData.location) / (double)ua.getMaxMoves());
 
             foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
-                distance = hook.onAgentAI_GetChallengeUtility_GetDistanceForDivisor(ua, aiData, challengeData, (int)distance);
+                distance = hook.onUnitAI_GetsDistanceToLocation(ua, challengeData.location, (int)distance);
             }
 
             int duration = (int)Math.Max(1.0, Math.Ceiling(challengeData.challenge.getCompletionMenaceAfterDifficulty() / challengeData.challenge.getProgressPerTurn(ua, null)));

@@ -46,12 +46,12 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when the relgion UI is openned. It recieves the holy order that the ui has opened to. This hook does not fire when a player switches which religion they are viewing.
+        /// This hook fires just after a graphical unit has been updated. It recieves the graphical unit (graphicalUnit).
         /// </summary>
-        /// <param name="order"></param>
-        public virtual void onPlayerOpensReligionUI(HolyOrder order)
+        /// <param name="graphicalUnit"></param>
+        public virtual void onGraphicalUnitUpdated(GraphicalUnit graphicalUnit)
         {
-            return;
+
         }
 
         /// <summary>
@@ -123,17 +123,17 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when an agent's AI checks the distance to a challenge for the purposes of the distance divisor component of its utility calculation for that challenge. It receives the agent (ua), the challenge (challenge), and the calculated distance (stepDistance). It returns the distance to the challenge as the number of turns required to reach it (typically equal to the step distance).
-        /// <para>If another mod has already returned a modified value, the distance as time value (stepDistance) that you recieve will already include that alteration.</para>
-        /// <para>This hook does not fire if the agent is already at the challenge.</para>
+        /// This hook fires when several key functions in the base game tries to get the shortest distance to a location. These functions are `UA.distanceDivisor`, `Task_AttackArmy`, `Task_AttackUnit`, `Task_AttackUnitWithEscort`, `Task_Bodyguard`, `Task_DisruptUA`, and `CommunityLibrary.AgentAI.getDistanceDivisor`.<br></br>
+        /// It receives the unit (u), the target location (target), and the time it will take the agent to traverse it's path to the destination (travelTime). By default the travelTime is equal to `Map.getStepDistance(u.location, loc) / u.getMaxSteps()`, rounded up. It returns the calculated travelTime.
+        /// <para>If a mod that is loaded before yours has already altered the travel time, the travelTime passed into this hook will already include that change.</para>
         /// </summary>
-        /// <param name="ua"></param>
-        /// <param name="c"></param>
-        /// <param name="stepDistance"></param>
+        /// <param name="u"></param>
+        /// <param name="target"></param>
+        /// <param name="travelTime"></param>
         /// <returns></returns>
-        public virtual int unitAgentAI_getChallengeUtility_getDistanceForDivisor(UA ua, Challenge c, int stepDistance)
+        public virtual int onUnitAI_GetsDistanceToLocation(Unit u, Location target, int travelTime)
         {
-            return stepDistance;
+            return travelTime;
         }
 
         /// <summary>
@@ -313,6 +313,15 @@ namespace CommunityLib
         public virtual int onUnitReceivesArmyBattleDamage(BattleArmy battle, UM u, int dmg)
         {
             return dmg;
+        }
+
+        /// <summary>
+        /// This hook fires when the relgion UI is openned. It recieves the holy order that the ui has opened to. This hook does not fire when a player switches which religion they are viewing.
+        /// </summary>
+        /// <param name="order"></param>
+        public virtual void onPlayerOpensReligionUI(HolyOrder order)
+        {
+            return;
         }
 
         /// <summary>
@@ -512,22 +521,6 @@ namespace CommunityLib
         public virtual double onAgentAI_GetChallengeUtility(UA ua, AgentAI.AIData aiData, AgentAI.ChallengeData challengeData, double utility, List<ReasonMsg> reasonMsgs)
         {
             return utility;
-        }
-
-        /// <summary>
-        /// This hook fires when the Community Library's AGent AI checks the distance to a challenge for the purposes of the distance divisor component of it's utility calculation for that challenge. It recieves the agent (ua), the AIData for its Agent AI (aiData), the AgentAI.ChallengeData (challengeData), and the calculated distance (stepDistance). It returns the distance to the challenge as the number of turns required to reach it (typically equal to the step distance).
-        /// <para>If another mod has already returned a modified value, the distance as time value (stepDistance) that you recieve will already include that alteration.</para>
-        /// <para>This hook does not fire if the agent is already at the challenge.</para>
-        /// </summary>
-        /// <param name="ua"></param>
-        /// <param name="aiData"></param>
-        /// <param name="challengeData"></param>
-        /// <param name="c"></param>
-        /// <param name="stepDistance"></param>
-        /// <returns></returns>
-        public virtual int onAgentAI_GetChallengeUtility_GetDistanceForDivisor(UA ua, AgentAI.AIData aiData, AgentAI.ChallengeData challengeData, int stepDistance)
-        {
-            return stepDistance;
         }
 
         /// <summary>
