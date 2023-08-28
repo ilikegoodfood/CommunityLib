@@ -1174,7 +1174,7 @@ namespace CommunityLib
                 {
                     ChallengeData targetChallenge = targetChallenges[0];
                     if (targetChallenges.Count > 1)
-                    { 
+                    {
                         targetChallenge = targetChallenges[Eleven.random.Next(targetChallenges.Count)];
                     }
 
@@ -1183,7 +1183,7 @@ namespace CommunityLib
                         Console.WriteLine("CommunityLib: " + ua.getName() + " is going to perform challenge " + targetChallenge.challenge.getName() + " at " + targetChallenge.location.getName() + " (" + (targetChallenge.location.soc?.getName() ?? "No Society") + ")");
 
                         List<ReasonMsg> reasonMsgs = new List<ReasonMsg>();
-                        getChallengeUtility(targetChallenge, ua,data, data.controlParameters, reasonMsgs);
+                        getChallengeUtility(targetChallenge, ua, data, data.controlParameters, reasonMsgs);
 
                         foreach (ReasonMsg reasonMsg in reasonMsgs)
                         {
@@ -1241,8 +1241,8 @@ namespace CommunityLib
             AIData data = (AIData)aiData;
 
             // Sort all aiChallenges into type-keyed dictionaries for faster searching.
-            Dictionary<Type, AIChallenge>  aiChallenges = new Dictionary<Type, AIChallenge>();
-            Dictionary<Type, AIChallenge>  aiRituals = new Dictionary<Type, AIChallenge>();
+            Dictionary<Type, AIChallenge> aiChallenges = new Dictionary<Type, AIChallenge>();
+            Dictionary<Type, AIChallenge> aiRituals = new Dictionary<Type, AIChallenge>();
 
             if (data.aiChallenges != null)
             {
@@ -1534,12 +1534,11 @@ namespace CommunityLib
 
         private double getDistanceDivisor(ChallengeData challengeData, AIData aiData, UA ua)
         {
-            double distance = map.getStepDist(ua.location, challengeData.location) / ua.getMaxMoves();
-            distance = Math.Ceiling(distance);
+            int distance = (int)Math.Ceiling((double)map.getStepDist(ua.location, challengeData.location) / (double)ua.getMaxMoves());
 
             foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
-                distance = hook.onAgentAI_GetChallengeUtility_GetDistanceForDivisor(ua, aiData, challengeData, (int)distance);
+                distance = hook.onUnitAI_GetsDistanceToLocation(ua, challengeData.location, (int)distance);
             }
 
             int duration = (int)Math.Max(1.0, Math.Ceiling(challengeData.challenge.getCompletionMenaceAfterDifficulty() / challengeData.challenge.getProgressPerTurn(ua, null)));
@@ -1559,7 +1558,7 @@ namespace CommunityLib
 
             if (data.aiTasks != null)
             {
-                if (debugInternal.debug)
+                if (debugInternal.debug || data.controlParameters.debugProperties.debug)
                 {
                     Console.WriteLine("CommunityLib: Agent AI for type " + ua.GetType() + " has " + data.aiTasks.Count + " assigned tasks.");
                 }
@@ -1572,7 +1571,7 @@ namespace CommunityLib
                         targetCategory = AITask.TargetCategory.None
                     };
 
-                    if (debugInternal.debug && (debugInternal.outputValidity_AllTasks || debugInternal.outputValidity_ValidTasks))
+                    if ((debugInternal.debug && (debugInternal.outputValidity_AllTasks || debugInternal.outputValidity_ValidTasks)) || (data.controlParameters.debugProperties.debug && (data.controlParameters.debugProperties.outputValidity_AllTasks || data.controlParameters.debugProperties.outputValidity_ValidTasks)))
                     {
                         Console.WriteLine("CommunityLib: Validity for " + aiTask.taskType + " by " + ua.getName() + " (" + (ua.society?.getName() ?? "No Society)") + " at " + ua.location.getName() + " (" + (ua.location.soc?.getName() ?? "Wilderness") + ")");
                     }
@@ -1644,11 +1643,11 @@ namespace CommunityLib
         {
             if (debugInternal.debug || data.controlParameters.debugProperties.debug)
             {
-                if (valid && debugInternal.debug && (debugInternal.outputValidity_AllTasks || debugInternal.outputUtility_ValidTasks))
+                if (valid && (debugInternal.outputValidity_AllTasks || data.controlParameters.debugProperties.outputValidity_AllTasks) || (data.controlParameters.debugProperties.outputUtility_ValidTasks || data.controlParameters.debugProperties.outputValidity_ValidTasks))
                 {
                     Console.WriteLine("CommunityLib: Valid");
                 }
-                else if (!valid && debugInternal.outputValidity_AllTasks)
+                else if (!valid && (debugInternal.outputValidity_AllTasks || data.controlParameters.debugProperties.outputValidity_AllTasks))
                 {
                     Console.WriteLine("CommunityLib: Invalid");
                 }

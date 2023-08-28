@@ -46,12 +46,12 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when the relgion UI is openned. It recieves the holy order that the ui has opened to. This hook does not fire when a player switched which religion they are viewing.
+        /// This hook fires just after a graphical unit has been updated. It recieves the graphical unit (graphicalUnit).
         /// </summary>
-        /// <param name="order"></param>
-        public virtual void onPlayerOpensReligionUI(HolyOrder order)
+        /// <param name="graphicalUnit"></param>
+        public virtual void onGraphicalUnitUpdated(GraphicalUnit graphicalUnit)
         {
-            return;
+
         }
 
         /// <summary>
@@ -111,7 +111,8 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when a unit is taking a step to a new location. All base-game movement processing has already been completed, except for moving the unit from it's current location to it's next location. It receives the unit moving (u), the unit's current location (locA), and the unit's new location (locB).
+        /// This hook fires when a unit is taking a step to a new location. All base-game movement processing have already been completed. It receives the unit moving (u), the unit's current location (locA), and the unit's new location (locB).
+        /// <para>The unit's `int movesTaken` value will not yet have been incremented, as that is done by the function that called for the movement to take place, not by the movement function itself. To refund a move taken, simply decrement the unit's movesTaken value in this hook, even if that results in a temporariliy negative value.</para>
         /// </summary>
         /// <param name="u"></param>
         /// <param name="locA"></param>
@@ -122,17 +123,17 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when an agent's AI checks the distance to a challenge for the purposes of the distance divisor component of it's utility calculation for that challenge. It receives the agent (ua), the challenge (challenge), and the calculated distance (stepDistance). It returns the distance to the challenge as the number of turns required to reach it (typically equal to the step distance).
-        /// <para>If another mod has already returned a modified value, the distance as time value (stepDistance) that you recieve will already include that alteration.</para>
-        /// <para>This hook does not fire if the agent is already at the challenge.</para>
+        /// This hook fires when several key functions in the base game tries to get the shortest distance to a location. These functions are `UA.distanceDivisor`, `Task_AttackArmy`, `Task_AttackUnit`, `Task_AttackUnitWithEscort`, `Task_Bodyguard`, `Task_DisruptUA`, and `CommunityLibrary.AgentAI.getDistanceDivisor`.<br></br>
+        /// It receives the unit (u), the target location (target), and the time it will take the agent to traverse it's path to the destination (travelTime). By default the travelTime is equal to `Map.getStepDistance(u.location, loc) / u.getMaxSteps()`, rounded up. It returns the calculated travelTime.
+        /// <para>If a mod that is loaded before yours has already altered the travel time, the travelTime passed into this hook will already include that change.</para>
         /// </summary>
-        /// <param name="ua"></param>
-        /// <param name="c"></param>
-        /// <param name="stepDistance"></param>
+        /// <param name="u"></param>
+        /// <param name="target"></param>
+        /// <param name="travelTime"></param>
         /// <returns></returns>
-        public virtual int unitAgentAI_getChallengeUtility_getDistanceForDivisor(UA ua, Challenge c, int stepDistance)
+        public virtual int onUnitAI_GetsDistanceToLocation(Unit u, Location target, int travelTime)
         {
-            return stepDistance;
+            return travelTime;
         }
 
         /// <summary>
@@ -215,7 +216,8 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when an army battle has allocated damage to the military units fighting on a side, but before the damage is applied. It recieves the army battle (battle), the list of units (units) that are about to recieve damage, and an integer array of the total damage that the units are about to recieve (dmgs). These values are matched by index.
+        /// This hook fires when an army battle has allocated damage to the military units fighting on a side, but before the damage is applied. It recieves the army battle (battle), the list of units (units) that are about to recieve damage, and an integer array of the total damage that the units are about to recieve (dmgs). These values are matched by index.<br></br>
+        /// The messages generated in the combat log, and the messages that are sent to the player, have already been genereated at this point. Only use this hook if you must change the total damage value, rather than the individual values, and make sure to add a new message to the battle log that explains the discrepancy.
         /// </summary>
         /// <param name="battle"></param>
         /// <param name="units"></param>
@@ -264,7 +266,7 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when a minion in a minion battle is about to make an attack. It receives the Minion that is about to attack (attacker), the enemy Agent (other), the Battle Popup Window (popup), which is null if the history is running or popups are disabled, the agent battle (battle), the damage that it si about to deal (dmg), and the row that it is attick down (row). It returns the damage that the minion will do.<br></br>
+        /// This hook fires when a minion in a minion battle is about to make an attack. It receives the Minion that is about to attack (attacker), the enemy Agent (other), the Battle Popup Window (battle), which is null if history is generating or popups are otherwise disabled, the agent battle (battle), the damage that it si about to deal (dmg), and the row that it is attick down (row). It returns the damage that the minion will do.<br></br>
         /// The Row directly corrisponds to the index of the minions on both agents. If "other.minions[row]" is equal to null, then the damage will be dealt to the enemy agent.
         /// <para>If another mod has already modified the damage value using this hook, that change will be in the damage value that you receive.</para>
         /// </summary>
@@ -282,7 +284,7 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when an agent or one of their minions is about to take attack damage in an agent battle. It receives the popup battle window (popup), which is null if the history is running or popups are disabled, the agent battle (battle), the agent whom the attack is directed towards (defender), the minion that is about to recieve the damge in the agent's stead (minion) if any, the damage they are about to receive (dmg), and the row that the attack is made down (row). It returns the damage that the victim will receive.<br></br>
+        /// This hook fires when an agent or one of their minions is about to take attack damage in an agent battle. It receives the popup battle window (battle), which is null if the history is generating or popups are otherwise disabled, the agent battle (battle), the agent whom the attack is directed towards (defender), the minion that is about to recieve the damge in the agent's stead (minion) if any, the damage they are about to receive (dmg), and the row that the attack is made down (row). It returns the damage that the victim will receive.<br></br>
         /// The Row directly corrisponds to the index of the minions on both agents. If minion is not null, it is stored in "defender.minion[row]".
         /// <para>If another mod has already modified the damage value using this hook, that change will be in the damage value that you receive.</para>
         /// </summary>
@@ -300,8 +302,9 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when a military unit is about to recieve damage in an army battle. It recieves the army battle (battle), the military unit (u), and the total damage it is about to recieve (dmg). It returns the damage the unit is about to recieve as an int.
-        /// <para>The damage that the unit is about to recieve is the total of all damage sources being applied to that unit in that battle cycle. This hook does not fire for each individual damage source. If you wish to modify the damage sources individually, use the 'onArmyBattleCycle_DamageCalculated' hook</para>
+        /// This hook fires when a military unit is about to recieve damage in an army battle. It recieves the army battle (battle), the military unit (u), and the total damage it is about to recieve (dmg). It returns the damage the unit is about to recieve as an int. <br></br>
+        /// The damage that the unit is about to recieve is the total of all damage sources being applied to that unit in that battle cycle. This hook does not fire for each individual damage source. If you wish to modify the damage sources individually, use the 'onArmyBattleCycle_DamageCalculated' hook.
+        /// <para>The messages generated in the combat log, and the messages that are sent to the player, have already been genereated at this point. Only use this hook if you must change the total damage value, rather than the individual values, and make sure to add a new message to the battle log that explains the discrepancy.</para>
         /// </summary>
         /// <param name="battle"></param>
         /// <param name="u"></param>
@@ -310,6 +313,15 @@ namespace CommunityLib
         public virtual int onUnitReceivesArmyBattleDamage(BattleArmy battle, UM u, int dmg)
         {
             return dmg;
+        }
+
+        /// <summary>
+        /// This hook fires when the relgion UI is openned. It recieves the holy order that the ui has opened to. This hook does not fire when a player switches which religion they are viewing.
+        /// </summary>
+        /// <param name="order"></param>
+        public virtual void onPlayerOpensReligionUI(HolyOrder order)
+        {
+            return;
         }
 
         /// <summary>
@@ -404,7 +416,7 @@ namespace CommunityLib
         /// <param name="um"></param>
         public virtual void onRazeLocation_StartOfProcess(UM um)
         {
-            
+
         }
 
         /// <summary>
@@ -509,22 +521,6 @@ namespace CommunityLib
         public virtual double onAgentAI_GetChallengeUtility(UA ua, AgentAI.AIData aiData, AgentAI.ChallengeData challengeData, double utility, List<ReasonMsg> reasonMsgs)
         {
             return utility;
-        }
-
-        /// <summary>
-        /// This hook fires when the Community Library's AGent AI checks the distance to a challenge for the purposes of the distance divisor component of it's utility calculation for that challenge. It recieves the agent (ua), the AIData for its Agent AI (aiData), the AgentAI.ChallengeData (challengeData), and the calculated distance (stepDistance). It returns the distance to the challenge as the number of turns required to reach it (typically equal to the step distance).
-        /// <para>If another mod has already returned a modified value, the distance as time value (stepDistance) that you recieve will already include that alteration.</para>
-        /// <para>This hook does not fire if the agent is already at the challenge.</para>
-        /// </summary>
-        /// <param name="ua"></param>
-        /// <param name="aiData"></param>
-        /// <param name="challengeData"></param>
-        /// <param name="c"></param>
-        /// <param name="stepDistance"></param>
-        /// <returns></returns>
-        public virtual int onAgentAI_GetChallengeUtility_GetDistanceForDivisor(UA ua, AgentAI.AIData aiData, AgentAI.ChallengeData challengeData, int stepDistance)
-        {
-            return stepDistance;
         }
 
         /// <summary>

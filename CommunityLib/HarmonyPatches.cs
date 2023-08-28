@@ -45,6 +45,9 @@ namespace CommunityLib
             }
 
             // HOOKS //
+            // Graphical unit updated hook
+            harmony.Patch(original: AccessTools.Method(typeof(GraphicalMap), nameof(GraphicalMap.checkData), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(GraphicalMap_checkData_Transpiler)));
+
             // Unit death hooks
             harmony.Patch(original: AccessTools.Method(typeof(Unit), nameof(Unit.die), new Type[] { typeof(Map), typeof(string), typeof(Person) }), transpiler: new HarmonyMethod(patchType, nameof(Unit_die_Transpiler)));
 
@@ -89,14 +92,17 @@ namespace CommunityLib
             // OnAgentIsRecruitable
             harmony.Patch(original: AccessTools.Method(typeof(PopupAgentCreation), nameof(PopupAgentCreation.populate), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(PopupAgentCreation_populate_Transpiler)));
 
-            // DistanceDivisor hooks
+            // Get Distance To hooks
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.distanceDivisor), new Type[] { typeof(Challenge) }), transpiler: new HarmonyMethod(patchType, nameof(UA_distanceDivisor_Transpiler)));
+            harmony.Patch(original: AccessTools.Constructor(typeof(Task_AttackArmy), new Type[] { typeof(UM), typeof(UM) }), postfix: new HarmonyMethod(patchType, nameof(Task_AttackArmy_ctor_Postfix)));
+            harmony.Patch(original: AccessTools.Constructor(typeof(Task_AttackUnit), new Type[] { typeof(Unit), typeof(Unit) }), postfix: new HarmonyMethod(patchType, nameof(Task_AttackUnit_ctor_Postfix)));
+            harmony.Patch(original: AccessTools.Constructor(typeof(Task_AttackUnitWithEscort), new Type[] { typeof(Unit), typeof(Unit), typeof(UM_CavalryEscort) }), postfix: new HarmonyMethod(patchType, nameof(Task_AttackUnitWithEscort_ctor_Postfix)));
+            harmony.Patch(original: AccessTools.Constructor(typeof(Task_Bodyguard), new Type[] { typeof(Unit), typeof(Unit) }), postfix: new HarmonyMethod(patchType, nameof(Task_Bodyguard_ctor_Postfix)));
+            harmony.Patch(original: AccessTools.Constructor(typeof(Task_DisruptUA), new Type[] { typeof(UA), typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Task_DisruptUA_ctor_Postfix)));
 
             // Prefab Store hooks
             harmony.Patch(original: AccessTools.Method(typeof(PrefabStore), nameof(PrefabStore.popHolyOrder), new Type[] { typeof(HolyOrder) }), prefix: new HarmonyMethod(patchType, nameof(Prefab_popHolyOrder_Prefix)));
 
-            // Graphical Hex Hooks
-            //harmony.Patch(original: AccessTools.Method(typeof(GraphicalHex), nameof(GraphicalHex.checkData), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(GraphicalHex_checkData_Transpiler)));
 
             // SYSTEM MODIFICATIONS //
             // Assign Killer to Miscellaneous causes of death
@@ -160,14 +166,59 @@ namespace CommunityLib
             // harmony.Patch(original: AccessTools.Method(typeof(), nameof(), new Type[] { typeof() }), postfix: new HarmonyMethod(patchType, nameof()));
         }
 
+        // Graphical unit updated hook
+        private static IEnumerable<CodeInstruction> GraphicalMap_checkData_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(GraphicalMap_checkData_TranspilerBody), new Type[] { typeof(GraphicalUnit) });
+
+            FieldInfo FI_Unit_outer = AccessTools.Field(typeof(Unit), nameof(Unit.outer));
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (i > 1 && instructionList[i].opcode == OpCodes.Nop && instructionList[i - 2].opcode == OpCodes.Callvirt && instructionList[i - 1].opcode == OpCodes.Nop)
+                        {
+                            targetIndex = 0;
+
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 4);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Unit_outer);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed GraphicalMap_checkData_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static void GraphicalMap_checkData_TranspilerBody(GraphicalUnit graphicalUnit)
+        {
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            {
+                hook.onGraphicalUnitUpdated(graphicalUnit);
+            }
+        }
+
         // Assign Killer to Miscellaneous causes of death
         private static IEnumerable<CodeInstruction> UM_HumanArmy_turnTickInner_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            FieldInfo FI_Person = AccessTools.Field(typeof(Unit), nameof(Unit.person));
+            MethodInfo MI_GetPerson = AccessTools.PropertyGetter(typeof(Unit), nameof(Unit.person));
 
-            int targetIndex = 0;
+            int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
             {
                 if (targetIndex > 0)
@@ -179,7 +230,7 @@ namespace CommunityLib
                             targetIndex = 0;
 
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Person);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_GetPerson);
 
                             i++;
                         }
@@ -2631,16 +2682,113 @@ namespace CommunityLib
             }
         }
 
+        private static void Task_AttackArmy_ctor_Postfix(Task_AttackArmy __instance, UM c, UM self)
+        {
+            int dist = self.map.getStepDist(c.location, self.location);
+            int duration = 0;
+            if (dist > 0)
+            {
+                duration = (int)Math.Ceiling((double)self.map.getStepDist(c.location, self.location) / (double)self.getMaxMoves());
+
+                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+                {
+                    duration = hook.onUnitAI_GetsDistanceToLocation(self, c.location, duration);
+                }
+
+                duration = Math.Max(1, duration);
+            }
+
+            __instance.turnsLeft = duration + 5;
+        }
+
+        private static void Task_AttackUnit_ctor_Postfix(Task_AttackUnit __instance, Unit c, Unit self)
+        {
+            int dist = self.map.getStepDist(c.location, self.location);
+            int duration = 0;
+            if (dist > 0)
+            {
+                duration = (int)Math.Ceiling((double)self.map.getStepDist(c.location, self.location) / (double)self.getMaxMoves());
+
+                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+                {
+                    duration = hook.onUnitAI_GetsDistanceToLocation(self, c.location, duration);
+                }
+
+                duration = Math.Max(1, duration);
+            }
+
+            __instance.turnsRemaining = duration + 5;
+        }
+
+        private static void Task_AttackUnitWithEscort_ctor_Postfix(Task_AttackUnitWithEscort __instance, Unit c, Unit self)
+        {
+            int dist = self.map.getStepDist(c.location, self.location);
+            int duration = 0;
+            if (dist > 0)
+            {
+                duration = (int)Math.Ceiling((double)self.map.getStepDist(c.location, self.location) / (double)self.getMaxMoves());
+
+                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+                {
+                    duration = hook.onUnitAI_GetsDistanceToLocation(self, c.location, duration);
+                }
+
+                duration = Math.Max(1, duration);
+            }
+
+            __instance.turnsRemaining = duration + 5;
+        }
+
+        private static void Task_Bodyguard_ctor_Postfix(Task_Bodyguard __instance, Unit c, Unit self)
+        {
+            int dist = self.map.getStepDist(c.location, self.location);
+            int duration = 0;
+            if (dist > 0)
+            {
+                duration = (int)Math.Ceiling((double)self.map.getStepDist(c.location, self.location) / (double)self.getMaxMoves());
+
+                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+                {
+                    duration = hook.onUnitAI_GetsDistanceToLocation(self, c.location, duration);
+                }
+
+                duration = Math.Max(1, duration);
+            }
+
+            __instance.turnsRemaining = duration + 5;
+        }
+
+        private static void Task_DisruptUA_ctor_Postfix(Task_DisruptUA __instance, Unit them, Unit us)
+        {
+            int dist = us.map.getStepDist(them.location, us.location);
+            int duration = 0;
+            if (dist > 0)
+            {
+                duration = (int)Math.Ceiling((double)dist / (double)us.getMaxMoves());
+
+                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+                {
+                    duration = hook.onUnitAI_GetsDistanceToLocation(us, them.location, duration);
+                }
+
+                duration = Math.Max(1, duration);
+            }
+
+            __instance.turnsLeft = duration + 10;
+        }
+
         private static int UA_distanceDivisor_TranspilerBody(UA ua, Challenge c, int distance)
         {
-            if (distance > 0)
+            if (distance > 0 && !(c is Ritual))
             {
                 distance = (int)Math.Ceiling((double)distance / ua.getMaxMoves());
 
                 foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
                 {
-                    distance = hook.unitAgentAI_getChallengeUtility_getDistanceForDivisor(ua, c, distance);
+                    distance = hook.onUnitAI_GetsDistanceToLocation(ua, c.location, distance);
                 }
+
+                distance = Math.Max(1, distance);
             }
 
             return distance;
