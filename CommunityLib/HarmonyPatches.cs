@@ -2268,11 +2268,7 @@ namespace CommunityLib
                 hook.onMoveTaken(u, __state, u.location);
             }
 
-            if (u.movesTaken < -1)
-            {
-                u.movesTaken = -1;
-            }
-            else if (u.movesTaken > u.getMaxMoves())
+            if (u.movesTaken > u.getMaxMoves())
             {
                 u.movesTaken = u.getMaxMoves();
             }
