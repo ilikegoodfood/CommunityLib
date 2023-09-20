@@ -134,6 +134,7 @@ namespace CommunityLib
         public struct ControlParameters
         {
             public bool considerAllChallenges;
+            public bool considerAllRituals;
             public bool forceSafeMove;
 
             public bool respectChallengeVisibility;
@@ -157,6 +158,7 @@ namespace CommunityLib
                 {
                     {
                         considerAllChallenges = false;
+                        considerAllRituals = true;
                         forceSafeMove = false;
 
                         respectChallengeVisibility = false;
@@ -179,6 +181,7 @@ namespace CommunityLib
                 {
                     {
                         considerAllChallenges = true;
+                        considerAllRituals = true;
                         forceSafeMove = false;
 
                         respectChallengeVisibility = true;
@@ -1260,7 +1263,7 @@ namespace CommunityLib
             }
 
             // Get instances of Ritual challenges and store in ChallengeData objects.
-            if (aiRituals.Count > 0)
+            if (data.controlParameters.considerAllRituals || aiRituals.Count > 0)
             {
                 //Console.WriteLine("CommunityLib: Has " + aiRituals.Count + " rituals");
                 List<Challenge> uaRituals = new List<Challenge>();
@@ -1284,7 +1287,7 @@ namespace CommunityLib
                         d.challenge = ritual;
                         ritualData.Add(d);
                     }
-                    else if (data.controlParameters.considerAllChallenges)
+                    else if (data.controlParameters.considerAllRituals)
                     {
                         ChallengeData d = new ChallengeData();
                         d.aiChallenge = null;
@@ -1339,6 +1342,7 @@ namespace CommunityLib
                         d.aiChallenge = rData.aiChallenge;
                         d.challenge = rData.challenge;
                         d.location = location;
+
                         if (getChallengeIsValid(ua, d, data.controlParameters))
                         {
                             result.Add(d);

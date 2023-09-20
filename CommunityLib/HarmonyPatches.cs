@@ -48,6 +48,9 @@ namespace CommunityLib
             // Graphical unit updated hook
             harmony.Patch(original: AccessTools.Method(typeof(GraphicalMap), nameof(GraphicalMap.checkData), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(GraphicalMap_checkData_Transpiler)));
 
+            // Graphical link updated hook
+            harmony.Patch(original: AccessTools.Method(typeof(GraphicalLink), nameof(GraphicalLink.Update), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(GraphicalLink_Update_Postfix)));
+
             // Unit death hooks
             harmony.Patch(original: AccessTools.Method(typeof(Unit), nameof(Unit.die), new Type[] { typeof(Map), typeof(string), typeof(Person) }), transpiler: new HarmonyMethod(patchType, nameof(Unit_die_Transpiler)));
 
@@ -58,8 +61,8 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), "allocateDamage", new Type[] { typeof(List<UM>), typeof(int[]) }), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_allocateDamage_Transpiler)));
 
             // Agent Battle hooks
-            harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.attackDownRow), new Type[] { typeof(int), typeof(UA), typeof(UA), typeof(PopupBattleAgent) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_AttackDownRow_Minion_Transpiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.attackDownRow), new Type[] { typeof(int), typeof(int), typeof(AgentCombatInterface), typeof(UA), typeof(UA), typeof(PopupBattleAgent) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_AttackDownRow_Agent_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.attackDownRow), new Type[] { typeof(int), typeof (UA), typeof(UA), typeof(PopupBattleAgent) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_AttackDownRow_Minion_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.attackDownRow), new Type[] { typeof(int), typeof (int), typeof(AgentCombatInterface), typeof(UA), typeof(UA), typeof(PopupBattleAgent) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_AttackDownRow_Agent_Transpiler)));
 
             // Raze Location hooks
             harmony.Patch(original: AccessTools.Method(typeof(Task_RazeLocation), nameof(Task_RazeLocation.turnTick), new Type[] { typeof(Unit) }), prefix: new HarmonyMethod(patchType, nameof(Task_RazeLocation_turnTick_Prefix)), postfix: new HarmonyMethod(patchType, nameof(Task_RazeLocation_turnTick_Postfix)), transpiler: new HarmonyMethod(patchType, nameof(Task_RazeLocation_turnTick_Transpiler)));
@@ -171,7 +174,7 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(GraphicalMap_checkData_TranspilerBody), new Type[] { typeof(GraphicalUnit) });
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof (GraphicalMap_checkData_TranspilerBody), new Type[] { typeof(GraphicalUnit) });
 
             FieldInfo FI_Unit_outer = AccessTools.Field(typeof(Unit), nameof(Unit.outer));
 
@@ -182,7 +185,7 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (i > 1 && instructionList[i].opcode == OpCodes.Nop && instructionList[i - 2].opcode == OpCodes.Callvirt && instructionList[i - 1].opcode == OpCodes.Nop)
+                        if (i > 1 && instructionList[i].opcode == OpCodes.Nop && instructionList[i-2].opcode == OpCodes.Callvirt && instructionList[i-1].opcode == OpCodes.Nop)
                         {
                             targetIndex = 0;
 
@@ -204,6 +207,14 @@ namespace CommunityLib
         }
 
         private static void GraphicalMap_checkData_TranspilerBody(GraphicalUnit graphicalUnit)
+        {
+            foreach(Hooks hook in ModCore.core.GetRegisteredHooks())
+            {
+                hook.onGraphicalUnitUpdated(graphicalUnit);
+            }
+        }
+
+        private static void GraphicalLink_Update_Postfix(GraphicalUnit graphicalUnit)
         {
             foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
@@ -260,7 +271,7 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldnull && instructionList[i - 1].opcode == OpCodes.Call && instructionList[i - 2].opcode == OpCodes.Callvirt)
+                        if (instructionList[i].opcode == OpCodes.Ldnull && instructionList[i-1].opcode == OpCodes.Call && instructionList[i-2].opcode == OpCodes.Callvirt)
                         {
                             targetIndex = 0;
 
@@ -391,7 +402,7 @@ namespace CommunityLib
                                 targetIndex = 0;
 
                                 yield return new CodeInstruction(OpCodes.Ldarg_0);
-
+                                
                                 i++;
                             }
                         }
@@ -497,7 +508,7 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i + 1].opcode == OpCodes.Ldfld && instructionList[i + 2].opcode == OpCodes.Callvirt && instructionList[i + 3].opcode == OpCodes.Brfalse_S)
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i+1].opcode == OpCodes.Ldfld && instructionList[i+2].opcode == OpCodes.Callvirt && instructionList[i+3].opcode == OpCodes.Brfalse_S)
                         {
                             targetIndex++;
 
@@ -727,7 +738,7 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i + 3].opcode == OpCodes.Callvirt && instructionList[i + 4].opcode == OpCodes.Pop)
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i+3].opcode == OpCodes.Callvirt && instructionList[i+4].opcode == OpCodes.Pop)
                         {
                             targetIndex++;
 
@@ -911,7 +922,7 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldloc_3 && instructionList[i - 1].opcode == OpCodes.Endfinally)
+                        if (instructionList[i].opcode == OpCodes.Ldloc_3 && instructionList[i-1].opcode == OpCodes.Endfinally)
                         {
                             targetIndex++;
 
@@ -937,7 +948,7 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 3)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i - 1].opcode == OpCodes.Endfinally)
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i-1].opcode == OpCodes.Endfinally)
                         {
                             targetIndex = 0;
 
@@ -1349,7 +1360,7 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 3)
                     {
-                        if (instructionList[i].opcode == OpCodes.Callvirt && instructionList[i - 1].opcode == OpCodes.Ldloc_3)
+                        if(instructionList[i].opcode == OpCodes.Callvirt && instructionList[i - 1].opcode == OpCodes.Ldloc_3)
                         {
                             targetIndex++;
 
@@ -1690,7 +1701,7 @@ namespace CommunityLib
                 {
                     if (targetIndex < 3)
                     {
-                        if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i - 1].opcode == OpCodes.Ldloc_S)
+                        if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i-1].opcode == OpCodes.Ldloc_S)
                         {
                             targetIndex++;
 
@@ -1969,13 +1980,13 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 2)
                     {
-                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i - 1].opcode == OpCodes.Brfalse_S)
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i-1].opcode == OpCodes.Brfalse_S)
                         {
                             targetIndex = 0;
 
                             yield return new CodeInstruction(OpCodes.Ldloc_S, 46);
                             yield return new CodeInstruction(OpCodes.Callvirt, MI_TranspilerBody_HolyOrderGone);
-                            yield return new CodeInstruction(OpCodes.Brtrue_S, instructionList[i - 1].operand);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, instructionList[i-1].operand);
                         }
                     }
                 }
@@ -2005,7 +2016,7 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (i > 2 && instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i - 1].opcode == OpCodes.Br && instructionList[i - 2].opcode == OpCodes.Stfld)
+                        if (i > 2 && instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i-1].opcode == OpCodes.Br && instructionList[i-2].opcode == OpCodes.Stfld)
                         {
                             targetIndex = 0;
 
@@ -2850,7 +2861,7 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 4)
                     {
-                        if (instructionList[i].opcode == OpCodes.Br_S && instructionList[i - 1].opcode == OpCodes.Nop)
+                        if (instructionList[i].opcode == OpCodes.Br_S && instructionList[i-1].opcode == OpCodes.Nop)
                         {
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Callvirt, MI_TranspilerBody_UM);
@@ -3183,12 +3194,12 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (i > 2 && instructionList[i].opcode == OpCodes.Nop && instructionList[i - 1].opcode == OpCodes.Brfalse && instructionList[i - 2].opcode == OpCodes.Ldloc_S && instructionList[i + 2].opcode == OpCodes.Ldfld && instructionList[i + 2].operand as FieldInfo == FI_UIScroll_Unit_Master && instructionList[i + 3].opcode == OpCodes.Ldfld && instructionList[i + 3].operand as FieldInfo == FI_UIMaster_World)
+                        if (i > 2 && instructionList[i].opcode == OpCodes.Nop && instructionList[i-1].opcode == OpCodes.Brfalse && instructionList[i-2].opcode == OpCodes.Ldloc_S && instructionList[i+2].opcode == OpCodes.Ldfld && instructionList[i+2].operand as FieldInfo == FI_UIScroll_Unit_Master && instructionList[i+3].opcode == OpCodes.Ldfld && instructionList[i+3].operand as FieldInfo == FI_UIMaster_World)
                         {
                             targetIndex++;
 
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_TimeStats);
-                            yield return new CodeInstruction(OpCodes.Brtrue, instructionList[i - 1].operand);
+                            yield return new CodeInstruction(OpCodes.Brtrue, instructionList[i-1].operand);
                         }
                     }
                     else if (targetIndex < 6)

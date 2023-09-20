@@ -37,15 +37,5 @@ namespace CommunityLib
             defenders.Clear();
             defComs.Clear();
         }
-
-        public Tuple<List<UM>, List<UA>> GetAttackers()
-        {
-            return new Tuple<List<UM>, List<UA>>(attackers, attComs);
-        }
-
-        public Tuple<List<UM>, List<UA>> GetDefenders()
-        {
-            return new Tuple<List<UM>, List<UA>>(defenders, defComs);
-        }
     }
 }
