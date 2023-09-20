@@ -48,6 +48,9 @@ namespace CommunityLib
             // Graphical unit updated hook
             harmony.Patch(original: AccessTools.Method(typeof(GraphicalMap), nameof(GraphicalMap.checkData), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(GraphicalMap_checkData_Transpiler)));
 
+            // Graphical link updated hook
+            harmony.Patch(original: AccessTools.Method(typeof(GraphicalLink), nameof(GraphicalLink.Update), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(GraphicalLink_Update_Postfix)));
+
             // Unit death hooks
             harmony.Patch(original: AccessTools.Method(typeof(Unit), nameof(Unit.die), new Type[] { typeof(Map), typeof(string), typeof(Person) }), transpiler: new HarmonyMethod(patchType, nameof(Unit_die_Transpiler)));
 
@@ -206,6 +209,14 @@ namespace CommunityLib
         private static void GraphicalMap_checkData_TranspilerBody(GraphicalUnit graphicalUnit)
         {
             foreach(Hooks hook in ModCore.core.GetRegisteredHooks())
+            {
+                hook.onGraphicalUnitUpdated(graphicalUnit);
+            }
+        }
+
+        private static void GraphicalLink_Update_Postfix(GraphicalUnit graphicalUnit)
+        {
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
                 hook.onGraphicalUnitUpdated(graphicalUnit);
             }
