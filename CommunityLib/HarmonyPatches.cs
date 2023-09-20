@@ -214,11 +214,11 @@ namespace CommunityLib
             }
         }
 
-        private static void GraphicalLink_Update_Postfix(GraphicalUnit graphicalUnit)
+        private static void GraphicalLink_Update_Postfix(GraphicalLink __instance)
         {
             foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
             {
-                hook.onGraphicalUnitUpdated(graphicalUnit);
+                hook.onGraphicalLinkUpdated(__instance);
             }
         }
 
