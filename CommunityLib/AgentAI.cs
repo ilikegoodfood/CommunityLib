@@ -6,7 +6,6 @@ using System.Linq;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using DuloGames.UI;
-using static CommunityLib.AgentAI;
 
 namespace CommunityLib
 {
@@ -17,6 +16,8 @@ namespace CommunityLib
         private static DebugProperties debugInternal;
 
         private bool aiRunning = false;
+
+        private bool aiCheckingUtility = false;
 
         private Dictionary<Type, AIData> ai;
 
@@ -795,6 +796,11 @@ namespace CommunityLib
             return aiRunning;
         }
 
+        public bool isAICheckingUtility()
+        {
+            return aiCheckingUtility;
+        }
+
         public void turnTickAI(UA ua)
         {
             if (ua == null)
@@ -1354,6 +1360,42 @@ namespace CommunityLib
             return result;
         }
 
+        public bool getChallengeIsValid(UA ua, Challenge challenge, Location location = null)
+        {
+            if (ua == null || challenge == null)
+            {
+                return false;
+            }
+
+            if (ModCore.core.GetAgentAI().TryGetAgentType(ua.GetType(), out AgentAI.AIData? aiData) && aiData is AgentAI.AIData data)
+            {
+                AIChallenge aiChallenge = ModCore.core.GetAgentAI().GetAIChallengeFromAgentType(ua.GetType(), challenge.GetType());
+                ChallengeData challengeData = new ChallengeData {
+                    aiChallenge = aiChallenge,
+                    challenge = challenge,
+                    location = challenge.location,
+                };
+
+                if (challenge is Ritual)
+                {
+                    if (location == null)
+                    {
+                        challengeData.location = ua.location;
+                    }
+                    else
+                    {
+                        challengeData.location = location;
+                    }
+                }
+
+                return getChallengeIsValid(ua, challengeData, data.controlParameters);
+            }
+            else
+            {
+                return challenge.valid() && challenge.validFor(ua);
+            }
+        }
+
         public bool getChallengeIsValid(UA ua, ChallengeData challengeData, ControlParameters controlParams)
         {
             if (challengeData.challenge.claimedBy != null && challengeData.challenge.claimedBy.isDead)
@@ -1374,7 +1416,7 @@ namespace CommunityLib
                     {
                         if (challengeData.challenge.allowMultipleUsers() || challengeData.challenge.claimedBy == null || challengeData.challenge.claimedBy == ua)
                         {
-                            if ((challengeData.aiChallenge != null && challengeData.aiChallenge.checkChallengeIsValid(challengeData, ua, controlParams)) || (controlParams.considerAllChallenges && challengeData.challenge.valid() && challengeData.challenge.validFor(ua)))
+                            if ((challengeData.aiChallenge != null && challengeData.aiChallenge.checkChallengeIsValid(challengeData, ua, controlParams)) || (challengeData.challenge is Ritual && controlParams.considerAllRituals && challengeData.challenge.valid() && challengeData.challenge.validFor(ua)) || (!(challengeData.challenge is Ritual) && controlParams.considerAllChallenges && challengeData.challenge.valid() && challengeData.challenge.validFor(ua)))
                             {
                                 return true;
                             }
@@ -1402,6 +1444,79 @@ namespace CommunityLib
             return false;
         }
 
+        public double getChallengeUtility(UA ua, Challenge challenge, List<ReasonMsg> reasonMsgs, Location location = null)
+        {
+            double utility = 0.0;
+
+            if (ua == null || challenge == null)
+            {
+                return -1.0;
+            }
+
+            if (ModCore.core.GetAgentAI().TryGetAgentType(ua.GetType(), out AgentAI.AIData? aiData) && aiData is AgentAI.AIData data)
+            {
+                AIChallenge aiChallenge = ModCore.core.GetAgentAI().GetAIChallengeFromAgentType(ua.GetType(), challenge.GetType());
+
+                if (aiChallenge == null)
+                {
+                    if (challenge is Ritual)
+                    {
+                        if (data.controlParameters.considerAllRituals)
+                        {
+                            aiCheckingUtility = true;
+                            utility = ua.getChallengeUtility(challenge, reasonMsgs);
+                            aiCheckingUtility = false;
+                        }
+                        else
+                        {
+                            utility = -1.0;
+                        }
+                    }
+                    else if (data.controlParameters.considerAllChallenges)
+                    {
+                        aiCheckingUtility = true;
+                        utility = ua.getChallengeUtility(challenge, reasonMsgs);
+                        aiCheckingUtility = false;
+                    }
+                    else
+                    {
+                        utility = -1.0;
+                    }
+                }
+                else
+                {
+                    AgentAI.ChallengeData cData = new AgentAI.ChallengeData
+                    {
+                        aiChallenge = aiChallenge,
+                        challenge = challenge,
+                        location = challenge.location
+                    };
+
+                    if (challenge is Ritual)
+                    {
+                        if (location == null)
+                        {
+                            cData.location = ua.location;
+                        }
+                        else
+                        {
+                            cData.location = location;
+                        }
+                    }
+
+                    utility = ModCore.core.GetAgentAI().getChallengeUtility(cData, ua, data, data.controlParameters, reasonMsgs);
+                }
+            }
+            else
+            {
+                aiCheckingUtility = true;
+                utility = ua.getChallengeUtility(challenge, reasonMsgs);
+                aiCheckingUtility = false;
+            }
+
+            return utility;
+        }
+
         public double getChallengeUtility(ChallengeData challengeData, UA ua, AIData aiData, ControlParameters controlParams, List<ReasonMsg> reasonMsgs = null)
         {
             double utility = 0.0;
@@ -1425,7 +1540,10 @@ namespace CommunityLib
             Challenge challenge = challengeData.challenge;
             if (challengeData.aiChallenge == null)
             {
-                return ua.getChallengeUtility(challengeData.challenge, reasonMsgs);
+                aiCheckingUtility = true;
+                utility = ua.getChallengeUtility(challengeData.challenge, reasonMsgs);
+                aiCheckingUtility = false;
+                return utility;
             }
 
             utility += challengeData.aiChallenge.checkChallengeUtility(challengeData, ua, controlParams, reasonMsgs);

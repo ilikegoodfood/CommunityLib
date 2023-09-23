@@ -46,7 +46,7 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires just after a graphical unit has been updated. It recieves the graphical unit (graphicalUnit).
+        /// This hook fires just after a graphical unit has been updated. It receives the graphical unit (graphicalUnit).
         /// </summary>
         /// <param name="graphicalUnit"></param>
         public virtual void onGraphicalUnitUpdated(GraphicalUnit graphicalUnit)
@@ -55,7 +55,7 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires just after a graphical link has been updated. It recieves the graphical link (graphicalLink).
+        /// This hook fires just after a graphical link has been updated. It receives the graphical link (graphicalLink).
         /// </summary>
         /// <param name="graphicalLink"></param>
         public virtual void onGraphicalLinkUpdated(GraphicalLink graphicalLink)
@@ -64,7 +64,7 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when a patch is requested between two locations. It recieves the location the path is from (locA), the location the path is aiming to reach (locB), the unit that is seeking the path (u), which is null if not applicable, and whether to consider safeMove (safeMove). <br></br>
+        /// This hook fires when a patch is requested between two locations. It receives the location the path is from (locA), the location the path is aiming to reach (locB), the unit that is seeking the path (u), which is null if not applicable, and whether to consider safeMove (safeMove). <br></br>
         /// If this hook returns any Location[] other than null, the rest of the pathFinding process will not happen. Instead, the function will return the array returned by this hook.
         /// <para>No instances of this hook will run after one which has not returned null.</para>
         /// </summary>

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
 using Assets.Code;
 using Assets.Code.Modding;
 using HarmonyLib;
@@ -70,7 +69,7 @@ namespace CommunityLib
             //Initialize subclasses.
             core.data = new ModData(map);
             getModKernels(map);
-            HarmonyPatches_Conditional.PatchingInit();
+            HarmonyPatches_Conditional.PatchingInit(map);
 
             core.pathfinding = new Pathfinding();
 
@@ -95,7 +94,7 @@ namespace CommunityLib
             }
             core.data.onLoad(map);
             getModKernels(map);
-            HarmonyPatches_Conditional.PatchingInit();
+            HarmonyPatches_Conditional.PatchingInit(map);
 
             // Set local variables
             if (core.randStore == null)
