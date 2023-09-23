@@ -2691,97 +2691,27 @@ namespace CommunityLib
 
         private static void Task_AttackArmy_ctor_Postfix(Task_AttackArmy __instance, UM c, UM self)
         {
-            int dist = self.map.getStepDist(c.location, self.location);
-            int duration = 0;
-            if (dist > 0)
-            {
-                duration = (int)Math.Ceiling((double)self.map.getStepDist(c.location, self.location) / (double)self.getMaxMoves());
-
-                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
-                {
-                    duration = hook.onUnitAI_GetsDistanceToLocation(self, c.location, duration);
-                }
-
-                duration = Math.Max(1, duration);
-            }
-
-            __instance.turnsLeft = duration + 5;
+            __instance.turnsLeft = ModCore.core.getTravelTimeTo(self, c.location) + 5;
         }
 
         private static void Task_AttackUnit_ctor_Postfix(Task_AttackUnit __instance, Unit c, Unit self)
         {
-            int dist = self.map.getStepDist(c.location, self.location);
-            int duration = 0;
-            if (dist > 0)
-            {
-                duration = (int)Math.Ceiling((double)self.map.getStepDist(c.location, self.location) / (double)self.getMaxMoves());
-
-                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
-                {
-                    duration = hook.onUnitAI_GetsDistanceToLocation(self, c.location, duration);
-                }
-
-                duration = Math.Max(1, duration);
-            }
-
-            __instance.turnsRemaining = duration + 5;
+            __instance.turnsRemaining = ModCore.core.getTravelTimeTo(self, c.location) + 5;
         }
 
         private static void Task_AttackUnitWithEscort_ctor_Postfix(Task_AttackUnitWithEscort __instance, Unit c, Unit self)
         {
-            int dist = self.map.getStepDist(c.location, self.location);
-            int duration = 0;
-            if (dist > 0)
-            {
-                duration = (int)Math.Ceiling((double)self.map.getStepDist(c.location, self.location) / (double)self.getMaxMoves());
-
-                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
-                {
-                    duration = hook.onUnitAI_GetsDistanceToLocation(self, c.location, duration);
-                }
-
-                duration = Math.Max(1, duration);
-            }
-
-            __instance.turnsRemaining = duration + 5;
+            __instance.turnsRemaining = ModCore.core.getTravelTimeTo(self, c.location) + 5;
         }
 
         private static void Task_Bodyguard_ctor_Postfix(Task_Bodyguard __instance, Unit c, Unit self)
         {
-            int dist = self.map.getStepDist(c.location, self.location);
-            int duration = 0;
-            if (dist > 0)
-            {
-                duration = (int)Math.Ceiling((double)self.map.getStepDist(c.location, self.location) / (double)self.getMaxMoves());
-
-                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
-                {
-                    duration = hook.onUnitAI_GetsDistanceToLocation(self, c.location, duration);
-                }
-
-                duration = Math.Max(1, duration);
-            }
-
-            __instance.turnsRemaining = duration + 5;
+            __instance.turnsRemaining = ModCore.core.getTravelTimeTo(self, c.location) + 5;
         }
 
         private static void Task_DisruptUA_ctor_Postfix(Task_DisruptUA __instance, Unit them, Unit us)
         {
-            int dist = us.map.getStepDist(them.location, us.location);
-            int duration = 0;
-            if (dist > 0)
-            {
-                duration = (int)Math.Ceiling((double)dist / (double)us.getMaxMoves());
-
-                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
-                {
-                    duration = hook.onUnitAI_GetsDistanceToLocation(us, them.location, duration);
-                }
-
-                duration = Math.Max(1, duration);
-            }
-
-            __instance.turnsLeft = duration + 10;
+            __instance.turnsLeft = ModCore.core.getTravelTimeTo(us, them.location) + 10;
         }
 
         private static int UA_distanceDivisor_TranspilerBody(UA ua, Challenge c, int distance)
