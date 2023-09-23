@@ -138,7 +138,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(UIScroll_Unit), nameof(UIScroll_Unit.Update), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(UIScroll_Unit_Update_Transpiler)));
 
             // RECRUITABILITY //
-            // Unit
+            // UAEN overrides
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.isCommandable), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(UA_isCommandable_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(UAEN_DeepOne), nameof(UAEN_DeepOne.isCommandable), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Unit_isCommandable_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(UAEN_Ghast), nameof(UAEN_Ghast.isCommandable), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Unit_isCommandable_Postfix)));
