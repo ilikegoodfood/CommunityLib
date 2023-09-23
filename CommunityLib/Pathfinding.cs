@@ -68,6 +68,10 @@ namespace CommunityLib
 
         public Location[] getPathTo(Location locA, Location locB, Unit u = null, bool safeMove = false)
         {
+            if (locA == locB)
+            {
+                return new Location[0];
+            }
 
             List<Func<Location[], Location, Unit, bool>>  pathfindingDelegates = new List<Func<Location[], Location, Unit, bool>>();
 
@@ -157,6 +161,11 @@ namespace CommunityLib
 
         public Location[] getPathTo(Location locA, SocialGroup sg, Unit u = null, bool safeMove = false)
         {
+            if (locA.soc == sg)
+            {
+                return new Location[0];
+            }
+
             List<Func<Location[], Location, Unit, bool>> pathfindingDelegates = new List<Func<Location[], Location, Unit, bool>>();
 
             if (u != null)

@@ -580,6 +580,27 @@ namespace CommunityLib
             return false;
         }
 
+        public int getTravelTimeTo(Unit u, Location location)
+        {
+            int travelTime = 0;
+
+            Location[] path = core.pathfinding.getPathTo(u.location, location, u);
+            if (path != null)
+            {
+                travelTime = (int)Math.Ceiling((double)path.Count() / (double)u.getMaxMoves());
+            }
+
+            if (travelTime > 0)
+            {
+                foreach (Hooks hook in core.GetRegisteredHooks())
+                {
+                    travelTime = hook.onUnitAI_GetsDistanceToLocation(u, location, travelTime);
+                }
+            }
+
+            return Math.Max(0, travelTime);
+        }
+
         public void forceShipwrecks()
         {
             opt_forceShipwrecks = true;
