@@ -119,6 +119,10 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bPrev), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bNext), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
 
+            // Pan to Holy Order Screen
+            harmony.Patch(original: AccessTools.Method(typeof(PopupMsgUnified), nameof(PopupMsgUnified.dismissAgentA), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(PopupMsgUnified_dismissAgentA_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(PopupMsgUnified), nameof(PopupMsgUnified.dismissAgentB), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(PopupMsgUnified_dismissAgentB_Postfix)));
+
             // Overmind modifications
             harmony.Patch(original: AccessTools.Method(typeof(Overmind), nameof(Overmind.getThreats), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Overmind_getThreats_Transpiler)));
 
@@ -1955,6 +1959,31 @@ namespace CommunityLib
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        // Pan To Holy Order
+        private static void PopupMsgUnified_dismissAgentA_Postfix(PopupMsgUnified __instance)
+        {
+            if (ModCore.opt_panToHolyOrderScreen && __instance.objA is HolyOrder order)
+            {
+                if (order.map.world.ui.blocker == null)
+                {
+                    order.map.world.prefabStore.popHolyOrder(order);
+                    return;
+                }
+            }
+        }
+
+        private static void PopupMsgUnified_dismissAgentB_Postfix(PopupMsgUnified __instance)
+        {
+            if (ModCore.opt_panToHolyOrderScreen && __instance.objB is HolyOrder order)
+            {
+                if (order.map.world.ui.blocker == null)
+                {
+                    order.map.world.prefabStore.popHolyOrder(order);
+                    return;
+                }
             }
         }
 
