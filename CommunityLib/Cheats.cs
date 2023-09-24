@@ -116,6 +116,25 @@ namespace CommunityLib
             GraphicalMap.purge();
             GraphicalMap.checkLoaded();
             map.recomputeStepDistMap();
+
+            string linkMsg = "";
+            if (!addLink)
+            {
+                if (removeLink)
+                {
+                    linkMsg = "The link connecting " + locA.getName() + " and " + locB.getName() + " have been severed";
+                }
+                else
+                {
+                    linkMsg = "The link connecting " + locA.getName() + " and " + locB.getName() + " could not be severed, as it was the last link connecting to one of them";
+                }
+            }
+            else
+            {
+                linkMsg = locA.getName() + " and " + locB.getName() + " were linked together";
+            }
+
+            map.addUnifiedMessage(locA, locB, "Locations Linked", linkMsg, "Locations Liked");
         }
 
         public static void cheat_InfluenceHolyOrder(int value, bool isElder = false)
