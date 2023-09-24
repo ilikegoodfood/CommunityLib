@@ -17,6 +17,8 @@ namespace CommunityLib
 
         public Dictionary<Unit, Dictionary<object, Dictionary<string, double>>> randStore;
 
+        private Map map;
+
         private List<Hooks> registeredHooks = new List<Hooks>();
 
         private Dictionary<Type, List<Type>> settlementTypesForOrcExpansion = new Dictionary<Type,  List<Type>>();
@@ -34,6 +36,8 @@ namespace CommunityLib
         public static bool opt_SpawnShipwrecks = false;
 
         public static bool opt_forceShipwrecks = false;
+
+        public static bool opt_panToHolyOrderScreen = true;
 
         public override void onModsInitiallyLoaded()
         {
@@ -53,6 +57,9 @@ namespace CommunityLib
                 case "Spawn Shipwrecks":
                     opt_SpawnShipwrecks = value;
                     break;
+                case "Pan To Holy Order Screen":
+                    opt_panToHolyOrderScreen = value;
+                    break;
                 default:
                     break;
             }
@@ -62,6 +69,7 @@ namespace CommunityLib
         {
             core = this;
             opt_forceShipwrecks = false;
+            this.map = map;
 
             // Set local variables;
             core.randStore = new Dictionary<Unit, Dictionary<object, Dictionary<string, double>>>();
@@ -87,6 +95,7 @@ namespace CommunityLib
         public override void afterLoading(Map map)
         {
             core = this;
+            this.map = map;
 
             if (core.data == null)
             {
@@ -376,7 +385,7 @@ namespace CommunityLib
 
         public override void onCheatEntered(string command)
         {
-            Cheats.parseCheat(command);
+            Cheats.parseCheat(command, map);
         }
 
         /// <summary>

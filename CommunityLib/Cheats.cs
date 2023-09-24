@@ -9,47 +9,113 @@ namespace CommunityLib
 {
     public class Cheats
     {
-        public static void parseCheat(string command)
+        public static void parseCheat(string command, Map map)
         {
             string[] commandComps = command.Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries);
 
             if (commandComps.Length > 0)
             {
-                switch (commandComps[0])
+                if (commandComps[0] == "link_locations")
                 {
-                    case "influenceElder":
-                        if (commandComps.Length == 1)
-                        {
-                            cheat_InfluenceHolyOrder(0, true);
-                        }
-                        else if (commandComps.Length == 2 && int.TryParse(commandComps[1], out int val))
-                        {
-                            cheat_InfluenceHolyOrder(val, true);
-                        }
-                        break;
-                    case "influenceHuman":
-                        if (commandComps.Length == 1)
-                        {
-                            cheat_InfluenceHolyOrder(0);
-                        }
-                        else if (commandComps.Length == 2 && int.TryParse(commandComps[1], out int val2))
-                        {
-                            cheat_InfluenceHolyOrder(val2);
-                        }
-                        break;
-                    case "shipwreck":
-                        cheat_Shipwreck();
-                        break;
-                    case "gold":
-                        if (commandComps.Length == 2 && int.TryParse(commandComps[1], out int val3))
-                        {
-                            cheat_Gold(val3);
-                        }
-                        break;
-                    default:
-                        break;
+                    if (commandComps.Length == 3 && int.TryParse(commandComps[1], out int val1) && int.TryParse(commandComps[2], out int val2))
+                    {
+                        cheat_LinkLocations(map, val1, val2);
+                    }
+                }
+                else if (commandComps[0] == "influenceElder")
+                {
+                    if (commandComps.Length == 1)
+                    {
+                        cheat_InfluenceHolyOrder(0, true);
+                    }
+                    else if (commandComps.Length == 2 && int.TryParse(commandComps[1], out int val))
+                    {
+                        cheat_InfluenceHolyOrder(val, true);
+                    }
+                }
+                else if (commandComps[0] == "influenceHuman")
+                {
+                    if (commandComps.Length == 1)
+                    {
+                        cheat_InfluenceHolyOrder(0);
+                    }
+                    else if (commandComps.Length == 2 && int.TryParse(commandComps[1], out int val2))
+                    {
+                        cheat_InfluenceHolyOrder(val2);
+                    }
+                }
+                else if (commandComps[0] == "shipwreck")
+                {
+                    cheat_Shipwreck();
+                }
+                else if (commandComps[0] == "gold")
+                {
+                    if (commandComps.Length == 2 && int.TryParse(commandComps[1], out int val3))
+                    {
+                        cheat_Gold(val3);
+                    }
                 }
             }
+        }
+
+        public static void cheat_LinkLocations(Map map, int indexA, int indexB)
+        {
+            if (indexA < 0)
+            {
+                indexA = 0;
+            }
+            else if (indexA >= map.locations.Count)
+            {
+                indexA -= map.locations.Count - 1;
+            }
+
+            if (indexB < 0)
+            {
+                indexB = 0;
+            }
+            else if (indexB >= map.locations.Count)
+            {
+                indexB -= map.locations.Count - 1;
+            }
+
+            Location locA = map.locations[indexA];
+            Location locB = map.locations[indexB];
+            Link linkA = locA.links.FirstOrDefault(l => l.other(locA) == locB);
+            Link linkB = locB.links.FirstOrDefault(l => l.other(locB) == locA);
+            bool addLink = true;
+            bool removeLink = locA.links.Count > 1 && locB.links.Count > 1;
+
+            if (linkA != null)
+            {
+                addLink = false;
+
+                if (removeLink)
+                {
+                    locA.links.Remove(linkA);
+                }
+            }
+
+            if (linkB != null)
+            {
+                addLink = false;
+
+                if (removeLink)
+                {
+                    locB.links.Remove(linkB);
+                }
+            }
+
+            if (addLink)
+            {
+                linkA = new Link(map, locA, locB);
+                locA.links.Add(linkA);
+                linkB = new Link(map, locB, locA);
+                locB.links.Add(linkB);
+            }
+
+            GraphicalMap.purge();
+            GraphicalMap.checkLoaded();
+            map.recomputeStepDistMap();
         }
 
         public static void cheat_InfluenceHolyOrder(int value, bool isElder = false)
