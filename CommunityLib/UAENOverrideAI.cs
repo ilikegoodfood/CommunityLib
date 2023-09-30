@@ -224,8 +224,7 @@ namespace CommunityLib
                     return false;
                 }
 
-                Pr_Opha_Faith faith = challengeData.location.properties.OfType<Pr_Opha_Faith>().FirstOrDefault();
-                if (faith != null)
+                if (challengeData.location.properties.FirstOrDefault(pr => pr is Pr_Opha_Faith) != null)
                 {
                     return false;
                 }
@@ -236,8 +235,8 @@ namespace CommunityLib
                     return false;
                 }
 
-                Pr_Ward ward = challengeData.location.properties.OfType<Pr_Ward>().FirstOrDefault();
-                if (ward?.charge >= 66)
+                Pr_Ward ward = (Pr_Ward)challengeData.location.properties.FirstOrDefault(pr => pr is Pr_Ward);
+                if (ward != null && ward.charge >= 66)
                 {
                     return false;
                 }
