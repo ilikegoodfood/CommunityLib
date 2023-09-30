@@ -1288,17 +1288,21 @@ namespace CommunityLib
                     if (aiRituals.ContainsKey(ritual.GetType()))
                     {
                         //Console.WriteLine("CommunityLib: Found ritual " + ritual.getName());
-                        ChallengeData d = new ChallengeData();
-                        d.aiChallenge = aiRituals[ritual.GetType()];
-                        d.challenge = ritual;
+                        ChallengeData d = new ChallengeData
+                        {
+                            aiChallenge = aiRituals[ritual.GetType()],
+                            challenge = ritual
+                        };
                         ritualData.Add(d);
                     }
                     else if (data.controlParameters.considerAllRituals)
                     {
-                        ChallengeData d = new ChallengeData();
-                        d.aiChallenge = null;
-                        d.challenge = ritual;
-                        d.location = ua.location;
+                        ChallengeData d = new ChallengeData
+                        {
+                            aiChallenge = null,
+                            challenge = ritual,
+                            location = ua.location
+                        };
                         if (getChallengeIsValid(ua, d, data.controlParameters))
                         {
                             result.Add(d);
@@ -1319,10 +1323,12 @@ namespace CommunityLib
                         {
                             if (aiChallenges.ContainsKey(challenge.GetType()))
                             {
-                                ChallengeData d = new ChallengeData();
-                                d.aiChallenge = aiChallenges[challenge.GetType()];
-                                d.challenge = challenge;
-                                d.location = location;
+                                ChallengeData d = new ChallengeData
+                                {
+                                    aiChallenge = aiChallenges[challenge.GetType()],
+                                    challenge = challenge,
+                                    location = location
+                                };
                                 if (getChallengeIsValid(ua, d, data.controlParameters))
                                 {
                                     result.Add(d);
@@ -1330,10 +1336,12 @@ namespace CommunityLib
                             }
                             else if (data.controlParameters.considerAllChallenges)
                             {
-                                ChallengeData d = new ChallengeData();
-                                d.aiChallenge = null;
-                                d.challenge = challenge;
-                                d.location = location;
+                                ChallengeData d = new ChallengeData
+                                {
+                                    aiChallenge = null,
+                                    challenge = challenge,
+                                    location = location
+                                };
                                 if (getChallengeIsValid(ua, d, data.controlParameters))
                                 {
                                     result.Add(d);
@@ -1344,10 +1352,12 @@ namespace CommunityLib
 
                     foreach (ChallengeData rData in ritualData)
                     {
-                        ChallengeData d = new ChallengeData();
-                        d.aiChallenge = rData.aiChallenge;
-                        d.challenge = rData.challenge;
-                        d.location = location;
+                        ChallengeData d = new ChallengeData
+                        {
+                            aiChallenge = rData.aiChallenge,
+                            challenge = rData.challenge,
+                            location = location
+                        };
 
                         if (getChallengeIsValid(ua, d, data.controlParameters))
                         {
@@ -1408,19 +1418,23 @@ namespace CommunityLib
                 Console.WriteLine("CommunityLib: Visibility and Validity for " + challengeData.challenge.getName() + " at " + challengeData.location.getName() + " (" + (challengeData.location.soc?.getName() ?? "Wilderness") + ") by " + ua.getName() + " (" + (ua.society?.getName() ?? "No Society") + ")");
             }
 
-            if (!controlParams.respectChallengeVisibility || (challengeData.aiChallenge != null && challengeData.aiChallenge.checkChallengeVisibility(challengeData, ua, controlParams)) || (controlParams.considerAllChallenges && ua.map.getStepDist(ua.location, challengeData.location) <= (challengeData.challenge.getProfile() / 10)))
+            if (!controlParams.respectChallengeVisibility
+                || (challengeData.aiChallenge != null && challengeData.aiChallenge.checkChallengeVisibility(challengeData, ua, controlParams))
+                || (controlParams.considerAllChallenges && ua.map.getStepDist(ua.location, challengeData.location) <= (challengeData.challenge.getProfile() / 10)))
             {
-                if (!controlParams.respectChallengeAlignment || !(challengeData.challenge.isGoodTernary() == -1 && ua is UAG && !ua.corrupted))
+                if (!controlParams.respectChallengeAlignment || !(challengeData.challenge.isGoodTernary() == -1 && (ua is UAG || ua is UAA) && !ua.corrupted))
                 {
                     if (!controlParams.respectChallengeAlignment || !(challengeData.challenge.isGoodTernary() == 1 && (ua is UAE || ua.corrupted)))
                     {
                         if (challengeData.challenge.allowMultipleUsers() || challengeData.challenge.claimedBy == null || challengeData.challenge.claimedBy == ua)
                         {
-                            if ((challengeData.aiChallenge != null && challengeData.aiChallenge.checkChallengeIsValid(challengeData, ua, controlParams)) || (challengeData.challenge is Ritual && controlParams.considerAllRituals && challengeData.challenge.valid() && challengeData.challenge.validFor(ua)) || (!(challengeData.challenge is Ritual) && controlParams.considerAllChallenges && challengeData.challenge.valid() && challengeData.challenge.validFor(ua)))
+                            if ((challengeData.aiChallenge != null && challengeData.aiChallenge.checkChallengeIsValid(challengeData, ua, controlParams))
+                                || (challengeData.aiChallenge == null && challengeData.challenge is Ritual && controlParams.considerAllRituals && challengeData.challenge.valid() && challengeData.challenge.validFor(ua))
+                                || (challengeData.aiChallenge == null && !(challengeData.challenge is Ritual) && controlParams.considerAllChallenges && challengeData.challenge.valid() && challengeData.challenge.validFor(ua)))
                             {
                                 return true;
                             }
-                            else if ( debugInternal.outputValidity_AllChallenges)
+                            else if (debugInternal.outputValidity_AllChallenges)
                             {
                                 Console.WriteLine("CommunityLib: Invalid: Challenge Not Valid, or Not Valid For " + ua.getName());
                             }
