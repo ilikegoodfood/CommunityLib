@@ -4,6 +4,7 @@ using System.Linq;
 using Assets.Code;
 using Assets.Code.Modding;
 using HarmonyLib;
+using UnityEngine;
 
 namespace CommunityLib
 {
@@ -39,6 +40,8 @@ namespace CommunityLib
 
         public static bool opt_panToHolyOrderScreen = true;
 
+        public static bool opt_ophanimFaithTomb = true;
+
         public override void onModsInitiallyLoaded()
         {
             core = this;
@@ -59,6 +62,9 @@ namespace CommunityLib
                     break;
                 case "Pan To Holy Order Screen":
                     opt_panToHolyOrderScreen = value;
+                    break;
+                case "Show Ophanim's Faith at Elder Tomb":
+                    opt_ophanimFaithTomb = value;
                     break;
                 default:
                     break;
@@ -386,6 +392,38 @@ namespace CommunityLib
         public override void onCheatEntered(string command)
         {
             Cheats.parseCheat(command, map);
+        }
+
+        public override void onGraphicalHexUpdated(GraphicalHex graphicalHex)
+        {
+            if (opt_ophanimFaithTomb)
+            {
+                if (graphicalHex.map.masker.mask == MapMaskManager.maskType.RELIGION)
+                {
+                    if (map.overmind.god is God_Ophanim opha && opha.faith != null)
+                    {
+                        Location location = graphicalHex.hex.location;
+                        if (location != null && location.settlement is Set_TombOfGods)
+                        {
+                            HolyOrder targetOrder = graphicalHex.map.world.ui.uiScrollables.scrollable_threats.targetOrder;
+                            if (targetOrder == null || targetOrder == opha.faith)
+                            {
+                                Color colour = opha.faith.color;
+                                if (colour.a > 0f && colour.r > 0f && colour.g > 0f && colour.b > 0f)
+                                {
+                                    graphicalHex.terrainLayer.color = colour;
+                                    graphicalHex.locLayer.color = colour;
+                                    graphicalHex.mask.enabled = false;
+                                }
+                            }
+                            else
+                            {
+                                graphicalHex.mask.color = new Color(0f, 0f, 0f, 0.75f);
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         /// <summary>

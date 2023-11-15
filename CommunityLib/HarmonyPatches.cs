@@ -2,7 +2,6 @@
 using HarmonyLib;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -76,6 +75,8 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.setTo), new Type[] { typeof(HolyOrder), typeof(int) }), prefix: new HarmonyMethod(patchType, nameof(PopupHolyOrder_setTo_Prefix)), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_setTo_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(UIE_HolyTenet), nameof(UIE_HolyTenet.bInfluenceNegatively), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(UIE_HolyTenet_bInfluence_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(UIE_HolyTenet), nameof(UIE_HolyTenet.bInfluencePositively), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(UIE_HolyTenet_bInfluence_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UILeftLocation), nameof(UILeftLocation.setTo), new Type[] { typeof(Location) }), postfix: new HarmonyMethod(patchType, nameof(UILeftLocation_setTo_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UILeftLocation), nameof(UILeftLocation.bViewFaith), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(UILeftLocation_bViewFaith_Transpiler)));
 
             // LevelUp Traits Hook
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getStartingTraits), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(UA_getStartingTraits_Postfix)));
@@ -89,6 +90,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(UIScroll_Locs), nameof(UIScroll_Locs.checkData), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(UIScroll_Locs_checkData_Transpiler)));
 
             // Sovereign Hooks
+            harmony.Patch(original: AccessTools.Method(typeof(Society), nameof(Society.processActions), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Society_processActions_Transpiler)));
 
             // onIsElderTomb Hooks
             harmony.Patch(original: AccessTools.Method(typeof(Overmind_Automatic), nameof(Overmind_Automatic.ai_testDark), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Overmind_Automatic_ai_testDark_Transpiler)));
@@ -1272,6 +1274,105 @@ namespace CommunityLib
             }
         }
 
+        private static void UILeftLocation_setTo_Postfix(UILeftLocation __instance, Location loc)
+        {
+            if (__instance.stat_faith.text == "")
+            {
+                HolyOrder order = null;
+                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+                {
+                    order = hook?.onLocationViewFaithButton_GetHolyOrder(loc);
+
+                    if (order != null)
+                    {
+                        break;
+                    }
+                }
+
+                if (order != null)
+                {
+                    __instance.stat_faith.text = order.getName();
+                }
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> UILeftLocation_bViewFaith_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = instructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(UIRightLocation_bViewFaith_TranspilerBody), new Type[] { typeof(Location) });
+
+            FieldInfo FI_SelectedLocation = AccessTools.Field(typeof(UILeftLocation), nameof(UILeftLocation.selectedLoc));
+
+            Label retLabel = ilg.DefineLabel();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (i == 3)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i-1].opcode == OpCodes.Nop && instructionList[i-2].opcode == OpCodes.Endfinally)
+                        {
+                            targetIndex++;
+
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_SelectedLocation);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                            yield return new CodeInstruction(OpCodes.Brtrue, retLabel);
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i+1].opcode == OpCodes.Ret)
+                        {
+                            targetIndex = 0;
+
+                            instructionList[i].labels.Add(retLabel);
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed UILeftLocation_bViewFaith_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static bool UIRightLocation_bViewFaith_TranspilerBody(Location loc)
+        {
+            HolyOrder order = null;
+            foreach(Hooks hook in ModCore.core.GetRegisteredHooks())
+            {
+                order = hook?.onLocationViewFaithButton_GetHolyOrder(loc);
+
+                if (order != null)
+                {
+                    break;
+                }
+            }
+
+            if (order != null)
+            {
+                loc.map.world.prefabStore.popHolyOrder(order);
+                return true;
+            }
+
+            return false;
+        }
+
         private static void PrefabStore_popHolyOrder_Prefix()
         {
             popupHolyOrder_PageText = null;
@@ -1951,7 +2052,7 @@ namespace CommunityLib
                 yield return instructionList[i];
             }
 
-            Console.WriteLine("CommunityLib: Completed UIScroll_Locs_checkData_Transpiler");
+            Console.WriteLine("CommunityLib: Completed Society_processActions_Transpiler");
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);

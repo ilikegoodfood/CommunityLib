@@ -406,6 +406,17 @@ namespace CommunityLib
         }
 
         /// <summary>
+        /// This hook fires when a settlement without a default relgion source is selected. It recieves the location of the settlement (loc). It returns the holy order that the view holy order button should be linked to.<br></br>
+        /// No hook after the first that does not return null, will be called.
+        /// </summary>
+        /// <param name="loc"></param>
+        /// <returns></returns>
+        public virtual HolyOrder onLocationViewFaithButton_GetHolyOrder(Location loc)
+        {
+            return null;
+        }
+
+        /// <summary>
         /// This hook fires when a settlement is destroyed. It recieves the settlement (set), a string representation of the cause (v), and the object, if applicable, that casued its destruction (killer). <br></br>
         /// If this hook returns true, the rest of the ruin proccess will not happen. If you wish to keep the settlement intact and prevent this check being performed multiple times per turn, make sure that their cause of destruction has been removed. The process which initially instructed the settlement to fall into ruin will still continue, so if you wish to keep the settlement intact, make to sure to account for, and act in response to, the method of its destruction.
         /// <para>All instances of this hook will run whenever a settlemnt is instructed to fall into ruin, even those after one which has returned true.</para>

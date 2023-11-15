@@ -51,6 +51,22 @@ namespace CommunityLib
             }
         }
 
+        public override HolyOrder onLocationViewFaithButton_GetHolyOrder(Location loc)
+        {
+            if (ModCore.opt_ophanimFaithTomb)
+            {
+                if (loc.map.overmind.god is God_Ophanim opha && opha.faith != null)
+                {
+                    if (loc.settlement is Set_TombOfGods)
+                    {
+                        return opha.faith;
+                    }
+                }
+            }
+
+            return null;
+        }
+
         public override bool interceptGetVisibleUnits(UA ua, List<Unit> visibleUnits)
         {
             switch (ua)
