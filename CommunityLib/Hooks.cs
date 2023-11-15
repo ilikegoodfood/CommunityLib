@@ -660,6 +660,25 @@ namespace CommunityLib
         }
 
         /// <summary>
+        /// This hook fires after an action taking monster social group starts a new monster action. It recieves the action taking monster social group (monster).
+        /// </summary>
+        /// <param name="actionTakingMonster"></param>
+        public virtual void onActionTakingMonsterAIDecision(SG_ActionTakingMonster monster)
+        {
+            return;
+        }
+
+        /// <summary>
+        /// This hook fires after a society social group with a sovereign starts a new national action. It recieves the society social group (society) and the sovereign (sovereign).
+        /// </summary>
+        /// <param name="society"></param>
+        /// <param name="sovereign"></param>
+        public virtual void onSovereignAIDecision(Society society, Person sovereign)
+        {
+            return;
+        }
+
+        /// <summary>
         /// This hook fires when an event checks if a location is the location of the Elder Tomb. It only fires if the location's settlement is not an instance of `Set_TombOfGods`, or a subclass thereof. It recieves the Location beibng checked (location) and returns whether the location should be considered to be the elder tomb. <br></br>
         /// This hook is not called to determine whether a graphical hex should display a property overlay for an atypical Elder Tomb. If you wish your atypical Elder Tomb to not display a property overlay, of if you wish it to display a speciifc property overlay, use the base game's `onGraphicalHexUpdated` hook instead.
         /// <para>No hook after the first hook to return true will be called.</para>

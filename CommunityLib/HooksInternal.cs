@@ -44,6 +44,10 @@ namespace CommunityLib
                         ModCore.core.spawnShipwreck(set.location);
                     }
                 }
+                else if (set is Set_OrcCamp camp && camp.specialism == 5)
+                {
+                    ModCore.core.spawnShipwreck(set.location);
+                }
             }
         }
 
