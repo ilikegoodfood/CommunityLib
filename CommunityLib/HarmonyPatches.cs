@@ -168,6 +168,10 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(UAEN_OrcUpstart), nameof(UAEN_OrcUpstart.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_OrcUpstart_turnTickAI_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UAEN_Vampire), nameof(UAEN_Vampire.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_OrcUpstart_turnTickAI_Prefix)));
 
+            // Deep ones
+            harmony.Patch(original: AccessTools.Method(typeof(Rt_DescendIntoTheSea), nameof(Rt_DescendIntoTheSea.validFor), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Rt_DescendIntoTheSea_validFor_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(Rt_MaintainHumanity), nameof(Rt_MaintainHumanity.validFor), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Rt_MaintainHumanity_validFor_Postfix)));
+
             // TEST ARTICLE
             //harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UA_turnTickAI_Prefix)));
 
@@ -3675,6 +3679,22 @@ namespace CommunityLib
         private static void Ch_Rest_InOrcCamp_complete_Postfix(UA u)
         {
             u.challengesSinceRest = 0;
+        }
+
+        private static void Rt_DescendIntoTheSea_validFor_Postfix(UA ua, ref bool __result)
+        {
+            if (ua.person.species is Species_DeepOne)
+            {
+                __result = false;
+            }
+        }
+
+        private static void Rt_MaintainHumanity_validFor_Postfix(UA ua, ref bool __result)
+        {
+            if (ua.person.species is Species_DeepOne)
+            {
+                __result = false;
+            }
         }
     }
 }
