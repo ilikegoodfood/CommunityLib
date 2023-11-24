@@ -711,5 +711,15 @@ namespace CommunityLib
         {
             return result;
         }
+
+        /// <summary>
+        /// This hook fires when the Broken Maker's powers "P_Eternity_CreateAgent" and "P_Eternity_CreateAgentReusable" are used to create an agent. It recieves the person of the agent (person), their location (location), and the text of the message that will be displayed to the player (text). It returns the text that will be displayed to the player.
+        /// </summary>
+        /// <param name="person"></param>
+        /// <param name="location"></param>
+        public virtual string onBrokenMakerPowerCreatesAgent(Person person, Location location, string text)
+        {
+            return text;
+        }
     }
 }

@@ -100,6 +100,10 @@ namespace CommunityLib
             // OnAgentIsRecruitable
             harmony.Patch(original: AccessTools.Method(typeof(PopupAgentCreation), nameof(PopupAgentCreation.populate), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(PopupAgentCreation_populate_Transpiler)));
 
+            // Broken Maker creates agents using powers
+            harmony.Patch(original: AccessTools.Method(typeof(P_Eternity_CreateAgent), nameof(P_Eternity_CreateAgent.createAgent), new Type[] { typeof(Person), typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(P_Eternity_CreateAgent_createAgent_transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(P_Eternity_CreateAgentReusable), nameof(P_Eternity_CreateAgentReusable.createAgent), new Type[] { typeof(Person), typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(P_Eternity_CreateAgentReusable_createAgent_transpiler)));
+
             // Get Distance To hooks
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.distanceDivisor), new Type[] { typeof(Challenge) }), transpiler: new HarmonyMethod(patchType, nameof(UA_distanceDivisor_Transpiler)));
             harmony.Patch(original: AccessTools.Constructor(typeof(Task_AttackArmy), new Type[] { typeof(UM), typeof(UM) }), postfix: new HarmonyMethod(patchType, nameof(Task_AttackArmy_ctor_Postfix)));
@@ -2856,6 +2860,91 @@ namespace CommunityLib
 
             //Console.WriteLine("CommunityLib: result is " + result);
             return result;
+        }
+
+        private static IEnumerable<CodeInstruction> P_Eternity_CreateAgent_createAgent_transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(P_Eternity_CreateAgent_createAgent_TranspilerBody), new Type[] { typeof(Person), typeof(Location), typeof(string) });
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_0 && instructionList[i+1].opcode == OpCodes.Ldc_I4_0)
+                        {
+                            targetIndex = 0;
+
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Ldarg_2);
+                            yield return new CodeInstruction(OpCodes.Ldloc_0);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                            yield return new CodeInstruction(OpCodes.Stloc_0);
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed P_Eternity_CreateAgent_createAgent_transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> P_Eternity_CreateAgentReusable_createAgent_transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(P_Eternity_CreateAgent_createAgent_TranspilerBody), new Type[] { typeof(Person), typeof(Location), typeof(string) });
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_0 && instructionList[i + 1].opcode == OpCodes.Ldc_I4_0)
+                        {
+                            targetIndex = 0;
+
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Ldarg_2);
+                            yield return new CodeInstruction(OpCodes.Ldloc_0);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                            yield return new CodeInstruction(OpCodes.Stloc_0);
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed P_Eternity_CreateAgentReusable_createAgent_transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static string P_Eternity_CreateAgent_createAgent_TranspilerBody(Person person, Location loc, string text)
+        {
+            foreach(Hooks hook in ModCore.core.GetRegisteredHooks())
+            {
+                if (hook != null)
+                {
+                    text = hook.onBrokenMakerPowerCreatesAgent(person, loc, text);
+                }
+            }
+
+            return text;
         }
 
         private static IEnumerable<CodeInstruction> UA_distanceDivisor_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
