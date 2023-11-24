@@ -1,4 +1,5 @@
 ﻿using Assets.Code;
+using Assets.Code;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -122,7 +123,12 @@ namespace CommunityLib
             }
 
             debugInternal = AgentAI.setupDebugInternal(controlParams.debugProperties);
-            if ((debugInternal.debug && debugInternal.outputProfile_AllChallenges) || (controlParams.debugProperties.debug && controlParams.debugProperties.outputProfile_AllChallenges))
+            if (debugInternal.debug && !ModCore.core.GetAgentAI().isAIRunning() && (debugInternal.outputProfile_AllChallenges || debugInternal.outputProfile_VisibleChallenges))
+            {
+                Console.WriteLine("CommunityLib: Checking profile of" + challengeData.challenge.getName());
+            }
+
+            if (debugInternal.debug && debugInternal.outputProfile_AllChallenges)
             {
                 Console.WriteLine("CommunityLib: Profile: " + result);
             }
@@ -139,6 +145,11 @@ namespace CommunityLib
             }
 
             debugInternal = AgentAI.setupDebugInternal(controlParams.debugProperties);
+            if (debugInternal.debug && !ModCore.core.GetAgentAI().isAIRunning() && (debugInternal.outputProfile_AllChallenges || debugInternal.outputProfile_VisibleChallenges))
+            {
+                Console.WriteLine("CommunityLib: Checking " + challengeData.challenge.getName() + " is visible to " + ua.getName());
+            }
+
             double profile = checkChallengeProfile(challengeData, ua, controlParams);
             int dist = ua.map.getStepDist(ua.location, challengeData.location);
             if (profile / 10 >= dist)
@@ -170,6 +181,11 @@ namespace CommunityLib
             }
 
             debugInternal = AgentAI.setupDebugInternal(controlParams.debugProperties);
+            if (debugInternal.debug && !ModCore.core.GetAgentAI().isAIRunning() && (debugInternal.outputValidity_AllChallenges || debugInternal.outputValidity_ValidChallenges))
+            {
+                Console.WriteLine("CommunityLib: Checking " + challengeData.challenge.getName() + " is valid for " + ua.getName());
+            }
+
             if (challengeData.location != ua.location)
             {
                 Location[] pathTo;

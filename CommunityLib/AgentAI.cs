@@ -6,6 +6,8 @@ using System.Linq;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using DuloGames.UI;
+using HarmonyLib;
+using System.Reflection;
 
 namespace CommunityLib
 {
@@ -822,7 +824,16 @@ namespace CommunityLib
                 Console.WriteLine("CommunityLib: Running Agent AI for " + ua.getName());
             }
             List<ChallengeData> validChallengeData = getAllValidChallengesAndRituals(ua);
-            List<Unit> visibleUnits = ua.getVisibleUnits();
+            List<Unit> visibleUnits = null;
+            MethodInfo MI_getVisibleUnits = AccessTools.DeclaredMethod(ua.GetType(), "getVisibleUnits", new Type[0]);
+            if (MI_getVisibleUnits != null)
+            {
+                visibleUnits = (List<Unit>)MI_getVisibleUnits.Invoke(ua, new object[0]);
+            }
+            else
+            {
+                visibleUnits = ua.getVisibleUnits();
+            }
             List<TaskData> validTasks = getAllValidTasks(ua);
 
             bool result = false;
@@ -848,381 +859,374 @@ namespace CommunityLib
                 hook.onAgentAI_StartOfProcess(ua, data, validChallengeData, validTasks, visibleUnits);
             }
 
-            if (ua.isCommandable() && map.automatic)
-            {
-                map.overmind.autoAI.UAAI(ua);
-            }
-            else
-            {
-                aiRunning = true;
+            aiRunning = true;
 
-                double utility = 0.01;
-                double utility2;
-                List<ChallengeData> targetChallenges = new List<ChallengeData>();
-                List<Unit> targetUnits = new List<Unit>();
-                List<Unit> targetGuards = new List<Unit>();
-                List<UA> targetDisrupts = new List<UA>();
-                List<TaskData> targetTasks = new List<TaskData>();
+            double utility = 0.01;
+            double utility2;
+            List<ChallengeData> targetChallenges = new List<ChallengeData>();
+            List<Unit> targetUnits = new List<Unit>();
+            List<Unit> targetGuards = new List<Unit>();
+            List<UA> targetDisrupts = new List<UA>();
+            List<TaskData> targetTasks = new List<TaskData>();
 
-                foreach (ChallengeData cData in validChallengeData)
+            foreach (ChallengeData cData in validChallengeData)
+            {
+                List<ReasonMsg> reasonMsgs = null;
+                if (debugInternal.outputValidity_ValidChallenges)
                 {
-                    List<ReasonMsg> reasonMsgs = null;
-                    if (debugInternal.outputValidity_ValidChallenges)
-                    {
-                        reasonMsgs = new List<ReasonMsg>();
-                    }
-
-                    utility2 = getChallengeUtility(cData, ua, data, data.controlParameters, reasonMsgs);
-
-                    if (debugInternal.outputValidity_ValidChallenges && reasonMsgs != null)
-                    {
-                        Console.WriteLine("CommunityLib: Utility for " + cData.challenge.getName() + " at " + cData.challenge.location.getName() + " (" + (cData.challenge.location.soc?.getName() ?? "Wilderness") + ")");
-                        foreach (ReasonMsg reasonMsg in reasonMsgs)
-                        {
-                            Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
-                        }
-                        Console.WriteLine("CommunityLib: Total: " + utility2);
-                    }
-
-                    if (utility2 >= utility)
-                    {
-                        if (utility2 > utility)
-                        {
-                            targetChallenges.Clear();
-                        }
-                        targetChallenges.Add(cData);
-                        utility = utility2;
-                    }
-                    else if (utility2 == utility)
-                    {
-                        targetChallenges.Add(cData);
-                    }
+                    reasonMsgs = new List<ReasonMsg>();
                 }
 
-                if (visibleUnits != null)
+                utility2 = getChallengeUtility(cData, ua, data, data.controlParameters, reasonMsgs);
+
+                if (debugInternal.outputValidity_ValidChallenges && reasonMsgs != null)
                 {
-                    foreach (Unit unit in visibleUnits)
+                    Console.WriteLine("CommunityLib: Utility for " + cData.challenge.getName() + " at " + cData.challenge.location.getName() + " (" + (cData.challenge.location.soc?.getName() ?? "Wilderness") + ")");
+                    foreach (ReasonMsg reasonMsg in reasonMsgs)
                     {
-                        UA agent = unit as UA;
-                        if (agent != null && !agent.isDead)
-                        {
-                            if (debugInternal.debug && (debugInternal.outputProfile_VisibleAgents || debugInternal.outputUtility_VisibleAgentsAttack || debugInternal.outputUtility_VisibleAgentsBodyguard || debugInternal.outputUtility_VisibleAgentsDisrupt))
-                            {
-                                Console.WriteLine("CommunityLib: Unit " + unit.getName() + " (" + (unit.society?.getName() ?? "No Society") + ") at " + unit.location.getName() + " (" + (unit.location.soc?.getName() ?? "No Society") + ")");
-                            }
-
-                            if (debugInternal.outputProfile_VisibleAgents)
-                            {
-                                Console.WriteLine("CommunityLib: Profile: " + agent.profile);
-                            }
-
-                            List<ReasonMsg> reasonMsgs = null;
-                            if (!(agent.task is Task_InHiding))
-                            {
-                                if (debugInternal.outputUtility_VisibleAgentsAttack)
-                                {
-                                    reasonMsgs = new List<ReasonMsg>();
-                                }
-
-                                utility2 = ua.getAttackUtility(agent, reasonMsgs, data.controlParameters.includeDangerousFoe);
-
-                                if (debugInternal.outputUtility_VisibleAgentsAttack && reasonMsgs != null)
-                                {
-                                    Console.WriteLine("CommunityLib: Attack Utility");
-                                    foreach (ReasonMsg reasonMsg in reasonMsgs)
-                                    {
-                                        Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
-                                    }
-                                    Console.WriteLine("CommunityLib: Total: " + utility2);
-                                }
-
-                                if (utility2 >= utility)
-                                {
-                                    targetChallenges.Clear();
-                                    if (utility2 > utility)
-                                    {
-                                        targetUnits.Clear();
-                                    }
-                                    targetUnits.Add(unit);
-                                    utility = utility2;
-                                }
-                            }
-
-                            reasonMsgs = null;
-                            if (ua != map.awarenessManager.getChosenOne())
-                            {
-                                if (ua.society?.getRel(unit.society).state != DipRel.dipState.war)
-                                {
-                                    if (debugInternal.outputUtility_VisibleAgentsBodyguard)
-                                    {
-                                        reasonMsgs = new List<ReasonMsg>();
-                                    }
-
-                                    utility2 = ua.getBodyguardUtility(unit, reasonMsgs);
-
-                                    if (debugInternal.outputUtility_VisibleAgentsBodyguard && reasonMsgs != null)
-                                    {
-                                        Console.WriteLine("CommunityLib: Bodyguard Utility");
-                                        foreach (ReasonMsg reasonMsg in reasonMsgs)
-                                        {
-                                            Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
-                                        }
-                                        Console.WriteLine("CommunityLib: Total: " + utility2);
-                                    }
-
-                                    if (utility2 >= utility)
-                                    {
-
-                                        targetChallenges.Clear();
-                                        targetUnits.Clear();
-
-                                        if (utility2 > utility)
-                                        {
-                                            targetGuards.Clear();
-                                        }
-                                        targetGuards.Add(unit);
-                                        utility = utility2;
-                                    }
-                                }
-                            }
-
-                            reasonMsgs = null;
-                            Task_PerformChallenge task = unit.task as Task_PerformChallenge;
-                            if (!(task?.challenge.isChannelled() ?? true))
-                            {
-                                if (debugInternal.outputUtility_VisibleAgentsDisrupt)
-                                {
-                                    reasonMsgs = new List<ReasonMsg>();
-                                }
-
-                                utility2 = ua.getDisruptUtility(unit, null);
-
-                                if (debugInternal.outputUtility_VisibleAgentsDisrupt && reasonMsgs != null)
-                                {
-                                    Console.WriteLine("CommunityLib: Disrupt Utility");
-                                    foreach (ReasonMsg reasonMsg in reasonMsgs)
-                                    {
-                                        Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
-                                    }
-                                    Console.WriteLine("CommunityLib: Total: " + utility2);
-                                }
-
-                                if (utility2 >= utility)
-                                {
-                                    targetChallenges.Clear();
-                                    targetUnits.Clear();
-                                    targetGuards.Clear();
-
-                                    if (utility2 > utility)
-                                    {
-                                        targetDisrupts.Clear();
-                                    }
-
-                                    targetDisrupts.Add(agent);
-                                    utility = utility2;
-                                }
-                            }
-                        }
+                        Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
                     }
+                    Console.WriteLine("CommunityLib: Total: " + utility2);
                 }
 
-                foreach (TaskData taskData in validTasks)
+                if (utility2 >= utility)
                 {
-                    List<ReasonMsg> reasonMsgs = null;
-                    if (debugInternal.outputUtility_ValidTasks)
-                    {
-                        reasonMsgs = new List<ReasonMsg>();
-                    }
-
-                    utility2 = checkTaskUtility(taskData, ua, data, data.controlParameters, reasonMsgs);
-
-                    if (debugInternal.outputUtility_ValidTasks && reasonMsgs != null)
-                    {
-                        Console.WriteLine("CommunityLib: Task Utility");
-                        foreach (ReasonMsg reasonMsg in reasonMsgs)
-                        {
-                            Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
-                        }
-                        Console.WriteLine("CommunityLib: Total: " + utility2);
-                    }
-
-                    if (utility2 >= utility)
+                    if (utility2 > utility)
                     {
                         targetChallenges.Clear();
-                        targetUnits.Clear();
-                        targetGuards.Clear();
-                        targetDisrupts.Clear();
+                    }
+                    targetChallenges.Add(cData);
+                    utility = utility2;
+                }
+                else if (utility2 == utility)
+                {
+                    targetChallenges.Add(cData);
+                }
+            }
 
-                        if (utility2 > utility)
+            if (visibleUnits != null)
+            {
+                foreach (Unit unit in visibleUnits)
+                {
+                    UA agent = unit as UA;
+                    if (agent != null && !agent.isDead)
+                    {
+                        if (debugInternal.debug && (debugInternal.outputProfile_VisibleAgents || debugInternal.outputUtility_VisibleAgentsAttack || debugInternal.outputUtility_VisibleAgentsBodyguard || debugInternal.outputUtility_VisibleAgentsDisrupt))
                         {
-                            targetTasks.Clear();
+                            Console.WriteLine("CommunityLib: Unit " + unit.getName() + " (" + (unit.society?.getName() ?? "No Society") + ") at " + unit.location.getName() + " (" + (unit.location.soc?.getName() ?? "No Society") + ")");
                         }
 
-                        targetTasks.Add(taskData);
-                        utility = utility2;
+                        if (debugInternal.outputProfile_VisibleAgents)
+                        {
+                            Console.WriteLine("CommunityLib: Profile: " + agent.profile);
+                        }
+
+                        List<ReasonMsg> reasonMsgs = null;
+                        if (!(agent.task is Task_InHiding))
+                        {
+                            if (debugInternal.outputUtility_VisibleAgentsAttack)
+                            {
+                                reasonMsgs = new List<ReasonMsg>();
+                            }
+
+                            utility2 = ua.getAttackUtility(agent, reasonMsgs, data.controlParameters.includeDangerousFoe);
+
+                            if (debugInternal.outputUtility_VisibleAgentsAttack && reasonMsgs != null)
+                            {
+                                Console.WriteLine("CommunityLib: Attack Utility");
+                                foreach (ReasonMsg reasonMsg in reasonMsgs)
+                                {
+                                    Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
+                                }
+                                Console.WriteLine("CommunityLib: Total: " + utility2);
+                            }
+
+                            if (utility2 >= utility)
+                            {
+                                targetChallenges.Clear();
+                                if (utility2 > utility)
+                                {
+                                    targetUnits.Clear();
+                                }
+                                targetUnits.Add(unit);
+                                utility = utility2;
+                            }
+                        }
+
+                        reasonMsgs = null;
+                        if (ua != map.awarenessManager.getChosenOne())
+                        {
+                            if (ua.society?.getRel(unit.society).state != DipRel.dipState.war)
+                            {
+                                if (debugInternal.outputUtility_VisibleAgentsBodyguard)
+                                {
+                                    reasonMsgs = new List<ReasonMsg>();
+                                }
+
+                                utility2 = ua.getBodyguardUtility(unit, reasonMsgs);
+
+                                if (debugInternal.outputUtility_VisibleAgentsBodyguard && reasonMsgs != null)
+                                {
+                                    Console.WriteLine("CommunityLib: Bodyguard Utility");
+                                    foreach (ReasonMsg reasonMsg in reasonMsgs)
+                                    {
+                                        Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
+                                    }
+                                    Console.WriteLine("CommunityLib: Total: " + utility2);
+                                }
+
+                                if (utility2 >= utility)
+                                {
+
+                                    targetChallenges.Clear();
+                                    targetUnits.Clear();
+
+                                    if (utility2 > utility)
+                                    {
+                                        targetGuards.Clear();
+                                    }
+                                    targetGuards.Add(unit);
+                                    utility = utility2;
+                                }
+                            }
+                        }
+
+                        reasonMsgs = null;
+                        Task_PerformChallenge task = unit.task as Task_PerformChallenge;
+                        if (!(task?.challenge.isChannelled() ?? true))
+                        {
+                            if (debugInternal.outputUtility_VisibleAgentsDisrupt)
+                            {
+                                reasonMsgs = new List<ReasonMsg>();
+                            }
+
+                            utility2 = ua.getDisruptUtility(unit, null);
+
+                            if (debugInternal.outputUtility_VisibleAgentsDisrupt && reasonMsgs != null)
+                            {
+                                Console.WriteLine("CommunityLib: Disrupt Utility");
+                                foreach (ReasonMsg reasonMsg in reasonMsgs)
+                                {
+                                    Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
+                                }
+                                Console.WriteLine("CommunityLib: Total: " + utility2);
+                            }
+
+                            if (utility2 >= utility)
+                            {
+                                targetChallenges.Clear();
+                                targetUnits.Clear();
+                                targetGuards.Clear();
+
+                                if (utility2 > utility)
+                                {
+                                    targetDisrupts.Clear();
+                                }
+
+                                targetDisrupts.Add(agent);
+                                utility = utility2;
+                            }
+                        }
                     }
                 }
+            }
 
+            foreach (TaskData taskData in validTasks)
+            {
+                List<ReasonMsg> reasonMsgs = null;
+                if (debugInternal.outputUtility_ValidTasks)
+                {
+                    reasonMsgs = new List<ReasonMsg>();
+                }
+
+                utility2 = checkTaskUtility(taskData, ua, data, data.controlParameters, reasonMsgs);
+
+                if (debugInternal.outputUtility_ValidTasks && reasonMsgs != null)
+                {
+                    Console.WriteLine("CommunityLib: Task Utility");
+                    foreach (ReasonMsg reasonMsg in reasonMsgs)
+                    {
+                        Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
+                    }
+                    Console.WriteLine("CommunityLib: Total: " + utility2);
+                }
+
+                if (utility2 >= utility)
+                {
+                    targetChallenges.Clear();
+                    targetUnits.Clear();
+                    targetGuards.Clear();
+                    targetDisrupts.Clear();
+
+                    if (utility2 > utility)
+                    {
+                        targetTasks.Clear();
+                    }
+
+                    targetTasks.Add(taskData);
+                    utility = utility2;
+                }
+            }
+
+            if (targetTasks.Count > 0)
+            {
+                TaskData targetTask = targetTasks[0];
                 if (targetTasks.Count > 0)
                 {
-                    TaskData targetTask = targetTasks[0];
-                    if (targetTasks.Count > 0)
-                    {
-                        targetTask = targetTasks[Eleven.random.Next(targetTasks.Count)];
-                    }
-                    if (debugInternal.outputUtility_ChosenAction)
-                    {
-                        List<ReasonMsg> reasonMsgs = new List<ReasonMsg>();
-                        Console.WriteLine("CommunityLib: " + ua.getName() + " is going to perform task of type " + targetTask.aiTask.taskType);
-                        targetTask.aiTask.checkTaskUtility(targetTask, ua, data.controlParameters, reasonMsgs);
-                        if (reasonMsgs != null)
-                        {
-                            foreach (ReasonMsg reasonMsg in reasonMsgs)
-                            {
-                                Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
-                            }
-                            Console.WriteLine("CommunityLib: Utility: " + utility);
-                        }
-                    }
-                    ua.task = targetTask.aiTask.instantiateTask(ua, targetTask.targetCategory, targetTask);
+                    targetTask = targetTasks[Eleven.random.Next(targetTasks.Count)];
                 }
-                else if (targetUnits.Count > 0)
+                if (debugInternal.outputUtility_ChosenAction)
                 {
-                    Unit targetUnit = targetUnits[0];
-                    if (targetUnits.Count > 1)
+                    List<ReasonMsg> reasonMsgs = new List<ReasonMsg>();
+                    Console.WriteLine("CommunityLib: " + ua.getName() + " is going to perform task of type " + targetTask.aiTask.taskType);
+                    targetTask.aiTask.checkTaskUtility(targetTask, ua, data.controlParameters, reasonMsgs);
+                    if (reasonMsgs != null)
                     {
-                        targetUnit = targetUnits[Eleven.random.Next(targetUnits.Count)];
-                    }
-
-                    if (debugInternal.outputUtility_ChosenAction)
-                    {
-                        List<ReasonMsg> reasonMsgs = new List<ReasonMsg>();
-                        Console.WriteLine("CommunityLib: " + ua.getName() + " is moving to attack " + targetUnit.getName() + " (" + (targetUnit.society?.getName() ?? "No Soceity") + ") at " + targetUnit.location.getName() + " (" + (targetUnit.location.soc?.getName() ?? "No Soceity") + ")");
-                        ua.getAttackUtility(targetUnit, reasonMsgs, true);
-                        if (reasonMsgs != null)
-                        {
-                            foreach (ReasonMsg reasonMsg in reasonMsgs)
-                            {
-                                Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
-                            }
-                            Console.WriteLine("CommunityLib: Utility: " + utility);
-                        }
-                    }
-
-                    UA agent = targetUnit as UA;
-                    if (agent != null && (ua.person.isWatched() || ua.isCommandable()))
-                    {
-                        map.addUnifiedMessage(ua, targetUnit, ua.person.getName() + " attacking", ua.getName() + " is moving to attack " + targetUnit.getName() + ". They will seek them out for a number of turns before losing the trail.", UnifiedMessage.messageType.HERO_ATTACKING);
-                    }
-                    Task_AttackUnit task = new Task_AttackUnit(ua, targetUnit);
-                    ua.getAttackUtility(targetUnit, task.reasonsMessages, true);
-                    ua.task = task;
-                }
-                else if (targetDisrupts.Count > 0)
-                {
-                    UA targetDisrupt = targetDisrupts[0];
-                    if (targetDisrupts.Count > 1)
-                    {
-                        targetDisrupt = targetDisrupts[Eleven.random.Next(targetDisrupts.Count)];
-                    }
-
-                    if (debugInternal.outputUtility_ChosenAction)
-                    {
-                        List<ReasonMsg> reasonMsgs = new List<ReasonMsg>();
-                        Console.WriteLine("CommunityLib: " + ua.getName() + " is moving to disrupt " + targetDisrupt.getName() + " (" + (targetDisrupt.society?.getName() ?? "No Soceity") + ") at " + targetDisrupt.location.getName() + " (" + (targetDisrupt.location.soc?.getName() ?? "No Soceity") + ")");
-                        ua.getDisruptUtility(targetDisrupt, reasonMsgs);
-                        if (reasonMsgs != null)
-                        {
-                            foreach (ReasonMsg reasonMsg in reasonMsgs)
-                            {
-                                Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
-                            }
-                            Console.WriteLine("CommunityLib: Utility: " + utility);
-                        }
-                    }
-
-                    if (ua.person.isWatched())
-                    {
-                        map.addUnifiedMessage(ua, targetDisrupt, ua.person.getName() + " moving to disrupt", ua.getName() + " is moving to disrupt " + targetDisrupt.getName() + ", which will slow their challenge progress", UnifiedMessage.messageType.MOVING_TO_DISRUPT);
-                    }
-                    Task_DisruptUA task = new Task_DisruptUA(ua, targetDisrupt);
-                    ua.getDisruptUtility(targetDisrupt, task.reasons);
-                    ua.task = task;
-                }
-                else if (targetGuards.Count > 0)
-                {
-                    Unit targetGuard = targetGuards[0];
-                    if (targetUnits.Count > 1)
-                    {
-                        targetGuard = targetGuards[Eleven.random.Next(targetGuards.Count)];
-                    }
-
-                    if (debugInternal.outputUtility_ChosenAction)
-                    {
-                        List<ReasonMsg> reasonMsgs = new List<ReasonMsg>();
-                        Console.WriteLine("CommunityLib: " + ua.getName() + " is moving to guard " + targetGuard.getName() + " (" + (targetGuard.society?.getName() ?? "No Soceity") + ") at " + targetGuard.location.getName() + " (" + (targetGuard.location.soc?.getName() ?? "No Soceity") + ")");
-                        ua.getDisruptUtility(targetGuard, reasonMsgs);
-                        if (reasonMsgs != null)
-                        {
-                            foreach (ReasonMsg reasonMsg in reasonMsgs)
-                            {
-                                Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
-                            }
-                            Console.WriteLine("CommunityLib: Utility: " + utility);
-                        }
-                    }
-
-                    if (ua.person.isWatched())
-                    {
-                        map.addUnifiedMessage(ua, targetGuard, ua.person.getName() + " moving to guard", ua.getName() + " is moving to protect " + targetGuard.getName() + " from any attackers", UnifiedMessage.messageType.MOVING_TO_GUARD);
-                    }
-                    Task_Bodyguard task = new Task_Bodyguard(ua, targetGuard);
-                    ua.task = task;
-                }
-                else if (targetChallenges.Count > 0)
-                {
-                    ChallengeData targetChallenge = targetChallenges[0];
-                    if (targetChallenges.Count > 1)
-                    { 
-                        targetChallenge = targetChallenges[Eleven.random.Next(targetChallenges.Count)];
-                    }
-
-                    if (debugInternal.outputUtility_ChosenAction)
-                    {
-                        Console.WriteLine("CommunityLib: " + ua.getName() + " is going to perform challenge " + targetChallenge.challenge.getName() + " at " + targetChallenge.location.getName() + " (" + (targetChallenge.location.soc?.getName() ?? "No Society") + ")");
-
-                        List<ReasonMsg> reasonMsgs = new List<ReasonMsg>();
-                        getChallengeUtility(targetChallenge, ua,data, data.controlParameters, reasonMsgs);
-
                         foreach (ReasonMsg reasonMsg in reasonMsgs)
                         {
                             Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
                         }
-                        Console.WriteLine("CommunityLib: Total: " + utility);
+                        Console.WriteLine("CommunityLib: Utility: " + utility);
                     }
-
-                    if (ua.person.isWatched() || targetChallenge.location.isWatched)
-                    {
-                        map.addUnifiedMessage(ua, null, "Beginning Quest", ua.getName() + " is beginning quest " + targetChallenge.challenge.getName() + " at location " + targetChallenge.location.getName(true), UnifiedMessage.messageType.BEGINNING_QUEST);
-                    }
-
-                    bool safeMove = false;
-                    if (data.controlParameters.forceSafeMove)
-                    {
-                        safeMove = true;
-                    }
-                    else if (targetChallenge.aiChallenge != null)
-                    {
-                        safeMove = targetChallenge.aiChallenge.safeMove;
-                    }
-
-                    ua.task = new Task_GoToPerformChallengeAtLocation(targetChallenge.challenge, targetChallenge.location, safeMove);
                 }
-
-                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+                ua.task = targetTask.aiTask.instantiateTask(ua, targetTask.targetCategory, targetTask);
+            }
+            else if (targetUnits.Count > 0)
+            {
+                Unit targetUnit = targetUnits[0];
+                if (targetUnits.Count > 1)
                 {
-                    hook.onAgentAI_EndOfProcess(ua, data, validChallengeData, validTasks, visibleUnits);
+                    targetUnit = targetUnits[Eleven.random.Next(targetUnits.Count)];
                 }
+
+                if (debugInternal.outputUtility_ChosenAction)
+                {
+                    List<ReasonMsg> reasonMsgs = new List<ReasonMsg>();
+                    Console.WriteLine("CommunityLib: " + ua.getName() + " is moving to attack " + targetUnit.getName() + " (" + (targetUnit.society?.getName() ?? "No Soceity") + ") at " + targetUnit.location.getName() + " (" + (targetUnit.location.soc?.getName() ?? "No Soceity") + ")");
+                    ua.getAttackUtility(targetUnit, reasonMsgs, true);
+                    if (reasonMsgs != null)
+                    {
+                        foreach (ReasonMsg reasonMsg in reasonMsgs)
+                        {
+                            Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
+                        }
+                        Console.WriteLine("CommunityLib: Utility: " + utility);
+                    }
+                }
+
+                UA agent = targetUnit as UA;
+                if (agent != null && (ua.person.isWatched() || ua.isCommandable()))
+                {
+                    map.addUnifiedMessage(ua, targetUnit, ua.person.getName() + " attacking", ua.getName() + " is moving to attack " + targetUnit.getName() + ". They will seek them out for a number of turns before losing the trail.", UnifiedMessage.messageType.HERO_ATTACKING);
+                }
+                Task_AttackUnit task = new Task_AttackUnit(ua, targetUnit);
+                ua.getAttackUtility(targetUnit, task.reasonsMessages, true);
+                ua.task = task;
+            }
+            else if (targetDisrupts.Count > 0)
+            {
+                UA targetDisrupt = targetDisrupts[0];
+                if (targetDisrupts.Count > 1)
+                {
+                    targetDisrupt = targetDisrupts[Eleven.random.Next(targetDisrupts.Count)];
+                }
+
+                if (debugInternal.outputUtility_ChosenAction)
+                {
+                    List<ReasonMsg> reasonMsgs = new List<ReasonMsg>();
+                    Console.WriteLine("CommunityLib: " + ua.getName() + " is moving to disrupt " + targetDisrupt.getName() + " (" + (targetDisrupt.society?.getName() ?? "No Soceity") + ") at " + targetDisrupt.location.getName() + " (" + (targetDisrupt.location.soc?.getName() ?? "No Soceity") + ")");
+                    ua.getDisruptUtility(targetDisrupt, reasonMsgs);
+                    if (reasonMsgs != null)
+                    {
+                        foreach (ReasonMsg reasonMsg in reasonMsgs)
+                        {
+                            Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
+                        }
+                        Console.WriteLine("CommunityLib: Utility: " + utility);
+                    }
+                }
+
+                if (ua.person.isWatched())
+                {
+                    map.addUnifiedMessage(ua, targetDisrupt, ua.person.getName() + " moving to disrupt", ua.getName() + " is moving to disrupt " + targetDisrupt.getName() + ", which will slow their challenge progress", UnifiedMessage.messageType.MOVING_TO_DISRUPT);
+                }
+                Task_DisruptUA task = new Task_DisruptUA(ua, targetDisrupt);
+                ua.getDisruptUtility(targetDisrupt, task.reasons);
+                ua.task = task;
+            }
+            else if (targetGuards.Count > 0)
+            {
+                Unit targetGuard = targetGuards[0];
+                if (targetUnits.Count > 1)
+                {
+                    targetGuard = targetGuards[Eleven.random.Next(targetGuards.Count)];
+                }
+
+                if (debugInternal.outputUtility_ChosenAction)
+                {
+                    List<ReasonMsg> reasonMsgs = new List<ReasonMsg>();
+                    Console.WriteLine("CommunityLib: " + ua.getName() + " is moving to guard " + targetGuard.getName() + " (" + (targetGuard.society?.getName() ?? "No Soceity") + ") at " + targetGuard.location.getName() + " (" + (targetGuard.location.soc?.getName() ?? "No Soceity") + ")");
+                    ua.getDisruptUtility(targetGuard, reasonMsgs);
+                    if (reasonMsgs != null)
+                    {
+                        foreach (ReasonMsg reasonMsg in reasonMsgs)
+                        {
+                            Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
+                        }
+                        Console.WriteLine("CommunityLib: Utility: " + utility);
+                    }
+                }
+
+                if (ua.person.isWatched())
+                {
+                    map.addUnifiedMessage(ua, targetGuard, ua.person.getName() + " moving to guard", ua.getName() + " is moving to protect " + targetGuard.getName() + " from any attackers", UnifiedMessage.messageType.MOVING_TO_GUARD);
+                }
+                Task_Bodyguard task = new Task_Bodyguard(ua, targetGuard);
+                ua.task = task;
+            }
+            else if (targetChallenges.Count > 0)
+            {
+                ChallengeData targetChallenge = targetChallenges[0];
+                if (targetChallenges.Count > 1)
+                { 
+                    targetChallenge = targetChallenges[Eleven.random.Next(targetChallenges.Count)];
+                }
+
+                if (debugInternal.outputUtility_ChosenAction)
+                {
+                    Console.WriteLine("CommunityLib: " + ua.getName() + " is going to perform challenge " + targetChallenge.challenge.getName() + " at " + targetChallenge.location.getName() + " (" + (targetChallenge.location.soc?.getName() ?? "No Society") + ")");
+
+                    List<ReasonMsg> reasonMsgs = new List<ReasonMsg>();
+                    getChallengeUtility(targetChallenge, ua,data, data.controlParameters, reasonMsgs);
+
+                    foreach (ReasonMsg reasonMsg in reasonMsgs)
+                    {
+                        Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
+                    }
+                    Console.WriteLine("CommunityLib: Total: " + utility);
+                }
+
+                if (ua.person.isWatched() || targetChallenge.location.isWatched)
+                {
+                    map.addUnifiedMessage(ua, null, "Beginning Quest", ua.getName() + " is beginning quest " + targetChallenge.challenge.getName() + " at location " + targetChallenge.location.getName(true), UnifiedMessage.messageType.BEGINNING_QUEST);
+                }
+
+                bool safeMove = false;
+                if (data.controlParameters.forceSafeMove)
+                {
+                    safeMove = true;
+                }
+                else if (targetChallenge.aiChallenge != null)
+                {
+                    safeMove = targetChallenge.aiChallenge.safeMove;
+                }
+
+                ua.task = new Task_GoToPerformChallengeAtLocation(targetChallenge.challenge, targetChallenge.location, safeMove);
+            }
+
+            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            {
+                hook.onAgentAI_EndOfProcess(ua, data, validChallengeData, validTasks, visibleUnits);
             }
 
             if (ua.task == null && ua.location.index != ua.homeLocation)

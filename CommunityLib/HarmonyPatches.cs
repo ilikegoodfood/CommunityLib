@@ -1616,9 +1616,10 @@ namespace CommunityLib
 
         private static int PopupHolyOrder_setTo_TranspilerBody_ProcessIncome(HolyOrder order, List<ReasonMsg> msgs)
         {
-            if (AccessTools.DeclaredMethod(order.GetType(), "processIncome", new Type[] { typeof(List<ReasonMsg>) }) != null)
+            MethodInfo MI_processIncome = AccessTools.DeclaredMethod(order.GetType(), "processIncome", new Type[] { typeof(List<ReasonMsg>) });
+            if (MI_processIncome != null)
             {
-                return (int)AccessTools.DeclaredMethod(order.GetType(), "processIncome", new Type[] { typeof(List<ReasonMsg>) }).Invoke(order, new object[] { msgs });
+                return (int)MI_processIncome.Invoke(order, new object[] { msgs });
             }
 
             return order.processIncome(msgs);
@@ -2866,7 +2867,7 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(P_Eternity_CreateAgent_createAgent_TranspilerBody), new Type[] { typeof(Person), typeof(Location), typeof(string) });
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(P_Eternity_CreateAgent_createAgent_TranspilerBody), new Type[] { typeof(Curse), typeof(Person), typeof(Location), typeof(string) });
 
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
@@ -2875,10 +2876,11 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldloc_0 && instructionList[i+1].opcode == OpCodes.Ldc_I4_0)
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i-1].opcode == OpCodes.Pop)
                         {
                             targetIndex = 0;
 
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 8);
                             yield return new CodeInstruction(OpCodes.Ldarg_1);
                             yield return new CodeInstruction(OpCodes.Ldarg_2);
                             yield return new CodeInstruction(OpCodes.Ldloc_0);
@@ -2902,7 +2904,7 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(P_Eternity_CreateAgent_createAgent_TranspilerBody), new Type[] { typeof(Person), typeof(Location), typeof(string) });
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(P_Eternity_CreateAgent_createAgent_TranspilerBody), new Type[] { typeof(Curse), typeof(Person), typeof(Location), typeof(string) });
 
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
@@ -2911,10 +2913,11 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldloc_0 && instructionList[i + 1].opcode == OpCodes.Ldc_I4_0)
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i+1].opcode == OpCodes.Dup && instructionList[i-1].opcode == OpCodes.Nop)
                         {
                             targetIndex = 0;
 
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 10);
                             yield return new CodeInstruction(OpCodes.Ldarg_1);
                             yield return new CodeInstruction(OpCodes.Ldarg_2);
                             yield return new CodeInstruction(OpCodes.Ldloc_0);
@@ -2934,13 +2937,13 @@ namespace CommunityLib
             }
         }
 
-        private static string P_Eternity_CreateAgent_createAgent_TranspilerBody(Person person, Location loc, string text)
+        private static string P_Eternity_CreateAgent_createAgent_TranspilerBody(Curse curse, Person person, Location loc, string text)
         {
             foreach(Hooks hook in ModCore.core.GetRegisteredHooks())
             {
                 if (hook != null)
                 {
-                    text = hook.onBrokenMakerPowerCreatesAgent(person, loc, text);
+                    text = hook.onBrokenMakerPowerCreatesAgent_ProcessCurse(curse, person, loc, text);
                 }
             }
 

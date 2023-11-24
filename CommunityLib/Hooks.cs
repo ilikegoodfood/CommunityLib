@@ -713,11 +713,12 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when the Broken Maker's powers "P_Eternity_CreateAgent" and "P_Eternity_CreateAgentReusable" are used to create an agent. It recieves the person of the agent (person), their location (location), and the text of the message that will be displayed to the player (text). It returns the text that will be displayed to the player.
+        /// This hook fires when the Broken Maker's powers "P_Eternity_CreateAgent" and "P_Eternity_CreateAgentReusable" are used to create an agent. It recieves the curse that is being processed (curse), the person of the agent (person), their location (location), and the text of the message that will be displayed to the player (text). It returns the text that will be displayed to the player.<br></br>
+        /// If the agent waa created using the "P_Eternity_CreateAgentReusable" power, the power has already been removed from the house. If created with the "P_Eternity_CreateAgent" power, the curse count has already been halved in strength.
         /// </summary>
         /// <param name="person"></param>
         /// <param name="location"></param>
-        public virtual string onBrokenMakerPowerCreatesAgent(Person person, Location location, string text)
+        public virtual string onBrokenMakerPowerCreatesAgent_ProcessCurse(Curse curse, Person person, Location location, string text)
         {
             return text;
         }
