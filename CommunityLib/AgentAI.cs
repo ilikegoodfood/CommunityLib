@@ -1221,7 +1221,14 @@ namespace CommunityLib
                     safeMove = targetChallenge.aiChallenge.safeMove;
                 }
 
-                ua.task = new Task_GoToPerformChallengeAtLocation(targetChallenge.challenge, targetChallenge.location, safeMove);
+                if (ua.location == targetChallenge.location)
+                {
+                    ua.task = new Task_PerformChallenge(targetChallenge.challenge);
+                }
+                else
+                {
+                    ua.task = new Task_GoToPerformChallengeAtLocation(targetChallenge.challenge, targetChallenge.location, safeMove);
+                }
             }
 
             foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
