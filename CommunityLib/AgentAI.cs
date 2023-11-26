@@ -1224,6 +1224,7 @@ namespace CommunityLib
                 if (ua.location == targetChallenge.location)
                 {
                     ua.task = new Task_PerformChallenge(targetChallenge.challenge);
+                    targetChallenge.challenge.claimedBy = ua;
                 }
                 else
                 {
