@@ -95,7 +95,7 @@ namespace CommunityLib
                 }
             }
 
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onPopulatingPathfindingDelegates_Location(locA, locB, u, pathfindingDelegates);
             }
@@ -185,7 +185,7 @@ namespace CommunityLib
                 }
             }
 
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onPopulatingPathfindingDelegates_SocialGroup(locA, sg, u, pathfindingDelegates);
             }
@@ -260,7 +260,7 @@ namespace CommunityLib
                     Location tomb = null;
                     foreach (Location location in u.map.locations)
                     {
-                        if (ModCore.core.checkIsElderTomb(location))
+                        if (ModCore.Get().checkIsElderTomb(location))
                         {
                             tomb = location;
                         }

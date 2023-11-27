@@ -222,7 +222,7 @@ namespace CommunityLib
 
             if (hex != null && hex.location != null && (hex.location.isOcean || hex.location.isCoastal))
             {
-                ModCore.core.spawnShipwreck(hex.location);
+                ModCore.Get().spawnShipwreck(hex.location);
             }
         }
 

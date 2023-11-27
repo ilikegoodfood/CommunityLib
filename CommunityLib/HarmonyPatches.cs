@@ -226,7 +226,7 @@ namespace CommunityLib
 
         private static void GraphicalMap_checkData_TranspilerBody(GraphicalUnit graphicalUnit)
         {
-            foreach(Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach(Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onGraphicalUnitUpdated(graphicalUnit);
             }
@@ -234,7 +234,7 @@ namespace CommunityLib
 
         private static void GraphicalLink_Update_Postfix(GraphicalLink __instance)
         {
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onGraphicalLinkUpdated(__instance);
             }
@@ -527,7 +527,7 @@ namespace CommunityLib
             bool result = false;
 
             //Console.WriteLine("CommunityLib: Intercept Unit Death");
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 bool retValue = hook.interceptUnitDeath(u, v, killer);
 
@@ -542,7 +542,7 @@ namespace CommunityLib
                 return result;
             }
 
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onUnitDeath_StartOfProcess(u, v, killer);
             }
@@ -680,7 +680,7 @@ namespace CommunityLib
 
             // Intercept Hook
             bool result = false;
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 bool retValue = hook.interceptArmyBattleCycle(battle);
 
@@ -702,7 +702,7 @@ namespace CommunityLib
             }
 
             // Start of Process hook if not intercepted
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook?.onArmyBattleCycle_StartOfProcess(battle);
             }
@@ -712,7 +712,7 @@ namespace CommunityLib
 
         private static void BattleArmy_cycle_TranspilerBody_EndOfProcess(BattleArmy battle)
         {
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook?.onArmyBattleCycle_EndOfProcess(battle);
             }
@@ -753,7 +753,7 @@ namespace CommunityLib
 
             if (defeatedUnits.Count > 0)
             {
-                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
                     hook?.onArmyBattleVictory(battle, victorUnits, victorComs, defeatedUnits, defeatedComs);
                 }
@@ -778,7 +778,7 @@ namespace CommunityLib
 
             if (unit != null && target != null)
             {
-                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
                     dmg = hook?.onArmyBattleCycle_DamageCalculated(battle, dmg, unit, target) ?? dmg;
                 }
@@ -836,7 +836,7 @@ namespace CommunityLib
 
         private static void BattleArmy_unitMovesFromLocation_TranspilerBody_OnAmryBattleRetreatOrFlee(BattleArmy battle, Unit u)
         {
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook?.onArmyBattleRetreatOrFlee(battle, u);
             }
@@ -858,7 +858,7 @@ namespace CommunityLib
                 victorComs.AddRange(battle.attComs);
             }
 
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook?.onArmyBattleTerminated(battle, victorUnits, victorComs, u);
             }
@@ -900,7 +900,7 @@ namespace CommunityLib
 
         private static void BattleArmy_computeAdvantage_TranspilerBody(BattleArmy battle, double advantage)
         {
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook?.onArmyBattleCycle_ComputeAdvantage(battle, advantage);
             }
@@ -957,7 +957,7 @@ namespace CommunityLib
 
         private static void BattleArmy_allocateDamage_TranspilerBody_allocateDamage(BattleArmy battle, List<UM> units, int[] dmgs)
         {
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook?.onArmyBattleCycle_AllocateDamage(battle, units, dmgs);
             }
@@ -965,7 +965,7 @@ namespace CommunityLib
 
         private static void BattleArmy_allocateDamage_TranspilerBody_receivesDamage(BattleArmy battle, List<UM> units, int[] dmgs, int index)
         {
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 dmgs[index] = hook?.onUnitReceivesArmyBattleDamage(battle, units[index], dmgs[index]) ?? dmgs[index];
             }
@@ -1054,7 +1054,7 @@ namespace CommunityLib
                 }
 
                 //Console.WriteLine("CommunityLib: Callning hooks");
-                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
                     dmg = hook.onMinionAttackAboutToBePerformed(me.minions[row], other, popup, battle, dmg, row);
                 }
@@ -1114,7 +1114,7 @@ namespace CommunityLib
             }
 
             //Console.WriteLine("CommunityLib: Calling hooks");
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 dmg = hook.onAgentBattle_ReceiveDamage(popup, battle, defender, minion, dmg, row);
             }
@@ -1133,7 +1133,7 @@ namespace CommunityLib
             if (razeIsValid && unit is UM um)
             {
                 //Console.WriteLine("CommunityLib: onRazeLocationEndOfProcess");
-                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
                     hook?.onRazeLocation_EndOfProcess(um);
                 }
@@ -1181,7 +1181,7 @@ namespace CommunityLib
             if (u is UM um)
             {
                 //Console.WriteLine("CommunityLib: onRazeLocation_StartOfProcess");
-                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
                     hook?.onRazeLocation_StartOfProcess(um);
                 }
@@ -1193,7 +1193,7 @@ namespace CommunityLib
             bool result = true;
 
             //Console.WriteLine("CommunityLib: interceptSettlementFallIntoRuin");
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 bool retValue = hook.interceptSettlementFallIntoRuin(__instance, v, killer);
 
@@ -1210,7 +1210,7 @@ namespace CommunityLib
             }
 
             //Console.WriteLine("CommunityLib: onSettlementFallIntoRuin_StartOfProcess");
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onSettlementFallIntoRuin_StartOfProcess(__instance, v, killer);
             }
@@ -1223,7 +1223,7 @@ namespace CommunityLib
             if (__state)
             {
                 //Console.WriteLine("CommunityLib: onSettlementFallIntoRuin_EndOfProcess");
-                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
                     hook.onSettlementFallIntoRuin_EndOfProcess(__instance, v, killer);
                 }
@@ -1290,7 +1290,7 @@ namespace CommunityLib
         {
             bool result = false;
 
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 bool retValue = hook.interceptSettlementFallIntoRuin(__instance, v, killer);
 
@@ -1305,7 +1305,7 @@ namespace CommunityLib
                 return result;
             }
 
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onSettlementFallIntoRuin_StartOfProcess(__instance, v, killer);
             }
@@ -1315,7 +1315,7 @@ namespace CommunityLib
 
         private static void Settlement_FallIntoRuin_TranspilerBody_End(Settlement __instance, string v, object killer)
         {
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook?.onSettlementFallIntoRuin_EndOfProcess(__instance, v, killer);
             }
@@ -1323,7 +1323,7 @@ namespace CommunityLib
 
         private static void UIE_HolyTenet_bInfluence_Postfix(UIE_HolyTenet __instance)
         {
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook?.onPlayerInfluenceTenet(__instance.tenet.order, __instance.tenet);
             }
@@ -1334,7 +1334,7 @@ namespace CommunityLib
             if (__instance.stat_faith.text == "")
             {
                 HolyOrder order = null;
-                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
                     order = hook?.onLocationViewFaithButton_GetHolyOrder(loc);
 
@@ -1409,7 +1409,7 @@ namespace CommunityLib
         private static bool UIRightLocation_bViewFaith_TranspilerBody(Location loc)
         {
             HolyOrder order = null;
-            foreach(Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach(Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 order = hook?.onLocationViewFaithButton_GetHolyOrder(loc);
 
@@ -1465,7 +1465,7 @@ namespace CommunityLib
                 }
 
                 //Console.WriteLine("CommunityLib: Running hooks for page " + page);
-                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
                     text.text = hook.onPopupHolyOrder_DisplayPageText(soc, text.text, page);
                 }
@@ -1683,7 +1683,7 @@ namespace CommunityLib
                 new ReasonMsgMax("Gold for Temples", order.cashForTemples, order.costTemple)
             };
 
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook?.onPopupHolyOrder_DisplayBudget(order, msgs);
             }
@@ -1763,7 +1763,7 @@ namespace CommunityLib
                 new ReasonMsg("of which Rulers", order.nWorshippingRulers)
             };
 
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook?.onPopupHolyOrder_DisplayStats(order, msgs);
             }
@@ -1794,7 +1794,7 @@ namespace CommunityLib
                 "/turn)"
             });
 
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 s = hook?.onPopupHolyOrder_DisplayInfluenceElder(order, s, infGain);
             }
@@ -1814,7 +1814,7 @@ namespace CommunityLib
                 "/turn)"
             });
 
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 s = hook?.onPopupHolyOrder_DisplayInfluenceHuman(order, s, infGain);
             }
@@ -1824,7 +1824,7 @@ namespace CommunityLib
 
         private static List<Trait> UA_getStartingTraits_Postfix(List<Trait> traits, UA __instance)
         {
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook?.onAgentLevelup_GetTraits(__instance, traits, true);
             }
@@ -1841,7 +1841,7 @@ namespace CommunityLib
 
             if (!ua.hasStartingTraits() || ua.hasAssignedStartingTraits)
             {
-                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
                     hook?.onAgentLevelup_GetTraits(ua, traits, false);
                 }
@@ -1902,7 +1902,7 @@ namespace CommunityLib
         {
             bool result = true;
 
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 bool retValue = hook?.interceptReplaceItem(person, item, newItem, obligateHold) ?? false;
 
@@ -2052,7 +2052,7 @@ namespace CommunityLib
 
         private static List<MonsterAction> SG_ActionTakingMonster_turnTick_TranspilerBody_populate(SG_ActionTakingMonster monster, List<MonsterAction> actions)
         {
-            foreach(Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach(Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook?.populatingMonsterActions(monster, actions);
             }
@@ -2064,7 +2064,7 @@ namespace CommunityLib
         {
             double result = utility;
 
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 result = hook?.onActionTakingMonster_getUtility(monster, action, utility, reasonMsgs) ?? result;
             }
@@ -2074,7 +2074,7 @@ namespace CommunityLib
 
         private static void SG_ActionTakingMonster_turnTick_TranspilerBody_onAIDecision(SG_ActionTakingMonster monster)
         {
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook?.onActionTakingMonsterAIDecision(monster);
             }
@@ -2117,7 +2117,7 @@ namespace CommunityLib
 
         private static void Society_processActions_TranspilerBody_onAIDecision(Society society, Person sovereign)
         {
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook?.onSovereignAIDecision(society, sovereign);
             }
@@ -2365,7 +2365,7 @@ namespace CommunityLib
         {
             Location[] path = null;
 
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 Location[] newPath = hook.interceptGetPathTo_Location(locA, locB, u, safeMove) ?? null;
 
@@ -2436,7 +2436,7 @@ namespace CommunityLib
         {
             Location[] path = null;
 
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 Location[] newPath = hook.interceptGetPathTo_SocialGroup(loc, sg, u, safeMove) ?? null;
 
@@ -2493,7 +2493,7 @@ namespace CommunityLib
                             break;
                         }
 
-                        foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+                        foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                         {
                             if (hook.onEvent_IsLocationElderTomb(location))
                             {
@@ -2531,7 +2531,7 @@ namespace CommunityLib
 
         private static void Map_adjacentMoveTo_Postfix(Unit u, Location __state)
         {
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onMoveTaken(u, __state, u.location);
             }
@@ -2590,7 +2590,7 @@ namespace CommunityLib
             }
             if (location.settlement != null)
             {
-                if (ModCore.core.getSettlementTypesForOrcExpanion().TryGetValue(location.settlement.GetType(), out List<Type> subsettlementBlacklist))
+                if (ModCore.Get().getSettlementTypesForOrcExpanion().TryGetValue(location.settlement.GetType(), out List<Type> subsettlementBlacklist))
                 {
                     if (subsettlementBlacklist?.Count > 0)
                     {
@@ -2649,7 +2649,7 @@ namespace CommunityLib
             if (ua.location.settlement != null)
             {
                 //Console.WriteLine("CommunityLib: Testing Claim Territory against Permitted Settlements");
-                if (ModCore.core.getSettlementTypesForOrcExpanion().TryGetValue(ua.location.settlement.GetType(), out List<Type> subsettlementBlacklist))
+                if (ModCore.Get().getSettlementTypesForOrcExpanion().TryGetValue(ua.location.settlement.GetType(), out List<Type> subsettlementBlacklist))
                 {
                     if (subsettlementBlacklist!= null && subsettlementBlacklist.Count > 0)
                     {
@@ -2811,7 +2811,7 @@ namespace CommunityLib
 
         private static bool checkIsElderTomb_TranspilerBody(Location location)
         {
-            return ModCore.core.checkIsElderTomb(location);
+            return ModCore.Get().checkIsElderTomb(location);
         }
 
         // onAgentIsRecruitable
@@ -2896,7 +2896,7 @@ namespace CommunityLib
                 }
 
                 //Console.WriteLine("CommunityLib: Unit is noncommandable agent");
-                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
                     result = hook.onAgentIsRecruitable(ua, result);
                 }
@@ -2986,7 +2986,7 @@ namespace CommunityLib
 
         private static string P_Eternity_CreateAgent_createAgent_TranspilerBody(Curse curse, Person person, Location loc, string text)
         {
-            foreach(Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach(Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 if (hook != null)
                 {
@@ -3035,27 +3035,27 @@ namespace CommunityLib
 
         private static void Task_AttackArmy_ctor_Postfix(Task_AttackArmy __instance, UM c, UM self)
         {
-            __instance.turnsLeft = ModCore.core.getTravelTimeTo(self, c.location) + 5;
+            __instance.turnsLeft = ModCore.Get().getTravelTimeTo(self, c.location) + 5;
         }
 
         private static void Task_AttackUnit_ctor_Postfix(Task_AttackUnit __instance, Unit c, Unit self)
         {
-            __instance.turnsRemaining = ModCore.core.getTravelTimeTo(self, c.location) + 5;
+            __instance.turnsRemaining = ModCore.Get().getTravelTimeTo(self, c.location) + 5;
         }
 
         private static void Task_AttackUnitWithEscort_ctor_Postfix(Task_AttackUnitWithEscort __instance, Unit c, Unit self)
         {
-            __instance.turnsRemaining = ModCore.core.getTravelTimeTo(self, c.location) + 5;
+            __instance.turnsRemaining = ModCore.Get().getTravelTimeTo(self, c.location) + 5;
         }
 
         private static void Task_Bodyguard_ctor_Postfix(Task_Bodyguard __instance, Unit c, Unit self)
         {
-            __instance.turnsRemaining = ModCore.core.getTravelTimeTo(self, c.location) + 5;
+            __instance.turnsRemaining = ModCore.Get().getTravelTimeTo(self, c.location) + 5;
         }
 
         private static void Task_DisruptUA_ctor_Postfix(Task_DisruptUA __instance, Unit them, Unit us)
         {
-            __instance.turnsLeft = ModCore.core.getTravelTimeTo(us, them.location) + 10;
+            __instance.turnsLeft = ModCore.Get().getTravelTimeTo(us, them.location) + 10;
         }
 
         private static int UA_distanceDivisor_TranspilerBody(UA ua, Challenge c, int distance)
@@ -3064,7 +3064,7 @@ namespace CommunityLib
             {
                 distance = (int)Math.Ceiling((double)distance / ua.getMaxMoves());
 
-                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
                     distance = hook.onUnitAI_GetsDistanceToLocation(ua, c.location, distance);
                 }
@@ -3078,7 +3078,7 @@ namespace CommunityLib
         // Prefab Store hooks
         private static void Prefab_popHolyOrder_Prefix(HolyOrder order)
         {
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onPlayerOpensReligionUI(order);
             }
@@ -3166,7 +3166,7 @@ namespace CommunityLib
                 return false;
             }
 
-            if (ModCore.core.GetAgentAI().TryGetAgentType(ua.GetType(), out AgentAI.AIData? aiData) && aiData is AgentAI.AIData data)
+            if (ModCore.Get().GetAgentAI().TryGetAgentType(ua.GetType(), out AgentAI.AIData? aiData) && aiData is AgentAI.AIData data)
             {
                 if (data.controlParameters.hideThoughts)
                 {
@@ -3175,12 +3175,12 @@ namespace CommunityLib
 
                 List<UIScroll_Unit.SortableTaskBlock> blocks = new List<UIScroll_Unit.SortableTaskBlock>();
                 //Console.WriteLine("CommunityLib: Got valid challenges and rituals");
-                foreach (AgentAI.ChallengeData challengeData in ModCore.core.GetAgentAI().getAllValidChallengesAndRituals(ua))
+                foreach (AgentAI.ChallengeData challengeData in ModCore.Get().GetAgentAI().getAllValidChallengesAndRituals(ua))
                 {
                     //Console.WriteLine("CommunityLib: Iterating " + challengeData.challenge.getName());
                     SortableTaskBlock_Advanced block = new SortableTaskBlock_Advanced();
                     block.challenge = challengeData.challenge;
-                    block.utility = ModCore.core.GetAgentAI().getChallengeUtility(challengeData, ua, data, data.controlParameters, block.msgs);
+                    block.utility = ModCore.Get().GetAgentAI().getChallengeUtility(challengeData, ua, data, data.controlParameters, block.msgs);
                     block.challengeData = challengeData;
                     blocks.Add(block);
 
@@ -3190,12 +3190,12 @@ namespace CommunityLib
                     }
                     //Console.WriteLine("CommunityLib: Added " + challengeData.challenge.getName());
                 }
-                foreach (AgentAI.TaskData taskData in ModCore.core.GetAgentAI().getAllValidTasks(ua))
+                foreach (AgentAI.TaskData taskData in ModCore.Get().GetAgentAI().getAllValidTasks(ua))
                 {
                     SortableTaskBlock_Advanced blockTask = new SortableTaskBlock_Advanced();
                     blockTask.challenge = null;
                     blockTask.taskType = taskData.aiTask.taskType;
-                    blockTask.utility = ModCore.core.GetAgentAI().checkTaskUtility(taskData, ua, data, data.controlParameters, blockTask.msgs);
+                    blockTask.utility = ModCore.Get().GetAgentAI().checkTaskUtility(taskData, ua, data, data.controlParameters, blockTask.msgs);
                     blockTask.taskData = taskData;
 
                     switch(taskData.targetCategory)
@@ -3379,7 +3379,7 @@ namespace CommunityLib
 
             if (um != null && um.isCommandable())
             {
-                foreach(Hooks hook in ModCore.core.GetRegisteredHooks())
+                foreach(Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
                     List<Hooks.TaskData> retData = hook?.onUIScroll_Unit_populateUM(um);
 
@@ -3516,7 +3516,7 @@ namespace CommunityLib
 
         private static bool UIScroll_Unit_Update_TranspilerBody_TimeStats()
         {
-            if (GraphicalMap.selectedUnit is UA ua && ModCore.core.GetAgentAI().TryGetAgentType(ua.GetType(), out AgentAI.AIData? aiData) && aiData is AgentAI.AIData data)
+            if (GraphicalMap.selectedUnit is UA ua && ModCore.Get().GetAgentAI().TryGetAgentType(ua.GetType(), out AgentAI.AIData? aiData) && aiData is AgentAI.AIData data)
             {
                 if (!data.controlParameters.valueTimeCost)
                 {
@@ -3582,7 +3582,7 @@ namespace CommunityLib
 
             popoutData.progressReasonMsgs = new List<ReasonMsg>();
 
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 // Call hook.
                 bool retValue = hook.interceptChallengePopout(um, taskData, ref popoutData);
@@ -3677,7 +3677,7 @@ namespace CommunityLib
         // UA
         private static bool UA_isCommandable_Postfix(bool result, UA __instance)
         {
-            if (ModCore.core.data.tryGetModAssembly("Cordyceps", out ModData.ModIntegrationData intDataCord) && intDataCord.assembly != null && intDataCord.typeDict.TryGetValue("Drone", out Type droneType) && droneType != null)
+            if (ModCore.Get().data.tryGetModAssembly("Cordyceps", out ModData.ModIntegrationData intDataCord) && intDataCord.assembly != null && intDataCord.typeDict.TryGetValue("Drone", out Type droneType) && droneType != null)
             {
                 if (__instance.GetType() == droneType)
                 {
@@ -3727,7 +3727,7 @@ namespace CommunityLib
         private static bool UA_getVisibleUnits_Prefix(UA __instance, ref List<Unit> __result, out bool __state)
         {
             bool result = true;
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 bool retValue = hook.interceptGetVisibleUnits(__instance, __result);
 
@@ -3745,7 +3745,7 @@ namespace CommunityLib
         {
             if (__state)
             {
-                foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
                     hook.getVisibleUnits_EndOfProcess(__instance, visibleUnits);
                 }
@@ -3756,9 +3756,9 @@ namespace CommunityLib
 
         private static bool UAEN_DeepOne_turnTickAI_Prefix(UAEN_DeepOne __instance)
         {
-            if (ModCore.core.GetAgentAI().ContainsAgentType(typeof(UAEN_DeepOne)))
+            if (ModCore.Get().GetAgentAI().ContainsAgentType(typeof(UAEN_DeepOne)))
             {
-                ModCore.core.GetAgentAI().turnTickAI(__instance);
+                ModCore.Get().GetAgentAI().turnTickAI(__instance);
                 return false;
             }
             return true;
@@ -3777,9 +3777,9 @@ namespace CommunityLib
 
         private static bool UAEN_Ghast_turnTickAI_Prefix(UAEN_Ghast __instance)
         {
-            if (ModCore.core.GetAgentAI().ContainsAgentType(typeof(UAEN_Ghast)))
+            if (ModCore.Get().GetAgentAI().ContainsAgentType(typeof(UAEN_Ghast)))
             {
-                ModCore.core.GetAgentAI().turnTickAI(__instance);
+                ModCore.Get().GetAgentAI().turnTickAI(__instance);
                 return false;
             }
             return true;
@@ -3787,9 +3787,9 @@ namespace CommunityLib
 
         private static bool UAEN_OrcUpstart_turnTickAI_Prefix(UAEN_OrcUpstart __instance)
         {
-            if (ModCore.core.GetAgentAI().ContainsAgentType(typeof(UAEN_OrcUpstart)))
+            if (ModCore.Get().GetAgentAI().ContainsAgentType(typeof(UAEN_OrcUpstart)))
             {
-                ModCore.core.GetAgentAI().turnTickAI(__instance);
+                ModCore.Get().GetAgentAI().turnTickAI(__instance);
                 return false;
             }
             return true;
@@ -3797,9 +3797,9 @@ namespace CommunityLib
 
         private static bool UAEN_Vampire_turnTickAI_Prefix(UAEN_Vampire __instance)
         {
-            if (ModCore.core.GetAgentAI().ContainsAgentType(typeof(UAEN_Vampire)))
+            if (ModCore.Get().GetAgentAI().ContainsAgentType(typeof(UAEN_Vampire)))
             {
-                ModCore.core.GetAgentAI().turnTickAI(__instance);
+                ModCore.Get().GetAgentAI().turnTickAI(__instance);
                 return false;
             }
             return true;
@@ -3807,9 +3807,9 @@ namespace CommunityLib
 
         private static bool UA_turnTickAI_Prefix(UA __instance)
         {
-            if (__instance is UAA && ModCore.core.GetAgentAI().ContainsAgentType(typeof(UAA)))
+            if (__instance is UAA && ModCore.Get().GetAgentAI().ContainsAgentType(typeof(UAA)))
             {
-                ModCore.core.GetAgentAI().turnTickAI(__instance);
+                ModCore.Get().GetAgentAI().turnTickAI(__instance);
                 return false;
             }
             return true;

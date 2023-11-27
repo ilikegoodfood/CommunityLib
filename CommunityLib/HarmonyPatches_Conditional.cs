@@ -31,7 +31,7 @@ namespace CommunityLib
             getChallengeUtility_BulkPatch(map);
 
             //Console.WriteLine("CommunityLib: Initializing Conditional Patches");
-            if (ModCore.core.data.tryGetModAssembly("Cordyceps", out ModData.ModIntegrationData intDataCord) && intDataCord.assembly != null)
+            if (ModCore.Get().data.tryGetModAssembly("Cordyceps", out ModData.ModIntegrationData intDataCord) && intDataCord.assembly != null)
             {
                 Patching_Cordyceps(intDataCord);
             }
@@ -73,14 +73,14 @@ namespace CommunityLib
 
         private static bool UA_getChallengeUtility_BulkPrefix(UA __instance, Challenge c, List<ReasonMsg> reasons, ref double __result)
         {
-            if (ModCore.core.GetAgentAI().isAICheckingUtility())
+            if (ModCore.Get().GetAgentAI().isAICheckingUtility())
             {
                 return true;
             }
 
-            if (ModCore.core.GetAgentAI().TryGetAgentType(__instance.GetType(), out AgentAI.AIData? aiData) && aiData is AgentAI.AIData data)
+            if (ModCore.Get().GetAgentAI().TryGetAgentType(__instance.GetType(), out AgentAI.AIData? aiData) && aiData is AgentAI.AIData data)
             {
-                AIChallenge aiChallenge = ModCore.core.GetAgentAI().GetAIChallengeFromAgentType(__instance.GetType(), c.GetType());
+                AIChallenge aiChallenge = ModCore.Get().GetAgentAI().GetAIChallengeFromAgentType(__instance.GetType(), c.GetType());
 
                 if (aiChallenge == null)
                 {
@@ -119,7 +119,7 @@ namespace CommunityLib
                     cData.location = __instance.location;
                 }
 
-                __result = ModCore.core.GetAgentAI().getChallengeUtility(cData, __instance, data, data.controlParameters, reasons);
+                __result = ModCore.Get().GetAgentAI().getChallengeUtility(cData, __instance, data, data.controlParameters, reasons);
                 return false;
             }
 
@@ -141,9 +141,9 @@ namespace CommunityLib
 
         private static bool UAEN_Drone_turnTickAI_Prefix(UA __instance)
         {
-            if (ModCore.core.GetAgentAI().ContainsAgentType(__instance.GetType()))
+            if (ModCore.Get().GetAgentAI().ContainsAgentType(__instance.GetType()))
             {
-                ModCore.core.GetAgentAI().turnTickAI(__instance);
+                ModCore.Get().GetAgentAI().turnTickAI(__instance);
                 return false;
             }
             return true;

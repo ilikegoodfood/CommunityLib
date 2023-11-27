@@ -10,7 +10,7 @@ namespace CommunityLib
 {
     public class ModCore : ModKernel
     {
-        public static ModCore core;
+        private static ModCore core;
 
         public ModData data;
 
@@ -41,6 +41,8 @@ namespace CommunityLib
         public static bool opt_panToHolyOrderScreen = true;
 
         public static bool opt_ophanimFaithTomb = true;
+
+        public static ModCore Get() => core;
 
         public override void onModsInitiallyLoaded()
         {
