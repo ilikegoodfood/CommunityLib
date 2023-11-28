@@ -2712,7 +2712,7 @@ namespace CommunityLib
 
             Culture culture = World.self.loadedCultures[(int)(__instance.map.landmassID[__instance.location.hex.x][__instance.location.hex.y] + __instance.map.seed / 2L) % World.self.loadedCultures.Count];
 
-            if (culture != null && ModCore.core.tryGetModCultureData(culture, out ModCultureData cultureData) && cultureData != null)
+            if (culture != null && ModCore.Get().tryGetModCultureData(culture, out ModCultureData cultureData) && cultureData != null)
             {
                 if (__instance.ophanimTakeOver && cultureData.ophanimMinorSettlementIcon != null)
                 {
@@ -3731,7 +3731,7 @@ namespace CommunityLib
         // UA
         private static bool UA_isCommandable_Postfix(bool result, UA __instance)
         {
-            if (ModCore.core.data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null && intDataCord.typeDict.TryGetValue("Drone", out Type droneType) && droneType != null)
+            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null && intDataCord.typeDict.TryGetValue("Drone", out Type droneType) && droneType != null)
             {
                 if (__instance.GetType() == droneType)
                 {
