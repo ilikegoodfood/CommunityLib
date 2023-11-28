@@ -147,7 +147,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Rt_Orcs_ClaimTerritory), nameof(Rt_Orcs_ClaimTerritory.validFor), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Rt_Orcs_ClaimTerritory_validFor_Transpiler)));
 
             // Culture modifications
-            harmony.Patch(original: AccessTools.Method(typeof(Set_MinorHuman), nameof(Set_MinorHuman.getSprite), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Set_MinorHuman_getSprite_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(Set_MinorHuman), nameof(Set_MinorHuman.getSprite), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Set_MinorHuman_getSprite_Transpiler)));
 
             // AGENT UI //
             // UIScroll_Unit (Challenge utility panel)
@@ -2703,54 +2703,64 @@ namespace CommunityLib
         }
 
         // Culture modifications patches.
-        private static void Set_MinorHuman_getSprite_Postfix(Set_MinorHuman __instance, ref Sprite __result)
+        private static IEnumerable<CodeInstruction> Set_MinorHuman_getSprite_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
-            if (!ModCore.opt_allowCulturalMinorSettelementGraphics && World.self.loadedCultures.Count == 0 || __instance.location == null)
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Set_MinorHuman_getSprite_TranspilerBody), new Type[] { typeof(Set_MinorHuman) });
+
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            yield return new CodeInstruction(OpCodes.Nop);
+            yield return new CodeInstruction(OpCodes.Ldarg_0);
+            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+            yield return new CodeInstruction(OpCodes.Stloc_1);
+            yield return new CodeInstruction(OpCodes.Ldloc_1);
+            yield return new CodeInstruction(OpCodes.Ret);
+
+            Console.WriteLine("CommunityLib: Completed complete function replacement transpiler Set_MinorHuman_getSprite_Transpiler");
+        }
+
+        private static Sprite Set_MinorHuman_getSprite_TranspilerBody(Set_MinorHuman set)
+        {
+            ModCultureData cultureData = null;
+
+            if (World.self.loadedCultures.Count > 0)
             {
-                return;
+                Culture culture = World.self.loadedCultures[(int)(set.map.landmassID[set.location.hex.x][set.location.hex.y] + set.map.seed / 2L) % World.self.loadedCultures.Count];
+                ModCore.core.tryGetModCultureData(culture, out cultureData);
             }
 
-            Culture culture = World.self.loadedCultures[(int)(__instance.map.landmassID[__instance.location.hex.x][__instance.location.hex.y] + __instance.map.seed / 2L) % World.self.loadedCultures.Count];
-
-            if (culture != null && ModCore.Get().tryGetModCultureData(culture, out ModCultureData cultureData) && cultureData != null)
+            if (set.ophanimTakeOver)
             {
-                if (__instance.ophanimTakeOver && cultureData.ophanimMinorSettlementIcon != null)
+                if (ModCore.opt_allowCulturalMinorSettelementGraphics && cultureData != null && cultureData.ophanimMinorSettlementIcon != null)
                 {
-                    __result = cultureData.ophanimMinorSettlementIcon;
-                    return;
+                    return cultureData.ophanimMinorSettlementIcon;
                 }
-
-                if (__instance.subs.Count > 0 && __instance.subs[0].definesSprite())
-                {
-                    if (cultureData.subsettlmentMinorSettlementIcons.TryGetValue(__instance.subs[0].GetType(), out Sprite icon) && icon != null)
-                    {
-                        __result = icon;
-                        return;
-                    }
-                }
-                else
-                {
-                    if (__instance.location.isCoastal)
-                    {
-                        if (cultureData.defaultMinorSettlementCoastalIcon)
-                        {
-                            __result = cultureData.defaultMinorSettlementCoastalIcon;
-                            return;
-                        }
-                    }
-                    else
-                    {
-                        if (cultureData.defaultMinorSettlementIcon != null)
-                        {
-                            __result = cultureData.defaultMinorSettlementIcon;
-                            return;
-                        }
-                    }
-                }
-                
+                return set.map.world.textureStore.loc_evil_ophanimMinor;
             }
 
-            return;
+            if (set.subs.Count > 0 && set.subs[0].definesSprite())
+            {
+                if (ModCore.opt_allowCulturalMinorSettelementGraphics && cultureData != null && cultureData.subsettlmentMinorSettlementIcons.TryGetValue(set.subs[0].GetType(), out Sprite icon) && icon != null)
+                {
+                    return icon;
+                }
+                return set.subs[0].getLocationSprite(set.map.world);
+            }
+
+            if (set.location.isCoastal)
+            {
+                if (ModCore.opt_allowCulturalMinorSettelementGraphics && cultureData != null && cultureData.defaultMinorSettlementCoastalIcon)
+                {
+                    return cultureData.defaultMinorSettlementCoastalIcon;
+                }
+                return set.map.world.textureStore.loc_minor_fishing;
+            }
+
+            if (ModCore.opt_allowCulturalMinorSettelementGraphics && cultureData != null && cultureData.defaultMinorSettlementIcon != null)
+            {
+                return cultureData.defaultMinorSettlementIcon;
+            }
+            return set.map.world.textureStore.loc_minor_farm;
         }
 
         // Overmind_Automatic onIsElderTomb hooks
