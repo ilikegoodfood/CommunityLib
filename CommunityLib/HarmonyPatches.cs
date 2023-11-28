@@ -2705,7 +2705,7 @@ namespace CommunityLib
         // Culture modifications patches.
         private static void Set_MinorHuman_getSprite_Postfix(Set_MinorHuman __instance, ref Sprite __result)
         {
-            if (World.self.loadedCultures.Count == 0 || __instance.location == null)
+            if (!ModCore.opt_allowCulturalMinorSettelementGraphics && World.self.loadedCultures.Count == 0 || __instance.location == null)
             {
                 return;
             }
