@@ -18,7 +18,7 @@ namespace CommunityLib
 
         public override void onUnitDeath_StartOfProcess(Unit u, string v, Person killer)
         {
-            if (ModCore.opt_forceShipwrecks || ModCore.opt_SpawnShipwrecks)
+            if (ModCore.opt_forceShipwrecks || ModCore.opt_spawnShipwrecks)
             {
                 if (u.location.isOcean)
                 {
@@ -35,7 +35,7 @@ namespace CommunityLib
 
         public override void onSettlementFallIntoRuin_StartOfProcess(Settlement set, string v, object killer = null)
         {
-            if (ModCore.opt_forceShipwrecks || ModCore.opt_SpawnShipwrecks)
+            if (ModCore.opt_forceShipwrecks || ModCore.opt_spawnShipwrecks)
             {
                 if (set is SettlementHuman settlementHuman && settlementHuman.subs.Count > 0)
                 {
@@ -87,7 +87,7 @@ namespace CommunityLib
                     break;
             }
 
-            if (ModCore.Get().data.tryGetModAssembly("Cordyceps", out ModData.ModIntegrationData intDataCord) && intDataCord.assembly != null)
+            if (ModCore.core.data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
             {
                 if (intDataCord.typeDict.TryGetValue("Drone", out Type droneType) && droneType != null)
                 {
@@ -113,7 +113,7 @@ namespace CommunityLib
                     break;
             }
 
-            if (ModCore.Get().data.tryGetModAssembly("Cordyceps", out ModData.ModIntegrationData intDataCord) && intDataCord.assembly != null)
+            if (ModCore.core.data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
             {
                 if (intDataCord.typeDict.TryGetValue("Drone", out Type droneType) && droneType != null)
                 {
@@ -145,7 +145,7 @@ namespace CommunityLib
             return false;
         }
 
-        private bool interceptCordycepsDrone(UA ua, ModData.ModIntegrationData intData)
+        private bool interceptCordycepsDrone(UA ua, ModIntegrationData intData)
         {
             if (intData.typeDict.TryGetValue("Drone", out Type droneType) && droneType != null && intData.fieldInfoDict.TryGetValue("Drone.prey", out FieldInfo FI_Prey) && FI_Prey != null && intData.methodInfoDict.TryGetValue("God.eat", out MethodInfo MI_GodEat) && MI_GodEat != null)
             {

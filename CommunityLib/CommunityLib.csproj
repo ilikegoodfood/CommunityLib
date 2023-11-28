@@ -64,6 +64,8 @@
     <Compile Include="Ch_DestroyShipwreck.cs" />
     <Compile Include="Ch_PlunderShipwreck.cs" />
     <Compile Include="Ch_RecoverShipwreck.cs" />
+    <Compile Include="ModCultureData.cs" />
+    <Compile Include="ModIntegrationData.cs" />
     <Compile Include="OnChallengeComplete.cs" />
     <Compile Include="Rt_DeepOnes_TravelBeneath.cs" />
     <Compile Include="Set_Shipwreck.cs" />

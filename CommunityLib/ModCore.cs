@@ -34,13 +34,15 @@ namespace CommunityLib
 
         private bool patched = false;
 
-        public static bool opt_SpawnShipwrecks = false;
+        public static bool opt_spawnShipwrecks = false;
 
         public static bool opt_forceShipwrecks = false;
 
         public static bool opt_panToHolyOrderScreen = true;
 
         public static bool opt_ophanimFaithTomb = true;
+
+        public static bool opt_allowCulturalMinorSettelementGraphics = true;
 
         public static ModCore Get() => core;
 
@@ -60,13 +62,16 @@ namespace CommunityLib
             switch(optName)
             {
                 case "Spawn Shipwrecks":
-                    opt_SpawnShipwrecks = value;
+                    opt_spawnShipwrecks = value;
                     break;
                 case "Pan To Holy Order Screen":
                     opt_panToHolyOrderScreen = value;
                     break;
                 case "Show Ophanim's Faith at Elder Tomb":
                     opt_ophanimFaithTomb = value;
+                    break;
+                case "Allow Culture-Specific Minor Settlement Graphics":
+                    opt_allowCulturalMinorSettelementGraphics = value;
                     break;
                 default:
                     break;
@@ -143,9 +148,9 @@ namespace CommunityLib
                 switch (kernel.GetType().Namespace)
                 {
                     case "ShadowsInsectGod.Code":
-                        core.data.addModAssembly("Cordyceps", new ModData.ModIntegrationData(kernel.GetType().Assembly));
+                        core.data.addModIntegrationData("Cordyceps", new ModIntegrationData(kernel.GetType().Assembly));
 
-                        if (core.data.tryGetModAssembly("Cordyceps", out ModData.ModIntegrationData intDataCord) && intDataCord.assembly != null)
+                        if (core.data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
                         {
                             Type godType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.God_Insect", false);
                             if (godType != null)
@@ -201,10 +206,10 @@ namespace CommunityLib
                         }
                         break;
                     case "Wonderblunder_DeepOnes":
-                        ModData.ModIntegrationData intDataDOPlus = new ModData.ModIntegrationData(kernel.GetType().Assembly);
-                        core.data.addModAssembly("DeepOnesPlus", intDataDOPlus);
+                        ModIntegrationData intDataDOPlus = new ModIntegrationData(kernel.GetType().Assembly);
+                        core.data.addModIntegrationData("DeepOnesPlus", intDataDOPlus);
 
-                        if (core.data.tryGetModAssembly("DeepOnesPlus", out intDataDOPlus))
+                        if (core.data.tryGetModIntegrationData("DeepOnesPlus", out intDataDOPlus))
                         {
                             Type kernelType = intDataDOPlus.assembly.GetType("Wonderblunder_DeepOnes.Modcore", false);
                             if (kernelType != null)
@@ -608,6 +613,16 @@ namespace CommunityLib
 
             subsettlementBlacklist = null;
             return false;
+        }
+
+        public void registerModCultureData(Culture culture, ModCultureData modCultureData)
+        {
+            core.data.addCultureData(culture, modCultureData);
+        }
+
+        public bool tryGetModCultureData(Culture culture, out ModCultureData modCultureData)
+        {
+            return core.data.tryGetModCultureData(culture, out modCultureData);
         }
 
         public bool checkIsElderTomb(Location location)

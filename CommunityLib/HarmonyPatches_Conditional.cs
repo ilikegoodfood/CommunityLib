@@ -31,7 +31,7 @@ namespace CommunityLib
             getChallengeUtility_BulkPatch(map);
 
             //Console.WriteLine("CommunityLib: Initializing Conditional Patches");
-            if (ModCore.Get().data.tryGetModAssembly("Cordyceps", out ModData.ModIntegrationData intDataCord) && intDataCord.assembly != null)
+            if (ModCore.core.data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
             {
                 Patching_Cordyceps(intDataCord);
             }
@@ -126,7 +126,7 @@ namespace CommunityLib
             return true;
         }
 
-        private static void Patching_Cordyceps(ModData.ModIntegrationData intData)
+        private static void Patching_Cordyceps(ModIntegrationData intData)
         {
             //Console.WriteLine("CommunityLib: Conditional Patch for Cordyceps");
             if (intData.methodInfoDict.TryGetValue("Drone.turnTickAI", out MethodInfo MI_turnTickAI) && MI_turnTickAI != null)
