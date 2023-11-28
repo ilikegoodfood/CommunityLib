@@ -26,7 +26,7 @@ namespace CommunityLib
 
         public static void spawnShipwreck_Rt_RaidPort(Challenge challenge, UA ua, Task_PerformChallenge task_PerformChallenge)
         {
-            if (!ModCore.opt_forceShipwrecks && !ModCore.opt_SpawnShipwrecks)
+            if (!ModCore.opt_forceShipwrecks && !ModCore.opt_spawnShipwrecks)
             {
                 return;
             }
@@ -41,7 +41,7 @@ namespace CommunityLib
 
         public static void spawnShipwreck_Rt_RaidShipping(Challenge challenge, UA ua, Task_PerformChallenge task_PerformChallenge)
         {
-            if (!ModCore.opt_forceShipwrecks && !ModCore.opt_SpawnShipwrecks)
+            if (!ModCore.opt_forceShipwrecks && !ModCore.opt_spawnShipwrecks)
             {
                 return;
             }

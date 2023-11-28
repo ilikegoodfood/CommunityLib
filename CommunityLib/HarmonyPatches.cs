@@ -146,6 +146,9 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(SG_Orc), nameof(SG_Orc.canSettle), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(SG_Orc_canSettle_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Rt_Orcs_ClaimTerritory), nameof(Rt_Orcs_ClaimTerritory.validFor), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Rt_Orcs_ClaimTerritory_validFor_Transpiler)));
 
+            // Culture modifications
+            harmony.Patch(original: AccessTools.Method(typeof(Set_MinorHuman), nameof(Set_MinorHuman.getSprite), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Set_MinorHuman_getSprite_Postfix)));
+
             // AGENT UI //
             // UIScroll_Unit (Challenge utility panel)
             harmony.Patch(original: AccessTools.Method(typeof(UIScroll_Unit), nameof(UIScroll_Unit.checkData), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UIScroll_Unit_checkData_Prefix)), transpiler: new HarmonyMethod(patchType, nameof(UIScroll_Unit_checkData_Transpiler)));
@@ -2699,6 +2702,57 @@ namespace CommunityLib
             return false;
         }
 
+        // Culture modifications patches.
+        private static void Set_MinorHuman_getSprite_Postfix(Set_MinorHuman __instance, ref Sprite __result)
+        {
+            if (World.self.loadedCultures.Count == 0 || __instance.location == null)
+            {
+                return;
+            }
+
+            Culture culture = World.self.loadedCultures[(int)(__instance.map.landmassID[__instance.location.hex.x][__instance.location.hex.y] + __instance.map.seed / 2L) % World.self.loadedCultures.Count];
+
+            if (culture != null && ModCore.core.tryGetModCultureData(culture, out ModCultureData cultureData) && cultureData != null)
+            {
+                if (__instance.ophanimTakeOver && cultureData.ophanimMinorSettlementIcon != null)
+                {
+                    __result = cultureData.ophanimMinorSettlementIcon;
+                    return;
+                }
+
+                if (__instance.subs.Count > 0 && __instance.subs[0].definesSprite())
+                {
+                    if (cultureData.subsettlmentMinorSettlementIcons.TryGetValue(__instance.subs[0].GetType(), out Sprite icon) && icon != null)
+                    {
+                        __result = icon;
+                        return;
+                    }
+                }
+                else
+                {
+                    if (__instance.location.isCoastal)
+                    {
+                        if (cultureData.defaultMinorSettlementCoastalIcon)
+                        {
+                            __result = cultureData.defaultMinorSettlementCoastalIcon;
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        if (cultureData.defaultMinorSettlementIcon != null)
+                        {
+                            __result = cultureData.defaultMinorSettlementIcon;
+                            return;
+                        }
+                    }
+                }
+                
+            }
+
+            return;
+        }
+
         // Overmind_Automatic onIsElderTomb hooks
         private static IEnumerable<CodeInstruction> Overmind_Automatic_ai_testDark_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
@@ -3677,7 +3731,7 @@ namespace CommunityLib
         // UA
         private static bool UA_isCommandable_Postfix(bool result, UA __instance)
         {
-            if (ModCore.core.data.tryGetModAssembly("Cordyceps", out ModData.ModIntegrationData intDataCord) && intDataCord.assembly != null && intDataCord.typeDict.TryGetValue("Drone", out Type droneType) && droneType != null)
+            if (ModCore.core.data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null && intDataCord.typeDict.TryGetValue("Drone", out Type droneType) && droneType != null)
             {
                 if (__instance.GetType() == droneType)
                 {

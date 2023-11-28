@@ -13,64 +13,75 @@ namespace CommunityLib
     {
         public Map map;
 
-        public struct ModIntegrationData
-        {
-            public Assembly assembly;
-            public Dictionary<string, Type> typeDict;
-            public Dictionary<string, MethodInfo> methodInfoDict;
-            public Dictionary<string, FieldInfo> fieldInfoDict;
+        private Dictionary<string, ModIntegrationData> modIntegrationData;
 
-            public ModIntegrationData(Assembly asm)
-            {
-                assembly = asm;
-                typeDict = new Dictionary<string, Type>();
-                methodInfoDict = new Dictionary<string, MethodInfo>();
-                fieldInfoDict = new Dictionary<string, FieldInfo>();
-            }
-        }
-
-        private Dictionary<string, ModIntegrationData> modAssemblies;
+        private Dictionary<Culture, ModCultureData> modCultureData;
 
         public ModData(Map map)
         {
             this.map = map;
             
-            modAssemblies = new Dictionary<string, ModIntegrationData>();
+            modIntegrationData = new Dictionary<string, ModIntegrationData>();
+            modCultureData = new Dictionary<Culture, ModCultureData>();
         }
 
         public void onLoad(Map map)
         {
             this.map = map;
 
-            if (modAssemblies == null)
+            if (modIntegrationData == null)
             {
-                modAssemblies = new Dictionary<string, ModIntegrationData>();
+                modIntegrationData = new Dictionary<string, ModIntegrationData>();
+            }
+
+            if (modCultureData == null)
+            {
+                modCultureData = new Dictionary<Culture, ModCultureData>();
             }
         }
 
-        internal void addModAssembly(string key, ModIntegrationData asm)
+        internal void addModIntegrationData(string key, ModIntegrationData intData)
         {
-            if (key == "" || asm.assembly == null)
+            if (key == "" || intData.assembly == null)
             {
                 return;
             }
 
-            if (modAssemblies.ContainsKey(key) && modAssemblies[key].assembly == null)
+            if (modIntegrationData.TryGetValue(key, out ModIntegrationData intData2) && intData2.assembly == null)
             {
-                modAssemblies[key] = asm;
+                modIntegrationData[key] = intData;
             }
             else
             {
-                modAssemblies.Add(key, asm);
+                modIntegrationData.Add(key, intData);
             }
         }
 
-        internal bool tryGetModAssembly(string key, out ModIntegrationData asm)
+        internal bool tryGetModIntegrationData(string key, out ModIntegrationData intData)
         {
-            bool result = modAssemblies.TryGetValue(key, out ModIntegrationData retASM);
-            asm = retASM;
+            return modIntegrationData.TryGetValue(key, out intData);
+        }
 
-            return result;
+        internal void addCultureData(Culture key, ModCultureData data)
+        {
+            if (key == null)
+            {
+                return;
+            }
+
+            if (modCultureData.TryGetValue(key, out ModCultureData data2) && data2 == null)
+            {
+                modCultureData[key] = data;
+            }
+            else
+            {
+                modCultureData.Add(key, data);
+            }
+        }
+
+        internal bool tryGetModCultureData(Culture key, out ModCultureData cultureData)
+        {
+            return modCultureData.TryGetValue(key, out cultureData);
         }
     }
 }
