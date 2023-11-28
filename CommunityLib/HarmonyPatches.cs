@@ -2726,7 +2726,7 @@ namespace CommunityLib
             if (World.self.loadedCultures.Count > 0)
             {
                 Culture culture = World.self.loadedCultures[(int)(set.map.landmassID[set.location.hex.x][set.location.hex.y] + set.map.seed / 2L) % World.self.loadedCultures.Count];
-                ModCore.core.tryGetModCultureData(culture, out cultureData);
+                ModCore.Get().tryGetModCultureData(culture, out cultureData);
             }
 
             if (set.ophanimTakeOver)
