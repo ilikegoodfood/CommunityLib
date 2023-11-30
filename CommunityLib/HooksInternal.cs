@@ -5,6 +5,7 @@ using UnityEngine;
 using System.Reflection;
 using UnityEngine.UI;
 using System.Linq;
+using static SortedDictionaryProvider;
 
 namespace CommunityLib
 {
@@ -37,7 +38,7 @@ namespace CommunityLib
         {
             if (ModCore.opt_forceShipwrecks || ModCore.opt_spawnShipwrecks)
             {
-                if (set is SettlementHuman settlementHuman && settlementHuman.subs.Count > 0)
+                if (set is SettlementHuman settlementHuman)
                 {
                     if (set.subs.Any(sub => sub is Sub_Docks))
                     {
@@ -65,6 +66,52 @@ namespace CommunityLib
             }
 
             return null;
+        }
+
+        public override void onGraphicalLinkUpdated(GraphicalLink graphicalLink)
+        {
+
+            if (ModCore.opt_enhancedTradeRouteLinks)
+            {
+                TradeRoute route = map.tradeManager.routes.FirstOrDefault(tr => tr.path.Contains(graphicalLink.link.a) && tr.path.Contains(graphicalLink.link.b));
+                if (route != null)
+                {
+                    float width = 0.04f;
+                    float alpha = 1f;
+
+                    if (graphicalLink.link.disabled)
+                    {
+                        alpha = 0.2f;
+                    }
+                    else if (route.raidingCooldown > 0)
+                    {
+                        alpha *= 0.8f;
+                    }
+
+                    if (graphicalLink.link.map.masker.mask > MapMaskManager.maskType.NONE)
+                    {
+                        if (graphicalLink.link.map.masker.mask == MapMaskManager.maskType.TRADE_ROUTE)
+                        {
+                            width = 0.03f;
+                        }
+                        else
+                        {
+                            alpha *= 0.15f;
+                        }
+                    }
+
+                    if (graphicalLink.link.map.world.ui.uiScrollables.scrollable_threats.targetRoute != null && graphicalLink.link.map.world.ui.uiScrollables.scrollable_threats.targetRoute != route)
+                    {
+                        width = 0.04f;
+                        alpha *= 0.15f;
+                    }
+
+                    graphicalLink.lineRenderer.startColor = new Color(graphicalLink.lineRenderer.startColor.r, graphicalLink.lineRenderer.startColor.g, graphicalLink.lineRenderer.startColor.b, alpha);
+                    graphicalLink.lineRenderer.endColor = new Color(graphicalLink.lineRenderer.endColor.r, graphicalLink.lineRenderer.endColor.g, graphicalLink.lineRenderer.endColor.b, alpha);
+                    graphicalLink.lineRenderer.startWidth = width;
+                    graphicalLink.lineRenderer.endWidth = width;
+                }
+            }
         }
 
         public override bool interceptGetVisibleUnits(UA ua, List<Unit> visibleUnits)

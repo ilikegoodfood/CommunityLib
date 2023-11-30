@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Assets.Code;
 using Assets.Code.Modding;
 using HarmonyLib;
@@ -44,6 +45,8 @@ namespace CommunityLib
 
         public static bool opt_allowCulturalMinorSettelementGraphics = true;
 
+        public static bool opt_enhancedTradeRouteLinks = true;
+
         public static ModCore Get() => core;
 
         public override void onModsInitiallyLoaded()
@@ -69,6 +72,9 @@ namespace CommunityLib
                     break;
                 case "Show Ophanim's Faith at Elder Tomb":
                     opt_ophanimFaithTomb = value;
+                    break;
+                case "Enhanced Trade Route Links":
+                    opt_enhancedTradeRouteLinks = value;
                     break;
                 case "Allow Culture-Specific Minor Settlement Graphics":
                     opt_allowCulturalMinorSettelementGraphics = value;
@@ -223,6 +229,19 @@ namespace CommunityLib
                     default:
                         break;
                 }
+                
+                // Code Template for modifying blacklist, non-dependent.
+                /*
+                MethodInfo MI_tryGetSettlementType = kernel.GetType().GetMethod("tryGetSettlementTypeForOrcExpansion", new Type[] { typeof(Type), typeof(List<Type>) });
+
+                object[] parameters = new object[] { typeof(Set_MinorOther), null };
+                object result = MI_tryGetSettlementType.Invoke(kernel, parameters);
+                bool bResult = (bool)result;
+                if (bResult)
+                {
+                    List<Type> blacklist = (List<Type>)parameters[1];
+                    blacklist.Add(Some Type);
+                }*/
             }
         }
 
