@@ -231,16 +231,14 @@ namespace CommunityLib
                 }
                 
                 // Code Template for modifying blacklist, non-dependent.
-                /*
-                MethodInfo MI_tryGetSettlementType = kernel.GetType().GetMethod("tryGetSettlementTypeForOrcExpansion", new Type[] { typeof(Type), typeof(List<Type>) });
+                /*MethodInfo MI_tryGetSettlementType = kernel.GetType().GetMethod("tryGetSettlementTypeForOrcExpansion", new Type[] { typeof(Type), typeof(List<Type>).MakeByRefType() });
 
                 object[] parameters = new object[] { typeof(Set_MinorOther), null };
-                object result = MI_tryGetSettlementType.Invoke(kernel, parameters);
-                bool bResult = (bool)result;
-                if (bResult)
+                bool result = (bool)MI_tryGetSettlementType.Invoke(kernel, parameters);
+                if (result)
                 {
                     List<Type> blacklist = (List<Type>)parameters[1];
-                    blacklist.Add(Some Type);
+                    blacklist.Add(/*Some Type);
                 }*/
             }
         }
