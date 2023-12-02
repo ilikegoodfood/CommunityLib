@@ -2593,7 +2593,7 @@ namespace CommunityLib
             }
             if (location.settlement != null)
             {
-                if (ModCore.Get().getSettlementTypesForOrcExpanion().TryGetValue(location.settlement.GetType(), out List<Type> subsettlementBlacklist))
+                if (ModCore.Get().getSettlementTypesForOrcExpanion().TryGetValue(location.settlement.GetType(), out HashSet<Type> subsettlementBlacklist))
                 {
                     if (subsettlementBlacklist?.Count > 0)
                     {
@@ -2652,7 +2652,7 @@ namespace CommunityLib
             if (ua.location.settlement != null)
             {
                 //Console.WriteLine("CommunityLib: Testing Claim Territory against Permitted Settlements");
-                if (ModCore.Get().getSettlementTypesForOrcExpanion().TryGetValue(ua.location.settlement.GetType(), out List<Type> subsettlementBlacklist))
+                if (ModCore.Get().getSettlementTypesForOrcExpanion().TryGetValue(ua.location.settlement.GetType(), out HashSet<Type> subsettlementBlacklist))
                 {
                     if (subsettlementBlacklist!= null && subsettlementBlacklist.Count > 0)
                     {
