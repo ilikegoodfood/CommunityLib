@@ -23,7 +23,7 @@ namespace CommunityLib
 
         private List<Hooks> registeredHooks = new List<Hooks>();
 
-        private Dictionary<Type, List<Type>> settlementTypesForOrcExpansion = new Dictionary<Type,  List<Type>>();
+        private Dictionary<Type, HashSet<Type>> settlementTypesForOrcExpansion = new Dictionary<Type,  HashSet<Type>>();
 
         private AgentAI agentAI;
 
@@ -247,7 +247,7 @@ namespace CommunityLib
         {
             registerSettlementTypeForOrcExpansion(typeof(Set_CityRuins));
             registerSettlementTypeForOrcExpansion(typeof(Set_Shipwreck));
-            registerSettlementTypeForOrcExpansion(typeof(Set_MinorOther), new Type[] { typeof(Sub_WitchCoven), typeof(Sub_Wonder_DeathIsland), typeof(Sub_Wonder_Doorway), typeof(Sub_Wonder_PrimalFont), typeof(Sub_Temple) });
+            registerSettlementTypeForOrcExpansion(typeof(Set_MinorOther), new HashSet<Type> { typeof(Sub_WitchCoven), typeof(Sub_Wonder_DeathIsland), typeof(Sub_Wonder_Doorway), typeof(Sub_Wonder_PrimalFont), typeof(Sub_Temple) });
         }
 
         public void eventModifications()
@@ -572,69 +572,41 @@ namespace CommunityLib
             }
         }
 
-        public bool registerSettlementTypeForOrcExpansion(Type t)
+        public void registerSettlementTypeForOrcExpansion(Type t, HashSet<Type> subsettlementBlacklist = null)
         {
-            if (!t.IsSubclassOf(typeof(Settlement)) || core.settlementTypesForOrcExpansion.ContainsKey(t))
+            if (!t.IsSubclassOf(typeof(Settlement)))
             {
-                return false;
+                return;
             }
 
-            core.settlementTypesForOrcExpansion.Add(t, null);
-            return true;
-        }
-
-        public bool registerSettlementTypeForOrcExpansion(Type t, List<Type> subsettlementBlacklist = null)
-        {
-            if (!t.IsSubclassOf(typeof(Settlement)) || core.settlementTypesForOrcExpansion.ContainsKey(t))
+            if (core.settlementTypesForOrcExpansion.TryGetValue(t, out HashSet<Type> blacklist))
             {
-                return false;
+                if (subsettlementBlacklist != null)
+                {
+                    blacklist.UnionWith(subsettlementBlacklist);
+                }
             }
-
-            core.settlementTypesForOrcExpansion.Add(t, subsettlementBlacklist);
-            return true;
-        }
-
-        public bool registerSettlementTypeForOrcExpansion(Type t, Type[] subsettlementBlacklist = null)
-        {
-            if (!t.IsSubclassOf(typeof(Settlement)) || core.settlementTypesForOrcExpansion.ContainsKey(t))
+            else
             {
-                return false;
+                if (subsettlementBlacklist == null)
+                {
+                    subsettlementBlacklist = new HashSet<Type>();
+                }
+
+                core.settlementTypesForOrcExpansion.Add(t, subsettlementBlacklist);
             }
-
-            core.settlementTypesForOrcExpansion.Add(t, subsettlementBlacklist?.ToList() ?? null);
-            return true;
+            
+            return;
         }
 
-        public bool removeSettlementTypeForOrcExpansion(Type t, out List<Type> subsettlementBlacklist)
-        {
-            if (t.IsSubclassOf(typeof(Settlement)) && core.settlementTypesForOrcExpansion.TryGetValue(t, out subsettlementBlacklist))
-            {
-                return core.settlementTypesForOrcExpansion.Remove(t);
-            }
-
-            subsettlementBlacklist = null;
-            return false;
-        }
-
-        internal Dictionary<Type, List<Type>> getSettlementTypesForOrcExpanion()
-        {
-            return core.settlementTypesForOrcExpansion;
-        }
-
-        public bool tryGetSettlementTypeForOrcExpansion(Type t, out List<Type> subsettlementBlacklist)
-        {
-            if (t.IsSubclassOf(typeof(Settlement)) && core.settlementTypesForOrcExpansion.TryGetValue(t, out subsettlementBlacklist))
-            {
-                return true;
-            }
-
-            subsettlementBlacklist = null;
-            return false;
-        }
+        internal Dictionary<Type, HashSet<Type>> getSettlementTypesForOrcExpanion() => core.settlementTypesForOrcExpansion;
 
         public void registerModCultureData(Culture culture, ModCultureData modCultureData)
         {
-            core.data.addCultureData(culture, modCultureData);
+            if (!core.data.GetModCultureData().ContainsKey(culture))
+            {
+                core.data.addCultureData(culture, modCultureData);
+            }
         }
 
         public bool tryGetModCultureData(Culture culture, out ModCultureData modCultureData)
