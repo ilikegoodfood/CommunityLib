@@ -595,6 +595,8 @@ namespace CommunityLib
             return;
         }
 
+        public bool tryGetSettlementTypeForOrcsExpansion(Type t, out HashSet<Type> subsettlementBlacklist) => core.settlementTypesForOrcExpansion.TryGetValue(t, out subsettlementBlacklist);
+
         internal Dictionary<Type, HashSet<Type>> getSettlementTypesForOrcExpanion() => core.settlementTypesForOrcExpansion;
 
         public void registerModCultureData(Culture culture, ModCultureData modCultureData)
