@@ -643,13 +643,14 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 6)
                     {
-                        if (i == instructionList.Count - 1)
+                        if (i == instructionList.Count - 1 && instructionList[i].opcode == OpCodes.Ret)
                         {
                             targetIndex = 0;
 
-                            yield return new CodeInstruction(OpCodes.Ldarg_0);
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_BattleArmy_Done);
-                            yield return new CodeInstruction(OpCodes.Brfalse_S, retLabel);
+                            CodeInstruction code = new CodeInstruction(OpCodes.Ldarg_0);
+                            code.labels.AddRange(instructionList[i].labels);
+                            instructionList[i].labels.Clear();
+                            yield return code;
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Callvirt, MI_TranspilerBody_EndOfProcess);
                         }
