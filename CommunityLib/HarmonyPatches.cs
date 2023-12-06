@@ -651,7 +651,6 @@ namespace CommunityLib
                             code.labels.AddRange(instructionList[i].labels);
                             instructionList[i].labels.Clear();
                             yield return code;
-                            yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Callvirt, MI_TranspilerBody_EndOfProcess);
                         }
                     }
