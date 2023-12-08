@@ -11,13 +11,11 @@ You should only have CommunityLib enabled if you have a mod enabled that is depe
 
 **This mod must be loaded before, higher in the load order, any mod that is dependant on it. It is recommended to place this mod directly under Core.**
 
-**NOTE:** If in a game and wishing to start a new game, please quit to desktop and relaunch the game before doing so. Some users have found that mods do not function properly if this step is not taken.
-
 ## Features
 It currently contains the follwoing features:
 
 ### Custom Hooks
-Using the Harmony Library, the community library now implements a large, and rapidly growing, number of custom hooks. These hooks operate much like those already available in the ModKernal.
+Using the Harmony Library, the community library now implements a large, and rapidly growing, number of custom hooks. These hooks operate much like those already available in the ModKernal. These hooks cover a vast array of features, both from the base game and the Community Library itself.
 
 To implement them in your mod, create aan instance of a class that inherits the `CommunityLib.Hooks` class, and call `RegisterHooks()` on the CommunityLib ModKernel. This must be done once when starting a new game, or when loading a game.
 
@@ -32,11 +30,11 @@ Multiple mods can all manipulate the AI of a single agent that is making use of 
 #### UAEN Override AI
 The basse games UAEN (Cordyceps' Drones, Deep Ones, Ghasts, Orc Upstarts, and Vampires) make use of hardcoded AI. All agents of those types now use the Universal Agent AI, which have been configured to closely, but not exactly, mimic their base game behaviour. The changes are small, resulting these agent types behaving slightly more intelligently.
 
-#### randStore
-The randStore is a method for generating, storing, and using random values within the Universal Agent AI for profile, utility and validity values, and ensuring they remain consistent within the UI. It can also be used for other purposes.
-
-### Orcs Expannsion Control
+### Orcs Expansion Control
 A registry that allows control over which settlement types orcs can expand onto. This is useful for mods that add new settlement types, such as a new type of ruin, which orcs should reasonable be able to colonise.
+
+### Mod Culture Data
+A registry for culture specific overrides to the graphics for minor human settlement `Set_MinorHuman`. If data is provided, these graphics will be used in place of the vanilla option. A master toggle for this feature for this feature exists in the Community Library's mod config, but individual mods should have their own individual on-off options.
 
 ### Shipwrecks
 Shipwrecks are Subsettlements that act much like ruins. They can be plundered (explored) multiple times, and can spawn when a city with a Dock is destroyed, or occasionally when a unit dies at sea, or The Bucanneer conduct naval actions. Unlike ruins, shipwrecks degrade over time, and whenever they are plundered, unless specific event outcomes are chosen.
@@ -46,8 +44,17 @@ By default, these are disabled through the mod configuration menu. Mods can forc
 ### Utilities
 The Community Library includes a number of helper classes and functions which can be used by other mods.
 
+#### Cheat Codes
+The Community Library offers a small number of useful cheat codes.
+
+#### randStore
+The randStore is a method for generating, storing, and using random values within the Universal Agent AI for profile, utility and validity values, and ensuring they remain consistent within the UI. It can also be used for other purposes.
+
 #### Task_GoPerformChallengeAtLocation
-This class operates in the same way as the base game's `Task_GoPerformChallenge`, but it can also handle performing rituals at locations other than the agent's current location, and it can make use of safeMove.
+This class operates in the same way as, and inherits from, the base game's `Task_GoPerformChallenge`, but it can also handle performing rituals at locations other than the agent's current location, and it can make use of safeMove.
+
+#### Task_GoToWilderness
+This class operates in the same way as Task_GoToLoation, but it will naviagte to the nearest unowned location. It can be configured to allow or disallow the destination being an ocean location, and can make use of safe move.
 
 
 
