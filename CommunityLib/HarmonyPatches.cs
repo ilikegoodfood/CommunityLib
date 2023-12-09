@@ -2587,7 +2587,7 @@ namespace CommunityLib
 
         private static bool SG_Orc_canSettle_TranspilerBody(Location location)
         {
-            if (location.isOcean || location.soc != null || location.hex.getHabilitability() < location.map.opt_orcHabMult * location.map.param.orc_habRequirement)
+            if (location.isOcean || location.hex.getHabilitability() < location.map.opt_orcHabMult * location.map.param.orc_habRequirement)
             {
                 return false;
             }
@@ -2595,7 +2595,7 @@ namespace CommunityLib
             {
                 if (ModCore.Get().getSettlementTypesForOrcExpanion().TryGetValue(location.settlement.GetType(), out HashSet<Type> subsettlementBlacklist))
                 {
-                    if (subsettlementBlacklist?.Count > 0)
+                    if (subsettlementBlacklist != null)
                     {
                         foreach (Subsettlement sub in location.settlement.subs)
                         {

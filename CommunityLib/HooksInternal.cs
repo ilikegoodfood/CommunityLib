@@ -216,7 +216,7 @@ namespace CommunityLib
 
         public override void onAgentAI_EndOfProcess(UA ua, AgentAI.AIData aiData, List<AgentAI.ChallengeData> validChallengeData, List<AgentAI.TaskData> validTaskData, List<Unit> visibleUnits)
         {
-            if (ua is UAEN_DeepOne && (ua.task == null || (ua.task is Task_GoToLocation tLocation && ua.homeLocation != -1 && tLocation.target == ua.map.locations[ua.homeLocation])) && validChallengeData.Count == 0 && validTaskData.Count == 0)
+            if (ua is UAEN_DeepOne && (ua.task == null || (ua.task is Task_GoToLocation tLocation && tLocation.target.index == ua.homeLocation)) && validChallengeData.FindAll(cd => !(cd.challenge is Rt_DeepOnes_TravelBeneath)).Count == 0 && validTaskData.Count == 0)
             {
                 Rt_DeepOnes_TravelBeneath travel = (Rt_DeepOnes_TravelBeneath)ua.rituals.FirstOrDefault(rt => rt is Rt_DeepOnes_TravelBeneath);
                 if (travel != null)
