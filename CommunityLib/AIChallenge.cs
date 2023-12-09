@@ -122,7 +122,7 @@ namespace CommunityLib
             }
 
             debugInternal = AgentAI.setupDebugInternal(controlParams.debugProperties);
-            if (debugInternal.debug && !ModCore.core.GetAgentAI().isAIRunning() && (debugInternal.outputProfile_AllChallenges || debugInternal.outputProfile_VisibleChallenges))
+            if (debugInternal.debug && !ModCore.Get().GetAgentAI().isAIRunning() && (debugInternal.outputProfile_AllChallenges || debugInternal.outputProfile_VisibleChallenges))
             {
                 Console.WriteLine("CommunityLib: Checking profile of" + challengeData.challenge.getName());
             }
@@ -144,7 +144,7 @@ namespace CommunityLib
             }
 
             debugInternal = AgentAI.setupDebugInternal(controlParams.debugProperties);
-            if (debugInternal.debug && !ModCore.core.GetAgentAI().isAIRunning() && (debugInternal.outputProfile_AllChallenges || debugInternal.outputProfile_VisibleChallenges))
+            if (debugInternal.debug && !ModCore.Get().GetAgentAI().isAIRunning() && (debugInternal.outputProfile_AllChallenges || debugInternal.outputProfile_VisibleChallenges))
             {
                 Console.WriteLine("CommunityLib: Checking " + challengeData.challenge.getName() + " is visible to " + ua.getName());
             }
@@ -180,7 +180,7 @@ namespace CommunityLib
             }
 
             debugInternal = AgentAI.setupDebugInternal(controlParams.debugProperties);
-            if (debugInternal.debug && !ModCore.core.GetAgentAI().isAIRunning() && (debugInternal.outputValidity_AllChallenges || debugInternal.outputValidity_ValidChallenges))
+            if (debugInternal.debug && !ModCore.Get().GetAgentAI().isAIRunning() && (debugInternal.outputValidity_AllChallenges || debugInternal.outputValidity_ValidChallenges))
             {
                 Console.WriteLine("CommunityLib: Checking " + challengeData.challenge.getName() + " is valid for " + ua.getName());
             }
@@ -1431,10 +1431,10 @@ namespace CommunityLib
                         break;
                     case ChallengeTags.PreferLocalRandomized:
                         dist = ua.map.getStepDist(ua.location, challengeData.location);
-                        dist -= ModCore.core.tryGetRand(ua, challengeData, "localRand", 1 + Eleven.random.Next(2) + Eleven.random.Next(2));
-                        if (ModCore.core.GetAgentAI().isAIRunning())
+                        dist -= ModCore.Get().tryGetRand(ua, challengeData, "localRand", 1 + Eleven.random.Next(2) + Eleven.random.Next(2));
+                        if (ModCore.Get().GetAgentAI().isAIRunning())
                         {
-                            ModCore.core.setRand(ua, challengeData, "localRand", 1 + Eleven.random.Next(2) + Eleven.random.Next(2));
+                            ModCore.Get().setRand(ua, challengeData, "localRand", 1 + Eleven.random.Next(2) + Eleven.random.Next(2));
                         }
                         val = dist * -10;
                         reasonMsgs?.Add(new ReasonMsg("Distance", val));

@@ -35,7 +35,7 @@ namespace CommunityLib
 
             if (wreckRoll == 0)
             {
-                ModCore.core.spawnShipwreck(ua.location);
+                ModCore.Get().spawnShipwreck(ua.location);
             }
         }
 
@@ -66,7 +66,7 @@ namespace CommunityLib
                             wreckLocation = oceanLocations[Eleven.random.Next(oceanLocations.Count)];
                         }
 
-                        ModCore.core.spawnShipwreck(wreckLocation);
+                        ModCore.Get().spawnShipwreck(wreckLocation);
                     }
                 }
             }

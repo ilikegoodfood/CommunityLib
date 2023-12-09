@@ -837,7 +837,7 @@ namespace CommunityLib
             List<TaskData> validTasks = getAllValidTasks(ua);
 
             bool result = false;
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 bool retValue = hook.interceptAgentAI(ua, data, validChallengeData, validTasks, visibleUnits);
                 if (retValue)
@@ -854,7 +854,7 @@ namespace CommunityLib
                 return;
             }
 
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onAgentAI_StartOfProcess(ua, data, validChallengeData, validTasks, visibleUnits);
             }
@@ -1232,7 +1232,7 @@ namespace CommunityLib
                 }
             }
 
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onAgentAI_EndOfProcess(ua, data, validChallengeData, validTasks, visibleUnits);
             }
@@ -1389,9 +1389,9 @@ namespace CommunityLib
                 return false;
             }
 
-            if (ModCore.core.GetAgentAI().TryGetAgentType(ua.GetType(), out AgentAI.AIData? aiData) && aiData is AgentAI.AIData data)
+            if (ModCore.Get().GetAgentAI().TryGetAgentType(ua.GetType(), out AgentAI.AIData? aiData) && aiData is AgentAI.AIData data)
             {
-                AIChallenge aiChallenge = ModCore.core.GetAgentAI().GetAIChallengeFromAgentType(ua.GetType(), challenge.GetType());
+                AIChallenge aiChallenge = ModCore.Get().GetAgentAI().GetAIChallengeFromAgentType(ua.GetType(), challenge.GetType());
                 ChallengeData challengeData = new ChallengeData {
                     aiChallenge = aiChallenge,
                     challenge = challenge,
@@ -1479,9 +1479,9 @@ namespace CommunityLib
                 return -1.0;
             }
 
-            if (ModCore.core.GetAgentAI().TryGetAgentType(ua.GetType(), out AgentAI.AIData? aiData) && aiData is AgentAI.AIData data)
+            if (ModCore.Get().GetAgentAI().TryGetAgentType(ua.GetType(), out AgentAI.AIData? aiData) && aiData is AgentAI.AIData data)
             {
-                AIChallenge aiChallenge = ModCore.core.GetAgentAI().GetAIChallengeFromAgentType(ua.GetType(), challenge.GetType());
+                AIChallenge aiChallenge = ModCore.Get().GetAgentAI().GetAIChallengeFromAgentType(ua.GetType(), challenge.GetType());
 
                 if (aiChallenge == null)
                 {
@@ -1530,7 +1530,7 @@ namespace CommunityLib
                         }
                     }
 
-                    utility = ModCore.core.GetAgentAI().getChallengeUtility(cData, ua, data, data.controlParameters, reasonMsgs);
+                    utility = ModCore.Get().GetAgentAI().getChallengeUtility(cData, ua, data, data.controlParameters, reasonMsgs);
                 }
             }
             else
@@ -1548,7 +1548,7 @@ namespace CommunityLib
             double utility = 0.0;
 
             bool intercept = false;
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 bool retValue = hook.interceptAgentAI_GetChallengeUtility(ua, aiData, challengeData, ref utility, reasonMsgs);
 
@@ -1630,7 +1630,7 @@ namespace CommunityLib
                 utility /= getDistanceDivisor(challengeData, aiData, ua);
             }
 
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 utility = hook.onAgentAI_GetChallengeUtility(ua, aiData, challengeData, utility, reasonMsgs);
             }
@@ -1684,7 +1684,7 @@ namespace CommunityLib
         {
             int distance = (int)Math.Ceiling((double)map.getStepDist(ua.location, challengeData.location) / (double)ua.getMaxMoves());
 
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 distance = hook.onUnitAI_GetsDistanceToLocation(ua, challengeData.location, (int)distance);
             }
@@ -1807,7 +1807,7 @@ namespace CommunityLib
             double utility = 0.0;
 
             bool intercept = false;
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 bool retValue = hook.interceptAgentAI_GetTaskUtility(ua, aiData, taskData, ref utility, reasonMsgs);
                 if (retValue)
@@ -1822,7 +1822,7 @@ namespace CommunityLib
 
             utility = taskData.aiTask.checkTaskUtility(taskData, ua, controlParams, reasonMsgs);
 
-            foreach (Hooks hook in ModCore.core.GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 utility = hook.onAgentAI_GetTaskUtility(ua, aiData, taskData, utility, reasonMsgs);
             }

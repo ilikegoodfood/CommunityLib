@@ -28,7 +28,7 @@ namespace CommunityLib
             populateOrcUpstart();
             populateVampire();
 
-            if (ModCore.core.data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
+            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
             {
                 populateCordycepsDrone(intDataCord);
             }
@@ -59,15 +59,15 @@ namespace CommunityLib
             aiChallenges_DeepOne[2].delegates_Utility.Add(delegate_Utility_Ch_ConcealDeepOnes);
 
             //Console.WriteLine("CommunityLibrary: Registering agent");
-            ModCore.core.GetAgentAI().RegisterAgentType(typeof(UAEN_DeepOne), new AgentAI.ControlParameters(true));
+            ModCore.Get().GetAgentAI().RegisterAgentType(typeof(UAEN_DeepOne), new AgentAI.ControlParameters(true));
             //Console.WriteLine("CommunityLibrary: Adding challenges to agent");
-            ModCore.core.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_DeepOne), aiChallenges_DeepOne);
+            ModCore.Get().GetAgentAI().AddChallengesToAgentType(typeof(UAEN_DeepOne), aiChallenges_DeepOne);
 
             AITask task = new AITask(taskType: typeof(Task_ReturnToTheDeep), title: "Return to the Deep", map: map, delegate_Instantiate: delegate_Instantiate_ReturnDeep, targetCategory: AITask.TargetCategory.Location, foregroundSprite: map.world.iconStore.hideInAbyss, colour: new Color(0.2f, 0.2f, 0.7f));
             task.delegates_Valid.Add(delegate_Validity_ReturnDeep);
             task.delegates_Utility.Add(delegate_Utility_ReturnDeep);
 
-            ModCore.core.GetAgentAI().AddTaskToAgentType(typeof(UAEN_DeepOne), task);
+            ModCore.Get().GetAgentAI().AddTaskToAgentType(typeof(UAEN_DeepOne), task);
         }
 
         private bool delegate_Valid_Rt_DeepOneReproduce(AgentAI.ChallengeData challengeData)
@@ -200,8 +200,8 @@ namespace CommunityLib
             aiChallenges_Ghast[0].delegates_Valid.Add(delegate_Valid_Rt_GhastEnshadow);
             aiChallenges_Ghast[0].delegates_Utility.Add(delegate_Utility_Rt_GhastEnshadow);
 
-            ModCore.core.GetAgentAI().RegisterAgentType(typeof(UAEN_Ghast), new AgentAI.ControlParameters(true));
-            ModCore.core.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_Ghast), aiChallenges_Ghast);
+            ModCore.Get().GetAgentAI().RegisterAgentType(typeof(UAEN_Ghast), new AgentAI.ControlParameters(true));
+            ModCore.Get().GetAgentAI().AddChallengesToAgentType(typeof(UAEN_Ghast), aiChallenges_Ghast);
         }
 
         private bool delegate_Valid_Rt_GhastEnshadow(AgentAI.ChallengeData challengeData)
@@ -271,8 +271,8 @@ namespace CommunityLib
 
             aiChallenges_OrcUpstart[2].delegates_Utility.Add(delegate_Utility_Ch_Rest_InOrcCamp);
 
-            ModCore.core.GetAgentAI().RegisterAgentType(typeof(UAEN_OrcUpstart), new AgentAI.ControlParameters(true));
-            ModCore.core.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_OrcUpstart), aiChallenges_OrcUpstart);
+            ModCore.Get().GetAgentAI().RegisterAgentType(typeof(UAEN_OrcUpstart), new AgentAI.ControlParameters(true));
+            ModCore.Get().GetAgentAI().AddChallengesToAgentType(typeof(UAEN_OrcUpstart), aiChallenges_OrcUpstart);
         }
 
         private double delegate_Utility_Ch_OrcRaiding(AgentAI.ChallengeData challengeData, UA ua, double utility, List<ReasonMsg> reasonMsgs)
@@ -347,8 +347,8 @@ namespace CommunityLib
 
             aiChallenges_Vampire[2].delegates_Utility.Add(delegate_Utility_Ch_Desecrate);
 
-            ModCore.core.GetAgentAI().RegisterAgentType(typeof(UAEN_Vampire), new AgentAI.ControlParameters(true));
-            ModCore.core.GetAgentAI().AddChallengesToAgentType(typeof(UAEN_Vampire), aiChallenges_Vampire);
+            ModCore.Get().GetAgentAI().RegisterAgentType(typeof(UAEN_Vampire), new AgentAI.ControlParameters(true));
+            ModCore.Get().GetAgentAI().AddChallengesToAgentType(typeof(UAEN_Vampire), aiChallenges_Vampire);
         }
 
         private bool delegate_ValidFor_Rt_Feed(AgentAI.ChallengeData challengeData, UA ua)
@@ -489,14 +489,14 @@ namespace CommunityLib
                     aiTasks_Cordyceps_Drone.Add(aiTask);
                 }
 
-                ModCore.core.GetAgentAI().RegisterAgentType(droneType, new AgentAI.ControlParameters(true));
-                ModCore.core.GetAgentAI().AddTasksToAgentType(droneType, aiTasks_Cordyceps_Drone);
+                ModCore.Get().GetAgentAI().RegisterAgentType(droneType, new AgentAI.ControlParameters(true));
+                ModCore.Get().GetAgentAI().AddTasksToAgentType(droneType, aiTasks_Cordyceps_Drone);
             }
         }
 
         private bool delegate_Validity_SeekPrey(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData taskData)
         {
-            if (ModCore.core.data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
+            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
             {
                 if (intDataCord.typeDict.TryGetValue("Hive", out Type hiveType) && hiveType != null)
                 {
@@ -522,12 +522,12 @@ namespace CommunityLib
 
         private double delegate_Utility_SeekPrey(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData taskData, List<ReasonMsg> reasonMsgs)
         {
-            double utility = ModCore.core.tryGetRand(ua, taskData, "baseRand", Eleven.random.Next(100));
+            double utility = ModCore.Get().tryGetRand(ua, taskData, "baseRand", Eleven.random.Next(100));
             reasonMsgs?.Add(new ReasonMsg("Base (Randomized)", utility));
 
-            if (ModCore.core.GetAgentAI().isAIRunning())
+            if (ModCore.Get().GetAgentAI().isAIRunning())
             {
-                ModCore.core.setRand(ua, taskData, "baseRand", Eleven.random.Next(100));
+                ModCore.Get().setRand(ua, taskData, "baseRand", Eleven.random.Next(100));
             }
 
             return utility;
@@ -535,7 +535,7 @@ namespace CommunityLib
 
         private bool delegate_Validity_ExploreDrone(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData taskData)
         {
-            if (ModCore.core.data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
+            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
             {
                 if (intDataCord.typeDict.TryGetValue("Hive", out Type hiveType) && hiveType != null && intDataCord.typeDict.TryGetValue("God", out Type godType) && godType != null)
                 {
@@ -559,7 +559,7 @@ namespace CommunityLib
 
         private bool delegate_Validity_GoHome(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData taskData)
         {
-            if (ModCore.core.data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
+            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
             {
                 if (intDataCord.typeDict.TryGetValue("Hive", out Type hiveType) && hiveType != null)
                 {

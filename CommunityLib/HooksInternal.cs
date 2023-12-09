@@ -28,7 +28,7 @@ namespace CommunityLib
 
                     if (wreckRoll == 0)
                     {
-                        ModCore.core.spawnShipwreck(u.location);
+                        ModCore.Get().spawnShipwreck(u.location);
                     }
                 }
             }
@@ -42,12 +42,12 @@ namespace CommunityLib
                 {
                     if (set.subs.Any(sub => sub is Sub_Docks))
                     {
-                        ModCore.core.spawnShipwreck(set.location);
+                        ModCore.Get().spawnShipwreck(set.location);
                     }
                 }
                 else if (set is Set_OrcCamp camp && camp.specialism == 5)
                 {
-                    ModCore.core.spawnShipwreck(set.location);
+                    ModCore.Get().spawnShipwreck(set.location);
                 }
             }
         }
@@ -134,7 +134,7 @@ namespace CommunityLib
                     break;
             }
 
-            if (ModCore.core.data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
+            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
             {
                 if (intDataCord.typeDict.TryGetValue("Drone", out Type droneType) && droneType != null)
                 {
@@ -160,7 +160,7 @@ namespace CommunityLib
                     break;
             }
 
-            if (ModCore.core.data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
+            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
             {
                 if (intDataCord.typeDict.TryGetValue("Drone", out Type droneType) && droneType != null)
                 {
@@ -216,7 +216,7 @@ namespace CommunityLib
 
         public override void onAgentAI_EndOfProcess(UA ua, AgentAI.AIData aiData, List<AgentAI.ChallengeData> validChallengeData, List<AgentAI.TaskData> validTaskData, List<Unit> visibleUnits)
         {
-            if (ua is UAEN_DeepOne && (ua.task == null || (ua.task is Task_GoToLocation tLocation && ua.homeLocation != -1 && tLocation.target == ua.map.locations[ua.homeLocation])) && validChallengeData.Count == 0 && validTaskData.Count == 0)
+            if (ua is UAEN_DeepOne && (ua.task == null || (ua.task is Task_GoToLocation tLocation && tLocation.target.index == ua.homeLocation)) && validChallengeData.FindAll(cd => !(cd.challenge is Rt_DeepOnes_TravelBeneath)).Count == 0 && validTaskData.Count == 0)
             {
                 Rt_DeepOnes_TravelBeneath travel = (Rt_DeepOnes_TravelBeneath)ua.rituals.FirstOrDefault(rt => rt is Rt_DeepOnes_TravelBeneath);
                 if (travel != null)
@@ -234,7 +234,7 @@ namespace CommunityLib
             if (u is UM_FirstDaughter)
             {
                 Console.WriteLine("CommunityLib: intercepted get path to for First Daughter");
-                return ModCore.core.pathfinding.getPathTo(locA, locB, new List<Func<Location[], Location, Unit, bool>>(), u);
+                return ModCore.Get().pathfinding.getPathTo(locA, locB, new List<Func<Location[], Location, Unit, bool>>(), u);
             }
             return null;
         }

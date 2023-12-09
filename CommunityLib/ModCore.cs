@@ -11,7 +11,7 @@ namespace CommunityLib
 {
     public class ModCore : ModKernel
     {
-        public static ModCore core;
+        private static ModCore core;
 
         public ModData data;
 
@@ -23,7 +23,7 @@ namespace CommunityLib
 
         private List<Hooks> registeredHooks = new List<Hooks>();
 
-        private Dictionary<Type, List<Type>> settlementTypesForOrcExpansion = new Dictionary<Type,  List<Type>>();
+        private Dictionary<Type, HashSet<Type>> settlementTypesForOrcExpansion = new Dictionary<Type,  HashSet<Type>>();
 
         private AgentAI agentAI;
 
@@ -46,6 +46,8 @@ namespace CommunityLib
         public static bool opt_allowCulturalMinorSettelementGraphics = true;
 
         public static bool opt_enhancedTradeRouteLinks = true;
+
+        public static ModCore Get() => core;
 
         public override void onModsInitiallyLoaded()
         {
@@ -84,25 +86,24 @@ namespace CommunityLib
 
         public override void beforeMapGen(Map map)
         {
-            core = this;
             opt_forceShipwrecks = false;
             this.map = map;
 
             // Set local variables;
-            core.randStore = new Dictionary<Unit, Dictionary<object, Dictionary<string, double>>>();
+            randStore = new Dictionary<Unit, Dictionary<object, Dictionary<string, double>>>();
 
             //Initialize subclasses.
-            core.data = new ModData(map);
+            data = new ModData(map);
             getModKernels(map);
             HarmonyPatches_Conditional.PatchingInit(map);
 
-            core.pathfinding = new Pathfinding();
+            pathfinding = new Pathfinding();
 
-            core.agentAI = new AgentAI(map);
+            agentAI = new AgentAI(map);
 
-            core.overrideAI = new UAENOverrideAI(map);
+            overrideAI = new UAENOverrideAI(map);
 
-            core.hooks = new HooksInternal(map);
+            hooks = new HooksInternal(map);
             RegisterHooks(hooks);
 
             orcExpansionDefaults();
@@ -114,31 +115,31 @@ namespace CommunityLib
             core = this;
             this.map = map;
 
-            if (core.data == null)
+            if (data == null)
             {
-                core.data = new ModData(map);
+                data = new ModData(map);
             }
-            core.data.onLoad(map);
+            data.onLoad(map);
             getModKernels(map);
             HarmonyPatches_Conditional.PatchingInit(map);
 
             // Set local variables
-            if (core.randStore == null)
+            if (randStore == null)
             {
-                core.randStore = new Dictionary<Unit, Dictionary<object, Dictionary<string, double>>>();
+                randStore = new Dictionary<Unit, Dictionary<object, Dictionary<string, double>>>();
             }
 
             //Initialize subclasses.
-            if (core.pathfinding == null)
+            if (pathfinding == null)
             {
                 pathfinding = new Pathfinding();
             }
 
-            core.agentAI = new AgentAI(map);
+            agentAI = new AgentAI(map);
 
-            core.overrideAI = new UAENOverrideAI(map);
+            overrideAI = new UAENOverrideAI(map);
 
-            core.hooks = new HooksInternal(map);
+            hooks = new HooksInternal(map);
             RegisterHooks(hooks);
 
             orcExpansionDefaults();
@@ -152,9 +153,9 @@ namespace CommunityLib
                 switch (kernel.GetType().Namespace)
                 {
                     case "ShadowsInsectGod.Code":
-                        core.data.addModIntegrationData("Cordyceps", new ModIntegrationData(kernel.GetType().Assembly));
+                        data.addModIntegrationData("Cordyceps", new ModIntegrationData(kernel.GetType().Assembly));
 
-                        if (core.data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
+                        if (data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
                         {
                             Type godType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.God_Insect", false);
                             if (godType != null)
@@ -211,9 +212,9 @@ namespace CommunityLib
                         break;
                     case "Wonderblunder_DeepOnes":
                         ModIntegrationData intDataDOPlus = new ModIntegrationData(kernel.GetType().Assembly);
-                        core.data.addModIntegrationData("DeepOnesPlus", intDataDOPlus);
+                        data.addModIntegrationData("DeepOnesPlus", intDataDOPlus);
 
-                        if (core.data.tryGetModIntegrationData("DeepOnesPlus", out intDataDOPlus))
+                        if (data.tryGetModIntegrationData("DeepOnesPlus", out intDataDOPlus))
                         {
                             Type kernelType = intDataDOPlus.assembly.GetType("Wonderblunder_DeepOnes.Modcore", false);
                             if (kernelType != null)
@@ -229,15 +230,11 @@ namespace CommunityLib
                 }
                 
                 // Code Template for modifying blacklist, non-dependent.
-                /*MethodInfo MI_tryGetSettlementType = kernel.GetType().GetMethod("tryGetSettlementTypeForOrcExpansion", new Type[] { typeof(Type), typeof(List<Type>).MakeByRefType() });
+                /*MethodInfo MI_registerSettlementTypeForOrcAxpansion = kernel.GetType().GetMethod("tryGetSettlementTypeForOrcExpansion", new Type[] { typeof(Type), typeof(HashSet<Type>) });
 
+                // If adding a subsettlement blacklist, replace the second parameter "null" with "new HashSet<Type> { typeof(Some Type) }"
                 object[] parameters = new object[] { typeof(Set_MinorOther), null };
-                bool result = (bool)MI_tryGetSettlementType.Invoke(kernel, parameters);
-                if (result)
-                {
-                    List<Type> blacklist = (List<Type>)parameters[1];
-                    blacklist.Add(/*Some Type);
-                }*/
+                MI_registerSettlementTypeForOrcAxpansion.Invoke(kernel, parameters);*/
             }
         }
 
@@ -245,7 +242,7 @@ namespace CommunityLib
         {
             registerSettlementTypeForOrcExpansion(typeof(Set_CityRuins));
             registerSettlementTypeForOrcExpansion(typeof(Set_Shipwreck));
-            registerSettlementTypeForOrcExpansion(typeof(Set_MinorOther), new Type[] { typeof(Sub_WitchCoven), typeof(Sub_Wonder_DeathIsland), typeof(Sub_Wonder_Doorway), typeof(Sub_Wonder_PrimalFont), typeof(Sub_Temple) });
+            registerSettlementTypeForOrcExpansion(typeof(Set_MinorOther), new HashSet<Type> { typeof(Sub_WitchCoven), typeof(Sub_Wonder_DeathIsland), typeof(Sub_Wonder_Doorway), typeof(Sub_Wonder_PrimalFont), typeof(Sub_Temple) });
         }
 
         public void eventModifications()
@@ -454,7 +451,7 @@ namespace CommunityLib
         /// <returns></returns>
         public AgentAI GetAgentAI()
         {
-            return core.agentAI;
+            return agentAI;
         }
 
         /// <summary>
@@ -463,15 +460,15 @@ namespace CommunityLib
         /// <param name="hook"></param>
         public void RegisterHooks(Hooks hook)
         {
-            if (hook != null && !core.registeredHooks.Contains(hook))
+            if (hook != null && !registeredHooks.Contains(hook))
             {
-                core.registeredHooks.Add(hook);
+                registeredHooks.Add(hook);
             }
         }
 
         public List<Hooks> GetRegisteredHooks()
         {
-            return core.registeredHooks;
+            return registeredHooks;
         }
 
         /// <summary>
@@ -489,20 +486,20 @@ namespace CommunityLib
                 return -1.0;
             }
 
-            if (!core.randStore.ContainsKey(outerKey))
+            if (!randStore.ContainsKey(outerKey))
             {
-                core.randStore.Add(outerKey, new Dictionary<object, Dictionary<string, double>>());
+                randStore.Add(outerKey, new Dictionary<object, Dictionary<string, double>>());
             }
-            if (!core.randStore[outerKey].ContainsKey(innerKey))
+            if (!randStore[outerKey].ContainsKey(innerKey))
             {
-                core.randStore[outerKey].Add(innerKey, new Dictionary<string, double>());
+                randStore[outerKey].Add(innerKey, new Dictionary<string, double>());
             }
-            if (!core.randStore[outerKey][innerKey].ContainsKey(stringKey))
+            if (!randStore[outerKey][innerKey].ContainsKey(stringKey))
             {
-                core.randStore[outerKey][innerKey].Add(stringKey, newValue);
+                randStore[outerKey][innerKey].Add(stringKey, newValue);
             }
 
-            return core.randStore[outerKey][innerKey][stringKey];
+            return randStore[outerKey][innerKey][stringKey];
         }
 
         /// <summary>
@@ -519,21 +516,21 @@ namespace CommunityLib
                 return;
             }
 
-            if (!core.randStore.ContainsKey(outerKey))
+            if (!randStore.ContainsKey(outerKey))
             {
-                core.randStore.Add(outerKey, new Dictionary<object, Dictionary<string, double>>());
+                randStore.Add(outerKey, new Dictionary<object, Dictionary<string, double>>());
             }
-            if (!core.randStore[outerKey].ContainsKey(innerKey))
+            if (!randStore[outerKey].ContainsKey(innerKey))
             {
-                core.randStore[outerKey].Add(innerKey, new Dictionary<string, double>());
+                randStore[outerKey].Add(innerKey, new Dictionary<string, double>());
             }
-            if (!core.randStore[outerKey][innerKey].ContainsKey(stringKey))
+            if (!randStore[outerKey][innerKey].ContainsKey(stringKey))
             {
-                core.randStore[outerKey][innerKey].Add(stringKey, value);
+                randStore[outerKey][innerKey].Add(stringKey, value);
             }
             else
             {
-                core.randStore[outerKey][innerKey][stringKey] = value;
+                randStore[outerKey][innerKey][stringKey] = value;
             }
         }
 
@@ -541,7 +538,7 @@ namespace CommunityLib
         {
             List<Unit> outerKeys = new List<Unit>();
             List<Tuple<Unit, Unit>> innerKeys = new List<Tuple<Unit, Unit>>();
-            foreach (Unit outerKey in core.randStore.Keys)
+            foreach (Unit outerKey in randStore.Keys)
             {
                 if (outerKey.isDead || !map.units.Contains(outerKey))
                 {
@@ -549,7 +546,7 @@ namespace CommunityLib
                 }
                 else
                 {
-                    foreach (object innerKey in core.randStore[outerKey])
+                    foreach (object innerKey in randStore[outerKey])
                     {
                         if (innerKey is Unit unit && (unit.isDead || !map.units.Contains(outerKey)))
                         {
@@ -561,83 +558,57 @@ namespace CommunityLib
 
             foreach (Unit unit in outerKeys)
             {
-                core.randStore.Remove(unit);
+                randStore.Remove(unit);
             }
 
             foreach (Tuple<Unit, Unit> tuple in innerKeys)
             {
-                core.randStore[tuple.Item1].Remove(tuple.Item2);
+                randStore[tuple.Item1].Remove(tuple.Item2);
             }
         }
 
-        public bool registerSettlementTypeForOrcExpansion(Type t)
+        public void registerSettlementTypeForOrcExpansion(Type t, HashSet<Type> subsettlementBlacklist = null)
         {
-            if (!t.IsSubclassOf(typeof(Settlement)) || core.settlementTypesForOrcExpansion.ContainsKey(t))
+            if (!t.IsSubclassOf(typeof(Settlement)))
             {
-                return false;
+                return;
             }
 
-            core.settlementTypesForOrcExpansion.Add(t, null);
-            return true;
-        }
-
-        public bool registerSettlementTypeForOrcExpansion(Type t, List<Type> subsettlementBlacklist = null)
-        {
-            if (!t.IsSubclassOf(typeof(Settlement)) || core.settlementTypesForOrcExpansion.ContainsKey(t))
+            if (settlementTypesForOrcExpansion.TryGetValue(t, out HashSet<Type> blacklist))
             {
-                return false;
+                if (subsettlementBlacklist != null)
+                {
+                    blacklist.UnionWith(subsettlementBlacklist);
+                }
             }
-
-            core.settlementTypesForOrcExpansion.Add(t, subsettlementBlacklist);
-            return true;
-        }
-
-        public bool registerSettlementTypeForOrcExpansion(Type t, Type[] subsettlementBlacklist = null)
-        {
-            if (!t.IsSubclassOf(typeof(Settlement)) || core.settlementTypesForOrcExpansion.ContainsKey(t))
+            else
             {
-                return false;
+                if (subsettlementBlacklist == null)
+                {
+                    subsettlementBlacklist = new HashSet<Type>();
+                }
+
+                settlementTypesForOrcExpansion.Add(t, subsettlementBlacklist);
             }
-
-            core.settlementTypesForOrcExpansion.Add(t, subsettlementBlacklist?.ToList() ?? null);
-            return true;
+            
+            return;
         }
 
-        public bool removeSettlementTypeForOrcExpansion(Type t, out List<Type> subsettlementBlacklist)
-        {
-            if (t.IsSubclassOf(typeof(Settlement)) && core.settlementTypesForOrcExpansion.TryGetValue(t, out subsettlementBlacklist))
-            {
-                return core.settlementTypesForOrcExpansion.Remove(t);
-            }
+        public bool tryGetSettlementTypeForOrcExpansion(Type t, out HashSet<Type> subsettlementBlacklist) => settlementTypesForOrcExpansion.TryGetValue(t, out subsettlementBlacklist);
 
-            subsettlementBlacklist = null;
-            return false;
-        }
-
-        internal Dictionary<Type, List<Type>> getSettlementTypesForOrcExpanion()
-        {
-            return core.settlementTypesForOrcExpansion;
-        }
-
-        public bool tryGetSettlementTypeForOrcExpansion(Type t, out List<Type> subsettlementBlacklist)
-        {
-            if (t.IsSubclassOf(typeof(Settlement)) && core.settlementTypesForOrcExpansion.TryGetValue(t, out subsettlementBlacklist))
-            {
-                return true;
-            }
-
-            subsettlementBlacklist = null;
-            return false;
-        }
+        internal Dictionary<Type, HashSet<Type>> getSettlementTypesForOrcExpanion() => settlementTypesForOrcExpansion;
 
         public void registerModCultureData(Culture culture, ModCultureData modCultureData)
         {
-            core.data.addCultureData(culture, modCultureData);
+            if (!data.GetModCultureData().ContainsKey(culture))
+            {
+                data.addCultureData(culture, modCultureData);
+            }
         }
 
         public bool tryGetModCultureData(Culture culture, out ModCultureData modCultureData)
         {
-            return core.data.tryGetModCultureData(culture, out modCultureData);
+            return data.tryGetModCultureData(culture, out modCultureData);
         }
 
         public bool checkIsElderTomb(Location location)
@@ -647,7 +618,7 @@ namespace CommunityLib
                 return true;
             }
 
-            foreach (Hooks hook in core.GetRegisteredHooks())
+            foreach (Hooks hook in GetRegisteredHooks())
             {
                 bool retValue = hook.onEvent_IsLocationElderTomb(location);
                 if (retValue)
@@ -663,7 +634,7 @@ namespace CommunityLib
         {
             int travelTime = 0;
 
-            Location[] path = core.pathfinding.getPathTo(u.location, location, u);
+            Location[] path = pathfinding.getPathTo(u.location, location, u);
             if (path != null)
             {
                 travelTime = (int)Math.Ceiling((double)path.Count() / (double)u.getMaxMoves());
@@ -671,7 +642,7 @@ namespace CommunityLib
 
             if (travelTime > 0)
             {
-                foreach (Hooks hook in core.GetRegisteredHooks())
+                foreach (Hooks hook in GetRegisteredHooks())
                 {
                     travelTime = hook.onUnitAI_GetsDistanceToLocation(u, location, travelTime);
                 }

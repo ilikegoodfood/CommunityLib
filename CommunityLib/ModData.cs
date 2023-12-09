@@ -79,9 +79,8 @@ namespace CommunityLib
             }
         }
 
-        internal bool tryGetModCultureData(Culture key, out ModCultureData cultureData)
-        {
-            return modCultureData.TryGetValue(key, out cultureData);
-        }
+        internal bool tryGetModCultureData(Culture key, out ModCultureData cultureData) => modCultureData.TryGetValue(key, out cultureData);
+
+        internal Dictionary<Culture, ModCultureData> GetModCultureData() => modCultureData;
     }
 }
