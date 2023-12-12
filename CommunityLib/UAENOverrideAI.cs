@@ -262,7 +262,8 @@ namespace CommunityLib
             {
                 new AIChallenge(typeof(Ch_OrcRaiding), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.BaseValid, AIChallenge.ChallengeTags.BaseValidFor, AIChallenge.ChallengeTags.RequiresOwnSociety }),
                 new AIChallenge(typeof(Ch_RecruitMinion), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.RequiresOwnSociety, AIChallenge.ChallengeTags.RecruitsMinion }),
-                new AIChallenge(typeof(Ch_Rest_InOrcCamp), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.RequiresOwnSociety, AIChallenge.ChallengeTags.HealOrc, AIChallenge.ChallengeTags.Rest })
+                new AIChallenge(typeof(Ch_Rest_InOrcCamp), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.RequiresOwnSociety, AIChallenge.ChallengeTags.HealOrc, AIChallenge.ChallengeTags.Rest }),
+                new AIChallenge(typeof(Rti_Orc_CeaseWar), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.BaseValid, AIChallenge.ChallengeTags.BaseValidFor } )
             };
 
             aiChallenges_OrcUpstart[0].delegates_Utility.Add(delegate_Utility_Ch_OrcRaiding);
@@ -270,6 +271,8 @@ namespace CommunityLib
             aiChallenges_OrcUpstart[1].delegates_Valid.Add(delegate_Valid_Ch_RecruitMinion);
 
             aiChallenges_OrcUpstart[2].delegates_Utility.Add(delegate_Utility_Ch_Rest_InOrcCamp);
+
+            aiChallenges_OrcUpstart[3].delegates_Utility.Add(delegate_Utility_Rti_Orc_CeaseWar);
 
             ModCore.Get().GetAgentAI().RegisterAgentType(typeof(UAEN_OrcUpstart), new AgentAI.ControlParameters(true));
             ModCore.Get().GetAgentAI().AddChallengesToAgentType(typeof(UAEN_OrcUpstart), aiChallenges_OrcUpstart);
@@ -321,6 +324,81 @@ namespace CommunityLib
                 if (msg != null)
                 {
                     msg.value = 1.0;
+                }
+            }
+
+            return utility;
+        }
+
+        private double delegate_Utility_Rti_Orc_CeaseWar(AgentAI.ChallengeData challengeData, UA ua, double utility, List<ReasonMsg> reasonMsgs)
+        {
+            if (challengeData.challenge is Rti_Orc_CeaseWar ceaseWar)
+            {
+                SG_Orc orcs = ceaseWar.caster.orcs;
+
+                int warCount = 0;
+                int offensiveWarCount = 0;
+
+                double enemyMight = 0.0;
+                double offensiveEnemyMight = 0.0;
+                double orcMight = orcs.currentMilitary;
+
+                foreach (DipRel rel in orcs.getAllRelations())
+                {
+                    SocialGroup other = rel.other(orcs);
+                    if (other.isGone())
+                    {
+                        continue;
+                    }
+
+                    if (rel.state == DipRel.dipState.war)
+                    {
+                        enemyMight += other.currentMilitary;
+                        warCount++;
+
+                        if (rel.war.att == orcs)
+                        {
+                            offensiveEnemyMight += other.currentMilitary;
+                            offensiveWarCount++;
+                        }
+                    }
+                }
+
+                double val = 0.0;
+                if (offensiveWarCount == 0 || offensiveEnemyMight == 0.0)
+                {
+                    val = -100.0;
+                    reasonMsgs?.Add(new ReasonMsg("Would not effect outcome", val));
+                    utility += val;
+                    return utility;
+                }
+
+                if (orcMight - 10 >= enemyMight)
+                {
+                    val = enemyMight - orcMight;
+                    reasonMsgs?.Add(new ReasonMsg("Superior military", val));
+                    utility += val;
+                }
+                else if (orcMight - 10 < enemyMight)
+                {
+                    if (offensiveWarCount >= warCount || offensiveEnemyMight >= enemyMight)
+                    {
+                        val = 2 * (enemyMight - (orcMight - 10));
+                        reasonMsgs?.Add(new ReasonMsg("Inferior military", val));
+                        utility += val;
+                    }
+                    else
+                    {
+                        val = enemyMight - (orcMight - 10);
+                        reasonMsgs?.Add(new ReasonMsg("Inferior military", val));
+                        utility += val;
+
+                        if (offensiveEnemyMight > 0.0)
+                        {
+                            val = offensiveEnemyMight;
+                            reasonMsgs?.Add(new ReasonMsg("Removes " + offensiveEnemyMight + " combatants from war", val));
+                        }
+                    }
                 }
             }
 

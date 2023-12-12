@@ -2680,12 +2680,14 @@ namespace CommunityLib
                 //Console.WriteLine("CommunityLib: Orcs have no locations");
                 return true;
             }
-            else if (ua.location.getNeighbours().Any(l => l.soc == orcSociety))
+            
+            if (ua.location.getNeighbours().Any(l => l.soc == orcSociety))
             {
                 //Console.WriteLine("CommunityLib: Location neighbours orc society");
                 return true;
             }
-            else if (ua.location.isCoastal)
+            
+            if (ua.location.isCoastal)
             {
                 //Console.WriteLine("CommunityLib: Location is coastal");
                 foreach (Location location in ua.map.locations)
