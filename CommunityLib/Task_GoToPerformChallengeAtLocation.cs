@@ -136,11 +136,12 @@ namespace CommunityLib
                 }
                 else
                 {
-                    unit.task = null;
                     if (unit.isCommandable() || target.isWatched)
                     {
                         unit.map.addUnifiedMessage(unit, null, "Unit Arrives", unit.getName() + " has reached " + unit.location.getName(true) + " but could not perform challenge " + challenge.getName() + " because the requirements to start this challenge have not yet been met.", UnifiedMessage.messageType.UNIT_ARRIVES, false);
                     }
+
+                    unit.task = null;
                 }
 
             }
