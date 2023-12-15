@@ -153,7 +153,8 @@ namespace CommunityLib
                 switch (kernel.GetType().Namespace)
                 {
                     case "ShadowsInsectGod.Code":
-                        data.addModIntegrationData("Cordyceps", new ModIntegrationData(kernel.GetType().Assembly));
+                        Console.WriteLine("CommunityLib: Cordyceps is Enabled");
+                        data.addModIntegrationData("Cordyceps", new ModIntegrationData(kernel.GetType().Assembly, kernel));
 
                         if (data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
                         {
@@ -164,6 +165,10 @@ namespace CommunityLib
                                 intDataCord.methodInfoDict.Add("God.eat", AccessTools.Method(godType, "eat", new Type[] { typeof(int) }));
                                 intDataCord.fieldInfoDict.Add("God.phHome", AccessTools.Field(godType, "phHome"));
                             }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Cordyceps god Type (ShadowsInsectGod.Code.God_Insect)");
+                            }
 
                             Type droneType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.UAEN_Drone", false);
                             if (droneType != null)
@@ -172,11 +177,19 @@ namespace CommunityLib
                                 intDataCord.methodInfoDict.Add("Drone.turnTickAI", AccessTools.Method(droneType, "turnTickAI", new Type[0]));
                                 intDataCord.fieldInfoDict.Add("Drone.prey", AccessTools.Field(droneType, "prey"));
                             }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Drone agent Type (ShadowsInsectGod.Code.UAEN_Drone)");
+                            }
 
                             Type hiveType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.Set_Hive", false);
                             if (hiveType != null)
                             {
                                 intDataCord.typeDict.Add("Hive", hiveType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Hive settlement Type (ShadowsInsectGod.Code.Set_Hive)");
                             }
 
                             Type larvalType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.Pr_LarvalMass", false);
@@ -184,11 +197,19 @@ namespace CommunityLib
                             {
                                 intDataCord.typeDict.Add("LarvalMass", larvalType);
                             }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Larval mass property Type (ShadowsInsectGod.Code.Pr_LarvalMass)");
+                            }
 
                             Type phFeedType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.Pr_Pheromone_Feeding", false);
                             if (phFeedType != null)
                             {
                                 intDataCord.typeDict.Add("phFeed", phFeedType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Feeding pheromone property Type (ShadowsInsectGod.Code.Pr_Pheromone_Feeding)");
                             }
 
                             Type seekType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.Task_SeekPrey", false);
@@ -196,11 +217,19 @@ namespace CommunityLib
                             {
                                 intDataCord.typeDict.Add("SeekTask", seekType);
                             }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Seek prey task Type (ShadowsInsectGod.Code.Task_SeekPrey)");
+                            }
 
                             Type exploreType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.Task_Explore", false);
                             if (exploreType != null)
                             {
                                 intDataCord.typeDict.Add("ExploreTask", exploreType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Explore task Type (ShadowsInsectGod.Code.Task_Explore)");
                             }
 
                             Type homeType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.Task_GoHome", false);
@@ -208,10 +237,15 @@ namespace CommunityLib
                             {
                                 intDataCord.typeDict.Add("GoHomeTask", homeType);
                             }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Go Home task Type (ShadowsInsectGod.Code.Task_GoHome)");
+                            }
                         }
                         break;
                     case "Wonderblunder_DeepOnes":
-                        ModIntegrationData intDataDOPlus = new ModIntegrationData(kernel.GetType().Assembly);
+                        Console.WriteLine("CommunityLib: DeepOnesPlus is Enabled");
+                        ModIntegrationData intDataDOPlus = new ModIntegrationData(kernel.GetType().Assembly, kernel);
                         data.addModIntegrationData("DeepOnesPlus", intDataDOPlus);
 
                         if (data.tryGetModIntegrationData("DeepOnesPlus", out intDataDOPlus))
@@ -220,10 +254,21 @@ namespace CommunityLib
                             if (kernelType != null)
                             {
                                 intDataDOPlus.typeDict.Add("Kernel", kernelType);
-                            }
 
-                            intDataDOPlus.methodInfoDict.Add("getAbyssalItem", AccessTools.Method(kernelType, "getItemFromAbyssalPool", new Type[] { typeof(Map), typeof(UA) }));
-                        }
+                                MethodInfo getAbyssalItem = kernelType.GetMethod("getItemFromAbyssalPool", new Type[] { typeof(Map), typeof(UA) });
+                                if (getAbyssalItem != null)
+                                {
+                                    intDataDOPlus.methodInfoDict.Add("getAbyssalItem", getAbyssalItem);
+                                }
+                                else
+                                {
+                                    Console.WriteLine("CommunityLib: Failed to get getAbyssalItem method from kernel Type (Wonderblunder_DeepOnes.Modcore.getItemFromAbyssalPool)");
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get kernel Type (Wonderblunder_DeepOnes.Modcore)");
+                            }                        }
                         break;
                     default:
                         break;
