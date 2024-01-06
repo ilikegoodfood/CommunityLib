@@ -13,31 +13,54 @@ namespace CommunityLib
     {
         public Map map;
 
+        public bool isClean = true;
+
         private Dictionary<string, ModIntegrationData> modIntegrationData;
 
         private Dictionary<Culture, ModCultureData> modCultureData;
 
-        public ModData(Map map)
+        public ModData()
         {
-            this.map = map;
-            
-            modIntegrationData = new Dictionary<string, ModIntegrationData>();
-            modCultureData = new Dictionary<Culture, ModCultureData>();
+            initialiseModIntegrationData();
+            initialiseModCultureData();
+        }
+
+        private void initialiseModIntegrationData()
+        {
+            if (modIntegrationData == null)
+            {
+                modIntegrationData = new Dictionary<string, ModIntegrationData>();
+            }
+        }
+
+        private void initialiseModCultureData()
+        {
+            if (modCultureData == null)
+            {
+                modCultureData = new Dictionary<Culture, ModCultureData>();
+            }
+        }
+
+        public void clean()
+        {
+            if (isClean)
+            {
+                return;
+            }
+
+            map = null;
+            modIntegrationData.Clear();
+            modCultureData.Clear();
+
+            isClean = true;
         }
 
         public void onLoad(Map map)
         {
             this.map = map;
 
-            if (modIntegrationData == null)
-            {
-                modIntegrationData = new Dictionary<string, ModIntegrationData>();
-            }
-
-            if (modCultureData == null)
-            {
-                modCultureData = new Dictionary<Culture, ModCultureData>();
-            }
+            initialiseModIntegrationData();
+            initialiseModCultureData();
         }
 
         internal void addModIntegrationData(string key, ModIntegrationData intData)
@@ -46,6 +69,8 @@ namespace CommunityLib
             {
                 return;
             }
+
+            initialiseModIntegrationData();
 
             if (modIntegrationData.TryGetValue(key, out ModIntegrationData intData2) && intData2.assembly == null)
             {
@@ -57,17 +82,16 @@ namespace CommunityLib
             }
         }
 
-        internal bool tryGetModIntegrationData(string key, out ModIntegrationData intData)
-        {
-            return modIntegrationData.TryGetValue(key, out intData);
-        }
+        internal bool tryGetModIntegrationData(string key, out ModIntegrationData intData) => modIntegrationData.TryGetValue(key, out intData);
 
         internal void addCultureData(Culture key, ModCultureData data)
         {
-            if (key == null)
+            if (key == null || data == null)
             {
                 return;
             }
+
+            initialiseModCultureData();
 
             if (modCultureData.TryGetValue(key, out ModCultureData data2) && data2 == null)
             {

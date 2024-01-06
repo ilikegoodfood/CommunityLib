@@ -33,8 +33,6 @@ namespace CommunityLib
 
         private UAENOverrideAI overrideAI;
 
-        private bool patched = false;
-
         public static bool opt_spawnShipwrecks = false;
 
         public static bool opt_forceShipwrecks = false;
@@ -53,11 +51,9 @@ namespace CommunityLib
         {
             core = this;
 
-            if (!patched)
-            {
-                patched = true;
-                HarmonyPatches.PatchingInit();
-            }
+            HarmonyPatches.PatchingInit();
+
+            data = new ModData();
         }
 
         public override void receiveModConfigOpts_bool(string optName, bool value)
@@ -84,16 +80,22 @@ namespace CommunityLib
             }
         }
 
+        public override void onStartGamePresssed(Map map, List<God> gods)
+        {
+            data.clean();
+        }
+
         public override void beforeMapGen(Map map)
         {
             opt_forceShipwrecks = false;
             this.map = map;
+            data.map = map;
+            data.isClean = false;
 
             // Set local variables;
             randStore = new Dictionary<Unit, Dictionary<object, Dictionary<string, double>>>();
 
             //Initialize subclasses.
-            data = new ModData(map);
             getModKernels(map);
             HarmonyPatches_Conditional.PatchingInit(map);
 
@@ -117,7 +119,7 @@ namespace CommunityLib
 
             if (data == null)
             {
-                data = new ModData(map);
+                data = new ModData();
             }
             data.onLoad(map);
             getModKernels(map);
