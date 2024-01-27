@@ -47,7 +47,8 @@ namespace CommunityLib
             ForbidPeace,
             PreferLocal,
             PreferLocalRandomized,
-            Aquaphibious
+            Aquaphibious,
+            RequireLocal
         }
 
         public Type challengeType;
@@ -639,6 +640,12 @@ namespace CommunityLib
                             return false;
                         }
                         break;
+                    case ChallengeTags.RequireLocal:
+                        if (challengeData.location == ua.location)
+                        {
+                            return true;
+                        }
+                        return false;
                     default:
                         break;
                 }
