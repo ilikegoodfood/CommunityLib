@@ -71,6 +71,7 @@
     <Compile Include="Set_Shipwreck.cs" />
     <Compile Include="SortableTaskBlock_Advanced.cs" />
     <Compile Include="Sub_Shipwreck.cs" />
+    <Compile Include="Task_AttackUnitWithCustomEscort.cs" />
     <Compile Include="Task_ReturnToTheDeep.cs" />
     <Compile Include="UIE_ChallengeTask.cs" />
     <None Include="packages.config" />

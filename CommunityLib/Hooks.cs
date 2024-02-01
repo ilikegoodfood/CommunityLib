@@ -148,7 +148,7 @@ namespace CommunityLib
         /// <summary>
         /// This hook fires when a unit is instructed to die. It recieves the Unit (u), a string representation of the cause (v), and the person, if applicable, that casued their death (killer). <br></br>
         /// If this hook returns true, the rest of the death proccess will not happen. If you wish to keep the unit alive and prevent this check being performed multiple times per turn, make sure that their health is greater than 0, or their cause of death has been removed. The process which initially instructed the unit to die will still continue, so if you wish to keep the unit alive, make to sure to account for, and act in response to, the method of its death.
-        /// <para>All instances of this hook will run whenever a unit is instructed to die, even those after one which has returned true.</para>
+        /// <para>Instances of this hook will be called up to the first to return true, aborting the death process.</para>
         /// </summary>
         /// <param name="u"></param>
         /// <param name="v"></param>
@@ -275,6 +275,32 @@ namespace CommunityLib
         }
 
         /// <summary>
+        /// This hook fires when a military unit is about to recieve damage in an army battle. It recieves the army battle (battle), the military unit (u), and the total damage it is about to recieve (dmg). It returns the damage the unit is about to recieve as an int. <br></br>
+        /// The damage that the unit is about to recieve is the total of all damage sources being applied to that unit in that battle cycle. This hook does not fire for each individual damage source. If you wish to modify the damage sources individually, use the 'onArmyBattleCycle_DamageCalculated' hook.
+        /// <para>The messages generated in the combat log, and the messages that are sent to the player, have already been genereated at this point. Only use this hook if you must change the total damage value, rather than the individual values, and make sure to add a new message to the battle log that explains the discrepancy.</para>
+        /// </summary>
+        /// <param name="battle"></param>
+        /// <param name="u"></param>
+        /// <param name="dmg"></param>
+        /// <returns></returns>
+        public virtual int onUnitReceivesArmyBattleDamage(BattleArmy battle, UM u, int dmg)
+        {
+            return dmg;
+        }
+
+        /// <summary>
+        /// This hook fires once for each dead minion or empty minion slot of each agent in the battle that has an escort. It recieves the agent who is attempting to reinforce (ua), and the military escort (escort). It returns the Minion that will fill the agent's minion slot. <br></br>
+        /// No instance of this hook will fire after the first to return a result that is not null.
+        /// </summary>
+        /// <param name="ua"></param>
+        /// <param name="escort"></param>
+        /// <returns></returns>
+        public virtual Minion onAgentBattle_ReinforceFromEscort(UA ua, UM escort)
+        {
+            return null;
+        }
+
+        /// <summary>
         /// This hook fires when a minion in a minion battle is about to make an attack. It receives the Minion that is about to attack (attacker), the enemy Agent (other), the Battle Popup Window (battle), which is null if history is generating or popups are otherwise disabled, the agent battle (battle), the damage that it si about to deal (dmg), and the row that it is attick down (row). It returns the damage that the minion will do.<br></br>
         /// The Row directly corrisponds to the index of the minions on both agents. If "other.minions[row]" is equal to null, then the damage will be dealt to the enemy agent.
         /// <para>If another mod has already modified the damage value using this hook, that change will be in the damage value that you receive.</para>
@@ -307,20 +333,6 @@ namespace CommunityLib
         public virtual int onAgentBattle_ReceiveDamage(PopupBattleAgent popup, BattleAgents battle, UA defender, Minion minion, int dmg, int row)
         {
             //Console.WriteLine("CommunityLib: Agent battle damage About to be received.");
-            return dmg;
-        }
-
-        /// <summary>
-        /// This hook fires when a military unit is about to recieve damage in an army battle. It recieves the army battle (battle), the military unit (u), and the total damage it is about to recieve (dmg). It returns the damage the unit is about to recieve as an int. <br></br>
-        /// The damage that the unit is about to recieve is the total of all damage sources being applied to that unit in that battle cycle. This hook does not fire for each individual damage source. If you wish to modify the damage sources individually, use the 'onArmyBattleCycle_DamageCalculated' hook.
-        /// <para>The messages generated in the combat log, and the messages that are sent to the player, have already been genereated at this point. Only use this hook if you must change the total damage value, rather than the individual values, and make sure to add a new message to the battle log that explains the discrepancy.</para>
-        /// </summary>
-        /// <param name="battle"></param>
-        /// <param name="u"></param>
-        /// <param name="dmg"></param>
-        /// <returns></returns>
-        public virtual int onUnitReceivesArmyBattleDamage(BattleArmy battle, UM u, int dmg)
-        {
             return dmg;
         }
 

@@ -52,7 +52,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(GraphicalLink), nameof(GraphicalLink.Update), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(GraphicalLink_Update_Postfix)));
 
             // Unit death hooks
-            harmony.Patch(original: AccessTools.Method(typeof(Unit), nameof(Unit.die), new Type[] { typeof(Map), typeof(string), typeof(Person) }), transpiler: new HarmonyMethod(patchType, nameof(Unit_die_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Unit), nameof(Unit.die), new Type[] { typeof(Map), typeof(string), typeof(Person) }), prefix: new HarmonyMethod(patchType, nameof(Unit_die_Prefix)), transpiler: new HarmonyMethod(patchType, nameof(Unit_die_Transpiler)));
 
             // Army Battle hooks
             harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), nameof(BattleArmy.cycle), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_cycle_Transpiler)));
@@ -61,6 +61,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), "allocateDamage", new Type[] { typeof(List<UM>), typeof(int[]) }), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_allocateDamage_Transpiler)));
 
             // Agent Battle hooks
+            harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.step), new Type[] { typeof(PopupBattleAgent) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_step_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.attackDownRow), new Type[] { typeof(int), typeof (UA), typeof(UA), typeof(PopupBattleAgent) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_AttackDownRow_Minion_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.attackDownRow), new Type[] { typeof(int), typeof (int), typeof(AgentCombatInterface), typeof(UA), typeof(UA), typeof(PopupBattleAgent) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_AttackDownRow_Agent_Transpiler)));
 
@@ -487,13 +488,49 @@ namespace CommunityLib
         }
 
         // Unit death hooks
+        private static bool Unit_die_Prefix(Map map, string v, Person killer, Unit __instance)
+        {
+            bool result = true;
+
+            //Console.WriteLine("CommunityLib: Intercept Unit Death");
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            {
+                bool retValue = hook.interceptUnitDeath(__instance, v, killer);
+
+                if (retValue)
+                {
+                    result = false;
+                    //Console.WriteLine("CommunityLib: " + hook.GetType().Namespace + " has intercepted death of " + __instance.getName());
+                    break;
+                }
+            }
+
+            if (!result)
+            {
+                if (__instance.maxHp < 1)
+                {
+                    __instance.maxHp = 1;
+                }
+
+                if (__instance.hp < 1)
+                {
+                    __instance.hp = 1;
+                }
+
+                if (__instance.isDead)
+                {
+                    __instance.isDead = false;
+                }
+            }
+
+            return result;
+        }
+
         private static IEnumerable<CodeInstruction> Unit_die_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
             MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Unit_die_TranspilerBody_InterceptAndStartOfUnitDeath), new Type[] { typeof(Unit), typeof(string), typeof(Person) });
-
-            Label retLabel = instructionList[instructionList.Count - 1].labels[0];
 
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
@@ -510,7 +547,6 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Ldarg_2);
                             yield return new CodeInstruction(OpCodes.Ldarg_3);
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
-                            yield return new CodeInstruction(OpCodes.Brtrue_S, retLabel);
                         }
                     }
                 }
@@ -525,32 +561,12 @@ namespace CommunityLib
             }
         }
 
-        private static bool Unit_die_TranspilerBody_InterceptAndStartOfUnitDeath(Unit u, string v, Person killer = null)
+        private static void Unit_die_TranspilerBody_InterceptAndStartOfUnitDeath(Unit u, string v, Person killer = null)
         {
-            bool result = false;
-
-            //Console.WriteLine("CommunityLib: Intercept Unit Death");
-            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
-            {
-                bool retValue = hook.interceptUnitDeath(u, v, killer);
-
-                if (retValue)
-                {
-                    result = true;
-                }
-            }
-
-            if (result)
-            {
-                return result;
-            }
-
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onUnitDeath_StartOfProcess(u, v, killer);
             }
-
-            return result;
         }
 
         // Army Battle hooks
@@ -972,6 +988,79 @@ namespace CommunityLib
             {
                 dmgs[index] = hook?.onUnitReceivesArmyBattleDamage(battle, units[index], dmgs[index]) ?? dmgs[index];
             }
+        }
+
+        private static IEnumerable<CodeInstruction> BattleAgents_step_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_Reinforce = AccessTools.Method(patchType, nameof(BattleAgents_step_ReinforceFromEscort), new Type[] { typeof(UA), typeof(UM) });
+
+            FieldInfo FI_EscortLeft = AccessTools.Field(typeof(BattleAgents), nameof(BattleAgents.escortL));
+            FieldInfo FI_EscortRight = AccessTools.Field(typeof(BattleAgents), nameof(BattleAgents.escortR));
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldfld && instructionList[i+1].opcode == OpCodes.Newobj)
+                        {
+                            targetIndex++;
+
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_EscortLeft);
+                            yield return new CodeInstruction(OpCodes.Call, MI_Reinforce);
+
+                            i += 2;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldfld && instructionList[i + 1].opcode == OpCodes.Newobj)
+                        {
+                            targetIndex = 0;
+
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_EscortRight);
+                            yield return new CodeInstruction(OpCodes.Call, MI_Reinforce);
+
+                            i += 2;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed BattleAgents_step_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static Minion BattleAgents_step_ReinforceFromEscort(UA ua, UM escort)
+        {
+            Minion result = null;
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            {
+                result = hook.onAgentBattle_ReinforceFromEscort(ua, escort);
+
+                if (result != null)
+                {
+                    break;
+                }
+            }
+
+            if (result == null)
+            {
+                result = new M_Knight(ua.map);
+            }
+
+            return result;
         }
 
         // Agent Battle Hooks BattleAgents_AttackDownRow_Minion_Transpiler
