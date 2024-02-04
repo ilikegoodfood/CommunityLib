@@ -801,6 +801,10 @@ namespace CommunityLib
                 }
             }
 
+            foreach (Hooks hook in Get().GetRegisteredHooks())
+            {
+                hook.onRevivePerson_EndOfProcess(victim, location);
+            }
             //Console.WriteLine("CommunityLib: Revival complete");
         }
 

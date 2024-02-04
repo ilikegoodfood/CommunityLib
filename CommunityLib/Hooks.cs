@@ -746,5 +746,16 @@ namespace CommunityLib
         {
             return null;
         }
+
+        /// <summary>
+        /// This hook fires after the revivePerson function has revived a person. It recieves the Person that is being revived (person), and their current Location (location).
+        /// <para>It is intended to provide dependent mods the opportunity to reset any values that the base function does not know exists.</para>
+        /// </summary>
+        /// <param name="person"></param>
+        /// <param name="location"></param>
+        public virtual void onRevivePerson_EndOfProcess(Person person, Location location)
+        {
+            return;
+        }
     }
 }
