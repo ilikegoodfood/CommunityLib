@@ -628,7 +628,7 @@ namespace CommunityLib
 
         public override string interceptCombatOutcomeEvent(string currentlyChosenEvent, UA victor, UA defeated, BattleAgents battleAgents)
         {
-            Console.WriteLine("OrcsPlus: intercepting agent battle outcome event (ModKernel.interceptCombatOutcomeEvent)");
+            //Console.WriteLine("OrcsPlus: intercepting agent battle outcome event (ModKernel.interceptCombatOutcomeEvent)");
             if (defeated.person != null && defeated.person.items.Any(i => i is I_Test_DeathSave))
             {
                 if (currentlyChosenEvent == victor.getEventID_combatDAL())

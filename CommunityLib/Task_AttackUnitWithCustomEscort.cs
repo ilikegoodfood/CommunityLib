@@ -24,28 +24,34 @@ namespace CommunityLib
 
         public override void turnTick(Unit unit)
         {
-            if (target.isDead || target.location == null || !target.location.units.Contains(target) || target == unit)
+            //Console.WriteLine("CommunityLib: Attacking with Custom Escort");
+            if (target == null || target.isDead || target.location == null || !target.location.units.Contains(target) || target == unit)
             {
                 unit.task = null;
                 return;
             }
+            //Console.WriteLine("CommunityLib: Target is valid");
 
             turnsRemaining--;
             if (turnsRemaining <= 0)
             {
+                //Console.WriteLine("CommunityLib: Timer expired");
                 unit.task = null;
                 return;
             }
 
             if (unit.location == target.location)
             {
+                //Console.WriteLine("CommunityLib: Reached target");
                 if (target.engagedBy == null && target.turnLastEngaged != unit.map.turn)
                 {
+                    //Console.WriteLine("CommunityLib: Targetcan be engaged");
                     UA ua = unit as UA;
                     UA targetUA = target as UA;
 
                     if (ua != null && targetUA != null)
                     {
+                        //Console.WriteLine("CommunityLib: Engaging target");
                         if (target.isCommandable())
                         {
                             if (unit.map.automatic)
@@ -73,16 +79,19 @@ namespace CommunityLib
             }
             else
             {
+                //Console.WriteLine("CommunityLib: Travelling to target");
                 int maxSteps = Math.Min(unit.getMaxMoves(), customEscort.getMaxMoves());
                 int stepsTaken = 0;
 
                 while (stepsTaken < maxSteps)
                 {
                     stepsTaken++;
+                    //Console.WriteLine("CommunityLib: Step Taken");
 
                     if (unit.map.moveTowards(unit, target.location))
                     {
-                        escort.map.adjacentMoveTo(escort, unit.location);
+                        //Console.WriteLine("CommunityLib: Move Sucessful, moving escort");
+                        unit.map.adjacentMoveTo(customEscort, unit.location);
                     }
                     else
                     {
