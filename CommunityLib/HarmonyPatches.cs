@@ -4228,8 +4228,7 @@ namespace CommunityLib
                 }
                 else
                 {
-                    Hooks hook = ModCore.Get().GetRegisteredHooks().FirstOrDefault(h => h.GetType().Namespace == wonderType.Namespace);
-                    if (hook != null)
+                    foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                     {
                         hook.onMapGen_PlaceWonders(wonderType);
                     }
