@@ -4237,6 +4237,8 @@ namespace CommunityLib
 
                 i--;
             }
+
+            ModCore.Get().data.getWonderGenTypes().Clear();
         }
     }
 }
