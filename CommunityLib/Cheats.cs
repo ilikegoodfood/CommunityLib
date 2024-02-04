@@ -55,6 +55,61 @@ namespace CommunityLib
                         cheat_Gold(val3);
                     }
                 }
+                else if (commandComps[0] == "noDeath")
+                {
+                    Unit selectedUnit = GraphicalMap.selectedUnit;
+                    if (selectedUnit != null)
+                    {
+                        if (selectedUnit.person != null)
+                        {
+                            int index = -1;
+                            for (int i = 0; i < selectedUnit.person.items.Length; i++)
+                            {
+                                if (selectedUnit.person.items[i] == null)
+                                {
+                                    index = i;
+                                    break;
+                                }
+                            }
+
+                            if (index != -1)
+                            {
+                                selectedUnit.person.items[index] = new I_Test_DeathSave(map);
+                            }
+                            else
+                            {
+                                selectedUnit.person.items[0] = new I_Test_DeathSave(map);
+                            }
+                        }
+                    }
+
+                    Hex selectedHex = GraphicalMap.selectedHex;
+                    if (selectedHex != null)
+                    {
+                        Location selectedLocation = selectedHex.location;
+                        if (selectedLocation != null && selectedLocation.settlement is SettlementHuman settlementHuman && settlementHuman.ruler != null)
+                        {
+                            int index = -1;
+                            for (int i = 0; i < settlementHuman.ruler.items.Length; i++)
+                            {
+                                if (settlementHuman.ruler.items[i] == null)
+                                {
+                                    index = i;
+                                    break;
+                                }
+                            }
+
+                            if (index != -1)
+                            {
+                                settlementHuman.ruler.items[index] = new I_Test_DeathSave(map);
+                            }
+                            else
+                            {
+                                settlementHuman.ruler.items[0] = new I_Test_DeathSave(map);
+                            }
+                        }
+                    }
+                }
             }
         }
 

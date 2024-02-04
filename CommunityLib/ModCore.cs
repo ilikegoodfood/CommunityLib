@@ -245,6 +245,35 @@ namespace CommunityLib
                             }
                         }
                         break;
+                    case "CovenExpansion":
+                        Console.WriteLine("CommunityLib: Covens, Curses, and Curios is Enabled");
+                        ModIntegrationData intDataCCC = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        Get().data.addModIntegrationData("CovensCursesCurios", intDataCCC);
+
+                        if (Get().data.tryGetModIntegrationData("CovensCursesCurios", out intDataCCC))
+                        {
+                            Type magicTraitType = intDataCCC.assembly.GetType("CovenExpansion.T_curseWeaving", false);
+                            if (magicTraitType != null)
+                            {
+                                intDataCCC.typeDict.Add("Curseweaving", magicTraitType);
+                                Get().registerMagicType(magicTraitType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Curseweaving trait Type (CovenExpansion.T_curseWeaving)");
+                            }
+
+                            Type heroicBootsType = intDataCCC.assembly.GetType("CovenExpansion.I_heroicBoot", false);
+                            if (heroicBootsType != null)
+                            {
+                                intDataCCC.typeDict.Add("HeroicBoots", heroicBootsType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Heroic boots item Type (CovenExpansion.I_heroicBoot)");
+                            }
+                        }
+                        break;
                     case "Wonderblunder_DeepOnes":
                         Console.WriteLine("CommunityLib: DeepOnesPlus is Enabled");
                         ModIntegrationData intDataDOPlus = new ModIntegrationData(kernel.GetType().Assembly, kernel);
@@ -270,7 +299,68 @@ namespace CommunityLib
                             else
                             {
                                 Console.WriteLine("CommunityLib: Failed to get kernel Type (Wonderblunder_DeepOnes.Modcore)");
-                            }                        }
+                            }
+
+                            Type abyssalLocusType = intDataDOPlus.assembly.GetType("Wonderblunder_DeepOnes.Pr_AbyssalLocus");
+                            if (abyssalLocusType != null)
+                            {
+                                intDataDOPlus.typeDict.Add("AbyssalLocus", abyssalLocusType);
+                                Get().registerLocusType(abyssalLocusType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Abyssal locus property Type (Wonderblunder_DeepOnes.Pr_AbyssalLocus)");
+                            }
+                        }
+                        break;
+                    case "God_Flesh":
+                        Console.WriteLine("CommunityLib: Escamrak is Enabled");
+                        ModIntegrationData intDataEscam = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        Get().data.addModIntegrationData("Escamrak", intDataEscam);
+
+                        if (Get().data.tryGetModIntegrationData("Escamrak", out intDataEscam))
+                        {
+                            Type corruptedLocusType = intDataEscam.assembly.GetType("God_Flesh.Pr_CorruptedLocus", false);
+                            if (corruptedLocusType != null)
+                            {
+                                intDataEscam.typeDict.Add("CorruptedLocus", corruptedLocusType);
+                                Get().registerLocusType(corruptedLocusType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Corrupted locus property Type (God_Flesh.Pr_CorruptedLocus)");
+                            }
+
+                            Type fleshcraftingTraitType = intDataEscam.assembly.GetType("God_Flesh.T_FleshKnowledge", false);
+                            if (fleshcraftingTraitType != null)
+                            {
+                                intDataEscam.typeDict.Add("FleshcraftingTraitType", fleshcraftingTraitType);
+                                Get().registerMagicType(fleshcraftingTraitType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Fleshcrafting trait Type (God_Flesh.T_FleshKnowledge)");
+                            }
+                        }
+                        break;
+                    case "LivingCharacter":
+                        Console.WriteLine("CommunityLib: Living Characters is Enabled");
+                        ModIntegrationData intDataLC = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        Get().data.addModIntegrationData("LivingCharacters", intDataLC);
+
+                        if (Get().data.tryGetModIntegrationData("LivingCharacters", out intDataLC))
+                        {
+                            Type vampireNobeType = intDataLC.assembly.GetType("LivingCharacters.UAEN_Chars_VampireNoble", false);
+                            if (vampireNobeType != null)
+                            {
+                                intDataLC.typeDict.Add("Vampire", vampireNobeType);
+                                Get().registerVampireType(vampireNobeType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Vampire noble agent Type (LivingCharacters.UAEN_Chars_VampireNoble)");
+                            }
+                        }
                         break;
                     default:
                         break;
@@ -443,6 +533,275 @@ namespace CommunityLib
                     })
                 );
             }
+
+            if (!properties.ContainsKey("REVIVE_PERSON"))
+            {
+                {
+                    properties.Add(
+                        "REVIVE_PERSON",
+                        new EventRuntime.TypedProperty<bool>(delegate (EventContext c, bool v)
+                        {
+                            revivePerson(c.person, v);
+                        })
+                    );
+                }
+            }
+        }
+
+        public override bool interceptDeath(Person person, string v, object killer)
+        {
+            //Console.WriteLine("OrcsPlus: intercepting person death (ModKernel.interceptDeath)");
+            for (int i = 0; i < person.items.Length; i++)
+            {
+                if (person.items[i] is I_Test_DeathSave)
+                {
+                    person.items[i] = null;
+
+                    EventManager.ActiveEvent activeEvent = null;
+                    EventContext ctx = EventContext.withPerson(person.map, person);
+
+                    foreach (EventManager.ActiveEvent aEvent in EventManager.events.Values)
+                    {
+                        if (aEvent.type == EventData.Type.INERT && aEvent.data.id.Contains("revive_deathSaveTest"))
+                        {
+                            activeEvent = aEvent;
+                        }
+                    }
+
+                    if (activeEvent == null)
+                    {
+                        person.map.world.prefabStore.popMsg("UNABLE TO FIND VALID REVIVE EVENT FOR REVIVE TEST ITEM HELD BY " + person.getName(), true, true);
+                    }
+                    else
+                    {
+                        person.map.world.prefabStore.popEvent(activeEvent.data, ctx, null, true);
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        public override string interceptCombatOutcomeEvent(string currentlyChosenEvent, UA victor, UA defeated, BattleAgents battleAgents)
+        {
+            Console.WriteLine("OrcsPlus: intercepting agent battle outcome event (ModKernel.interceptCombatOutcomeEvent)");
+            if (defeated.person != null && defeated.person.items.Any(i => i is I_Test_DeathSave))
+            {
+                if (currentlyChosenEvent == victor.getEventID_combatDAL())
+                {
+                    return victor.getEventID_combatDAR();
+                }
+                if (currentlyChosenEvent == victor.getEventID_combatDDL())
+                {
+                    return victor.getEventID_combatDDR();
+                }
+            }
+
+            return currentlyChosenEvent;
+        }
+
+        public void revivePerson(Person victim, bool v)
+        {
+            //Console.WriteLine("CommunityLib: Reviving Person");
+            if (victim == null)
+            {
+                //Console.WriteLine("CommunityLib: victim is null");
+                return;
+            }
+            //Console.WriteLine("CommunityLib: victim is " + victim.getFullName());
+
+            Map map = victim.map;
+            Unit unit = victim.unit;
+            UA agent = unit as UA;
+            Location location = null;
+            SettlementHuman rulerSettlement = null;
+
+            victim.isDead = false;
+
+            if (!map.persons.Contains(victim))
+            {
+                //Console.WriteLine("CommunityLib: re-adding to map.person");
+                map.persons.Add(victim);
+            }
+
+            if (!victim.society.people.Contains(victim.index))
+            {
+                //Console.WriteLine("CommunityLib: re-adding to society.people (" + victim.society.getName() + ")");
+                victim.society.people.Add(victim.index);
+            }
+
+            if (unit != null)
+            {
+                //Console.WriteLine("CommunityLib: victim has unit");
+                location = unit.location;
+
+                if (agent != null)
+                {
+                    //Console.WriteLine("CommunityLib: victim has agent");
+                }
+                else if (unit is UM um)
+                {
+                    //Console.WriteLine("CommunityLib: victim is commanding military unit");
+                    if (!um.isDead && map.units.Contains(um) && um.location.units.Contains(um))
+                    {
+                        //Console.WriteLine("CommunityLib: reassigning person to military unit");
+                        unit.person = victim;
+                    }
+                    else
+                    {
+                        if (unit is UM_OrcRaiders raiders)
+                        {
+                            //Console.WriteLine("CommunityLib: getting subsumed agent from orc raiders");
+                            agent = raiders.subsumedUnit;
+                        }
+                    }
+                }
+            }
+
+            if (victim.rulerOf > -1 && victim.rulerOf < map.locations.Count)
+            {
+                //Console.WriteLine("CommunityLib: victim is ruler");
+                Location rulerLocation = map.locations[victim.rulerOf];
+                if (location == null)
+                {
+                    location = rulerLocation;
+                }
+
+                rulerSettlement = rulerLocation.settlement as SettlementHuman;
+                if (rulerSettlement != null)
+                {
+                    //Console.WriteLine("CommunityLib: victim's settlement still exists");
+                    if (rulerSettlement.ruler != null && rulerSettlement.ruler != victim)
+                    {
+                        //Console.WriteLine("CommunityLib: victim has been deposed");
+                        rulerSettlement = null;
+                    }
+                    else
+                    {
+                        //Console.WriteLine("CommunityLib: re-assigning victim as ruler of " + rulerSettlement.getName());
+                        rulerSettlement.ruler = victim;
+                        rulerSettlement.rulerIndex = victim.index;
+                    }
+                }
+            }
+
+            if ((unit == null || unit.isDead || unit is UM) && agent == null && location != null && rulerSettlement == null)
+            {
+                //Console.WriteLine("CommunityLib: victim needs new agent");
+                foreach (Hooks hook in Get().GetRegisteredHooks())
+                {
+                    UA retValue = hook.onRevivePerson_CreateAgent(victim, location);
+
+                    if (retValue != null)
+                    {
+                        agent = retValue;
+                        break;
+                    }
+                }
+
+                if (agent == null)
+                {
+                    foreach (Func<Person, Location, UA> func in Get().data.iterateReviveAgentCreationFunctions())
+                    {
+                        UA retValue = func(victim, location);
+
+                        if (retValue != null)
+                        {
+                            agent = retValue;
+                            break;
+                        }
+                    }
+                }
+
+                victim.rulerOf = -1;
+                if (unit is UM um)
+                {
+                    um.person = null;
+                }
+
+
+                if (agent == null)
+                {
+                    //Console.WriteLine("CommunityLib: No mod supplied a custom agent. Getting defaults");
+                    if (victim.society is HolyOrder hO)
+                    {
+                        //Console.WriteLine("CommunityLib: Victim become acolyte");
+                        agent = new UAA(location, hO, victim);
+                    }
+                    else if (victim.species == map.species_human)
+                    {
+                        //Console.WriteLine("CommunityLib: victim is human");
+                        if (victim.stat_command + victim.stat_might >= victim.stat_lore + victim.stat_intrigue)
+                        {
+                            //Console.WriteLine("CommunityLib: victim becomes Warrior");
+                            agent = new UAG_Warrior(location, victim.society, victim);
+                        }
+                        else
+                        {
+                            //Console.WriteLine("CommunityLib: Victim becomes Mage");
+                            agent = new UAG_Mage(location, victim.society, victim);
+                        }
+                    }
+                    else if (victim.species == map.species_elf)
+                    {
+                        //Console.WriteLine("CommunityLib: victim is elf, becomes Warrior");
+                        agent = new UAG_Warrior(location, victim.society, victim);
+                    }
+                    else if (victim.species == map.species_deepOne)
+                    {
+                        //Console.WriteLine("CommunityLib: victim is DeepOne");
+                        agent = new UAEN_DeepOne(location, map.soc_dark, victim);
+                    }
+                    else if (victim.species == map.species_orc && unit != null && unit.society is SG_Orc orcs)
+                    {
+                        //Console.WriteLine("CommunityLib: victim is orc commanding a military unit, becomes upstart");
+                        agent = new UAEN_OrcUpstart(location, orcs, victim);
+                    }
+                }
+            }
+
+            if (agent != null && location != null)
+            {
+                //Console.WriteLine("CommunityLib: victim's agent is of type " + agent.GetType().Name + " and is at " + location.getName());
+
+                agent.isDead = false;
+                agent.person = victim;
+
+                agent.location = location;
+                location.units.Add(agent);
+
+                agent.hp = 1;
+                if (v)
+                {
+                    //Console.WriteLine("CommunityLib: victim's HP is restored to full");
+                    agent.hp = agent.maxHp;
+                }
+
+                if (!location.units.Contains(agent))
+                {
+                    //Console.WriteLine("CommunityLib: re-adding to location.units");
+                    location.units.Add(agent);
+                }
+
+                if (!map.units.Contains(agent))
+                {
+                    //Console.WriteLine("CommunityLib: re-adding to map.units");
+                    map.units.Add(agent);
+                }
+
+                if (agent.isCommandable())
+                {
+                    //Console.WriteLine("CommunityLib: victim is commandable");
+                    if (!map.overmind.agents.Contains(agent))
+                    {
+                        //Console.WriteLine("CommunityLib: re-adding to overmind");
+                        map.overmind.agents.Add(agent);
+                        map.overmind.calculateAgentsUsed();
+                    }
+                }
+            }
+
+            //Console.WriteLine("CommunityLib: Revival complete");
         }
 
         public override void onTurnEnd(Map map)
@@ -667,8 +1026,7 @@ namespace CommunityLib
 
             foreach (Hooks hook in GetRegisteredHooks())
             {
-                bool retValue = hook.onEvent_IsLocationElderTomb(location);
-                if (retValue)
+                if (hook.onEvent_IsLocationElderTomb(location))
                 {
                     return true;
                 }
@@ -677,21 +1035,39 @@ namespace CommunityLib
             return false;
         }
 
+        public void registerLocusType(Type type) => Get().data.addLocusType(type);
+
+        public bool checkHasLocus(Location location) => Get().data.isLocusType(location);
+
+        public void registerMagicType(Type type) => Get().data.addMagicTraitType(type);
+
+        public bool checkKnowsMagic(Person person) => Get().data.knowsMagic(person);
+
+        public void registerNaturalWonderType(Type type) => Get().data.addNaturalWonderType(type);
+
+        public bool checkIsNaturalWonder(Location location) => Get().data.isNaturalWonder(location);
+
+        public void registerVampireType(Type type) => Get().data.addVampireType(type);
+
+        public bool checkIsVampire(Unit unit) => Get().data.isVampireType(unit);
+
+        public void registerReviveAgentCreationFunction(Func<Person, Location, UA> func) => Get().data.addReviveAgentCreationFunction(func);
+
         public int getTravelTimeTo(Unit u, Location location)
         {
             int travelTime = 0;
 
             Location[] path = pathfinding.getPathTo(u.location, location, u);
-            if (path != null)
+            if (path != null && path.Length > 1)
             {
-                travelTime = (int)Math.Ceiling((double)path.Count() / (double)u.getMaxMoves());
+                travelTime = (int)Math.Ceiling((double)path.Length / (double)u.getMaxMoves());
             }
 
             if (travelTime > 0)
             {
                 foreach (Hooks hook in GetRegisteredHooks())
                 {
-                    travelTime = hook.onUnitAI_GetsDistanceToLocation(u, location, travelTime);
+                    travelTime = hook.onUnitAI_GetsDistanceToLocation(u, location, path, travelTime);
                 }
             }
 

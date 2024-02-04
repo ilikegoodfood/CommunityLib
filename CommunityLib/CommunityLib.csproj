@@ -64,6 +64,7 @@
     <Compile Include="Ch_DestroyShipwreck.cs" />
     <Compile Include="Ch_PlunderShipwreck.cs" />
     <Compile Include="Ch_RecoverShipwreck.cs" />
+    <Compile Include="I_Test_DeathSave.cs" />
     <Compile Include="ModCultureData.cs" />
     <Compile Include="ModIntegrationData.cs" />
     <Compile Include="OnChallengeComplete.cs" />

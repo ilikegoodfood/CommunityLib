@@ -3217,11 +3217,18 @@ namespace CommunityLib
         {
             if (distance > 0 && !(c is Ritual))
             {
-                distance = (int)Math.Ceiling((double)distance / ua.getMaxMoves());
+                Location[] pathTo = ua.map.getPathTo(ua.location, c.location);
+
+                if (pathTo == null || pathTo.Length < 2)
+                {
+                    return distance;
+                }
+
+                distance = (int)Math.Ceiling((double)pathTo.Length / ua.getMaxMoves());
 
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
-                    distance = hook.onUnitAI_GetsDistanceToLocation(ua, c.location, distance);
+                    distance = hook.onUnitAI_GetsDistanceToLocation(ua, c.location, pathTo, distance);
                 }
 
                 distance = Math.Max(1, distance);

@@ -1682,11 +1682,20 @@ namespace CommunityLib
 
         private double getDistanceDivisor(ChallengeData challengeData, AIData aiData, UA ua)
         {
-            int distance = (int)Math.Ceiling((double)map.getStepDist(ua.location, challengeData.location) / (double)ua.getMaxMoves());
+            int distance = 0;
+
+            Location[] pathTo = ua.map.getPathTo(ua.location, challengeData.location);
+
+            if (pathTo == null || pathTo.Length < 2)
+            {
+                return distance;
+            }
+
+            distance = (int)Math.Ceiling((double)pathTo.Length / (double)ua.getMaxMoves());
 
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                distance = hook.onUnitAI_GetsDistanceToLocation(ua, challengeData.location, (int)distance);
+                distance = hook.onUnitAI_GetsDistanceToLocation(ua, challengeData.location, pathTo, (int)distance);
             }
 
             int duration = (int)Math.Max(1.0, Math.Ceiling(challengeData.challenge.getCompletionMenaceAfterDifficulty() / challengeData.challenge.getProgressPerTurn(ua, null)));

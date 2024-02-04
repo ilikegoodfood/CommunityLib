@@ -226,6 +226,22 @@ namespace CommunityLib
             }
         }
 
+        public override int onUnitAI_GetsDistanceToLocation(Unit u, Location target, Location[] pathTo, int travelTime)
+        {
+            if (u.person != null)
+            {
+                if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC) && intDataCCC != null && intDataCCC.typeDict.TryGetValue("HeroicBoots", out Type heroicBootsType) && heroicBootsType != null)
+                {
+                    if (u.person.items.Any(i => i.GetType() == heroicBootsType))
+                    {
+                        travelTime = (int)Math.Ceiling(travelTime / 3.0);
+                    }
+                }
+            }
+
+            return travelTime;
+        }
+
         // Test items.
 
         /*

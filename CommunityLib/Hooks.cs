@@ -133,14 +133,14 @@ namespace CommunityLib
 
         /// <summary>
         /// This hook fires when several key functions in the base game tries to get the shortest distance to a location. These functions are `UA.distanceDivisor`, `Task_AttackArmy`, `Task_AttackUnit`, `Task_AttackUnitWithEscort`, `Task_Bodyguard`, `Task_DisruptUA`, and `CommunityLibrary.AgentAI.getDistanceDivisor`.<br></br>
-        /// It receives the unit (u), the target location (target), and the time it will take the agent to traverse it's path to the destination (travelTime). By default the travelTime is equal to `Map.getStepDistance(u.location, loc) / u.getMaxSteps()`, rounded up. It returns the calculated travelTime.
+        /// It receives the unit (u), the target location (target), the path to the target location (pathTo), and the time it will take the agent to traverse it's path to the destination (travelTime). By default the travelTime is equal to `Map.getStepDistance(u.location, loc) / u.getMaxSteps()`, rounded up. It returns the calculated travelTime.
         /// <para>If a mod that is loaded before yours has already altered the travel time, the travelTime passed into this hook will already include that change.</para>
         /// </summary>
         /// <param name="u"></param>
         /// <param name="target"></param>
         /// <param name="travelTime"></param>
         /// <returns></returns>
-        public virtual int onUnitAI_GetsDistanceToLocation(Unit u, Location target, int travelTime)
+        public virtual int onUnitAI_GetsDistanceToLocation(Unit u, Location target, Location[] pathTo, int travelTime)
         {
             return travelTime;
         }
@@ -733,6 +733,18 @@ namespace CommunityLib
         public virtual string onBrokenMakerPowerCreatesAgent_ProcessCurse(Curse curse, Person person, Location location, string text)
         {
             return text;
+        }
+
+        /// <summary>
+        /// This hook fires when the revivePerson function is attempting to determine what agent should be produced for a person who does not have an Agent (UA) assigned to them. It recieves the Person (person) that is being revived, and the Location (location) at which they should be revived. It should return the intended Agent for that person, or null. <br></br>
+        /// Hooks after the first to return something other than null do not fire. If all mods return null, a new agent will be selected based on hard-coded defaults.
+        /// </summary>
+        /// <param name="person"></param>
+        /// <param name="location"></param>
+        /// <returns></returns>
+        public virtual UA onRevivePerson_CreateAgent(Person person, Location location)
+        {
+            return null;
         }
     }
 }
