@@ -21,6 +21,7 @@ namespace CommunityLib
 
         private List<Func<Person, Location, UA>> reviveAgentCreationFunctons;
 
+        // Collections
         private HashSet<Type> locusTypes;
 
         private HashSet<Type> magicTraitTypes;
@@ -28,16 +29,23 @@ namespace CommunityLib
         private HashSet<Type> naturalWonderTypes;
 
         private HashSet<Type> vampireTypes;
+        // end
+
+        private List<Type> wonderGenTypes;
 
         public ModData()
         {
             initialiseModIntegrationData();
             initialiseModCultureData();
             initialiseReviveAgentCreationFunctions();
+
+            // Colections
             initialiseLocusTypes();
             initialiseMagicTraitTypes();
             initialiseNaturalWonderTypes();
             initialiseVampireTypes();
+
+            initialiseWonderGenTypes();
         }
 
         private void initialiseModIntegrationData()
@@ -96,6 +104,14 @@ namespace CommunityLib
             }
         }
 
+        private void initialiseWonderGenTypes()
+        {
+            if (wonderGenTypes == null)
+            {
+                wonderGenTypes = new List<Type>();
+            }
+        }
+
         public void clean()
         {
             if (isClean)
@@ -107,10 +123,14 @@ namespace CommunityLib
             modIntegrationData.Clear();
             modCultureData.Clear();
             reviveAgentCreationFunctons.Clear();
+
+            // COllections
             locusTypes.Clear();
             magicTraitTypes.Clear();
             naturalWonderTypes.Clear();
             vampireTypes.Clear();
+
+            wonderGenTypes.Clear();
 
             isClean = true;
         }
@@ -122,10 +142,14 @@ namespace CommunityLib
             initialiseModIntegrationData();
             initialiseModCultureData();
             initialiseReviveAgentCreationFunctions();
+
+            // Collections
             initialiseLocusTypes();
             initialiseMagicTraitTypes();
             initialiseNaturalWonderTypes();
             initialiseVampireTypes();
+
+            initialiseWonderGenTypes();
         }
 
         internal void addModIntegrationData(string key, ModIntegrationData intData)
@@ -340,5 +364,17 @@ namespace CommunityLib
 
             return false;
         }
+
+        internal void addWonderGenType(Type t)
+        {
+            initialiseWonderGenTypes();
+
+            if (!wonderGenTypes.Contains(t))
+            {
+                wonderGenTypes.Add(t);
+            }
+        }
+
+        internal List<Type> getWonderGenTypes() => wonderGenTypes;
     }
 }

@@ -45,6 +45,16 @@ namespace CommunityLib
             this.map = map;
         }
 
+        public virtual List<Type> onMapGen_PlaceWonders()
+        {
+            return null;
+        }
+
+        public virtual void onMapGen_PlaceWonders(Type t)
+        {
+            return;
+        }
+
         /// <summary>
         /// This hook fires just after a graphical unit has been updated. It receives the graphical unit (graphicalUnit).
         /// </summary>
@@ -133,7 +143,7 @@ namespace CommunityLib
 
         /// <summary>
         /// This hook fires when several key functions in the base game tries to get the shortest distance to a location. These functions are `UA.distanceDivisor`, `Task_AttackArmy`, `Task_AttackUnit`, `Task_AttackUnitWithEscort`, `Task_Bodyguard`, `Task_DisruptUA`, and `CommunityLibrary.AgentAI.getDistanceDivisor`.<br></br>
-        /// It receives the unit (u), the target location (target), the path to the target location (pathTo), and the time it will take the agent to traverse it's path to the destination (travelTime). By default the travelTime is equal to `Map.getStepDistance(u.location, loc) / u.getMaxSteps()`, rounded up. It returns the calculated travelTime.
+        /// It receives the unit (u), the target location (target), the path to the target location (pathTo), and the time it will take the agent to traverse it's path to the destination (travelTime). The travelTime is equal to the length of the pathTo, unles the PathTo is null, in which case it will be equal to `Map.getStepDistance(u.location, loc) / u.getMaxSteps()`, rounded up. It returns the calculated travelTime.
         /// <para>If a mod that is loaded before yours has already altered the travel time, the travelTime passed into this hook will already include that change.</para>
         /// </summary>
         /// <param name="u"></param>

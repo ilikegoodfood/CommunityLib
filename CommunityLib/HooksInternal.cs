@@ -228,13 +228,15 @@ namespace CommunityLib
 
         public override int onUnitAI_GetsDistanceToLocation(Unit u, Location target, Location[] pathTo, int travelTime)
         {
+            //Console.WriteLine("CommunityLib: Internal Hook GetDistance for " + u.getName() + " of type " + u.GetType().Name);
             if (u.person != null)
             {
+                //Console.WriteLine("CommunityLib: " + u.getName() + " has person");
                 if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC) && intDataCCC != null && intDataCCC.typeDict.TryGetValue("HeroicBoots", out Type heroicBootsType) && heroicBootsType != null)
                 {
-                    if (u.person.items.Any(i => i.GetType() == heroicBootsType))
+                    if (u.person.items.Any(i => i != null && i.GetType() == heroicBootsType))
                     {
-                        travelTime = (int)Math.Ceiling(travelTime / 3.0);
+                        travelTime = (int)Math.Ceiling(travelTime / (u.getMaxMoves() + 2.0));
                     }
                 }
             }

@@ -181,11 +181,15 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Rt_DescendIntoTheSea), nameof(Rt_DescendIntoTheSea.validFor), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Rt_DescendIntoTheSea_validFor_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(Rt_MaintainHumanity), nameof(Rt_MaintainHumanity.validFor), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Rt_MaintainHumanity_validFor_Postfix)));
 
-            // TEST ARTICLE
-            //harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UA_turnTickAI_Prefix)));
-
             // Ch_Rest_InOrcCamp
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Rest_InOrcCamp), nameof(Ch_Rest_InOrcCamp.complete), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Ch_Rest_InOrcCamp_complete_Postfix)));
+
+            // MOD OPTIONS //
+            // Patches for ManagerMajorThreats
+            harmony.Patch(original: AccessTools.Method(typeof(ManagerMajorThreats), nameof(ManagerMajorThreats.turnTick), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(ManagerMajorThreats_turnTick_Transpiler)));
+
+            // Patches for Map
+            harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.placeWonders), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Map_placeWonders_Transpiler)));
 
             // Template Patch
             // harmony.Patch(original: AccessTools.Method(typeof(), nameof(), new Type[] { typeof() }), postfix: new HarmonyMethod(patchType, nameof()));
@@ -3221,14 +3225,19 @@ namespace CommunityLib
 
                 if (pathTo == null || pathTo.Length < 2)
                 {
-                    return distance;
+                    distance = (int)Math.Ceiling((double)distance / ua.getMaxMoves());
+                }
+                else
+                {
+                    distance = (int)Math.Ceiling((double)pathTo.Length / ua.getMaxMoves());
                 }
 
-                distance = (int)Math.Ceiling((double)pathTo.Length / ua.getMaxMoves());
-
-                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                if (distance > 0 && ua != null)
                 {
-                    distance = hook.onUnitAI_GetsDistanceToLocation(ua, c.location, pathTo, distance);
+                    foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                    {
+                        distance = hook.onUnitAI_GetsDistanceToLocation(ua, c.location, pathTo, distance);
+                    }
                 }
 
                 distance = Math.Max(1, distance);
@@ -3995,6 +4004,238 @@ namespace CommunityLib
             if (ua.person.species is Species_DeepOne)
             {
                 __result = false;
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> ManagerMajorThreats_turnTick_Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            List<CodeInstruction> instructionList = instructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(ManagerMajorThreats_turnTick_TranspilerBody));
+
+            FieldInfo FI_Map = AccessTools.Field(typeof(ManagerMajorThreats), nameof(ManagerMajorThreats.map));
+
+            int targetIndex = 1;
+
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldc_I4_2)
+                        {
+                            targetIndex = 0;
+
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Map);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+
+                            i++;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed ManagerMajorThreats_turnTick_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static int ManagerMajorThreats_turnTick_TranspilerBody(Map map)
+        {
+            int result = ModCore.opt_targetOrcCount;
+
+            if (ModCore.opt_DynamicOrcCount)
+            {
+                if (map.sizeX * map.sizeY >= 3136)
+                {
+                    result++;
+                }
+                else if (map.sizeX * map.sizeY < 1600)
+                {
+                    result--;
+                }
+            }
+
+            return result;
+        }
+
+        private static IEnumerable<CodeInstruction> Map_placeWonders_Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Map_placeWonders_TranspilerBody), new Type[] { typeof(Map) });
+
+            yield return new CodeInstruction(OpCodes.Nop);
+            yield return new CodeInstruction(OpCodes.Ldarg_0);
+            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+            yield return new CodeInstruction(OpCodes.Ret);
+
+            Console.WriteLine("CommunityLib: Completed complete function replacement transpiler Map_placeWonders_Transpiler");
+        }
+
+        private static void Map_placeWonders_TranspilerBody(Map map)
+        {
+            if (map.tutorial)
+            {
+                return;
+            }
+
+            if (!ModCore.Get().data.getWonderGenTypes().Contains(typeof(Sub_Wonder_DeathIsland)))
+            {
+                ModCore.Get().data.addWonderGenType(typeof(Sub_Wonder_DeathIsland));
+            }
+            if (!ModCore.Get().data.getWonderGenTypes().Contains(typeof(Sub_Wonder_Doorway)))
+            {
+                ModCore.Get().data.addWonderGenType(typeof(Sub_Wonder_Doorway));
+            }
+            if (!ModCore.Get().data.getWonderGenTypes().Contains(typeof(Sub_Wonder_PrimalFont)))
+            {
+                ModCore.Get().data.addWonderGenType(typeof(Sub_Wonder_PrimalFont));
+            }
+
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            {
+                List<Type> retValue = hook.onMapGen_PlaceWonders();
+
+                if (retValue != null)
+                {
+                    foreach (Type t in retValue)
+                    {
+                        ModCore.Get().data.addWonderGenType(t);
+                    }
+                }
+            }
+
+            int i = ModCore.opt_targetNaturalWonderCount;
+
+            if (ModCore.opt_DynamicNaturalWonderCount)
+            {
+                if (map.sizeX * map.sizeY >= 3136)
+                {
+                    i++;
+                }
+                else if (map.sizeX * map.sizeY < 1600)
+                {
+                    i--;
+                }
+            }
+
+            if (i < 1 || map.seed == 0L)
+            {
+                i = 1;
+            }
+
+            while (i > 0 && ModCore.Get().data.getWonderGenTypes().Count > 0)
+            {
+                Type wonderType = ModCore.Get().data.getWonderGenTypes()[Eleven.random.Next(ModCore.Get().data.getWonderGenTypes().Count)];
+                ModCore.Get().data.getWonderGenTypes().Remove(wonderType);
+
+                if (map.seed == 0L)
+                {
+                    wonderType = typeof(Sub_Wonder_Doorway);
+                }
+
+                if (wonderType == typeof(Sub_Wonder_DeathIsland))
+                {
+                    List<Location> locations = new List<Location>();
+                    Location target = null;
+
+                    foreach (Location location in map.locations)
+                    {
+                        if (location.isOcean && !location.getNeighbours().Any(n => !n.isOcean) && location.settlement == null)
+                        {
+                            locations.Add(location);
+                        }
+                    }
+
+                    if (locations.Count > 0)
+                    {
+                        target = locations[0];
+                        if (Location.indexCounter > 1)
+                        {
+                            target = locations[Eleven.random.Next(locations.Count)];
+                        }
+                    }
+
+                    if (target != null)
+                    {
+                        target.settlement = new Set_MinorOther(target);
+                        target.settlement.subs.Clear();
+                        target.settlement.subs.Add(new Sub_Wonder_DeathIsland(target.settlement));
+                    }
+                }
+                else if (wonderType == typeof(Sub_Wonder_Doorway))
+                {
+                    List<Location> locations = new List<Location>();
+                    Location target = null;
+
+                    foreach (Location location in map.locations)
+                    {
+                        if (location.settlement == null && !location.isOcean && (location.hex.terrain == Hex.terrainType.ARID || location.hex.terrain == Hex.terrainType.DESERT || location.hex.terrain == Hex.terrainType.DRY))
+                        {
+                            locations.Add(location);
+                        }
+                    }
+
+                    if (locations.Count > 0)
+                    {
+                        target = locations[0];
+                        if (Location.indexCounter > 1)
+                        {
+                            target = locations[Eleven.random.Next(locations.Count)];
+                        }
+                    }
+
+                    if (target != null)
+                    {
+                        target.settlement = new Set_MinorOther(target);
+                        target.settlement.subs.Clear();
+                        target.settlement.subs.Add(new Sub_Wonder_Doorway(target.settlement));
+                    }
+                }
+                else if (wonderType == typeof(Sub_Wonder_PrimalFont))
+                {
+                    List<Location> locations = new List<Location>();
+                    Location target = null;
+
+                    foreach (Location location in map.locations)
+                    {
+                        if (location.settlement == null && !location.isOcean)
+                        {
+                            locations.Add(location);
+                        }
+                    }
+
+                    if (locations.Count > 0)
+                    {
+                        target = locations[0];
+                        if (Location.indexCounter > 1)
+                        {
+                            target = locations[Eleven.random.Next(locations.Count)];
+                        }
+                    }
+
+                    if (target != null)
+                    {
+                        target.settlement = new Set_MinorOther(target);
+                        target.settlement.subs.Clear();
+                        target.settlement.subs.Add(new Sub_Wonder_PrimalFont(target.settlement));
+                    }
+                }
+                else
+                {
+                    Hooks hook = ModCore.Get().GetRegisteredHooks().FirstOrDefault(h => h.GetType().Namespace == wonderType.Namespace);
+                    if (hook != null)
+                    {
+                        hook.onMapGen_PlaceWonders(wonderType);
+                    }
+                }
+
+                i--;
             }
         }
     }

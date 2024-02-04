@@ -45,6 +45,14 @@ namespace CommunityLib
 
         public static bool opt_enhancedTradeRouteLinks = true;
 
+        public static bool opt_DynamicOrcCount = false;
+
+        public static int opt_targetOrcCount = 2;
+
+        public static bool opt_DynamicNaturalWonderCount = false;
+
+        public static int opt_targetNaturalWonderCount = 1;
+
         public static ModCore Get() => core;
 
         public override void onModsInitiallyLoaded()
@@ -60,6 +68,12 @@ namespace CommunityLib
         {
             switch(optName)
             {
+                case "Dynamic Orc Horde Count":
+                    opt_DynamicOrcCount = value;
+                    break;
+                case "Dynamic Natural Wonder Count":
+                    opt_DynamicNaturalWonderCount = value;
+                    break;
                 case "Spawn Shipwrecks":
                     opt_spawnShipwrecks = value;
                     break;
@@ -74,6 +88,21 @@ namespace CommunityLib
                     break;
                 case "Allow Culture-Specific Minor Settlement Graphics":
                     opt_allowCulturalMinorSettelementGraphics = value;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        public override void receiveModConfigOpts_int(string optName, int value)
+        {
+            switch (optName)
+            {
+                case "Target Orc Horde Count":
+                    opt_targetOrcCount = value;
+                    break;
+                case "Target Natural Wonder Count":
+                    opt_targetNaturalWonderCount = value;
                     break;
                 default:
                     break;
@@ -146,6 +175,8 @@ namespace CommunityLib
 
             orcExpansionDefaults();
             eventModifications();
+
+            updateSaveGameVersion(map);
         }
 
         private void getModKernels (Map map)
@@ -545,6 +576,19 @@ namespace CommunityLib
                         })
                     );
                 }
+            }
+        }
+
+        public void updateSaveGameVersion(Map map)
+        {
+            if (opt_targetOrcCount == 0)
+            {
+                opt_targetOrcCount = 2;
+            }
+
+            if (opt_targetNaturalWonderCount == 0)
+            {
+                opt_targetNaturalWonderCount = 1;
             }
         }
 
@@ -1059,12 +1103,21 @@ namespace CommunityLib
 
         public int getTravelTimeTo(Unit u, Location location)
         {
-            int travelTime = 0;
+            if (u == null || location == null)
+            {
+                return -1;
+            }
+
+            int travelTime;
 
             Location[] path = pathfinding.getPathTo(u.location, location, u);
-            if (path != null && path.Length > 1)
+            if (path == null && path.Length < 2)
             {
-                travelTime = (int)Math.Ceiling((double)path.Length / (double)u.getMaxMoves());
+                travelTime = (int)Math.Ceiling(u.map.getStepDist(u.location, location) / (double)u.getMaxMoves());
+            }
+            else
+            {
+                travelTime = (int)Math.Ceiling(path.Length / (double)u.getMaxMoves());
             }
 
             if (travelTime > 0)
