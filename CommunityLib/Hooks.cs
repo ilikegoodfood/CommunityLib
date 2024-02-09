@@ -111,7 +111,7 @@ namespace CommunityLib
         /// <param name="locB"></param>
         /// <param name="u"></param>
         /// <param name="pathfindingDelegates"></param>
-        public virtual void onPopulatingPathfindingDelegates_Location(Location locA, Location locB, Unit u, List<Func<Location[], Location, Unit, bool>> pathfindingDelegates)
+        public virtual void onPopulatingPathfindingDelegates_Location(Location locA, Location locB, Unit u, List<Func<Location[], Location, Unit, Location, Location, bool>> pathfindingDelegates)
         {
             return;
         }
@@ -124,7 +124,7 @@ namespace CommunityLib
         /// <param name="sg"></param>
         /// <param name="u"></param>
         /// <param name="pathfindingDelegates"></param>
-        public virtual void onPopulatingPathfindingDelegates_SocialGroup(Location loc, SocialGroup sg, Unit u, List<Func<Location[], Location, Unit, bool>> pathfindingDelegates)
+        public virtual void onPopulatingPathfindingDelegates_SocialGroup(Location loc, SocialGroup sg, Unit u, List<Func<Location[], Location, Unit, Location, Location, bool>> pathfindingDelegates)
         {
             return;
         }

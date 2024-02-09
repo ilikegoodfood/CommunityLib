@@ -14,32 +14,43 @@ namespace CommunityLib
 
         }
 
-        public static bool delegate_AQUAPHIBIOUS(Location[] currentPath, Location location, Unit u)
+        public static bool delegate_AQUAPHIBIOUS(Location[] currentPath, Location location, Unit u, Location origin, Location destination)
         {
             return location.isOcean || location.isCoastal;
         }
 
-        public static bool delegate_AQUATIC(Location[] currentPath, Location location, Unit u)
+        public static bool delegate_AQUATIC(Location[] currentPath, Location location, Unit u, Location origin, Location destination)
         {
             return location.isOcean;
         }
 
-        public static bool delegate_DESERT_ONLY(Location[] currentPath, Location location, Unit u)
+        public static bool delegate_DESERT_ONLY(Location[] currentPath, Location location, Unit u, Location origin, Location destination)
         {
             return location.hex.terrain == Hex.terrainType.ARID || location.hex.terrain == Hex.terrainType.DESERT || location.hex.terrain == Hex.terrainType.DRY;
         }
 
-        public static bool delegate_LANDLOCKED(Location[] currentPath, Location location, Unit u)
+        public static bool delegate_LANDLOCKED(Location[] currentPath, Location location, Unit u, Location origin, Location destination)
         {
             return !location.isOcean;
         }
 
-        public static bool delegate_SAFE_MOVE(Location[] currentPath, Location location, Unit u)
+        public static bool delegate_LayerBound(Location[] currentPath, Location location, Unit u, Location origin, Location destination)
+        {
+            HashSet<int> layers = new HashSet<int> { origin.hex.z };
+            if (destination.hex.z != origin.hex.z)
+            {
+                layers.Add(destination.hex.z);
+            }
+
+            return layers.Contains(location.hex.z);
+        }
+
+        public static bool delegate_SAFE_MOVE(Location[] currentPath, Location location, Unit u, Location origin, Location destination)
         {
             return u == null || location.soc == null || !location.soc.hostileTo(u);
         }
 
-        public static bool delegate_SHADOWBOUND(Location[] currentPath, Location location, Unit u)
+        public static bool delegate_SHADOWBOUND(Location[] currentPath, Location location, Unit u, Location origin, Location destination)
         {
             int hp = 0;
 
@@ -73,7 +84,7 @@ namespace CommunityLib
                 return new Location[0];
             }
 
-            List<Func<Location[], Location, Unit, bool>>  pathfindingDelegates = new List<Func<Location[], Location, Unit, bool>>();
+            List<Func<Location[], Location, Unit, Location, Location, bool>>  pathfindingDelegates = new List<Func<Location[], Location, Unit, Location, Location, bool>> { delegate_LayerBound };
 
             if (u != null)
             {
@@ -103,57 +114,69 @@ namespace CommunityLib
             HashSet<Location> locationHashes = new HashSet<Location> { locA };
             List<Location> locations = new List<Location> { locA };
             List<Location[]> paths = new List<Location[]> { new Location[] { locA } };
+            List<int> layers = new List<int> { locA.hex.z };
 
-            int i = 0;
-            while (i < 128)
+            if (locB.hex.z != locA.hex.z)
             {
-                List<Location> newLocations = new List<Location>();
-                List<Location[]> newPaths = new List<Location[]>();
-                i++;
+                layers.Add(locB.hex.z);
+            }
 
-                for (int j = 0; j < locations.Count; j++)
+            bool firstPass = true;
+            while (firstPass)
+            {
+                int i = 0;
+                while (i < 128)
                 {
-                    foreach (Location neighbour in getNeighboursConditional(locations[j], u))
+                    List<Location> newLocations = new List<Location>();
+                    List<Location[]> newPaths = new List<Location[]>();
+                    i++;
+
+                    for (int j = 0; j < locations.Count; j++)
                     {
-                        if (!locationHashes.Contains(neighbour))
+                        foreach (Location neighbour in getNeighboursConditional(locations[j], u))
                         {
-                            bool valid = true;
-                            foreach (Func<Location[], Location, Unit, bool> pathfindingDelegate in pathfindingDelegates)
+                            if (!locationHashes.Contains(neighbour))
                             {
-                                if (!pathfindingDelegate(paths[j], neighbour, u))
+                                bool valid = true;
+                                foreach (Func<Location[], Location, Unit, bool> pathfindingDelegate in pathfindingDelegates)
                                 {
-                                    valid = false;
-                                    break;
+                                    if (!pathfindingDelegate(paths[j], neighbour, u))
+                                    {
+                                        valid = false;
+                                        break;
+                                    }
                                 }
-                            }
 
-                            if (!valid)
-                            {
-                                continue;
-                            }
+                                if (!valid)
+                                {
+                                    continue;
+                                }
 
-                            Location[] newPathArray = new Location[paths[j].Length + 1];
-                            for (int k = 0; k < paths[j].Length; k++)
-                            {
-                                newPathArray[k] = paths[j][k];
-                            }
-                            newPathArray[newPathArray.Length - 1] = neighbour;
+                                Location[] newPathArray = new Location[paths[j].Length + 1];
+                                for (int k = 0; k < paths[j].Length; k++)
+                                {
+                                    newPathArray[k] = paths[j][k];
+                                }
+                                newPathArray[newPathArray.Length - 1] = neighbour;
 
-                            if (neighbour == locB)
-                            {
-                                return newPathArray;
-                            }
+                                if (neighbour == locB)
+                                {
+                                    return newPathArray;
+                                }
 
-                            newLocations.Add(neighbour);
-                            newPaths.Add(newPathArray);
-                            locationHashes.Add(neighbour);
+                                newLocations.Add(neighbour);
+                                newPaths.Add(newPathArray);
+                                locationHashes.Add(neighbour);
+                            }
                         }
                     }
+
+                    locations = newLocations;
+                    paths = newPaths;
+                    shuffle(locations, paths);
                 }
 
-                locations = newLocations;
-                paths = newPaths;
-                shuffle(locations, paths);
+
             }
 
             return null;
@@ -193,6 +216,12 @@ namespace CommunityLib
             HashSet<Location> locationHashes = new HashSet<Location> { locA };
             List<Location> locations = new List<Location> { locA };
             List<Location[]> paths = new List<Location[]> { new Location[] { locA } };
+            List<int> layers = new List<int> { locA.hex.z };
+
+            if (sg.getCapitalHex().z != locA.hex.z)
+            {
+                layers.Add(sg.getCapitalHex().z);
+            }
 
             int i = 0;
             while (i < 128)
