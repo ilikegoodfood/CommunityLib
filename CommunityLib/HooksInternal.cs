@@ -173,6 +173,26 @@ namespace CommunityLib
             return false;
         }
 
+        public override Location[] interceptGetPathTo_Location(Location locA, Location locB, Unit u, bool safeMove)
+        {
+            if (ModCore.opt_forceCommunityLibraryPathfinding)
+            {
+                return ModCore.Get().pathfinding.getPathTo(locA, locB, u, safeMove);
+            }
+
+            return null;
+        }
+
+        public override Location[] interceptGetPathTo_SocialGroup(Location loc, SocialGroup sg, Unit u, bool safeMove)
+        {
+            if (ModCore.opt_forceCommunityLibraryPathfinding)
+            {
+                return ModCore.Get().pathfinding.getPathTo(loc, sg, u, safeMove);
+            }
+
+            return null;
+        }
+
         public override bool interceptAgentAI(UA ua, AgentAI.AIData aiData, List<AgentAI.ChallengeData> challengeData, List<AgentAI.TaskData> taskData, List<Unit> visibleUnits)
         {
             switch (ua)

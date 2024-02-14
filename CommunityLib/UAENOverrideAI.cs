@@ -67,6 +67,11 @@ namespace CommunityLib
 
         private bool delegate_Validity_Wander(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData taskData)
         {
+            if (taskData.targetCategory == AITask.TargetCategory.None)
+            {
+                return true;
+            }
+
             if (taskData.targetLocation.hex.z == 1 && taskData.targetLocation.getNeighbours().Contains(ua.location))
             {
                 return true;
@@ -728,12 +733,9 @@ namespace CommunityLib
             {
                 List<AIChallenge> aiChallenges_Cordyceps_Haematophage = new List<AIChallenge>();
 
-                if (intData.typeDict.TryGetValue("SlowHealTask", out Type slowHealType) && slowHealType != null)
-                {
-                    AIChallenge aiChallenge = new AIChallenge(slowHealType, 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.BaseValid, AIChallenge.ChallengeTags.BaseUtility });
-                    aiChallenge.delegates_ValidFor.Add(delegate_ValidFor_SlowHealing);
-                    aiChallenges_Cordyceps_Haematophage.Add(aiChallenge);
-                }
+                AIChallenge aiChallenge = new AIChallenge(typeof(Rt_SlowHealing), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.BaseValid, AIChallenge.ChallengeTags.BaseUtility });
+                aiChallenge.delegates_ValidFor.Add(delegate_ValidFor_SlowHealing);
+                aiChallenges_Cordyceps_Haematophage.Add(aiChallenge);
 
                 AgentAI.ControlParameters controlParams = new AgentAI.ControlParameters(true);
                 controlParams.respectDanger = false;

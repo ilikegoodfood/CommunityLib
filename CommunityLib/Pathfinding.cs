@@ -34,7 +34,7 @@ namespace CommunityLib
             return !location.isOcean;
         }
 
-        public static bool delegate_LayerBound(Location[] currentPath, Location location, Unit u, Location origin, Location destination)
+        public static bool delegate_LAYERBOUND(Location[] currentPath, Location location, Unit u, Location origin, Location destination)
         {
             HashSet<int> layers = new HashSet<int> { origin.hex.z };
             if (destination.hex.z != origin.hex.z)
@@ -84,7 +84,7 @@ namespace CommunityLib
                 return new Location[0];
             }
 
-            List<Func<Location[], Location, Unit, Location, Location, bool>>  pathfindingDelegates = new List<Func<Location[], Location, Unit, Location, Location, bool>> { delegate_LayerBound };
+            List<Func<Location[], Location, Unit, Location, Location, bool>>  pathfindingDelegates = new List<Func<Location[], Location, Unit, Location, Location, bool>> { delegate_LAYERBOUND };
 
             if (u != null)
             {
@@ -114,12 +114,6 @@ namespace CommunityLib
             HashSet<Location> locationHashes = new HashSet<Location> { locA };
             List<Location> locations = new List<Location> { locA };
             List<Location[]> paths = new List<Location[]> { new Location[] { locA } };
-            List<int> layers = new List<int> { locA.hex.z };
-
-            if (locB.hex.z != locA.hex.z)
-            {
-                layers.Add(locB.hex.z);
-            }
 
             int passCount = 0;
             while (passCount < 2)
@@ -178,7 +172,10 @@ namespace CommunityLib
                     shuffle(locations, paths);
                 }
 
-                pathfindingDelegates.Remove(delegate_LayerBound);
+                if (passCount == 1)
+                {
+                    pathfindingDelegates.Remove(delegate_LAYERBOUND);
+                }
             }
 
             return null;
@@ -191,7 +188,7 @@ namespace CommunityLib
                 return new Location[0];
             }
 
-            List<Func<Location[], Location, Unit, Location, Location, bool>> pathfindingDelegates = new List<Func<Location[], Location, Unit, Location, Location, bool>>();
+            List<Func<Location[], Location, Unit, Location, Location, bool>> pathfindingDelegates = new List<Func<Location[], Location, Unit, Location, Location, bool>> { delegate_LAYERBOUND };
 
             if (u != null)
             {
@@ -220,63 +217,68 @@ namespace CommunityLib
             HashSet<Location> locationHashes = new HashSet<Location> { locA };
             List<Location> locations = new List<Location> { locA };
             List<Location[]> paths = new List<Location[]> { new Location[] { locA } };
-            List<int> layers = new List<int> { locA.hex.z };
 
-            if (sg.getCapitalHex().z != locA.hex.z)
+            int passCount = 0;
+            while (passCount < 2)
             {
-                layers.Add(sg.getCapitalHex().z);
-            }
+                passCount++;
 
-            int i = 0;
-            while (i < 128)
-            {
-                List<Location> newLocations = new List<Location>();
-                List<Location[]> newPaths = new List<Location[]>();
-                i++;
-
-                for (int j = 0; j < locations.Count; j++)
+                int i = 0;
+                while (i < 128)
                 {
-                    foreach (Location neighbour in getNeighboursConditional(locations[j], u))
+                    List<Location> newLocations = new List<Location>();
+                    List<Location[]> newPaths = new List<Location[]>();
+                    i++;
+
+                    for (int j = 0; j < locations.Count; j++)
                     {
-                        if (!locationHashes.Contains(neighbour))
+                        foreach (Location neighbour in getNeighboursConditional(locations[j], u))
                         {
-                            bool valid = true;
-                            foreach (Func<Location[], Location, Unit, Location, Location, bool> pathfindingDelegate in pathfindingDelegates)
+                            if (!locationHashes.Contains(neighbour))
                             {
-                                if (!pathfindingDelegate(paths[j], neighbour, u, locA, locB))
+                                bool valid = true;
+                                foreach (Func<Location[], Location, Unit, Location, Location, bool> pathfindingDelegate in pathfindingDelegates)
                                 {
-                                    valid = false;
-                                    break;
+                                    if (!pathfindingDelegate(paths[j], neighbour, u, locA, locB))
+                                    {
+                                        valid = false;
+                                        break;
+                                    }
                                 }
-                            }
 
-                            if (!valid)
-                            {
-                                continue;
-                            }
+                                if (!valid)
+                                {
+                                    continue;
+                                }
 
-                            Location[] newPathArray = new Location[paths[j].Length + 1];
-                            for (int k = 0; k < paths[j].Length; k++)
-                            {
-                                newPathArray[k] = paths[j][k];
-                            }
-                            newPathArray[newPathArray.Length - 1] = neighbour;
+                                Location[] newPathArray = new Location[paths[j].Length + 1];
+                                for (int k = 0; k < paths[j].Length; k++)
+                                {
+                                    newPathArray[k] = paths[j][k];
+                                }
+                                newPathArray[newPathArray.Length - 1] = neighbour;
 
-                            if (neighbour.soc == sg)
-                            {
-                                return newPathArray;
-                            }
+                                if (neighbour.soc == sg)
+                                {
+                                    return newPathArray;
+                                }
 
-                            newLocations.Add(neighbour);
-                            newPaths.Add(newPathArray);
-                            locationHashes.Add(neighbour);
+                                newLocations.Add(neighbour);
+                                newPaths.Add(newPathArray);
+                                locationHashes.Add(neighbour);
+                            }
                         }
                     }
+
+                    locations = newLocations;
+                    paths = newPaths;
+                    shuffle(locations, paths);
                 }
 
-                locations = newLocations;
-                paths = newPaths;
-                shuffle(locations, paths);
+                if (passCount == 1)
+                {
+                    pathfindingDelegates.Remove(delegate_LAYERBOUND);
+                }
             }
 
             return null;
