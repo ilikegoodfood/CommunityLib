@@ -4098,7 +4098,7 @@ namespace CommunityLib
             God[] godsArray = new God[gods.Count];
 
             int swwfIndex = -1;
-            HashSet<Type> baseGameGodTypes = new HashSet<Type> { typeof(God_LaughingKing), typeof(God_Vinerva), typeof(God_Ophanim), typeof(God_Mammon), typeof(God_Eternity), typeof(God_Cards) };
+            HashSet<Type> baseGameGodTypes = new HashSet<Type> { typeof(God_LaughingKing), typeof(God_Vinerva), typeof(God_Ophanim), typeof(God_Mammon), typeof(God_Eternity), typeof(God_Cards), typeof(God_Underground) };
             List<int> godIndexes = new List<int>();
             List<int> moddedGodIndexes = new List<int>();
 
