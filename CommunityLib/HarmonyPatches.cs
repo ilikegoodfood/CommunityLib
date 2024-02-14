@@ -165,17 +165,18 @@ namespace CommunityLib
 
             // UAEN OVERRIDE AI //
             // Negate unit interactions.
-            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getAttackUtility), new Type[] { typeof(Unit), typeof(List<ReasonMsg>), typeof(bool) }), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getAttackUtility), new Type[] { typeof(Unit), typeof(List<ReasonMsg>), typeof(bool) }), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)), postfix: new HarmonyMethod(patchType, nameof(UAEN_getAttackUtility_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getBodyguardUtility), new Type[] { typeof(Unit), typeof(List<ReasonMsg>) }), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getDisruptUtility), new Type[] { typeof(Unit), typeof(List<ReasonMsg>) }), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getVisibleUnits), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UA_getVisibleUnits_Prefix)), postfix: new HarmonyMethod(patchType, nameof(UA_getVisibleUnits_Postfix)));
 
             // Override AI
+            harmony.Patch(original: AccessTools.Method(typeof(UAEN_CaveSpider), nameof(UAEN_CaveSpider.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_CaveSpider_turnTickAI_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UAEN_DeepOne), nameof(UAEN_DeepOne.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_DeepOne_turnTickAI_Prefix)));
             harmony.Patch(original: AccessTools.Constructor(typeof(UAEN_DeepOne), new Type[] { typeof(Location), typeof(Society), typeof(Person) }), postfix: new HarmonyMethod(patchType, nameof(UAEN_DeepOne_ctor_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(UAEN_Ghast), nameof(UAEN_Ghast.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_Ghast_turnTickAI_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UAEN_OrcUpstart), nameof(UAEN_OrcUpstart.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_OrcUpstart_turnTickAI_Prefix)));
-            harmony.Patch(original: AccessTools.Method(typeof(UAEN_Vampire), nameof(UAEN_Vampire.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_OrcUpstart_turnTickAI_Prefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UAEN_Vampire), nameof(UAEN_Vampire.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_Vampire_turnTickAI_Prefix)));
 
             // Deep ones
             harmony.Patch(original: AccessTools.Method(typeof(Rt_DescendIntoTheSea), nameof(Rt_DescendIntoTheSea.validFor), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Rt_DescendIntoTheSea_validFor_Postfix)));
@@ -3877,6 +3878,9 @@ namespace CommunityLib
         {
             switch (__instance)
             {
+                case UAEN_CaveSpider _:
+                    __result = double.MinValue;
+                    return false;
                 case UAEN_DeepOne _:
                     __result = double.MinValue;
                     return false;
@@ -3892,7 +3896,72 @@ namespace CommunityLib
                 default:
                     break;
             }
+
+            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord != null)
+            {
+                if (intDataCord.typeDict.TryGetValue("Haematophage", out Type haematophageType) && haematophageType != null)
+                {
+                    if (__instance.GetType() == haematophageType)
+                    {
+                        __result = double.MinValue;
+                        return false;
+                    }
+                }
+            }
+
             return true;
+        }
+
+        private static double UAEN_getAttackUtility_Postfix(double utility, UA __instance, Unit other, List<ReasonMsg> reasons, bool includeDangerousFoe)
+        {
+            if (__instance is UAEN_CaveSpider)
+            {
+                return UAEN_CaveSpider_getAttackUtility(utility, __instance, other, reasons, includeDangerousFoe);
+            }
+
+            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord != null)
+            {
+                if (intDataCord.typeDict.TryGetValue("Haematophage", out Type haematophageType) && haematophageType != null)
+                {
+                    if (__instance.GetType() == haematophageType)
+                    {
+                        return UAEN_Cordyceps_Haematophage_getAttackUtility(utility, __instance, other, reasons, includeDangerousFoe);
+                    }
+                }
+            }
+
+            return utility;
+        }
+
+        public static double UAEN_CaveSpider_getAttackUtility(double utility, UA ua, Unit other, List<ReasonMsg> reasonMsgs, bool includeDangerousFoe)
+        {
+            if (other is UA && !(other is UAEN_CaveSpider))
+            {
+                utility = 100.0;
+                reasonMsgs?.Add(new ReasonMsg("Base", utility));
+            }
+
+            return utility;
+        }
+
+        public static double UAEN_Cordyceps_Haematophage_getAttackUtility(double utility, UA ua, Unit other, List<ReasonMsg> reasonMsgs, bool includeDangerousFoe)
+        {
+            if (other is UAG target && !other.isCommandable())
+            {
+                double attackStrength = target.getStatAttack();
+                if (target.minions[0] != null)
+                {
+                    attackStrength += target.minions[0].getAttack();
+                }
+
+                if (ua.minions[0] != null || attackStrength < ua.hp)
+                {
+                    utility = 80.0;
+                    reasonMsgs?.Add(new ReasonMsg("Base", utility));
+                }
+            }
+
+            return utility;
         }
 
         private static bool UA_getVisibleUnits_Prefix(UA __instance, ref List<Unit> __result, out bool __state)
@@ -3923,6 +3992,16 @@ namespace CommunityLib
             }
 
             return visibleUnits;
+        }
+
+        private static bool UAEN_CaveSpider_turnTickAI_Prefix(UAEN_CaveSpider __instance)
+        {
+            if (ModCore.Get().GetAgentAI().ContainsAgentType(typeof(UAEN_CaveSpider)))
+            {
+                ModCore.Get().GetAgentAI().turnTickAI(__instance);
+                return false;
+            }
+            return true;
         }
 
         private static bool UAEN_DeepOne_turnTickAI_Prefix(UAEN_DeepOne __instance)

@@ -9,6 +9,8 @@ namespace CommunityLib
 {
     public class UAENOverrideAI
     {
+        private List<AITask> aiTasks_CaveSpider;
+
         private List<AIChallenge> aiChallenges_DeepOne;
 
         private List<AIChallenge> aiChallenges_Ghast;
@@ -23,6 +25,7 @@ namespace CommunityLib
         {
             this.map = map;
 
+            populateCaveSpider();
             populateDeepOne();
             populateGhast();
             populateOrcUpstart();
@@ -31,9 +34,68 @@ namespace CommunityLib
             if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
             {
                 populateCordycepsDrone(intDataCord);
+                populateCoryceptsHaematophage(intDataCord);
             }
 
             // Test Articles
+        }
+
+        private void populateCaveSpider()
+        {
+            aiTasks_CaveSpider = new List<AITask>
+            {
+                new AITask(taskType: typeof(Task_GoToLocation), title: "Wander", map: map, delegate_Instantiate: delegate_Instantiate_GoToLocation, targetCategory: AITask.TargetCategory.Location, foregroundSprite: map.world.textureStore.evil_caveSpider)
+            };
+
+            aiTasks_CaveSpider[0].delegates_Valid.Add(delegate_Validity_Wander);
+            aiTasks_CaveSpider[0].delegates_Utility.Add(delegate_Utility_Wander);
+
+            AgentAI.ControlParameters controlParams = new AgentAI.ControlParameters(true);
+            controlParams.respectDanger = false;
+            controlParams.respectArmyIntercept = false;
+            controlParams.includeDangerousFoe = false;
+            
+
+            ModCore.Get().GetAgentAI().RegisterAgentType(typeof(UAEN_CaveSpider), controlParams);
+            ModCore.Get().GetAgentAI().AddTasksToAgentType(typeof(UAEN_CaveSpider), aiTasks_CaveSpider);
+        }
+
+        private Task delegate_Instantiate_GoToLocation(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData taskData)
+        {
+            return new Task_GoToLocation(taskData.targetLocation);
+        }
+
+        private bool delegate_Validity_Wander(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData taskData)
+        {
+            if (taskData.targetLocation.hex.z == 1 && taskData.targetLocation.getNeighbours().Contains(ua.location))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private double delegate_Utility_Wander(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData taskData, List<ReasonMsg> reasonMsgs)
+        {
+            double utility = 0.0;
+
+            double val = 25.0;
+            if (taskData.targetLocation.units.Any(u => u is UA && !(u is UAEN_CaveSpider)))
+            {
+                reasonMsgs?.Add(new ReasonMsg("Potential prey", val));
+                utility += val;
+                return utility;
+            }
+
+            if (!taskData.targetLocation.isOcean && taskData.targetLocation.settlement == null)
+            {
+                val = 20.0;
+                reasonMsgs?.Add(new ReasonMsg("Base", val));
+                utility += val;
+                return utility;
+            }
+
+            return utility;
         }
 
         private void populateDeepOne()
@@ -414,7 +476,8 @@ namespace CommunityLib
                 new AIChallenge(typeof(Ch_Desecrate), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.BaseValid, AIChallenge.ChallengeTags.BaseValidFor, AIChallenge.ChallengeTags.RequiresInfiltrated, AIChallenge.ChallengeTags.PreferLocalRandomized }),
                 new AIChallenge(typeof(Ch_Enshadow), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.Enshadows, AIChallenge.ChallengeTags.RequiresInfiltrated, AIChallenge.ChallengeTags.PreferLocalRandomized }),
                 new AIChallenge(typeof(Ch_WellOfShadows), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.BaseValid, AIChallenge.ChallengeTags.PushesShadow, AIChallenge.ChallengeTags.RequiresSociety, AIChallenge.ChallengeTags.PreferLocalRandomized }),
-                new AIChallenge(typeof(Ch_Rest_InOrcCamp), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.HealOrc, AIChallenge.ChallengeTags.PreferLocalRandomized })
+                new AIChallenge(typeof(Ch_Rest), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.BaseValid, AIChallenge.ChallengeTags.BaseValidFor, AIChallenge.ChallengeTags.BaseUtility, AIChallenge.ChallengeTags.PreferLocalRandomized }),
+                new AIChallenge(typeof(Ch_Rest_InOrcCamp), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.BaseValid, AIChallenge.ChallengeTags.BaseValidFor, AIChallenge.ChallengeTags.BaseUtility, AIChallenge.ChallengeTags.PreferLocalRandomized })
             };
 
             aiChallenges_Vampire[0].delegates_ValidFor.Add(delegate_ValidFor_Rt_Feed);
@@ -657,6 +720,39 @@ namespace CommunityLib
             reasonMsgs?.Add(new ReasonMsg("Base", utility));
 
             return utility;
+        }
+
+        private void populateCoryceptsHaematophage(ModIntegrationData intData)
+        {
+            if (intData.typeDict.TryGetValue("Haematophage", out Type haematophageType) && haematophageType != null)
+            {
+                List<AIChallenge> aiChallenges_Cordyceps_Haematophage = new List<AIChallenge>();
+
+                if (intData.typeDict.TryGetValue("SlowHealTask", out Type slowHealType) && slowHealType != null)
+                {
+                    AIChallenge aiChallenge = new AIChallenge(slowHealType, 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.BaseValid, AIChallenge.ChallengeTags.BaseUtility });
+                    aiChallenge.delegates_ValidFor.Add(delegate_ValidFor_SlowHealing);
+                    aiChallenges_Cordyceps_Haematophage.Add(aiChallenge);
+                }
+
+                AgentAI.ControlParameters controlParams = new AgentAI.ControlParameters(true);
+                controlParams.respectDanger = false;
+                controlParams.respectArmyIntercept = false;
+                controlParams.includeDangerousFoe = false;
+
+                ModCore.Get().GetAgentAI().RegisterAgentType(haematophageType, controlParams);
+                ModCore.Get().GetAgentAI().AddChallengesToAgentType(haematophageType, aiChallenges_Cordyceps_Haematophage);
+            }
+        }
+
+        private bool delegate_ValidFor_SlowHealing(AgentAI.ChallengeData challengeData, UA ua)
+        {
+            if (challengeData.location.index == ua.homeLocation && ua.hp < ua.maxHp)
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 }

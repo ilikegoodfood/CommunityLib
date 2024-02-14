@@ -42,7 +42,7 @@ namespace CommunityLib
 
             if (result < 1)
             {
-                msgs?.Add(new ReasonMsg("BAse", 1));
+                msgs?.Add(new ReasonMsg("Base", 1));
                 result = 1;
             }
             else
@@ -75,12 +75,8 @@ namespace CommunityLib
 
         public override bool validFor(UA ua)
         {
+            base.validFor(ua);
             return true;
-        }
-
-        public override int getCompletionMenace()
-        {
-            return 0;
         }
 
         public override int getSimplificationLevel()

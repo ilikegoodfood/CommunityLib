@@ -6,6 +6,7 @@ using System.Reflection;
 using UnityEngine.UI;
 using System.Linq;
 using static SortedDictionaryProvider;
+using FullSerializer;
 
 namespace CommunityLib
 {
@@ -118,6 +119,10 @@ namespace CommunityLib
         {
             switch (ua)
             {
+                case UAEN_CaveSpider _:
+                    visibleUnits = new List<Unit>();
+                    visibleUnits.AddRange(ua.location.units);
+                    return true;
                 case UAEN_DeepOne _:
                     visibleUnits = new List<Unit>();
                     return true;
@@ -141,6 +146,24 @@ namespace CommunityLib
                     if (ua.GetType() == droneType)
                     {
                         visibleUnits = new List<Unit>();
+                        return true;
+                    }
+                }
+
+                if (intDataCord.typeDict.TryGetValue("Haematophage", out Type haematophageType) && haematophageType != null)
+                {
+                    if (ua.GetType() == haematophageType)
+                    {
+                        visibleUnits = new List<Unit>();
+
+                        foreach (Unit unit in map.units)
+                        {
+                            if (map.getStepDist(ua.location, unit.location) < 4)
+                            {
+                                visibleUnits.Add(unit);
+                            }
+                        }
+
                         return true;
                     }
                 }
@@ -216,12 +239,22 @@ namespace CommunityLib
 
         public override void onAgentAI_EndOfProcess(UA ua, AgentAI.AIData aiData, List<AgentAI.ChallengeData> validChallengeData, List<AgentAI.TaskData> validTaskData, List<Unit> visibleUnits)
         {
-            if (ua is UAEN_DeepOne && (ua.task == null || (ua.task is Task_GoToLocation tLocation && tLocation.target.index == ua.homeLocation)) && validChallengeData.FindAll(cd => !(cd.challenge is Rt_DeepOnes_TravelBeneath)).Count == 0 && validTaskData.Count == 0)
+            if (ua is UAEN_DeepOne)
             {
-                Rt_DeepOnes_TravelBeneath travel = (Rt_DeepOnes_TravelBeneath)ua.rituals.FirstOrDefault(rt => rt is Rt_DeepOnes_TravelBeneath);
-                if (travel != null)
+                if ((ua.task == null || (ua.task is Task_GoToLocation tLocation && tLocation.target.index == ua.homeLocation)) && validChallengeData.FindAll(cd => !(cd.challenge is Rt_DeepOnes_TravelBeneath)).Count == 0 && validTaskData.Count == 0)
                 {
-                    ua.task = new Task_PerformChallenge(travel);
+                    Rt_DeepOnes_TravelBeneath travel = (Rt_DeepOnes_TravelBeneath)ua.rituals.FirstOrDefault(rt => rt is Rt_DeepOnes_TravelBeneath);
+                    if (travel != null)
+                    {
+                        ua.task = new Task_PerformChallenge(travel);
+                    }
+                }
+            }
+            else if (ua is UAEN_CaveSpider)
+            {
+                if (ua.task is Task_GoToLocation)
+                {
+                    ua.task.turnTick(ua);
                 }
             }
         }
@@ -243,48 +276,5 @@ namespace CommunityLib
 
             return travelTime;
         }
-
-        // Test items.
-
-        /*
-        public override Location[] interceptGetPathTo_Location(Location locA, Location locB, Unit u, bool safeMove)
-        {
-            if (u is UM_FirstDaughter)
-            {
-                Console.WriteLine("CommunityLib: intercepted get path to for First Daughter");
-                return ModCore.Get().pathfinding.getPathTo(locA, locB, new List<Func<Location[], Location, Unit, bool>>(), u);
-            }
-            return null;
-        }
-
-        public override void onPopulatingPathfindingDelegates_Location(Location locA, Location locB, Unit u, List<Func<Location[], Location, Unit, bool>> pathfindingDelegates)
-        {
-            if (u is UM_FirstDaughter)
-            {
-                Console.WriteLine("CommunityLib: populating delegate for First Daughter");
-                pathfindingDelegates.Add(Pathfinding.delegate_LANDLOCKED);
-            }
-        }*/
-
-
-        /*public override string onPopupHolyOrder_DisplayPageText(HolyOrder order, string s, int pageIndex)
-        {
-            if (order is HolyOrder_Witches && pageIndex == 0)
-            {
-                return "Witches are fickle things.";
-            }
-
-            return s;
-        }*/
-
-        /*public override bool onAgentIsRecruitable(UA ua, bool result)
-        {
-            if (ua is UAEN_OrcUpstart)
-            {
-                return true;
-            }
-
-            return result;
-        }*/
     }
 }

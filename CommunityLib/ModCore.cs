@@ -274,6 +274,28 @@ namespace CommunityLib
                             {
                                 Console.WriteLine("CommunityLib: Failed to get Go Home task Type (ShadowsInsectGod.Code.Task_GoHome)");
                             }
+
+                            Type haematophageType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.UAEN_Haematophage", false);
+                            if (droneType != null)
+                            {
+                                intDataCord.typeDict.Add("Haematophage", haematophageType);
+                                intDataCord.constructorInfoDict.Add("Haematophage", AccessTools.Constructor(haematophageType, new Type[] { typeof(Location), typeof(SocialGroup), typeof(Person) }));
+                                intDataCord.methodInfoDict.Add("Haematophage.turnTickAI", AccessTools.Method(haematophageType, "turnTickAI", new Type[0]));
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Haematophage agent Type (ShadowsInsectGod.Code.UAEN_Haematophage)");
+                            }
+
+                            Type slowHealingType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.Task_SlowHealing", false);
+                            if (seekType != null)
+                            {
+                                intDataCord.typeDict.Add("SlowHealTask", slowHealingType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Slow healing task Type (ShadowsInsectGod.Code.Task_SlowHealing)");
+                            }
                         }
                         break;
                     case "CovenExpansion":

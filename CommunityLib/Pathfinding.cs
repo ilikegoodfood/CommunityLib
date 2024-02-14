@@ -72,7 +72,7 @@ namespace CommunityLib
             return true;
         }
 
-        public static bool delegate_SHADOW_ONLY(Location[] currentPath, Location location, Unit u)
+        public static bool delegate_SHADOW_ONLY(Location[] currentPath, Location location, Unit u, Location origin, Location destination)
         {
             return location.getShadow() >= 0.5;
         }
@@ -121,9 +121,11 @@ namespace CommunityLib
                 layers.Add(locB.hex.z);
             }
 
-            bool firstPass = true;
-            while (firstPass)
+            int passCount = 0;
+            while (passCount < 2)
             {
+                passCount++;
+
                 int i = 0;
                 while (i < 128)
                 {
@@ -138,9 +140,9 @@ namespace CommunityLib
                             if (!locationHashes.Contains(neighbour))
                             {
                                 bool valid = true;
-                                foreach (Func<Location[], Location, Unit, bool> pathfindingDelegate in pathfindingDelegates)
+                                foreach (Func<Location[], Location, Unit, Location, Location, bool> pathfindingDelegate in pathfindingDelegates)
                                 {
-                                    if (!pathfindingDelegate(paths[j], neighbour, u))
+                                    if (!pathfindingDelegate(paths[j], neighbour, u, locA, locB))
                                     {
                                         valid = false;
                                         break;
@@ -176,7 +178,7 @@ namespace CommunityLib
                     shuffle(locations, paths);
                 }
 
-
+                pathfindingDelegates.Remove(delegate_LayerBound);
             }
 
             return null;
@@ -189,7 +191,7 @@ namespace CommunityLib
                 return new Location[0];
             }
 
-            List<Func<Location[], Location, Unit, bool>> pathfindingDelegates = new List<Func<Location[], Location, Unit, bool>>();
+            List<Func<Location[], Location, Unit, Location, Location, bool>> pathfindingDelegates = new List<Func<Location[], Location, Unit, Location, Location, bool>>();
 
             if (u != null)
             {
@@ -212,6 +214,8 @@ namespace CommunityLib
             {
                 hook.onPopulatingPathfindingDelegates_SocialGroup(locA, sg, u, pathfindingDelegates);
             }
+
+            Location locB = sg.getCapitalHex().location;
 
             HashSet<Location> locationHashes = new HashSet<Location> { locA };
             List<Location> locations = new List<Location> { locA };
@@ -237,9 +241,9 @@ namespace CommunityLib
                         if (!locationHashes.Contains(neighbour))
                         {
                             bool valid = true;
-                            foreach (Func<Location[], Location, Unit, bool> pathfindingDelegate in pathfindingDelegates)
+                            foreach (Func<Location[], Location, Unit, Location, Location, bool> pathfindingDelegate in pathfindingDelegates)
                             {
-                                if (!pathfindingDelegate(paths[j], neighbour, u))
+                                if (!pathfindingDelegate(paths[j], neighbour, u, locA, locB))
                                 {
                                     valid = false;
                                     break;
