@@ -55,6 +55,18 @@ namespace CommunityLib
 
         public static int opt_targetNaturalWonderCount = 1;
 
+        public static bool opt_godSort_Alphabetise = false;
+
+        public static bool opt_godSort_swwfFirst = true;
+
+        public static bool opt_godSort_splitModded = true;
+
+        public static bool opt_godSort_bonusLast = true;
+
+        public static bool opt_godSort_minorLate = true;
+
+        public static bool opt_godSort_ignorePrefixes = true;
+
         public static ModCore Get() => core;
 
         public override void onModsInitiallyLoaded()
@@ -93,6 +105,24 @@ namespace CommunityLib
                     break;
                 case "Allow Culture-Specific Minor Settlement Graphics":
                     opt_allowCulturalMinorSettelementGraphics = value;
+                    break;
+                case "God Sort: Alphabetise":
+                    opt_godSort_Alphabetise = value;
+                    break;
+                case "God Sort: Keep SWWF First":
+                    opt_godSort_swwfFirst = value;
+                    break;
+                case "God Sort: Differentiate Modded Gods":
+                    opt_godSort_splitModded = value;
+                    break;
+                case "God Sort: Bonus Gods Last":
+                    opt_godSort_bonusLast = value;
+                    break;
+                case "God Sort: Minor Gods After Major Gods":
+                    opt_godSort_minorLate = value;
+                    break;
+                case "God Sort: Ignore God-Name Prefixes":
+                    opt_godSort_ignorePrefixes = value;
                     break;
                 default:
                     break;

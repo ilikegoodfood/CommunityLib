@@ -116,7 +116,6 @@ namespace CommunityLib
             // Prefab Store hooks
             harmony.Patch(original: AccessTools.Method(typeof(PrefabStore), nameof(PrefabStore.popHolyOrder), new Type[] { typeof(HolyOrder) }), prefix: new HarmonyMethod(patchType, nameof(Prefab_popHolyOrder_Prefix)));
 
-
             // SYSTEM MODIFICATIONS //
             // Assign Killer to Miscellaneous causes of death
             harmony.Patch(original: AccessTools.Method(typeof(UM_HumanArmy), nameof(UM_HumanArmy.turnTickInner)), transpiler: new HarmonyMethod(patchType, nameof(UM_HumanArmy_turnTickInner_Transpiler)));
@@ -186,9 +185,15 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Rest_InOrcCamp), nameof(Ch_Rest_InOrcCamp.complete), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Ch_Rest_InOrcCamp_complete_Postfix)));
 
             // MOD OPTIONS //
+            // God-Sort
+            // Patches for PrefabStore
+            harmony.Patch(original: AccessTools.Method(typeof(PrefabStore), nameof(PrefabStore.getScrollSetGods), new Type[] { typeof(List<God>) }), prefix: new HarmonyMethod(patchType, nameof(PrefabStore_getScrollSetGods_Prefix)));
+
+            // Orc Horde Count
             // Patches for ManagerMajorThreats
             harmony.Patch(original: AccessTools.Method(typeof(ManagerMajorThreats), nameof(ManagerMajorThreats.turnTick), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(ManagerMajorThreats_turnTick_Transpiler)));
 
+            // Natural Wonder Count
             // Patches for Map
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.placeWonders), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Map_placeWonders_Transpiler)));
 
@@ -4086,6 +4091,262 @@ namespace CommunityLib
             }
         }
 
+        // Mod Option Patches //
+        // God Sort Patches
+        private static void PrefabStore_getScrollSetGods_Prefix(List<God> gods)
+        {
+            God[] godsArray = new God[gods.Count];
+
+            int swwfIndex = -1;
+            HashSet<Type> baseGameGodTypes = new HashSet<Type> { typeof(God_LaughingKing), typeof(God_Vinerva), typeof(God_Ophanim), typeof(God_Mammon), typeof(God_Eternity), typeof(God_Cards) };
+            List<int> godIndexes = new List<int>();
+            List<int> moddedGodIndexes = new List<int>();
+
+            if (!ModCore.opt_godSort_swwfFirst && swwfIndex != -1)
+            {
+                godIndexes.Add(swwfIndex);
+            }
+
+            //Console.WriteLine("Community Lib: Inital God Order:");
+            for(int i = 0; i < gods.Count; i++)
+            {
+                //Console.WriteLine("CommunityLin: " + gods[i].getName());
+                godsArray[i] = gods[i];
+
+                if (ModCore.opt_godSort_splitModded)
+                {
+                    if (ModCore.opt_godSort_swwfFirst)
+                    {
+                        if (gods[i].GetType() == typeof(God_Snake))
+                        {
+                            swwfIndex = i;
+                            //Console.WriteLine("CommunityLin: SWWF index is " + i);
+                        }
+                        else
+                        {
+                            if (baseGameGodTypes.Contains(gods[i].GetType()))
+                            {
+                                godIndexes.Add(i);
+                            }
+                            else if (gods[i].getName() == "Cordyceps Hive Mind")
+                            {
+                                godIndexes.Add(i);
+                            }
+                            else
+                            {
+                                moddedGodIndexes.Add(i);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (baseGameGodTypes.Contains(gods[i].GetType()))
+                        {
+                            godIndexes.Add(i);
+                        }
+                        else if (gods[i].getName() == "Cordyceps Hive Mind")
+                        {
+                            godIndexes.Add(i);
+                        }
+                        else
+                        {
+                            moddedGodIndexes.Add(i);
+                        }
+                    }
+                }
+                else
+                {
+                    if (ModCore.opt_godSort_swwfFirst)
+                    {
+                        if (gods[i].GetType() == typeof(God_Snake))
+                        {
+                            swwfIndex = i;
+                            //Console.WriteLine("CommunityLin: SWWF index is " + i);
+                        }
+                        else
+                        {
+                            godIndexes.Add(i);
+                        }
+                    }
+                    else
+                    {
+                        godIndexes.Add(i);
+                    }
+                }
+            }
+            List<int> sortBlock = new List<int>();
+            sortBlock.AddRange(godIndexes);
+
+            godIndexes.Clear();
+            if (ModCore.opt_godSort_swwfFirst && swwfIndex != -1)
+            {
+                godIndexes.Add(swwfIndex);
+            }
+
+            sortGods(sortBlock, godsArray);
+            godIndexes.AddRange(sortBlock);
+
+            if (ModCore.opt_godSort_splitModded)
+            {
+                sortBlock.Clear();
+                sortBlock.AddRange(moddedGodIndexes);
+
+                sortGods(sortBlock, godsArray);
+                godIndexes.AddRange(sortBlock);
+            }
+
+            for (int i = 0; i < gods.Count; i++)
+            {
+                gods[i] = godsArray[godIndexes[i]];
+            }
+
+            /*Console.WriteLine("CommunityLib: Final God Order");
+            foreach (God god in gods)
+            {
+                Console.WriteLine("CommunityLib: " + god.getName());
+            }*/
+        }
+
+        private static void sortGods(List<int> sortBlock, God[] godsArray)
+        {
+            List<int> bonusSortBlock = new List<int>();
+            List<int> minorSortBlock = new List<int>();
+
+            foreach (int index in sortBlock)
+            {
+                if (godsArray[index].getName().Contains("Bonus God: "))
+                {
+                    bonusSortBlock.Add(index);
+                }
+                else if (godsArray[index].getName().Contains("Minor God: "))
+                {
+                    minorSortBlock.Add(index);
+                }
+            }
+
+            if (ModCore.opt_godSort_bonusLast)
+            {
+                foreach (int index in bonusSortBlock)
+                {
+                    sortBlock.Remove(index);
+                }
+
+                if (ModCore.opt_godSort_Alphabetise)
+                {
+                    alphabetiseGodIndexes(bonusSortBlock, godsArray);
+                }
+            }
+
+            if (ModCore.opt_godSort_minorLate)
+            {
+                foreach (int index in minorSortBlock)
+                {
+                    sortBlock.Remove(index);
+                }
+
+                if (ModCore.opt_godSort_Alphabetise)
+                {
+                    alphabetiseGodIndexes(minorSortBlock, godsArray);
+                }
+            }
+
+            if (ModCore.opt_godSort_Alphabetise)
+            {
+                alphabetiseGodIndexes(sortBlock, godsArray);
+            }
+
+            if (ModCore.opt_godSort_minorLate)
+            {
+                sortBlock.AddRange(minorSortBlock);
+            }
+
+            if (ModCore.opt_godSort_bonusLast)
+            {
+                sortBlock.AddRange(bonusSortBlock);
+            }
+        }
+
+        private static void alphabetiseGodIndexes(List<int> godIndexes, God[] godsArray)
+        {
+            /*Console.WriteLine("----------");
+            Console.WriteLine("CommunityLib: Alphabetising gods");
+            foreach (int index in godIndexes)
+            {
+                Console.WriteLine("CommunityLib: " + godsArray[index].getName());
+            }
+            Console.WriteLine("----------");*/
+
+            if (godIndexes.Count < 2 || godsArray.Length < 2)
+            {
+                //Console.WriteLine("CommunityLib: Number of gods below 2 is sorted by default.");
+                return;
+            }
+
+            bool sorted = false;
+            int iterations = 0;
+            int maxIterations = godIndexes.Count * godIndexes.Count;
+            while (!sorted && iterations < maxIterations)
+            {
+                iterations++;
+
+                bool changed = false;
+                for (int i = 1; i < godIndexes.Count; i++)
+                {
+                    string godNameA = godsArray[godIndexes[i - 1]].getName();
+                    string godNameB = godsArray[godIndexes[i]].getName();
+
+                    //Console.WriteLine("CommunityLib: Comparing names for " + godNameA + " and " + godNameB);
+
+                    if (ModCore.opt_godSort_ignorePrefixes)
+                    {
+                        //Console.WriteLine("CommunityLib: Trimming Prefixes");
+                        char[] deliminator = new char[] { ':' };
+                        string[] splitA = godNameA.Split(deliminator, 2);
+                        if (splitA.Length == 2)
+                        {
+                            godNameA = splitA[1];
+                        }
+
+                        string[] splitB = godNameB.Split(deliminator, 2);
+                        if (splitB.Length == 2)
+                        {
+                            godNameB = splitB[1];
+                        }
+
+                        //Console.WriteLine("CommunityLib: Trimmed God names are: " + godNameA + " and " +godNameB);
+                    }
+
+                    godNameA = godNameA.TrimStart();
+                    godNameB = godNameB.TrimStart();
+                    if (StringComparer.OrdinalIgnoreCase.Compare(godNameB, godNameA) < 0)
+                    {
+                        //Console.WriteLine("CommunityLib: " + godNameB + " should come before " + godNameA);
+                        int indexA = godIndexes[i - 1];
+                        int indexB = godIndexes[i];
+
+                        godIndexes[i - 1] = indexB;
+                        godIndexes[i] = indexA;
+
+                        changed = true;
+                    }
+                }
+
+                if (!changed)
+                {
+                    sorted = true;
+                }
+            }
+            
+            /*Console.WriteLine("----------");
+            Console.WriteLine("CommunityLib: Gods alphabetised");
+            foreach (int index in godIndexes)
+            {
+                Console.WriteLine("CommunityLib: " + godsArray[index].getName());
+            }
+            Console.WriteLine("----------");*/
+        }
+
+        // Orc Horde Count Patches
         private static IEnumerable<CodeInstruction> ManagerMajorThreats_turnTick_Transpiler(IEnumerable<CodeInstruction> instructions)
         {
             List<CodeInstruction> instructionList = instructions.ToList();
@@ -4144,6 +4405,7 @@ namespace CommunityLib
             return result;
         }
 
+        // Natural Wonder Count Patches
         private static IEnumerable<CodeInstruction> Map_placeWonders_Transpiler(IEnumerable<CodeInstruction> instructions)
         {
             MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Map_placeWonders_TranspilerBody), new Type[] { typeof(Map) });
