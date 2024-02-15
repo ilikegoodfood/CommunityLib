@@ -272,6 +272,7 @@ namespace CommunityLib
 
             aiChallenges_OrcUpstart[2].delegates_Utility.Add(delegate_Utility_Ch_Rest_InOrcCamp);
 
+            aiChallenges_OrcUpstart[3].delegates_ValidFor.Add(delegate_ValidFor_Rti_Orcs_CeaseWar);
             aiChallenges_OrcUpstart[3].delegates_Utility.Add(delegate_Utility_Rti_Orc_CeaseWar);
 
             ModCore.Get().GetAgentAI().RegisterAgentType(typeof(UAEN_OrcUpstart), new AgentAI.ControlParameters(true));
@@ -328,6 +329,15 @@ namespace CommunityLib
             }
 
             return utility;
+        }
+
+        private bool delegate_ValidFor_Rti_Orcs_CeaseWar(AgentAI.ChallengeData challengeData, UA ua)
+        {
+            if (challengeData.location.soc == null || challengeData.location.soc == ua.society)
+            {
+                return true;
+            }
+            return false;
         }
 
         private double delegate_Utility_Rti_Orc_CeaseWar(AgentAI.ChallengeData challengeData, UA ua, double utility, List<ReasonMsg> reasonMsgs)
