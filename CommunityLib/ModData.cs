@@ -1,6 +1,8 @@
 ﻿using Assets.Code;
+using Assets.Code.Modding;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -12,6 +14,12 @@ namespace CommunityLib
     public class ModData
     {
         public Map map;
+
+        private SaveData saveData = null;
+
+        private string dataDirPath = "";
+
+        private string dataFileName = "UserData.json";
 
         public bool isClean = true;
 
@@ -135,9 +143,64 @@ namespace CommunityLib
             isClean = true;
         }
 
+        public SaveData getSaveData() => saveData;
+
+        public void loadUserData()
+        {
+            dataDirPath = Path.Combine(Path.GetDirectoryName(ModCore.Get().GetType().Assembly.Location), "..");
+
+            if (!string.IsNullOrEmpty(dataDirPath) && Directory.Exists(dataDirPath))
+            {
+                string filePath = Path.Combine(dataDirPath, dataFileName);
+
+                if (!File.Exists(filePath))
+                {
+                    SaveData saveData = new SaveData();
+                    string jsonData = JsonUtility.ToJson(saveData);
+
+                    File.WriteAllText(filePath, jsonData);
+                    Console.WriteLine("CommunityLib: New file created: " + filePath);
+                }
+                else
+                {
+                    Console.WriteLine("CommunityLib: File already exists: " + filePath);
+
+                    string jsonData = File.ReadAllText(filePath);
+                    saveData = JsonUtility.FromJson<SaveData>(jsonData);
+                }
+            }
+            else
+            {
+                Console.WriteLine("CommunityLib: Directory does not exist or is invalid: " + dataDirPath);
+            }
+        }
+
+        public void saveUserData()
+        {
+            dataDirPath = Path.Combine(Path.GetDirectoryName(ModCore.Get().GetType().Assembly.Location), "..");
+
+            if (!string.IsNullOrEmpty(dataDirPath) && Directory.Exists(dataDirPath))
+            {
+                string filePath = Path.Combine(dataDirPath, dataFileName);
+
+                // Serialize the SaveData object to JSON and write it to the file
+                string jsonData = JsonUtility.ToJson(saveData);
+                File.WriteAllText(filePath, jsonData);
+
+                Console.WriteLine("CommunityLib: User data saved to: " + filePath);
+            }
+            else
+            {
+                Console.WriteLine("CommunityLib: Directory does not exist or is invalid: " + dataDirPath);
+            }
+        }
+
         public void onLoad(Map map)
         {
             this.map = map;
+
+            saveData.lastPlayedGod = map.overmind.god.getName();
+            saveUserData();
 
             initialiseModIntegrationData();
             initialiseModCultureData();
