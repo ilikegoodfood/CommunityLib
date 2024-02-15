@@ -50,6 +50,10 @@
       <HintPath>..\..\..\Game DLLs\1_1\UnityEngine.CoreModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.JSONSerializeModule">
+      <HintPath>..\..\..\Game DLLs\1_1\UnityEngine.JSONSerializeModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityEngine.UI">
       <HintPath>..\..\..\Game DLLs\1_1\UnityEngine.UI.dll</HintPath>
       <Private>False</Private>
@@ -69,6 +73,7 @@
     <Compile Include="ModIntegrationData.cs" />
     <Compile Include="OnChallengeComplete.cs" />
     <Compile Include="Rt_DeepOnes_TravelBeneath.cs" />
+    <Compile Include="SaveData.cs" />
     <Compile Include="Set_Shipwreck.cs" />
     <Compile Include="SortableTaskBlock_Advanced.cs" />
     <Compile Include="Sub_Shipwreck.cs" />

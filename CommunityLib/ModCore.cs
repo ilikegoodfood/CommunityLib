@@ -65,6 +65,8 @@ namespace CommunityLib
 
         public static bool opt_godSort_ignorePrefixes = true;
 
+        public static bool opt_godSort_lastPlayedFirst = false;
+
         public static ModCore Get() => core;
 
         public override void onModsInitiallyLoaded()
@@ -74,6 +76,7 @@ namespace CommunityLib
             HarmonyPatches.PatchingInit();
 
             data = new ModData();
+            data.loadUserData();
         }
 
         public override void receiveModConfigOpts_bool(string optName, bool value)
@@ -119,6 +122,9 @@ namespace CommunityLib
                 case "God Sort: Ignore God-Name Prefixes":
                     opt_godSort_ignorePrefixes = value;
                     break;
+                case "God Sort: Last Played First":
+                    opt_godSort_lastPlayedFirst = value;
+                    break;
                 default:
                     break;
             }
@@ -150,6 +156,9 @@ namespace CommunityLib
             this.map = map;
             data.map = map;
             data.isClean = false;
+
+            data.getSaveData().lastPlayedGod = map.overmind.god.getName();
+            data.saveUserData();
 
             // Set local variables;
             randStore = new Dictionary<Unit, Dictionary<object, Dictionary<string, double>>>();

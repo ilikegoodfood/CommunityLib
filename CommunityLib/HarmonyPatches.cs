@@ -4018,15 +4018,11 @@ namespace CommunityLib
         {
             God[] godsArray = new God[gods.Count];
 
+            int lastPlayedIndex = -1;
             int swwfIndex = -1;
             HashSet<Type> baseGameGodTypes = new HashSet<Type> { typeof(God_LaughingKing), typeof(God_Vinerva), typeof(God_Ophanim), typeof(God_Mammon), typeof(God_Eternity), typeof(God_Cards) };
             List<int> godIndexes = new List<int>();
             List<int> moddedGodIndexes = new List<int>();
-
-            if (!ModCore.opt_godSort_swwfFirst && swwfIndex != -1)
-            {
-                godIndexes.Add(swwfIndex);
-            }
 
             //Console.WriteLine("Community Lib: Inital God Order:");
             for(int i = 0; i < gods.Count; i++)
@@ -4036,28 +4032,14 @@ namespace CommunityLib
 
                 if (ModCore.opt_godSort_splitModded)
                 {
-                    if (ModCore.opt_godSort_swwfFirst)
+                    if (ModCore.opt_godSort_lastPlayedFirst && gods[i].getName() == ModCore.Get().data.getSaveData().lastPlayedGod)
                     {
-                        if (gods[i].GetType() == typeof(God_Snake))
-                        {
-                            swwfIndex = i;
-                            //Console.WriteLine("CommunityLin: SWWF index is " + i);
-                        }
-                        else
-                        {
-                            if (baseGameGodTypes.Contains(gods[i].GetType()))
-                            {
-                                godIndexes.Add(i);
-                            }
-                            else if (gods[i].getName() == "Cordyceps Hive Mind")
-                            {
-                                godIndexes.Add(i);
-                            }
-                            else
-                            {
-                                moddedGodIndexes.Add(i);
-                            }
-                        }
+                        lastPlayedIndex = i;
+                    }
+                    else if (ModCore.opt_godSort_swwfFirst && gods[i].GetType() == typeof(God_Snake))
+                    {
+                        swwfIndex = i;
+                        //Console.WriteLine("CommunityLin: SWWF index is " + i);
                     }
                     else
                     {
@@ -4077,17 +4059,14 @@ namespace CommunityLib
                 }
                 else
                 {
-                    if (ModCore.opt_godSort_swwfFirst)
+                    if (ModCore.opt_godSort_lastPlayedFirst && gods[i].getName() == ModCore.Get().data.getSaveData().lastPlayedGod)
                     {
-                        if (gods[i].GetType() == typeof(God_Snake))
-                        {
-                            swwfIndex = i;
-                            //Console.WriteLine("CommunityLin: SWWF index is " + i);
-                        }
-                        else
-                        {
-                            godIndexes.Add(i);
-                        }
+                        lastPlayedIndex = i;
+                    }
+                    else if (ModCore.opt_godSort_swwfFirst && gods[i].GetType() == typeof(God_Snake))
+                    {
+                        swwfIndex = i;
+                        //Console.WriteLine("CommunityLin: SWWF index is " + i);
                     }
                     else
                     {
@@ -4099,6 +4078,11 @@ namespace CommunityLib
             sortBlock.AddRange(godIndexes);
 
             godIndexes.Clear();
+            if (ModCore.opt_godSort_lastPlayedFirst && lastPlayedIndex != -1)
+            {
+                godIndexes.Add(lastPlayedIndex);
+            }
+
             if (ModCore.opt_godSort_swwfFirst && swwfIndex != -1)
             {
                 godIndexes.Add(swwfIndex);
