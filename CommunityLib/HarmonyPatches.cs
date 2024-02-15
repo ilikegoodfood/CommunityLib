@@ -2677,6 +2677,7 @@ namespace CommunityLib
             MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(SG_Orc_canSettle_TranspilerBody));
 
             yield return new CodeInstruction(OpCodes.Nop);
+            yield return new CodeInstruction(OpCodes.Ldarg_0);
             yield return new CodeInstruction(OpCodes.Ldarg_1);
             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
             yield return new CodeInstruction(OpCodes.Ret);
@@ -2684,12 +2685,18 @@ namespace CommunityLib
             Console.WriteLine("CommunityLib: Completed complete function replacement transpiler SG_Orc_canSettle_Transpiler");
         }
 
-        private static bool SG_Orc_canSettle_TranspilerBody(Location location)
+        private static bool SG_Orc_canSettle_TranspilerBody(SG_Orc orcs, Location location)
         {
             if (location.isOcean || location.hex.getHabilitability() < location.map.opt_orcHabMult * location.map.param.orc_habRequirement)
             {
                 return false;
             }
+
+            if (location.hex.z == 1 && !orcs.canGoUnderground())
+            {
+                return false;
+            }
+
             if (location.settlement != null)
             {
                 if (ModCore.Get().getSettlementTypesForOrcExpanion().TryGetValue(location.settlement.GetType(), out HashSet<Type> subsettlementBlacklist))
@@ -2745,6 +2752,11 @@ namespace CommunityLib
             if (ua.location.isOcean || ua.location.hex.getHabilitability() < ua.location.map.opt_orcHabMult * ua.location.map.param.orc_habRequirement)
             {
                 //Console.WriteLine("CommunityLib: Location is uninhabitable");
+                return false;
+            }
+
+            if (ua.location.hex.z == 1 && !orcSociety.canGoUnderground())
+            {
                 return false;
             }
 
