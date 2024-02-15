@@ -4487,7 +4487,7 @@ namespace CommunityLib
 
                     foreach (Location location in map.locations)
                     {
-                        if (location.isOcean && !location.getNeighbours().Any(n => !n.isOcean) && location.settlement == null)
+                        if (location.hex.z == 0 && location.isOcean && !location.getNeighbours().Any(n => !n.isOcean) && location.settlement == null)
                         {
                             locations.Add(location);
                         }
@@ -4516,7 +4516,7 @@ namespace CommunityLib
 
                     foreach (Location location in map.locations)
                     {
-                        if (location.settlement == null && !location.isOcean && (location.hex.terrain == Hex.terrainType.ARID || location.hex.terrain == Hex.terrainType.DESERT || location.hex.terrain == Hex.terrainType.DRY))
+                        if (location.hex.z == 0 && location.settlement == null && !location.isOcean && (location.hex.terrain == Hex.terrainType.ARID || location.hex.terrain == Hex.terrainType.DESERT || location.hex.terrain == Hex.terrainType.DRY))
                         {
                             locations.Add(location);
                         }
@@ -4545,7 +4545,7 @@ namespace CommunityLib
 
                     foreach (Location location in map.locations)
                     {
-                        if (location.settlement == null && !location.isOcean)
+                        if (location.hex.z == 0 && location.settlement == null && !location.isOcean)
                         {
                             locations.Add(location);
                         }
