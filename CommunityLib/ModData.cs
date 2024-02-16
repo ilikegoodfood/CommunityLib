@@ -199,6 +199,10 @@ namespace CommunityLib
         {
             this.map = map;
 
+            if (saveData == null)
+            {
+                loadUserData();
+            }
             saveData.lastPlayedGod = map.overmind.god.getName();
             saveUserData();
 
