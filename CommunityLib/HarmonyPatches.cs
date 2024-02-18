@@ -46,7 +46,7 @@ namespace CommunityLib
 
             // HOOKS //
             // Graphical unit updated hook
-            harmony.Patch(original: AccessTools.Method(typeof(GraphicalMap), nameof(GraphicalMap.checkData), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(GraphicalMap_checkData_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(GraphicalUnit), nameof(GraphicalUnit.checkData), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(GraphicalUnit_checkData_Postfix)));
 
             // Graphical link updated hook
             harmony.Patch(original: AccessTools.Method(typeof(GraphicalLink), nameof(GraphicalLink.Update), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(GraphicalLink_Update_Postfix)));
@@ -201,47 +201,13 @@ namespace CommunityLib
         }
 
         // Graphical unit updated hook
-        private static IEnumerable<CodeInstruction> GraphicalMap_checkData_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        private static void GraphicalUnit_checkData_Postfix(GraphicalUnit __instance)
         {
-            List<CodeInstruction> instructionList = codeInstructions.ToList();
-
-            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof (GraphicalMap_checkData_TranspilerBody), new Type[] { typeof(GraphicalUnit) });
-
-            FieldInfo FI_Unit_outer = AccessTools.Field(typeof(Unit), nameof(Unit.outer));
-
-            int targetIndex = 1;
-            for (int i = 0; i < instructionList.Count; i++)
+            Console.WriteLine("CommunityLib: Calling onGraphicalUnitUpdated hook");
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                if (targetIndex > 0)
-                {
-                    if (targetIndex == 1)
-                    {
-                        if (i > 1 && instructionList[i].opcode == OpCodes.Nop && instructionList[i-2].opcode == OpCodes.Callvirt && instructionList[i-1].opcode == OpCodes.Nop)
-                        {
-                            targetIndex = 0;
-
-                            yield return new CodeInstruction(OpCodes.Ldloc_S, 4);
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Unit_outer);
-                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
-                        }
-                    }
-                }
-
-                yield return instructionList[i];
-            }
-
-            Console.WriteLine("CommunityLib: Completed GraphicalMap_checkData_Transpiler");
-            if (targetIndex != 0)
-            {
-                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
-            }
-        }
-
-        private static void GraphicalMap_checkData_TranspilerBody(GraphicalUnit graphicalUnit)
-        {
-            foreach(Hooks hook in ModCore.Get().GetRegisteredHooks())
-            {
-                hook.onGraphicalUnitUpdated(graphicalUnit);
+                Console.WriteLine("CommunityLib: Calling hook from " + hook.GetType().Namespace);
+                hook.onGraphicalUnitUpdated(__instance);
             }
         }
 
@@ -3900,9 +3866,35 @@ namespace CommunityLib
             return true;
         }
 
+        public static double UAEN_Cordyceps_Haematophage_getAttackUtility(double utility, UA ua, Unit other, List<ReasonMsg> reasonMsgs, bool includeDangerousFoe)
+        {
+            if (other is UAG target && !other.isCommandable())
+            {
+                double attackStrength = target.getStatAttack();
+                if (target.minions[0] != null)
+                {
+                    attackStrength += target.minions[0].getAttack();
+                }
+
+                if (ua.minions[0] != null || attackStrength < ua.hp)
+                {
+                    utility = 80.0;
+                    reasonMsgs?.Add(new ReasonMsg("Base", utility));
+                }
+            }
+
+            return utility;
+        }
+
         private static bool UA_getVisibleUnits_Prefix(UA __instance, ref List<Unit> __result, out bool __state)
         {
             bool result = true;
+
+            if (__result == null)
+            {
+                __result = new List<Unit>();
+            }
+
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 bool retValue = hook.interceptGetVisibleUnits(__instance, __result);

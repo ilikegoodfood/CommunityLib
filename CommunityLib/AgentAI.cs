@@ -15,7 +15,7 @@ namespace CommunityLib
     {
         public static DebugProperties debug;
 
-        private static DebugProperties debugInternal;
+        public static DebugProperties debugInternal;
 
         private bool aiRunning = false;
 
@@ -1034,14 +1034,14 @@ namespace CommunityLib
             foreach (TaskData taskData in validTasks)
             {
                 List<ReasonMsg> reasonMsgs = null;
-                if (debugInternal.outputUtility_ValidTasks)
+                if (debugInternal.debug && debugInternal.outputUtility_ValidTasks)
                 {
                     reasonMsgs = new List<ReasonMsg>();
                 }
 
                 utility2 = checkTaskUtility(taskData, ua, data, data.controlParameters, reasonMsgs);
 
-                if (debugInternal.outputUtility_ValidTasks && reasonMsgs != null)
+                if (debugInternal.debug && debugInternal.outputUtility_ValidTasks && reasonMsgs != null)
                 {
                     Console.WriteLine("CommunityLib: Task Utility");
                     foreach (ReasonMsg reasonMsg in reasonMsgs)
@@ -1075,7 +1075,7 @@ namespace CommunityLib
                 {
                     targetTask = targetTasks[Eleven.random.Next(targetTasks.Count)];
                 }
-                if (debugInternal.outputUtility_ChosenAction)
+                if (debugInternal.debug && debugInternal.outputUtility_ChosenAction)
                 {
                     List<ReasonMsg> reasonMsgs = new List<ReasonMsg>();
                     Console.WriteLine("CommunityLib: " + ua.getName() + " is going to perform task of type " + targetTask.aiTask.taskType);
@@ -1099,7 +1099,7 @@ namespace CommunityLib
                     targetUnit = targetUnits[Eleven.random.Next(targetUnits.Count)];
                 }
 
-                if (debugInternal.outputUtility_ChosenAction)
+                if (debugInternal.debug && debugInternal.outputUtility_ChosenAction)
                 {
                     List<ReasonMsg> reasonMsgs = new List<ReasonMsg>();
                     Console.WriteLine("CommunityLib: " + ua.getName() + " is moving to attack " + targetUnit.getName() + " (" + (targetUnit.society?.getName() ?? "No Soceity") + ") at " + targetUnit.location.getName() + " (" + (targetUnit.location.soc?.getName() ?? "No Soceity") + ")");
@@ -1131,7 +1131,7 @@ namespace CommunityLib
                     targetDisrupt = targetDisrupts[Eleven.random.Next(targetDisrupts.Count)];
                 }
 
-                if (debugInternal.outputUtility_ChosenAction)
+                if (debugInternal.debug && debugInternal.outputUtility_ChosenAction)
                 {
                     List<ReasonMsg> reasonMsgs = new List<ReasonMsg>();
                     Console.WriteLine("CommunityLib: " + ua.getName() + " is moving to disrupt " + targetDisrupt.getName() + " (" + (targetDisrupt.society?.getName() ?? "No Soceity") + ") at " + targetDisrupt.location.getName() + " (" + (targetDisrupt.location.soc?.getName() ?? "No Soceity") + ")");
@@ -1162,7 +1162,7 @@ namespace CommunityLib
                     targetGuard = targetGuards[Eleven.random.Next(targetGuards.Count)];
                 }
 
-                if (debugInternal.outputUtility_ChosenAction)
+                if (debugInternal.debug && debugInternal.outputUtility_ChosenAction)
                 {
                     List<ReasonMsg> reasonMsgs = new List<ReasonMsg>();
                     Console.WriteLine("CommunityLib: " + ua.getName() + " is moving to guard " + targetGuard.getName() + " (" + (targetGuard.society?.getName() ?? "No Soceity") + ") at " + targetGuard.location.getName() + " (" + (targetGuard.location.soc?.getName() ?? "No Soceity") + ")");
@@ -1192,7 +1192,7 @@ namespace CommunityLib
                     targetChallenge = targetChallenges[Eleven.random.Next(targetChallenges.Count)];
                 }
 
-                if (debugInternal.outputUtility_ChosenAction)
+                if (debugInternal.debug && debugInternal.outputUtility_ChosenAction)
                 {
                     Console.WriteLine("CommunityLib: " + ua.getName() + " is going to perform challenge " + targetChallenge.challenge.getName() + " at " + targetChallenge.location.getName() + " (" + (targetChallenge.location.soc?.getName() ?? "No Society") + ")");
 
@@ -1260,6 +1260,7 @@ namespace CommunityLib
                 return null;
             }
             AIData data = (AIData)aiData;
+            debugInternal = setupDebugInternal(data.controlParameters.debugProperties);
 
             // Sort all aiChallenges into type-keyed dictionaries for faster searching.
             Dictionary<Type, AIChallenge>  aiChallenges = new Dictionary<Type, AIChallenge>();
@@ -1713,82 +1714,85 @@ namespace CommunityLib
             }
             AIData data = (AIData)aiData;
 
-            if (data.aiTasks != null)
+            if (data.aiTasks == null)
             {
-                if (debugInternal.debug || data.controlParameters.debugProperties.debug)
+                return results;
+            }
+
+            setupDebugInternal(data.controlParameters.debugProperties);
+            if (debugInternal.debug)
+            {
+                Console.WriteLine("CommunityLib: Agent AI for type " + ua.GetType() + " has " + data.aiTasks.Count + " assigned tasks.");
+            }
+
+            foreach (AITask aiTask in data.aiTasks)
+            {
+                TaskData taskData = new TaskData()
                 {
-                    Console.WriteLine("CommunityLib: Agent AI for type " + ua.GetType() + " has " + data.aiTasks.Count + " assigned tasks.");
+                    aiTask = aiTask,
+                    targetCategory = AITask.TargetCategory.None
+                };
+
+                if (debugInternal.debug && (debugInternal.outputValidity_AllTasks || debugInternal.outputValidity_ValidTasks))
+                {
+                    Console.WriteLine("CommunityLib: Validity for " + aiTask.taskType + " by " + ua.getName() + " (" + (ua.society?.getName() ?? "No Society)") + " at " + ua.location.getName() + " (" + (ua.location.soc?.getName() ?? "Wilderness") + ")");
                 }
 
-                foreach (AITask aiTask in data.aiTasks)
+                bool valid = aiTask.checkTaskIsValid(taskData, ua, data.controlParameters);
+                debugTaskValidity(valid, ua, aiTask, data);
+
+                if (valid)
                 {
-                    TaskData taskData = new TaskData()
+                    switch (aiTask.targetCategory)
                     {
-                        aiTask = aiTask,
-                        targetCategory = AITask.TargetCategory.None
-                    };
+                        case AITask.TargetCategory.Location:
+                            taskData.targetCategory = AITask.TargetCategory.Location;
+                            foreach (Location location in ua.map.locations)
+                            {
+                                TaskData taskDataLoc = taskData;
+                                taskDataLoc.targetLocation = location;
+                                valid = aiTask.checkTaskIsValid(taskDataLoc, ua, data.controlParameters);
 
-                    if ((debugInternal.debug && (debugInternal.outputValidity_AllTasks || debugInternal.outputValidity_ValidTasks)) || (data.controlParameters.debugProperties.debug && (data.controlParameters.debugProperties.outputValidity_AllTasks || data.controlParameters.debugProperties.outputValidity_ValidTasks)))
-                    {
-                        Console.WriteLine("CommunityLib: Validity for " + aiTask.taskType + " by " + ua.getName() + " (" + (ua.society?.getName() ?? "No Society)") + " at " + ua.location.getName() + " (" + (ua.location.soc?.getName() ?? "Wilderness") + ")");
-                    }
-
-                    bool valid = aiTask.checkTaskIsValid(taskData, ua, data.controlParameters);
-                    debugTaskValidity(valid, ua, aiTask, data);
-
-                    if (valid)
-                    {
-                        switch (aiTask.targetCategory)
-                        {
-                            case AITask.TargetCategory.Location:
-                                taskData.targetCategory = AITask.TargetCategory.Location;
-                                foreach (Location location in ua.map.locations)
+                                debugTaskValidity(valid, ua, aiTask, data);
+                                if (valid)
                                 {
-                                    TaskData taskDataLoc = taskData;
-                                    taskDataLoc.targetLocation = location;
-                                    valid = aiTask.checkTaskIsValid(taskDataLoc, ua, data.controlParameters);
-
-                                    debugTaskValidity(valid, ua, aiTask, data);
-                                    if (valid)
-                                    {
-                                        results.Add(taskDataLoc);
-                                    }
+                                    results.Add(taskDataLoc);
                                 }
-                                break;
-                            case AITask.TargetCategory.SocialGroup:
-                                taskData.targetCategory = AITask.TargetCategory.SocialGroup;
-                                foreach (SocialGroup sg in map.socialGroups)
+                            }
+                            break;
+                        case AITask.TargetCategory.SocialGroup:
+                            taskData.targetCategory = AITask.TargetCategory.SocialGroup;
+                            foreach (SocialGroup sg in map.socialGroups)
+                            {
+                                TaskData taskDataSoc = taskData;
+                                taskDataSoc.targetSocialGroup = sg;
+                                valid = aiTask.checkTaskIsValid(taskDataSoc, ua, data.controlParameters);
+
+                                debugTaskValidity(valid, ua, aiTask, data);
+                                if (valid)
                                 {
-                                    TaskData taskDataSoc = taskData;
-                                    taskDataSoc.targetSocialGroup = sg;
-                                    valid = aiTask.checkTaskIsValid(taskDataSoc, ua, data.controlParameters);
-
-                                    debugTaskValidity(valid, ua, aiTask, data);
-                                    if (valid)
-                                    {
-                                        results.Add(taskDataSoc);
-                                    }
+                                    results.Add(taskDataSoc);
                                 }
-                                break;
-                            case AITask.TargetCategory.Unit:
-                                taskData.targetCategory = AITask.TargetCategory.Unit;
-                                foreach (Unit unit in ua.map.units)
+                            }
+                            break;
+                        case AITask.TargetCategory.Unit:
+                            taskData.targetCategory = AITask.TargetCategory.Unit;
+                            foreach (Unit unit in ua.map.units)
+                            {
+                                TaskData taskDataUnit = taskData;
+                                taskDataUnit.targetUnit = unit;
+                                valid = aiTask.checkTaskIsValid(taskDataUnit, ua, data.controlParameters);
+
+                                debugTaskValidity(valid, ua, aiTask, data);
+                                if (valid)
                                 {
-                                    TaskData taskDataUnit = taskData;
-                                    taskDataUnit.targetUnit = unit;
-                                    valid = aiTask.checkTaskIsValid(taskDataUnit, ua, data.controlParameters);
-
-                                    debugTaskValidity(valid, ua, aiTask, data);
-                                    if (valid)
-                                    {
-                                        results.Add(taskDataUnit);
-                                    }
+                                    results.Add(taskDataUnit);
                                 }
-                                break;
-                            default:
-                                results.Add(taskData);
-                                break;
-                        }
+                            }
+                            break;
+                        default:
+                            results.Add(taskData);
+                            break;
                     }
                 }
             }
@@ -1798,13 +1802,13 @@ namespace CommunityLib
 
         public void debugTaskValidity(bool valid, UA ua, AITask aiTask, AIData data)
         {
-            if (debugInternal.debug || data.controlParameters.debugProperties.debug)
+            if (debugInternal.debug)
             {
-                if (valid && (debugInternal.outputValidity_AllTasks || data.controlParameters.debugProperties.outputValidity_AllTasks) || (data.controlParameters.debugProperties.outputUtility_ValidTasks || data.controlParameters.debugProperties.outputValidity_ValidTasks))
+                if (valid && (debugInternal.outputValidity_AllTasks || debugInternal.outputValidity_ValidTasks))
                 {
                     Console.WriteLine("CommunityLib: Valid");
                 }
-                else if (!valid && (debugInternal.outputValidity_AllTasks || data.controlParameters.debugProperties.outputValidity_AllTasks))
+                else if (!valid && debugInternal.outputValidity_AllTasks)
                 {
                     Console.WriteLine("CommunityLib: Invalid");
                 }

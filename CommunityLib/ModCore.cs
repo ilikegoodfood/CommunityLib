@@ -67,6 +67,8 @@ namespace CommunityLib
 
         public static bool opt_godSort_lastPlayedFirst = false;
 
+        public static bool opt_forceCommunityLibraryPathfinding = true;
+
         public static ModCore Get() => core;
 
         public override void onModsInitiallyLoaded()
@@ -124,6 +126,9 @@ namespace CommunityLib
                     break;
                 case "God Sort: Last Played First":
                     opt_godSort_lastPlayedFirst = value;
+                    break;
+                case "Force Community Library Pathfinding":
+                    opt_forceCommunityLibraryPathfinding = value;
                     break;
                 default:
                     break;

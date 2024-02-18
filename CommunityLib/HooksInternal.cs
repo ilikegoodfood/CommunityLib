@@ -119,16 +119,16 @@ namespace CommunityLib
             switch (ua)
             {
                 case UAEN_DeepOne _:
-                    visibleUnits = new List<Unit>();
+                    visibleUnits.Clear();
                     return true;
                 case UAEN_Ghast _:
-                    visibleUnits = new List<Unit>();
+                    visibleUnits.Clear();
                     return true;
                 case UAEN_OrcUpstart _:
-                    visibleUnits = new List<Unit>();
+                    visibleUnits.Clear();
                     return true;
                 case UAEN_Vampire _:
-                    visibleUnits = new List<Unit>();
+                    visibleUnits.Clear();
                     return true;
                 default:
                     break;
@@ -140,7 +140,25 @@ namespace CommunityLib
                 {
                     if (ua.GetType() == droneType)
                     {
-                        visibleUnits = new List<Unit>();
+                        visibleUnits.Clear();
+                        return true;
+                    }
+                }
+
+                if (intDataCord.typeDict.TryGetValue("Haematophage", out Type haematophageType) && haematophageType != null)
+                {
+                    if (ua.GetType() == haematophageType)
+                    {
+                        visibleUnits.Clear();
+
+                        foreach (Unit unit in map.units)
+                        {
+                            if (!unit.isDead && map.getStepDist(ua.location, unit.location) < 4)
+                            {
+                                visibleUnits.Add(unit);
+                            }
+                        }
+
                         return true;
                     }
                 }
@@ -148,6 +166,26 @@ namespace CommunityLib
             }
 
             return false;
+        }
+
+        public override Location[] interceptGetPathTo_Location(Location locA, Location locB, Unit u, bool safeMove)
+        {
+            if (ModCore.opt_forceCommunityLibraryPathfinding)
+            {
+                return ModCore.Get().pathfinding.getPathTo(locA, locB, u, safeMove);
+            }
+
+            return null;
+        }
+
+        public override Location[] interceptGetPathTo_SocialGroup(Location loc, SocialGroup sg, Unit u, bool safeMove)
+        {
+            if (ModCore.opt_forceCommunityLibraryPathfinding)
+            {
+                return ModCore.Get().pathfinding.getPathTo(loc, sg, u, safeMove);
+            }
+
+            return null;
         }
 
         public override bool interceptAgentAI(UA ua, AgentAI.AIData aiData, List<AgentAI.ChallengeData> challengeData, List<AgentAI.TaskData> taskData, List<Unit> visibleUnits)
@@ -216,12 +254,15 @@ namespace CommunityLib
 
         public override void onAgentAI_EndOfProcess(UA ua, AgentAI.AIData aiData, List<AgentAI.ChallengeData> validChallengeData, List<AgentAI.TaskData> validTaskData, List<Unit> visibleUnits)
         {
-            if (ua is UAEN_DeepOne && (ua.task == null || (ua.task is Task_GoToLocation tLocation && tLocation.target.index == ua.homeLocation)) && validChallengeData.FindAll(cd => !(cd.challenge is Rt_DeepOnes_TravelBeneath)).Count == 0 && validTaskData.Count == 0)
+            if (ua is UAEN_DeepOne)
             {
-                Rt_DeepOnes_TravelBeneath travel = (Rt_DeepOnes_TravelBeneath)ua.rituals.FirstOrDefault(rt => rt is Rt_DeepOnes_TravelBeneath);
-                if (travel != null)
+                if ((ua.task == null || (ua.task is Task_GoToLocation tLocation && tLocation.target.index == ua.homeLocation)) && validChallengeData.FindAll(cd => !(cd.challenge is Rt_DeepOnes_TravelBeneath)).Count == 0 && validTaskData.Count == 0)
                 {
-                    ua.task = new Task_PerformChallenge(travel);
+                    Rt_DeepOnes_TravelBeneath travel = (Rt_DeepOnes_TravelBeneath)ua.rituals.FirstOrDefault(rt => rt is Rt_DeepOnes_TravelBeneath);
+                    if (travel != null)
+                    {
+                        ua.task = new Task_PerformChallenge(travel);
+                    }
                 }
             }
         }

@@ -31,6 +31,7 @@ namespace CommunityLib
             if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
             {
                 populateCordycepsDrone(intDataCord);
+                populateCoryceptsHaematophage(intDataCord);
             }
 
             // Test Articles
@@ -167,9 +168,9 @@ namespace CommunityLib
                     return true;
                 }
             }
-            else if (targetCategory == AITask.TargetCategory.Location && taskData.targetLocation != null)
+            else if (targetCategory == AITask.TargetCategory.Location)
             {
-                if (taskData.targetLocation.isOcean)
+                if (taskData.targetLocation != null && taskData.targetLocation.isOcean)
                 {
                     return true;
                 }
@@ -667,6 +668,36 @@ namespace CommunityLib
             reasonMsgs?.Add(new ReasonMsg("Base", utility));
 
             return utility;
+        }
+
+        private void populateCoryceptsHaematophage(ModIntegrationData intData)
+        {
+            if (intData.typeDict.TryGetValue("Haematophage", out Type haematophageType) && haematophageType != null)
+            {
+                List<AIChallenge> aiChallenges_Cordyceps_Haematophage = new List<AIChallenge>();
+
+                AIChallenge aiChallenge = new AIChallenge(typeof(Rt_SlowHealing), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.BaseValid, AIChallenge.ChallengeTags.BaseUtility });
+                aiChallenge.delegates_ValidFor.Add(delegate_ValidFor_SlowHealing);
+                aiChallenges_Cordyceps_Haematophage.Add(aiChallenge);
+
+                AgentAI.ControlParameters controlParams = new AgentAI.ControlParameters(true);
+                controlParams.respectDanger = false;
+                controlParams.respectArmyIntercept = false;
+                controlParams.includeDangerousFoe = false;
+
+                ModCore.Get().GetAgentAI().RegisterAgentType(haematophageType, controlParams);
+                ModCore.Get().GetAgentAI().AddChallengesToAgentType(haematophageType, aiChallenges_Cordyceps_Haematophage);
+            }
+        }
+
+        private bool delegate_ValidFor_SlowHealing(AgentAI.ChallengeData challengeData, UA ua)
+        {
+            if (challengeData.location.index == ua.homeLocation && ua.hp < ua.maxHp)
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 }

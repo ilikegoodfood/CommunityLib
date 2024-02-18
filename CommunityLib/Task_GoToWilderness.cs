@@ -13,9 +13,9 @@ namespace CommunityLib
 
         public bool safeMove;
 
-        public Task_GoToWilderness(bool goToLand = false, bool safeMove = false)
+        public Task_GoToWilderness(bool goToLandOnly = false,  bool safeMove = false)
         {
-            this.goToLand = goToLand;
+            this.goToLand = goToLandOnly;
             this.safeMove = safeMove;
         }
 
@@ -38,37 +38,35 @@ namespace CommunityLib
             }
 
             Location targetLocation = null;
-            if (goToLand)
-            {
-                int steps = -1;
-                List<Location> targetLocations = new List<Location>();
-                foreach (Location loc in unit.map.locations)
-                {
-                    if (loc.soc == null && !loc.isOcean)
-                    {
-                        int dist = unit.map.getStepDist(unit.location, loc);
-                        if (steps == -1 || dist <= steps)
-                        {
-                            if (dist < steps)
-                            {
-                                targetLocations.Clear();
-                            }
 
-                            targetLocations.Add(loc);
-                            steps = dist;
+            int steps = -1;
+            List<Location> targetLocations = new List<Location>();
+            foreach (Location loc in unit.map.locations)
+            {
+                if (loc.soc == null && (!goToLand || !loc.isOcean))
+                {
+                    int dist = unit.map.getStepDist(unit.location, loc);
+                    if (steps == -1 || dist <= steps)
+                    {
+                        if (dist < steps)
+                        {
+                            targetLocations.Clear();
                         }
+
+                        targetLocations.Add(loc);
+                        steps = dist;
                     }
                 }
+            }
 
-                if (targetLocations.Count == 1)
-                {
-                    targetLocation = targetLocations[0];
-                }
-                else if (targetLocations.Count > 1)
-                {
-                    targetLocation = targetLocations[
-                        (targetLocations.Count)];
-                }
+            if (targetLocations.Count == 1)
+            {
+                targetLocation = targetLocations[0];
+            }
+            else if (targetLocations.Count > 1)
+            {
+                targetLocation = targetLocations[
+                    (targetLocations.Count)];
             }
 
             while (unit.movesTaken < unit.getMaxMoves())

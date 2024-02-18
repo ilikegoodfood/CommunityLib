@@ -122,7 +122,7 @@ namespace CommunityLib
                 }
             }
 
-            debugInternal = AgentAI.setupDebugInternal(controlParams.debugProperties);
+            debugInternal = AgentAI.debugInternal;
             if (debugInternal.debug && !ModCore.Get().GetAgentAI().isAIRunning() && (debugInternal.outputProfile_AllChallenges || debugInternal.outputProfile_VisibleChallenges))
             {
                 Console.WriteLine("CommunityLib: Checking profile of" + challengeData.challenge.getName());
@@ -144,7 +144,7 @@ namespace CommunityLib
                 return false;
             }
 
-            debugInternal = AgentAI.setupDebugInternal(controlParams.debugProperties);
+            debugInternal = AgentAI.debugInternal;
             if (debugInternal.debug && !ModCore.Get().GetAgentAI().isAIRunning() && (debugInternal.outputProfile_AllChallenges || debugInternal.outputProfile_VisibleChallenges))
             {
                 Console.WriteLine("CommunityLib: Checking " + challengeData.challenge.getName() + " is visible to " + ua.getName());
@@ -180,10 +180,45 @@ namespace CommunityLib
                 return false;
             }
 
-            debugInternal = AgentAI.setupDebugInternal(controlParams.debugProperties);
+            debugInternal = AgentAI.debugInternal;
             if (debugInternal.debug && !ModCore.Get().GetAgentAI().isAIRunning() && (debugInternal.outputValidity_AllChallenges || debugInternal.outputValidity_ValidChallenges))
             {
                 Console.WriteLine("CommunityLib: Checking " + challengeData.challenge.getName() + " is valid for " + ua.getName());
+            }
+
+            if (!validTags(challengeData, ua, controlParams))
+            {
+                return false;
+            }
+
+            if (delegates_Valid != null)
+            {
+                foreach (Func<AgentAI.ChallengeData, bool> delegate_Valid in delegates_Valid)
+                {
+                    if (!delegate_Valid(challengeData))
+                    {
+                        if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
+                        {
+                            Console.WriteLine("CommunityLib: Invalid: Failed Valid delegates");
+                        }
+                        return false;
+                    }
+                }
+            }
+
+            if (delegates_ValidFor != null)
+            {
+                foreach (Func<AgentAI.ChallengeData, UA, bool> delegate_ValidFor in delegates_ValidFor)
+                {
+                    if (!delegate_ValidFor(challengeData, ua))
+                    {
+                        if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
+                        {
+                            Console.WriteLine("CommunityLib: Invalid: Failed ValidFor delegates");
+                        }
+                        return false;
+                    }
+                }
             }
 
             if (challengeData.location != ua.location)
@@ -207,41 +242,6 @@ namespace CommunityLib
                     Console.WriteLine("CommunityLib: Invalid: Failed safeMove");
                 }
                 return false;
-            }
-
-            if (!validTags(challengeData, ua, controlParams))
-            {
-                return false;
-            }
-
-            if (delegates_Valid != null)
-            {
-                foreach (Func<AgentAI.ChallengeData, bool> delegate_Valid in delegates_Valid)
-                {
-                    if (!delegate_Valid(challengeData))
-                    {
-                        if (debugInternal.outputValidity_AllChallenges)
-                        {
-                            Console.WriteLine("CommunityLib: Invalid: Failed Valid delegates");
-                        }
-                        return false;
-                    }
-                }
-            }
-
-            if (delegates_ValidFor != null)
-            {
-                foreach (Func<AgentAI.ChallengeData, UA, bool> delegate_ValidFor in delegates_ValidFor)
-                {
-                    if (!delegate_ValidFor(challengeData, ua))
-                    {
-                        if (debugInternal.outputValidity_AllChallenges)
-                        {
-                            Console.WriteLine("CommunityLib: Invalid: Failed ValidFor delegates");
-                        }
-                        return false;
-                    }
-                }
             }
 
             if (debugInternal.debug && (debugInternal.outputValidity_AllChallenges || debugInternal.outputValidity_ValidChallenges))
