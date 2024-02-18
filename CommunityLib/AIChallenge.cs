@@ -244,6 +244,11 @@ namespace CommunityLib
                     {
                         Console.WriteLine("CommunityLib: Invalid: Failed to find Path");
                     }
+
+                    if (newPath)
+                    {
+                        lastPath = new Tuple<Unit, Location, int, Location[]>(ua, challengeData.location, ua.map.turn, pathTo);
+                    }
                     return false;
                 }
 
