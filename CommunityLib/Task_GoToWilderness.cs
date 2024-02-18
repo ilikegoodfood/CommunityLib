@@ -13,9 +13,17 @@ namespace CommunityLib
 
         public bool safeMove;
 
-        public Task_GoToWilderness(bool goToLandOnly = false,  bool safeMove = false)
+        public Location target = null;
+
+        public Task_GoToWilderness(Location targetLocation, bool safeMove = false)
         {
-            this.goToLand = goToLandOnly;
+            goToLand = false;
+            this.safeMove = safeMove;
+        }
+
+        public Task_GoToWilderness(bool goToLandOnly = false, bool safeMove = false)
+        {
+            goToLand = goToLandOnly;
             this.safeMove = safeMove;
         }
 
@@ -26,7 +34,7 @@ namespace CommunityLib
 
         public override string getLong()
         {
-            return getShort();
+            return "This unit is travelling to the wilderness" + (target != null ? " (" + target.getName() + ")" : "");
         }
 
         public override void turnTick(Unit unit)
@@ -37,48 +45,60 @@ namespace CommunityLib
                 return;
             }
 
-            Location targetLocation = null;
-
-            int steps = -1;
-            List<Location> targetLocations = new List<Location>();
-            foreach (Location loc in unit.map.locations)
+            if (target == null || target.soc != null)
             {
-                if (loc.soc == null && (!goToLand || !loc.isOcean))
+                target = null;
+                int steps = -1;
+                List<Location> targetLocations = new List<Location>();
+                foreach (Location loc in unit.map.locations)
                 {
-                    int dist = unit.map.getStepDist(unit.location, loc);
-                    if (steps == -1 || dist <= steps)
+                    if (loc.soc == null && (!goToLand || !loc.isOcean))
                     {
-                        if (dist < steps)
+                        int stepDistance = unit.map.getStepDist(unit.location, loc);
+                        if (loc != unit.location)
                         {
-                            targetLocations.Clear();
+                            Location[] pathTo = unit.map.getPathTo(unit.location, loc, unit);
+                            if (pathTo == null || pathTo.Length < 2)
+                            {
+                                continue;
+                            }
+                            stepDistance = pathTo.Length;
                         }
 
-                        targetLocations.Add(loc);
-                        steps = dist;
+                        if (steps == -1 || stepDistance <= steps)
+                        {
+                            if (stepDistance < steps)
+                            {
+                                targetLocations.Clear();
+                            }
+
+                            targetLocations.Add(loc);
+                            steps = stepDistance;
+                        }
                     }
                 }
-            }
 
-            if (targetLocations.Count == 1)
-            {
-                targetLocation = targetLocations[0];
-            }
-            else if (targetLocations.Count > 1)
-            {
-                targetLocation = targetLocations[
-                    (targetLocations.Count)];
+
+                if (targetLocations.Count == 1)
+                {
+                    target = targetLocations[0];
+                }
+                else if (targetLocations.Count > 1)
+                {
+                    target = targetLocations[(targetLocations.Count)];
+                }
             }
 
             while (unit.movesTaken < unit.getMaxMoves())
             {
                 Location[] pathTo;
-                if (targetLocation == null)
+                if (target == null)
                 {
                     pathTo = unit.map.getPathTo(unit.location, (SocialGroup)null, unit, safeMove);
                 }
                 else
                 {
-                    pathTo = unit.map.getPathTo(unit.location, targetLocation, unit, safeMove);
+                    pathTo = unit.map.getPathTo(unit.location, target, unit, safeMove);
                 }
 
                 if (pathTo == null || pathTo.Length < 2)
@@ -89,7 +109,7 @@ namespace CommunityLib
 
                 unit.location.map.adjacentMoveTo(unit, pathTo[1]);
                 unit.movesTaken++;
-                if (unit.location.soc == null)
+                if (unit.location == target)
                 {
                     unit.task = null;
                     break;

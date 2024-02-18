@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace CommunityLib
 {
-    public class Task_ReturnToTheDeep :Assets.Code.Task
+    public class Task_ReturnToTheDeep : Assets.Code.Task
     {
         public Location target = null;
 
@@ -44,17 +44,27 @@ namespace CommunityLib
                     return;
                 }
 
-                if ((target == null || !target.isOcean) && deepOne.moveType == Unit.MoveType.NORMAL)
+                if (target == null || !target.isOcean)
                 {
                     target = null;
                     List<Location> nearbyOceanLocations = new List<Location>();
-                    int distance = 10000;
+                    int distance = -1;
                     foreach (Location loc in deepOne.map.locations)
                     {
                         if (loc.isOcean)
                         {
                             int stepDistance = deepOne.map.getStepDist(deepOne.location, loc);
-                            if (stepDistance <= distance)
+                            if (loc != deepOne.location)
+                            {
+                                Location[] pathTo = deepOne.map.getPathTo(deepOne.location, loc, deepOne);
+                                if (pathTo == null || pathTo.Length < 2)
+                                {
+                                    continue;
+                                }
+                                stepDistance = pathTo.Length;
+                            }
+
+                            if (distance == -1 || stepDistance <= distance)
                             {
                                 if (stepDistance < distance)
                                 {
@@ -96,7 +106,7 @@ namespace CommunityLib
                         deepOne.map.adjacentMoveTo(unit, pathTo[1]);
                         deepOne.movesTaken++;
 
-                        if (deepOne.location == target && target.isOcean)
+                        if (deepOne.location == target)
                         {
                             deepOne.moveType = Unit.MoveType.AQUAPHIBIOUS;
                             deepOne.task = null;

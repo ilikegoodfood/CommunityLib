@@ -64,7 +64,7 @@ namespace CommunityLib
             //Console.WriteLine("CommunityLibrary: Adding challenges to agent");
             ModCore.Get().GetAgentAI().AddChallengesToAgentType(typeof(UAEN_DeepOne), aiChallenges_DeepOne);
 
-            AITask task = new AITask(taskType: typeof(Task_ReturnToTheDeep), title: "Return to the Deep", map: map, delegate_Instantiate: delegate_Instantiate_ReturnDeep, targetCategory: AITask.TargetCategory.Location, foregroundSprite: map.world.iconStore.hideInAbyss, colour: new Color(0.2f, 0.2f, 0.7f));
+            AITask task = new AITask(taskType: typeof(Task_ReturnToTheDeep), title: "Return to the Deep", map: map, delegate_Instantiate: delegate_Instantiate_ReturnDeep, targetCategory: AITask.TargetCategory.None, foregroundSprite: map.world.iconStore.hideInAbyss, colour: new Color(0.2f, 0.2f, 0.7f));
             task.delegates_Valid.Add(delegate_Validity_ReturnDeep);
             task.delegates_Utility.Add(delegate_Utility_ReturnDeep);
 
@@ -156,24 +156,14 @@ namespace CommunityLib
 
         private Task delegate_Instantiate_ReturnDeep(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData taskData)
         {
-            return new Task_ReturnToTheDeep(taskData.targetLocation);
+            return new Task_ReturnToTheDeep(null);
         }
 
         private bool delegate_Validity_ReturnDeep(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData taskData)
         {
-            if (targetCategory == AITask.TargetCategory.None)
+            if (targetCategory == AITask.TargetCategory.None && ua.moveType == Unit.MoveType.NORMAL)
             {
-                if (ua.moveType == Unit.MoveType.NORMAL)
-                {
-                    return true;
-                }
-            }
-            else if (targetCategory == AITask.TargetCategory.Location)
-            {
-                if (taskData.targetLocation != null && taskData.targetLocation.isOcean)
-                {
-                    return true;
-                }
+                return true;
             }
 
             return false;
@@ -183,10 +173,6 @@ namespace CommunityLib
         {
             double utility = 10000;
             reasonMsgs?.Add(new ReasonMsg("Must Return to the Deep", utility));
-
-            double val = -10 * ua.map.getStepDist(ua.location, taskData.targetLocation);
-            reasonMsgs?.Add(new ReasonMsg("Distance", val));
-            utility += val;
 
             return utility;
         }
