@@ -3181,6 +3181,11 @@ namespace CommunityLib
 
         private static int UA_distanceDivisor_TranspilerBody(UA ua, Challenge c, int distance)
         {
+            if (!ModCore.opt_usePreciseDistanceDivisor)
+            {
+                return distance;
+            }
+
             if (distance > 0 && !(c is Ritual))
             {
                 Location[] pathTo;

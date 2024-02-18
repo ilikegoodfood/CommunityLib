@@ -69,6 +69,8 @@ namespace CommunityLib
 
         public static bool opt_godSort_lastPlayedFirst = false;
 
+        public static bool opt_usePreciseDistanceDivisor = true;
+
         public static ModCore Get() => core;
 
         public override void onModsInitiallyLoaded()
@@ -105,6 +107,9 @@ namespace CommunityLib
                     break;
                 case "Force Community Library Pathfinding":
                     opt_forceCommunityLibraryPathfinding = value;
+                    break;
+                case "Use Precise Distance Divisor":
+                    opt_usePreciseDistanceDivisor = value;
                     break;
                 case "Allow Culture-Specific Minor Settlement Graphics":
                     opt_allowCulturalMinorSettelementGraphics = value;
