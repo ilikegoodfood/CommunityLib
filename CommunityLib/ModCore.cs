@@ -69,6 +69,8 @@ namespace CommunityLib
 
         public static bool opt_forceCommunityLibraryPathfinding = true;
 
+        public static bool opt_usePreciseDIstanceDivisor = true;
+
         public static ModCore Get() => core;
 
         public override void onModsInitiallyLoaded()
@@ -129,6 +131,9 @@ namespace CommunityLib
                     break;
                 case "Force Community Library Pathfinding":
                     opt_forceCommunityLibraryPathfinding = value;
+                    break;
+                case "Use Precise Distance Divisor":
+                    opt_usePreciseDIstanceDivisor = value;
                     break;
                 default:
                     break;
