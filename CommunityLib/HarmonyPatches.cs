@@ -24,6 +24,8 @@ namespace CommunityLib
 
         private static bool razeIsValid;
 
+        private static Tuple<Unit, Location, int, Location[]> lastPath;
+
         /// <summary>
         /// Initialises variables in this class that are required to perform patches, then executes harmony patches.
         /// </summary>
@@ -3177,6 +3179,45 @@ namespace CommunityLib
             }
         }
 
+        private static int UA_distanceDivisor_TranspilerBody(UA ua, Challenge c, int distance)
+        {
+            if (distance > 0 && !(c is Ritual))
+            {
+                Location[] pathTo;
+
+                if (lastPath != null && lastPath.Item1 == ua && lastPath.Item2 == c.location && lastPath.Item3 == ua.map.turn)
+                {
+                    pathTo = lastPath.Item4;
+                }
+                else
+                {
+                    pathTo = ua.map.getPathTo(ua.location, c.location);
+                    lastPath = new Tuple<Unit, Location, int, Location[]>(ua, c.location, ua.map.turn, pathTo);
+                }
+
+                if (pathTo == null || pathTo.Length < 2)
+                {
+                    distance = (int)Math.Ceiling((double)distance / ua.getMaxMoves());
+                }
+                else
+                {
+                    distance = (int)Math.Ceiling((double)pathTo.Length / ua.getMaxMoves());
+                }
+
+                if (distance > 0 && ua != null)
+                {
+                    foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                    {
+                        distance = hook.onUnitAI_GetsDistanceToLocation(ua, c.location, pathTo, distance);
+                    }
+                }
+
+                distance = Math.Max(1, distance);
+            }
+
+            return distance;
+        }
+
         private static void Task_AttackArmy_ctor_Postfix(Task_AttackArmy __instance, UM c, UM self)
         {
             __instance.turnsLeft = ModCore.Get().getTravelTimeTo(self, c.location) + 5;
@@ -3200,35 +3241,6 @@ namespace CommunityLib
         private static void Task_DisruptUA_ctor_Postfix(Task_DisruptUA __instance, Unit them, Unit us)
         {
             __instance.turnsLeft = ModCore.Get().getTravelTimeTo(us, them.location) + 10;
-        }
-
-        private static int UA_distanceDivisor_TranspilerBody(UA ua, Challenge c, int distance)
-        {
-            if (distance > 0 && !(c is Ritual))
-            {
-                Location[] pathTo = ua.map.getPathTo(ua.location, c.location);
-
-                if (pathTo == null || pathTo.Length < 2)
-                {
-                    distance = (int)Math.Ceiling((double)distance / ua.getMaxMoves());
-                }
-                else
-                {
-                    distance = (int)Math.Ceiling((double)pathTo.Length / ua.getMaxMoves());
-                }
-
-                if (distance > 0 && ua != null)
-                {
-                    foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
-                    {
-                        distance = hook.onUnitAI_GetsDistanceToLocation(ua, c.location, pathTo, distance);
-                    }
-                }
-
-                distance = Math.Max(1, distance);
-            }
-
-            return distance;
         }
 
         // Prefab Store hooks

@@ -228,15 +228,14 @@ namespace CommunityLib
             {
                 Location[] pathTo;
 
-                bool newPath = false;
-                if (lastPath.Item1 == ua && lastPath.Item2 == challengeData.location && lastPath.Item3 == ua.map.turn)
+                if (lastPath != null && lastPath.Item1 == ua && lastPath.Item2 == challengeData.location && lastPath.Item3 == ua.map.turn)
                 {
                     pathTo = lastPath.Item4;
                 }
                 else
                 {
                     pathTo = ua.location.map.getPathTo(ua.location, challengeData.location, ua, safeMove);
-                    newPath = true;
+                    lastPath = new Tuple<Unit, Location, int, Location[]>(ua, challengeData.location, ua.map.turn, pathTo);
                 }
 
                 if (pathTo == null || pathTo.Length < 2)
@@ -244,11 +243,6 @@ namespace CommunityLib
                     if (debugInternal.outputValidity_AllChallenges)
                     {
                         Console.WriteLine("CommunityLib: Invalid: Failed to find Path");
-                    }
-
-                    if (newPath)
-                    {
-                        lastPath = new Tuple<Unit, Location, int, Location[]>(ua, challengeData.location, ua.map.turn, pathTo);
                     }
                     return false;
                 }
@@ -686,26 +680,20 @@ namespace CommunityLib
             {
                 Location[] pathTo;
 
-                bool newPath = false;
-                if (lastPath.Item1 == ua && lastPath.Item2 == challengeData.location && lastPath.Item3 == ua.map.turn)
+                if (lastPath != null && lastPath.Item1 == ua && lastPath.Item2 == challengeData.location && lastPath.Item3 == ua.map.turn)
                 {
                     pathTo = lastPath.Item4;
                 }
                 else
                 {
                     pathTo = ua.location.map.getPathTo(ua.location, challengeData.location, ua, safeMove);
-                    newPath = true;
+                    lastPath = new Tuple<Unit, Location, int, Location[]>(ua, challengeData.location, ua.map.turn, pathTo);
                 }
 
                 if (pathTo == null || pathTo.Length < 2)
                 {
                     reasonMsgs?.Add(new ReasonMsg("Cannot find path to challenge", -10000.0));
                     result -= 10000.0;
-                }
-
-                if (newPath)
-                {
-                    lastPath = new Tuple<Unit, Location, int, Location[]>(ua, challengeData.location, ua.map.turn, pathTo);
                 }
             }
 
