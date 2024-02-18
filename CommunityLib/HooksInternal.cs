@@ -120,20 +120,20 @@ namespace CommunityLib
             switch (ua)
             {
                 case UAEN_CaveSpider _:
-                    visibleUnits = new List<Unit>();
+                    visibleUnits.Clear();
                     visibleUnits.AddRange(ua.location.units);
                     return true;
                 case UAEN_DeepOne _:
-                    visibleUnits = new List<Unit>();
+                    visibleUnits.Clear();
                     return true;
                 case UAEN_Ghast _:
-                    visibleUnits = new List<Unit>();
+                    visibleUnits.Clear();
                     return true;
                 case UAEN_OrcUpstart _:
-                    visibleUnits = new List<Unit>();
+                    visibleUnits.Clear();
                     return true;
                 case UAEN_Vampire _:
-                    visibleUnits = new List<Unit>();
+                    visibleUnits.Clear();
                     return true;
                 default:
                     break;
@@ -145,7 +145,7 @@ namespace CommunityLib
                 {
                     if (ua.GetType() == droneType)
                     {
-                        visibleUnits = new List<Unit>();
+                        visibleUnits.Clear();
                         return true;
                     }
                 }
@@ -154,11 +154,11 @@ namespace CommunityLib
                 {
                     if (ua.GetType() == haematophageType)
                     {
-                        visibleUnits = new List<Unit>();
+                        visibleUnits.Clear();
 
                         foreach (Unit unit in map.units)
                         {
-                            if (map.getStepDist(ua.location, unit.location) < 4)
+                            if (!unit.isDead && map.getStepDist(ua.location, unit.location) < 4)
                             {
                                 visibleUnits.Add(unit);
                             }
@@ -272,7 +272,7 @@ namespace CommunityLib
             }
             else if (ua is UAEN_CaveSpider)
             {
-                if (ua.task is Task_GoToLocation)
+                if (ua.task is Task_GoToLocation || ua.task is Task_AttackUnit)
                 {
                     ua.task.turnTick(ua);
                 }
