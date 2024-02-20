@@ -3,10 +3,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Reflection;
-using UnityEngine.UI;
 using System.Linq;
-using static SortedDictionaryProvider;
-using FullSerializer;
 
 namespace CommunityLib
 {
@@ -191,6 +188,28 @@ namespace CommunityLib
             }
 
             return null;
+        }
+
+        public override bool onPathfinding_AllowMultiLayerPathfinding(Unit u)
+        {
+            if (u.map.awarenessOfUnderground >= 1.0)
+            {
+                return true;
+            }
+            else if (u.society is Society society && (society.isOphanimControlled || society.isDarkEmpire))
+            {
+                return true;
+            }
+            else if (u.society == u.map.soc_dark || u.society == u.map.soc_neutral)
+            {
+                return true;
+            }
+            else if (u.society is SG_Orc orcSociety && orcSociety.canGoUnderground())
+            {
+                return true;
+            }
+
+            return false;
         }
 
         public override bool interceptAgentAI(UA ua, AgentAI.AIData aiData, List<AgentAI.ChallengeData> challengeData, List<AgentAI.TaskData> taskData, List<Unit> visibleUnits)

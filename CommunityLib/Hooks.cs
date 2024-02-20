@@ -130,6 +130,17 @@ namespace CommunityLib
         }
 
         /// <summary>
+        /// This hook fires when the pathfinding system has failed to find a valid path to the destination via only the layers of the path's origin and destination. It recieves the unit that is attempting to find a valid path (u). It returns if the unit should be allowed to path via other layers to try and reach the destination, as a bool. <br></br>
+        /// After the first to return true, no other instance of this hook will be called.
+        /// </summary>
+        /// <param name="u"></param>
+        /// <returns></returns>
+        public virtual bool onPathfinding_AllowMultiLayerPathfinding(Unit u)
+        {
+            return false;
+        }
+
+        /// <summary>
         /// This hook fires when a unit is taking a step to a new location. All base-game movement processing have already been completed. It receives the unit moving (u), the unit's current location (locA), and the unit's new location (locB).
         /// <para>The unit's `int movesTaken` value will not yet have been incremented, as that is done by the function that called for the movement to take place, not by the movement function itself. To refund a move taken, simply decrement the unit's movesTaken value in this hook, even if that results in a temporariliy negative value.</para>
         /// </summary>

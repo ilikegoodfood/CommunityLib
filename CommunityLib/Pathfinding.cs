@@ -172,6 +172,25 @@ namespace CommunityLib
                     shuffle(locations, paths);
                 }
 
+                bool allowPass = true;
+                if (u != null && !u.isCommandable())
+                {
+                    allowPass = false;
+                    foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                    {
+                        if (hook.onPathfinding_AllowMultiLayerPathfinding(u))
+                        {
+                            allowPass = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!allowPass)
+                {
+                    break;
+                }
+
                 if (passCount == 1)
                 {
                     pathfindingDelegates.Remove(delegate_LAYERBOUND);
