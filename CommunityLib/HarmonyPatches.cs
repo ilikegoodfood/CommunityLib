@@ -207,10 +207,10 @@ namespace CommunityLib
         // Graphical unit updated hook
         private static void GraphicalUnit_checkData_Postfix(GraphicalUnit __instance)
         {
-            Console.WriteLine("CommunityLib: Calling onGraphicalUnitUpdated hook");
+            //Console.WriteLine("CommunityLib: Calling onGraphicalUnitUpdated hook");
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                Console.WriteLine("CommunityLib: Calling hook from " + hook.GetType().Namespace);
+                //Console.WriteLine("CommunityLib: Calling hook from " + hook.GetType().Namespace);
                 hook.onGraphicalUnitUpdated(__instance);
             }
         }
