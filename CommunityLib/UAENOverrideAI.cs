@@ -365,12 +365,12 @@ namespace CommunityLib
 
         private bool universalDelegate_ValidFor_Underground(AgentAI.ChallengeData challengeData, UA ua)
         {
-            if (challengeData.location.hex.z == 1 && ua.society is SG_Orc orcs && orcs.canGoUnderground())
+            if (challengeData.location.hex.z == 1 && ua.society is SG_Orc orcs && !orcs.canGoUnderground())
             {
-                return true;
+                return false;
             }
 
-            return false;
+            return true;
         }
 
         private double delegate_Utility_Ch_OrcRaiding(AgentAI.ChallengeData challengeData, UA ua, double utility, List<ReasonMsg> reasonMsgs)
