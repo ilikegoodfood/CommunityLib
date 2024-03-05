@@ -3339,9 +3339,9 @@ namespace CommunityLib
                 return false;
             }
 
-            if (ModCore.Get().GetAgentAI().TryGetAgentType(ua.GetType(), out AgentAI.AIData? aiData) && aiData is AgentAI.AIData data)
+            if (ModCore.Get().GetAgentAI().TryGetAgentType(ua.GetType(), out AgentAI.AIData aiData) && aiData != null)
             {
-                if (data.controlParameters.hideThoughts)
+                if (aiData.controlParameters.hideThoughts)
                 {
                     return true;
                 }
@@ -3353,7 +3353,7 @@ namespace CommunityLib
                     //Console.WriteLine("CommunityLib: Iterating " + challengeData.challenge.getName());
                     SortableTaskBlock_Advanced block = new SortableTaskBlock_Advanced();
                     block.challenge = challengeData.challenge;
-                    block.utility = ModCore.Get().GetAgentAI().getChallengeUtility(challengeData, ua, data, data.controlParameters, block.msgs);
+                    block.utility = ModCore.Get().GetAgentAI().getChallengeUtility(challengeData, ua, aiData, aiData.controlParameters, block.msgs);
                     block.challengeData = challengeData;
                     blocks.Add(block);
 
@@ -3368,7 +3368,7 @@ namespace CommunityLib
                     SortableTaskBlock_Advanced blockTask = new SortableTaskBlock_Advanced();
                     blockTask.challenge = null;
                     blockTask.taskType = taskData.aiTask.taskType;
-                    blockTask.utility = ModCore.Get().GetAgentAI().checkTaskUtility(taskData, ua, data, data.controlParameters, blockTask.msgs);
+                    blockTask.utility = ModCore.Get().GetAgentAI().checkTaskUtility(taskData, ua, aiData, aiData.controlParameters, blockTask.msgs);
                     blockTask.taskData = taskData;
 
                     switch(taskData.targetCategory)
@@ -3408,7 +3408,7 @@ namespace CommunityLib
                             //Console.WriteLine("CommunityLib: Unit is UA");
                             UIScroll_Unit.SortableTaskBlock blockAttack = new UIScroll_Unit.SortableTaskBlock();
                             blockAttack.unitToAttack = unit;
-                            blockAttack.utility = ua.getAttackUtility(unit, blockAttack.msgs, data.controlParameters.includeDangerousFoe);
+                            blockAttack.utility = ua.getAttackUtility(unit, blockAttack.msgs, aiData.controlParameters.includeDangerousFoe);
                             if (blockAttack.utility >= -1000)
                             {
                                 blocks.Add(blockAttack);
@@ -3689,9 +3689,9 @@ namespace CommunityLib
 
         private static bool UIScroll_Unit_Update_TranspilerBody_TimeStats()
         {
-            if (GraphicalMap.selectedUnit is UA ua && ModCore.Get().GetAgentAI().TryGetAgentType(ua.GetType(), out AgentAI.AIData? aiData) && aiData is AgentAI.AIData data)
+            if (GraphicalMap.selectedUnit is UA ua && ModCore.Get().GetAgentAI().TryGetAgentType(ua.GetType(), out AgentAI.AIData aiData) && aiData != null)
             {
-                if (!data.controlParameters.valueTimeCost)
+                if (!aiData.controlParameters.valueTimeCost)
                 {
                     return true;
                 }

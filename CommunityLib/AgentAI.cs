@@ -132,7 +132,7 @@ namespace CommunityLib
             }
         }
 
-        public struct ControlParameters
+        public class ControlParameters
         {
             public bool considerAllChallenges;
             public bool considerAllRituals;
@@ -204,10 +204,14 @@ namespace CommunityLib
             }
         }
 
-        public struct AIData
+        public class AIData
         {
             public Type agentType;
             public List<AIChallenge> aiChallenges;
+            public List<Func<ChallengeData, UA, double, double>> aiChallenges_UniversalDelegates_Profile = new List<Func<ChallengeData, UA, double, double>>();
+            public List<Func<ChallengeData, bool>> aiChallenges_UniversalDelegates_Valid = new List<Func<ChallengeData, bool>>();
+            public List<Func<ChallengeData, UA, bool>> aiChallenges_UniversalDelegates_ValidFor = new List<Func<ChallengeData, UA, bool>>();
+            public List<Func<ChallengeData, UA, double, List<ReasonMsg>, double>> aiChallenges_UniversalDelegates_Utility = new List<Func<ChallengeData, UA, double, List<ReasonMsg>, double>>();
             public List<AITask> aiTasks;
             public ControlParameters controlParameters;
 
@@ -215,6 +219,10 @@ namespace CommunityLib
             {
                 this.agentType = agentType;
                 aiChallenges = new List<AIChallenge>();
+                aiChallenges_UniversalDelegates_Profile = new List<Func<ChallengeData, UA, double, double>>();
+                aiChallenges_UniversalDelegates_Valid = new List<Func<ChallengeData, bool>>();
+                aiChallenges_UniversalDelegates_ValidFor = new List<Func<ChallengeData, UA, bool>>();
+                aiChallenges_UniversalDelegates_Utility = new List<Func<ChallengeData, UA, double, List<ReasonMsg>, double>>();
                 aiTasks = new List<AITask>();
                 this.controlParameters = controlParameters;
             }
@@ -222,20 +230,29 @@ namespace CommunityLib
             public AIData(Type agentType, List<AIChallenge> aIChallenges, List<AITask> aiTasks, ControlParameters controlParameters)
             {
                 this.agentType = agentType;
-                this.aiChallenges = aIChallenges;
+                aiChallenges = aIChallenges;
+                aiChallenges_UniversalDelegates_Profile = new List<Func<ChallengeData, UA, double, double>>();
+                aiChallenges_UniversalDelegates_Valid = new List<Func<ChallengeData, bool>>();
+                aiChallenges_UniversalDelegates_ValidFor = new List<Func<ChallengeData, UA, bool>>();
+                aiChallenges_UniversalDelegates_Utility = new List<Func<ChallengeData, UA, double, List<ReasonMsg>, double>>();
                 this.aiTasks = aiTasks;
                 this.controlParameters = controlParameters;
             }
         }
 
-        public struct ChallengeData
+        public class ChallengeData
         {
             public AIChallenge aiChallenge;
             public Challenge challenge;
             public Location location;
+
+            public List<Func<ChallengeData, UA, double, double>> universalDelegates_Profile = new List<Func<ChallengeData, UA, double, double>>();
+            public List<Func<ChallengeData, bool>> universalDelegates_Valid = new List<Func<ChallengeData, bool>>();
+            public List<Func<ChallengeData, UA, bool>> universalDelegates_ValidFor = new List<Func<ChallengeData, UA, bool>>();
+            public List<Func<ChallengeData, UA, double, List<ReasonMsg>, double>> universalDelegates_Utility = new List<Func<ChallengeData, UA, double, List<ReasonMsg>, double>>();
         }
 
-        public struct TaskData
+        public class TaskData
         {
             public AITask aiTask;
             public AITask.TargetCategory targetCategory;
@@ -408,16 +425,15 @@ namespace CommunityLib
         /// <param name="tAgent"></param>
         /// <param name="aiData"></param>
         /// <returns></returns>
-        public bool TryGetAgentType(Type tAgent, out AIData? aiData)
+        public bool TryGetAgentType(Type tAgent, out AIData aiData)
         {
-            aiData = null;
-
             if (ai.TryGetValue(tAgent, out AIData data))
             {
                 aiData = data;
                 return true;
             }
 
+            aiData = null;
             return false;
         }
 
@@ -429,16 +445,15 @@ namespace CommunityLib
         /// <param name="tAgent"></param>
         /// <param name="aiData"></param>
         /// <returns></returns>
-        public bool DeregisterAgentType(Type tAgent, out AIData? aiData)
+        public bool DeregisterAgentType(Type tAgent, out AIData aiData)
         {
-            aiData = null;
-
             if (ai.TryGetValue(tAgent, out AIData data))
             {
                 aiData = data;
                 return ai.Remove(tAgent);
             }
 
+            aiData = null;
             return false;
         }
 
@@ -452,11 +467,11 @@ namespace CommunityLib
         /// <returns></returns>
         public bool AddChallengeToAgentType(Type tAgent, AIChallenge aiChallenge)
         {
-            if (TryGetAgentType(tAgent, out AIData? aiData) && aiData is AIData data)
+            if (TryGetAgentType(tAgent, out AIData aiData) && aiData != null)
             {
-                if (!data.aiChallenges.Any(aiC => aiC.challengeType == aiChallenge.challengeType))
+                if (!aiData.aiChallenges.Any(aiC => aiC.challengeType == aiChallenge.challengeType))
                 {
-                    data.aiChallenges.Add(aiChallenge);
+                    aiData.aiChallenges.Add(aiChallenge);
                     return true;
                 }
             }
@@ -474,13 +489,13 @@ namespace CommunityLib
         {
             bool result = false;
 
-            if (TryGetAgentType(tAgent, out AIData? aiData) && aiData is AIData data)
+            if (TryGetAgentType(tAgent, out AIData aiData) && aiData != null)
             {
                 foreach (AIChallenge aiChallenge in aiChallenges)
                 {
-                    if (!data.aiChallenges.Any(aiC => aiC.challengeType == aiChallenge.challengeType))
+                    if (!aiData.aiChallenges.Any(aiC => aiC.challengeType == aiChallenge.challengeType))
                     {
-                        data.aiChallenges.Add(aiChallenge);
+                        aiData.aiChallenges.Add(aiChallenge);
                         result = true;
                     }
                 }
@@ -499,13 +514,13 @@ namespace CommunityLib
         {
             bool result = false;
 
-            if (TryGetAgentType(tAgent, out AIData? aiData) && aiData is AIData data)
+            if (TryGetAgentType(tAgent, out AIData aiData) && aiData != null)
             {
                 foreach (AIChallenge aiChallenge in aiChallenges)
                 {
-                    if (!data.aiChallenges.Any(aiC => aiC.challengeType == aiChallenge.challengeType))
+                    if (!aiData.aiChallenges.Any(aiC => aiC.challengeType == aiChallenge.challengeType))
                     {
-                        data.aiChallenges.Add(aiChallenge);
+                        aiData.aiChallenges.Add(aiChallenge);
                         result = true;
                     }
                 }
@@ -522,9 +537,9 @@ namespace CommunityLib
         /// <returns></returns>
         public AIChallenge GetAIChallengeFromAgentType(Type tAgent, Type tChallenge)
         {
-            if (TryGetAgentType(tAgent, out AIData? aiData) && aiData is AIData data)
+            if (TryGetAgentType(tAgent, out AIData aiData) && aiData != null)
             {
-                return data.aiChallenges.FirstOrDefault(aiC => aiC.challengeType == tChallenge);
+                return aiData.aiChallenges.FirstOrDefault(aiC => aiC.challengeType == tChallenge);
             }
 
             return null;
@@ -545,9 +560,9 @@ namespace CommunityLib
                 return false;
             }
 
-            if (TryGetAgentType(tAgent, out AIData? aiData) && aiData is AIData data)
+            if (TryGetAgentType(tAgent, out AIData aiData) && aiData != null)
             {
-                return data.aiChallenges.Remove(aiChallenge);
+                return aiData.aiChallenges.Remove(aiChallenge);
             }
 
             return false;
@@ -568,12 +583,12 @@ namespace CommunityLib
                 return false;
             }
 
-            if (TryGetAgentType(tAgent, out AIData? aiData) && aiData is AIData data)
+            if (TryGetAgentType(tAgent, out AIData aiData) && aiData != null)
             {
-                AIChallenge aiChallenge = data.aiChallenges.FirstOrDefault(aiC => aiC.challengeType == tChallenge);
+                AIChallenge aiChallenge = aiData.aiChallenges.FirstOrDefault(aiC => aiC.challengeType == tChallenge);
                 if (aiChallenge != null)
                 {
-                    return data.aiChallenges.Remove(aiChallenge);
+                    return aiData.aiChallenges.Remove(aiChallenge);
                 }
             }
 
@@ -590,11 +605,11 @@ namespace CommunityLib
         /// <returns></returns>
         public bool AddTaskToAgentType(Type tAgent, AITask aiTask)
         {
-            if (TryGetAgentType(tAgent, out AIData? aiData) && aiData is AIData data)
+            if (TryGetAgentType(tAgent, out AIData aiData) && aiData != null)
             {
-                if (!data.aiTasks.Any(aiT => aiT.taskType == aiTask.taskType))
+                if (!aiData.aiTasks.Any(aiT => aiT.taskType == aiTask.taskType))
                 {
-                    data.aiTasks.Add(aiTask);
+                    aiData.aiTasks.Add(aiTask);
                     return true;
                 }
             }
@@ -612,13 +627,13 @@ namespace CommunityLib
         {
             bool result = false;
 
-            if (TryGetAgentType(t, out AIData? aiData) && aiData is AIData data)
+            if (TryGetAgentType(t, out AIData aiData) && aiData != null)
             {
                 foreach (AITask aiTask in aiTasks)
                 {
-                    if (!data.aiTasks.Any(aiT => aiT.taskType == aiTask.taskType))
+                    if (!aiData.aiTasks.Any(aiT => aiT.taskType == aiTask.taskType))
                     {
-                        data.aiTasks.Add(aiTask);
+                        aiData.aiTasks.Add(aiTask);
                         result = true;
                     }
                 }
@@ -637,13 +652,13 @@ namespace CommunityLib
         {
             bool result = false;
 
-            if (TryGetAgentType(tAgent, out AIData? aiData) && aiData is AIData data)
+            if (TryGetAgentType(tAgent, out AIData aiData) && aiData != null)
             {
                 foreach (AITask aiTask in aiTasks)
                 {
-                    if (!data.aiTasks.Contains(aiTask))
+                    if (!aiData.aiTasks.Contains(aiTask))
                     {
-                        data.aiTasks.Add(aiTask);
+                        aiData.aiTasks.Add(aiTask);
                         result = true;
                     }
                 }
@@ -660,9 +675,9 @@ namespace CommunityLib
         /// <returns></returns>
         public AITask GetAITaskFromAgentType(Type tAgent, Type tTask)
         {
-            if (TryGetAgentType(tAgent, out AIData? aiData) && aiData is AIData data)
+            if (TryGetAgentType(tAgent, out AIData aiData) && aiData != null)
             {
-                return data.aiTasks.FirstOrDefault(aiT => aiT.taskType == tTask);
+                return aiData.aiTasks.FirstOrDefault(aiT => aiT.taskType == tTask);
             }
 
             return null;
@@ -683,9 +698,9 @@ namespace CommunityLib
                 return false;
             }
 
-            if (TryGetAgentType(tAgent, out AIData? aiData) && aiData is AIData data)
+            if (TryGetAgentType(tAgent, out AIData aiData) && aiData != null)
             {
-                return data.aiTasks.Remove(aiTask);
+                return aiData.aiTasks.Remove(aiTask);
             }
 
             return false;
@@ -706,12 +721,12 @@ namespace CommunityLib
                 return false;
             }
 
-            if (TryGetAgentType(tAgent, out AIData? aiData) && aiData is AIData data)
+            if (TryGetAgentType(tAgent, out AIData aiData) && aiData != null)
             {
-                AITask aiTask = data.aiTasks.FirstOrDefault(aiT => aiT.taskType == tTask);
+                AITask aiTask = aiData.aiTasks.FirstOrDefault(aiT => aiT.taskType == tTask);
                 if (aiTask != null)
                 {
-                    return data.aiTasks.Remove(aiTask);
+                    return aiData.aiTasks.Remove(aiTask);
                 }
             }
 
@@ -808,21 +823,18 @@ namespace CommunityLib
                 return;
             }
 
-            bool gotAgentType = TryGetAgentType(ua.GetType(), out AIData? aiData);
-
-            if (!gotAgentType || aiData == null)
+            if (!TryGetAgentType(ua.GetType(), out AIData aiData) || aiData == null)
             {
                 return;
             }
-            AIData data = (AIData)aiData;
 
-            debugInternal = setupDebugInternal(data.controlParameters.debugProperties);
+            debugInternal = setupDebugInternal(aiData.controlParameters.debugProperties);
             if (debugInternal.debug)
             {
                 Console.WriteLine("CommunityLib: Running Agent AI for " + ua.getName());
             }
             List<ChallengeData> validChallengeData = getAllValidChallengesAndRituals(ua);
-            List<Unit> visibleUnits = null;
+            List<Unit> visibleUnits;
             MethodInfo MI_getVisibleUnits = AccessTools.DeclaredMethod(ua.GetType(), "getVisibleUnits", new Type[0]);
             if (MI_getVisibleUnits != null)
             {
@@ -837,7 +849,7 @@ namespace CommunityLib
             bool result = false;
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                bool retValue = hook.interceptAgentAI(ua, data, validChallengeData, validTasks, visibleUnits);
+                bool retValue = hook.interceptAgentAI(ua, aiData, validChallengeData, validTasks, visibleUnits);
                 if (retValue)
                 {
                     result = true;
@@ -854,7 +866,7 @@ namespace CommunityLib
 
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                hook.onAgentAI_StartOfProcess(ua, data, validChallengeData, validTasks, visibleUnits);
+                hook.onAgentAI_StartOfProcess(ua, aiData, validChallengeData, validTasks, visibleUnits);
             }
 
             aiRunning = true;
@@ -875,7 +887,7 @@ namespace CommunityLib
                     reasonMsgs = new List<ReasonMsg>();
                 }
 
-                utility2 = getChallengeUtility(cData, ua, data, data.controlParameters, reasonMsgs);
+                utility2 = getChallengeUtility(cData, ua, aiData, aiData.controlParameters, reasonMsgs);
 
                 if (debugInternal.outputValidity_ValidChallenges && reasonMsgs != null)
                 {
@@ -927,7 +939,7 @@ namespace CommunityLib
                                 reasonMsgs = new List<ReasonMsg>();
                             }
 
-                            utility2 = ua.getAttackUtility(agent, reasonMsgs, data.controlParameters.includeDangerousFoe);
+                            utility2 = ua.getAttackUtility(agent, reasonMsgs, aiData.controlParameters.includeDangerousFoe);
 
                             if (debugInternal.outputUtility_VisibleAgentsAttack && reasonMsgs != null)
                             {
@@ -1037,7 +1049,7 @@ namespace CommunityLib
                     reasonMsgs = new List<ReasonMsg>();
                 }
 
-                utility2 = checkTaskUtility(taskData, ua, data, data.controlParameters, reasonMsgs);
+                utility2 = checkTaskUtility(taskData, ua, aiData, aiData.controlParameters, reasonMsgs);
 
                 if (debugInternal.debug && debugInternal.outputUtility_ValidTasks && reasonMsgs != null)
                 {
@@ -1077,7 +1089,7 @@ namespace CommunityLib
                 {
                     List<ReasonMsg> reasonMsgs = new List<ReasonMsg>();
                     Console.WriteLine("CommunityLib: " + ua.getName() + " is going to perform task of type " + targetTask.aiTask.taskType);
-                    targetTask.aiTask.checkTaskUtility(targetTask, ua, data.controlParameters, reasonMsgs);
+                    targetTask.aiTask.checkTaskUtility(targetTask, ua, aiData.controlParameters, reasonMsgs);
                     if (reasonMsgs != null)
                     {
                         foreach (ReasonMsg reasonMsg in reasonMsgs)
@@ -1195,7 +1207,7 @@ namespace CommunityLib
                     Console.WriteLine("CommunityLib: " + ua.getName() + " is going to perform challenge " + targetChallenge.challenge.getName() + " at " + targetChallenge.location.getName() + " (" + (targetChallenge.location.soc?.getName() ?? "No Society") + ")");
 
                     List<ReasonMsg> reasonMsgs = new List<ReasonMsg>();
-                    getChallengeUtility(targetChallenge, ua,data, data.controlParameters, reasonMsgs);
+                    getChallengeUtility(targetChallenge, ua,aiData, aiData.controlParameters, reasonMsgs);
 
                     foreach (ReasonMsg reasonMsg in reasonMsgs)
                     {
@@ -1210,7 +1222,7 @@ namespace CommunityLib
                 }
 
                 bool safeMove = false;
-                if (data.controlParameters.forceSafeMove)
+                if (aiData.controlParameters.forceSafeMove)
                 {
                     safeMove = true;
                 }
@@ -1232,7 +1244,7 @@ namespace CommunityLib
 
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                hook.onAgentAI_EndOfProcess(ua, data, validChallengeData, validTasks, visibleUnits);
+                hook.onAgentAI_EndOfProcess(ua, aiData, validChallengeData, validTasks, visibleUnits);
             }
 
             if (ua.task == null && ua.location.index != ua.homeLocation)
@@ -1252,21 +1264,20 @@ namespace CommunityLib
             List<ChallengeData> result = new List<ChallengeData>();
             List<ChallengeData> ritualData = new List<ChallengeData>();
 
-            if (!TryGetAgentType(ua.GetType(), out AIData? aiData) || aiData == null)
+            if (!TryGetAgentType(ua.GetType(), out AIData aiData) || aiData == null)
             {
                 Console.WriteLine("CommunityLib: ERROR: Failed to Get aiData for " + ua.getName() + " of type " + ua.GetType());
                 return null;
             }
-            AIData data = (AIData)aiData;
-            debugInternal = setupDebugInternal(data.controlParameters.debugProperties);
+            debugInternal = setupDebugInternal(aiData.controlParameters.debugProperties);
 
             // Sort all aiChallenges into type-keyed dictionaries for faster searching.
             Dictionary<Type, AIChallenge>  aiChallenges = new Dictionary<Type, AIChallenge>();
             Dictionary<Type, AIChallenge>  aiRituals = new Dictionary<Type, AIChallenge>();
 
-            if (data.aiChallenges != null)
+            if (aiData.aiChallenges != null)
             {
-                foreach (AIChallenge aiChallenge in data.aiChallenges)
+                foreach (AIChallenge aiChallenge in aiData.aiChallenges)
                 {
                     if (aiChallenge.isRitual)
                     {
@@ -1280,7 +1291,7 @@ namespace CommunityLib
             }
 
             // Get instances of Ritual challenges and store in ChallengeData objects.
-            if (data.controlParameters.considerAllRituals || aiRituals.Count > 0)
+            if (aiData.controlParameters.considerAllRituals || aiRituals.Count > 0)
             {
                 //Console.WriteLine("CommunityLib: Has " + aiRituals.Count + " rituals");
                 List<Challenge> uaRituals = new List<Challenge>();
@@ -1306,7 +1317,7 @@ namespace CommunityLib
                         };
                         ritualData.Add(d);
                     }
-                    else if (data.controlParameters.considerAllRituals)
+                    else if (aiData.controlParameters.considerAllRituals)
                     {
                         ChallengeData d = new ChallengeData
                         {
@@ -1314,7 +1325,7 @@ namespace CommunityLib
                             challenge = ritual,
                             location = ua.location
                         };
-                        if (getChallengeIsValid(ua, d, data.controlParameters))
+                        if (getChallengeIsValid(ua, d, aiData.controlParameters))
                         {
                             result.Add(d);
                         }
@@ -1322,7 +1333,7 @@ namespace CommunityLib
                 }
             }
 
-            if (data.controlParameters.considerAllChallenges || aiChallenges.Count > 0 || aiRituals.Count > 0)
+            if (aiData.controlParameters.considerAllChallenges || aiChallenges.Count > 0 || aiRituals.Count > 0)
             {
                 foreach (Location location in ua.map.locations)
                 {
@@ -1338,22 +1349,30 @@ namespace CommunityLib
                                 {
                                     aiChallenge = aiChallenges[challenge.GetType()],
                                     challenge = challenge,
-                                    location = location
+                                    location = location,
+                                    universalDelegates_Profile = aiData.aiChallenges_UniversalDelegates_Profile,
+                                    universalDelegates_Valid = aiData.aiChallenges_UniversalDelegates_Valid,
+                                    universalDelegates_ValidFor = aiData.aiChallenges_UniversalDelegates_ValidFor,
+                                    universalDelegates_Utility = aiData.aiChallenges_UniversalDelegates_Utility
                                 };
-                                if (getChallengeIsValid(ua, d, data.controlParameters))
+                                if (getChallengeIsValid(ua, d, aiData.controlParameters))
                                 {
                                     result.Add(d);
                                 }
                             }
-                            else if (data.controlParameters.considerAllChallenges)
+                            else if (aiData.controlParameters.considerAllChallenges)
                             {
                                 ChallengeData d = new ChallengeData
                                 {
                                     aiChallenge = null,
                                     challenge = challenge,
-                                    location = location
+                                    location = location,
+                                    universalDelegates_Profile = aiData.aiChallenges_UniversalDelegates_Profile,
+                                    universalDelegates_Valid = aiData.aiChallenges_UniversalDelegates_Valid,
+                                    universalDelegates_ValidFor = aiData.aiChallenges_UniversalDelegates_ValidFor,
+                                    universalDelegates_Utility = aiData.aiChallenges_UniversalDelegates_Utility
                                 };
-                                if (getChallengeIsValid(ua, d, data.controlParameters))
+                                if (getChallengeIsValid(ua, d, aiData.controlParameters))
                                 {
                                     result.Add(d);
                                 }
@@ -1370,7 +1389,7 @@ namespace CommunityLib
                             location = location
                         };
 
-                        if (getChallengeIsValid(ua, d, data.controlParameters))
+                        if (getChallengeIsValid(ua, d, aiData.controlParameters))
                         {
                             result.Add(d);
                         }
@@ -1388,7 +1407,7 @@ namespace CommunityLib
                 return false;
             }
 
-            if (ModCore.Get().GetAgentAI().TryGetAgentType(ua.GetType(), out AgentAI.AIData? aiData) && aiData is AgentAI.AIData data)
+            if (ModCore.Get().GetAgentAI().TryGetAgentType(ua.GetType(), out AgentAI.AIData aiData) && aiData != null)
             {
                 AIChallenge aiChallenge = ModCore.Get().GetAgentAI().GetAIChallengeFromAgentType(ua.GetType(), challenge.GetType());
                 ChallengeData challengeData = new ChallengeData {
@@ -1409,7 +1428,7 @@ namespace CommunityLib
                     }
                 }
 
-                return getChallengeIsValid(ua, challengeData, data.controlParameters);
+                return getChallengeIsValid(ua, challengeData, aiData.controlParameters);
             }
             else
             {
@@ -1431,7 +1450,7 @@ namespace CommunityLib
 
             if (!controlParams.respectChallengeVisibility
                 || (challengeData.aiChallenge != null && challengeData.aiChallenge.checkChallengeVisibility(challengeData, ua, controlParams))
-                || (controlParams.considerAllChallenges && ua.map.getStepDist(ua.location, challengeData.location) <= (challengeData.challenge.getProfile() / 10)))
+                || (challengeData.aiChallenge == null && controlParams.considerAllChallenges && ua.map.getStepDist(ua.location, challengeData.location) <= (challengeData.challenge.getProfile() / 10)))
             {
                 if (!controlParams.respectChallengeAlignment || !(challengeData.challenge.isGoodTernary() == -1 && (ua is UAG || ua is UAA) && !ua.corrupted))
                 {
@@ -1440,8 +1459,8 @@ namespace CommunityLib
                         if (challengeData.challenge.allowMultipleUsers() || challengeData.challenge.claimedBy == null || challengeData.challenge.claimedBy == ua)
                         {
                             if ((challengeData.aiChallenge != null && challengeData.aiChallenge.checkChallengeIsValid(challengeData, ua, controlParams))
-                                || (challengeData.aiChallenge == null && challengeData.challenge is Ritual && controlParams.considerAllRituals && challengeData.challenge.valid() && challengeData.challenge.validFor(ua))
-                                || (challengeData.aiChallenge == null && !(challengeData.challenge is Ritual) && controlParams.considerAllChallenges && challengeData.challenge.valid() && challengeData.challenge.validFor(ua)))
+                                || (challengeData.aiChallenge == null && challengeData.challenge is Ritual && controlParams.considerAllRituals && (challengeData.universalDelegates_Valid?.All(d => d(challengeData) == true) ?? true) && (challengeData.universalDelegates_ValidFor?.All(d => d(challengeData, ua) == true) ?? true) && challengeData.challenge.valid() && challengeData.challenge.validFor(ua))
+                                || (challengeData.aiChallenge == null && !(challengeData.challenge is Ritual) && controlParams.considerAllChallenges && (challengeData.universalDelegates_Valid?.All(d => d(challengeData) == true) ?? true) && (challengeData.universalDelegates_ValidFor?.All(d => d(challengeData, ua) == true) ?? true) && challengeData.challenge.valid() && challengeData.challenge.validFor(ua)))
                             {
                                 return true;
                             }
@@ -1478,7 +1497,7 @@ namespace CommunityLib
                 return -1.0;
             }
 
-            if (ModCore.Get().GetAgentAI().TryGetAgentType(ua.GetType(), out AgentAI.AIData? aiData) && aiData is AgentAI.AIData data)
+            if (ModCore.Get().GetAgentAI().TryGetAgentType(ua.GetType(), out AgentAI.AIData aiData) && aiData != null)
             {
                 AIChallenge aiChallenge = ModCore.Get().GetAgentAI().GetAIChallengeFromAgentType(ua.GetType(), challenge.GetType());
 
@@ -1486,22 +1505,52 @@ namespace CommunityLib
                 {
                     if (challenge is Ritual)
                     {
-                        if (data.controlParameters.considerAllRituals)
+                        if (aiData.controlParameters.considerAllRituals)
                         {
                             aiCheckingUtility = true;
                             utility = ua.getChallengeUtility(challenge, reasonMsgs);
                             aiCheckingUtility = false;
+
+                            if (aiData.aiChallenges_UniversalDelegates_Utility.Count > 0)
+                            {
+                                ChallengeData d = new ChallengeData
+                                {
+                                    aiChallenge = null,
+                                    challenge = challenge,
+                                    location = ua.location
+                                };
+
+                                foreach (Func<ChallengeData, UA, double, List<ReasonMsg>, double> @delegate in aiData.aiChallenges_UniversalDelegates_Utility)
+                                {
+                                    utility = @delegate(d, ua, utility, reasonMsgs);
+                                }
+                            }
                         }
                         else
                         {
                             utility = -1.0;
                         }
                     }
-                    else if (data.controlParameters.considerAllChallenges)
+                    else if (aiData.controlParameters.considerAllChallenges)
                     {
                         aiCheckingUtility = true;
                         utility = ua.getChallengeUtility(challenge, reasonMsgs);
                         aiCheckingUtility = false;
+
+                        if (aiData.aiChallenges_UniversalDelegates_Utility.Count > 0)
+                        {
+                            ChallengeData d = new ChallengeData
+                            {
+                                aiChallenge = null,
+                                challenge = challenge,
+                                location = challenge.location
+                            };
+
+                            foreach (Func<ChallengeData, UA, double, List<ReasonMsg>, double> @delegate in aiData.aiChallenges_UniversalDelegates_Utility)
+                            {
+                                utility = @delegate(d, ua, utility, reasonMsgs);
+                            }
+                        }
                     }
                     else
                     {
@@ -1529,7 +1578,7 @@ namespace CommunityLib
                         }
                     }
 
-                    utility = ModCore.Get().GetAgentAI().getChallengeUtility(cData, ua, data, data.controlParameters, reasonMsgs);
+                    utility = ModCore.Get().GetAgentAI().getChallengeUtility(cData, ua, aiData, aiData.controlParameters, reasonMsgs);
                 }
             }
             else
@@ -1705,25 +1754,24 @@ namespace CommunityLib
         {
             List<TaskData> results = new List<TaskData>();
 
-            if (!TryGetAgentType(ua.GetType(), out AIData? aiData) || aiData == null)
+            if (!TryGetAgentType(ua.GetType(), out AIData aiData) || aiData == null)
             {
                 Console.WriteLine("CommunityLib: ERROR: Failed to Get aiData for " + ua.getName() + " of type " + ua.GetType());
                 return null;
             }
-            AIData data = (AIData)aiData;
 
-            if (data.aiTasks == null)
+            if (aiData.aiTasks == null)
             {
                 return results;
             }
 
-            setupDebugInternal(data.controlParameters.debugProperties);
+            setupDebugInternal(aiData.controlParameters.debugProperties);
             if (debugInternal.debug)
             {
-                Console.WriteLine("CommunityLib: Agent AI for type " + ua.GetType() + " has " + data.aiTasks.Count + " assigned tasks.");
+                Console.WriteLine("CommunityLib: Agent AI for type " + ua.GetType() + " has " + aiData.aiTasks.Count + " assigned tasks.");
             }
 
-            foreach (AITask aiTask in data.aiTasks)
+            foreach (AITask aiTask in aiData.aiTasks)
             {
                 TaskData taskData = new TaskData()
                 {
@@ -1736,8 +1784,8 @@ namespace CommunityLib
                     Console.WriteLine("CommunityLib: Validity for " + aiTask.taskType + " by " + ua.getName() + " (" + (ua.society?.getName() ?? "No Society)") + " at " + ua.location.getName() + " (" + (ua.location.soc?.getName() ?? "Wilderness") + ")");
                 }
 
-                bool valid = aiTask.checkTaskIsValid(taskData, ua, data.controlParameters);
-                debugTaskValidity(valid, ua, aiTask, data);
+                bool valid = aiTask.checkTaskIsValid(taskData, ua, aiData.controlParameters);
+                debugTaskValidity(valid, ua, aiTask, aiData);
 
                 if (valid)
                 {
@@ -1749,9 +1797,9 @@ namespace CommunityLib
                             {
                                 TaskData taskDataLoc = taskData;
                                 taskDataLoc.targetLocation = location;
-                                valid = aiTask.checkTaskIsValid(taskDataLoc, ua, data.controlParameters);
+                                valid = aiTask.checkTaskIsValid(taskDataLoc, ua, aiData.controlParameters);
 
-                                debugTaskValidity(valid, ua, aiTask, data);
+                                debugTaskValidity(valid, ua, aiTask, aiData);
                                 if (valid)
                                 {
                                     results.Add(taskDataLoc);
@@ -1764,9 +1812,9 @@ namespace CommunityLib
                             {
                                 TaskData taskDataSoc = taskData;
                                 taskDataSoc.targetSocialGroup = sg;
-                                valid = aiTask.checkTaskIsValid(taskDataSoc, ua, data.controlParameters);
+                                valid = aiTask.checkTaskIsValid(taskDataSoc, ua, aiData.controlParameters);
 
-                                debugTaskValidity(valid, ua, aiTask, data);
+                                debugTaskValidity(valid, ua, aiTask, aiData);
                                 if (valid)
                                 {
                                     results.Add(taskDataSoc);
@@ -1779,9 +1827,9 @@ namespace CommunityLib
                             {
                                 TaskData taskDataUnit = taskData;
                                 taskDataUnit.targetUnit = unit;
-                                valid = aiTask.checkTaskIsValid(taskDataUnit, ua, data.controlParameters);
+                                valid = aiTask.checkTaskIsValid(taskDataUnit, ua, aiData.controlParameters);
 
-                                debugTaskValidity(valid, ua, aiTask, data);
+                                debugTaskValidity(valid, ua, aiTask, aiData);
                                 if (valid)
                                 {
                                     results.Add(taskDataUnit);

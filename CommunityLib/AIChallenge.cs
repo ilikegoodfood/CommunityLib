@@ -117,6 +117,14 @@ namespace CommunityLib
             }
 
             double result = profile;
+            if (challengeData.universalDelegates_Profile != null)
+            {
+                foreach (Func<AgentAI.ChallengeData, UA, double, double> delegate_Profile in challengeData.universalDelegates_Profile)
+                {
+                    result = delegate_Profile(challengeData, ua, profile);
+                }
+            }
+
             if (delegates_Profile != null)
             {
                 foreach (Func<AgentAI.ChallengeData, UA, double, double> delegate_Profile in delegates_Profile)
@@ -192,6 +200,36 @@ namespace CommunityLib
             if (!validTags(challengeData, ua, controlParams))
             {
                 return false;
+            }
+
+            if (challengeData.universalDelegates_Valid != null)
+            {
+                foreach (Func<AgentAI.ChallengeData, bool> delegate_Valid in challengeData.universalDelegates_Valid)
+                {
+                    if (!delegate_Valid(challengeData))
+                    {
+                        if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
+                        {
+                            Console.WriteLine("CommunityLib: Invalid: Failed Universal Valid delegates");
+                        }
+                        return false;
+                    }
+                }
+            }
+
+            if (challengeData.universalDelegates_ValidFor != null)
+            {
+                foreach (Func<AgentAI.ChallengeData, UA, bool> delegate_ValidFor in challengeData.universalDelegates_ValidFor)
+                {
+                    if (!delegate_ValidFor(challengeData, ua))
+                    {
+                        if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
+                        {
+                            Console.WriteLine("CommunityLib: Invalid: Failed Universal ValidFor delegates");
+                        }
+                        return false;
+                    }
+                }
             }
 
             if (delegates_Valid != null)
@@ -694,6 +732,14 @@ namespace CommunityLib
                 {
                     reasonMsgs?.Add(new ReasonMsg("Cannot find path to challenge", -10000.0));
                     result -= 10000.0;
+                }
+            }
+
+            if (challengeData.universalDelegates_Utility != null)
+            {
+                foreach (Func<AgentAI.ChallengeData, UA, double, List<ReasonMsg>, double> delegate_Utility in challengeData.universalDelegates_Utility)
+                {
+                    result = delegate_Utility(challengeData, ua, result, reasonMsgs);
                 }
             }
 

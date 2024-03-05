@@ -356,6 +356,21 @@ namespace CommunityLib
 
             ModCore.Get().GetAgentAI().RegisterAgentType(typeof(UAEN_OrcUpstart), new AgentAI.ControlParameters(true));
             ModCore.Get().GetAgentAI().AddChallengesToAgentType(typeof(UAEN_OrcUpstart), aiChallenges_OrcUpstart);
+
+            if (ModCore.Get().GetAgentAI().TryGetAgentType(typeof(UAEN_OrcUpstart), out AgentAI.AIData aiData) && aiData != null)
+            {
+                aiData.aiChallenges_UniversalDelegates_ValidFor.Add(universalDelegate_ValidFor_Underground);
+            }
+        }
+
+        private bool universalDelegate_ValidFor_Underground(AgentAI.ChallengeData challengeData, UA ua)
+        {
+            if (challengeData.location.hex.z == 1 && ua.society is SG_Orc orcs && orcs.canGoUnderground())
+            {
+                return true;
+            }
+
+            return false;
         }
 
         private double delegate_Utility_Ch_OrcRaiding(AgentAI.ChallengeData challengeData, UA ua, double utility, List<ReasonMsg> reasonMsgs)

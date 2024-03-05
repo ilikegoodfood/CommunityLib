@@ -78,7 +78,7 @@ namespace CommunityLib
                 return true;
             }
 
-            if (ModCore.Get().GetAgentAI().TryGetAgentType(__instance.GetType(), out AgentAI.AIData? aiData) && aiData is AgentAI.AIData data)
+            if (ModCore.Get().GetAgentAI().TryGetAgentType(__instance.GetType(), out AgentAI.AIData aiData) && aiData != null)
             {
                 AIChallenge aiChallenge = ModCore.Get().GetAgentAI().GetAIChallengeFromAgentType(__instance.GetType(), c.GetType());
 
@@ -86,7 +86,7 @@ namespace CommunityLib
                 {
                     if (c is Ritual)
                     {
-                        if (data.controlParameters.considerAllRituals)
+                        if (aiData.controlParameters.considerAllRituals)
                         {
                             return true;
                         }
@@ -96,7 +96,7 @@ namespace CommunityLib
                             return false;
                         }
                     }
-                    else if (data.controlParameters.considerAllChallenges)
+                    else if (aiData.controlParameters.considerAllChallenges)
                     {
                         return true;
                     }
@@ -119,7 +119,7 @@ namespace CommunityLib
                     cData.location = __instance.location;
                 }
 
-                __result = ModCore.Get().GetAgentAI().getChallengeUtility(cData, __instance, data, data.controlParameters, reasons);
+                __result = ModCore.Get().GetAgentAI().getChallengeUtility(cData, __instance, aiData, aiData.controlParameters, reasons);
                 return false;
             }
 
