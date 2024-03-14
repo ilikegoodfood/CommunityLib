@@ -926,6 +926,15 @@ namespace CommunityLib
         public override void onTurnEnd(Map map)
         {
             cleanRandStore(map);
+
+            if (!map.burnInComplete)
+            {
+                if (map.awarenessOfUnderground > 0.0)
+                {
+                    Console.WriteLine($"CommunityLib: Awareness of Underground was greater than 0 ({map.awarenessOfUnderground})");
+                    map.awarenessOfUnderground = 0.0;
+                }
+            }
         }
 
         public override void onChallengeComplete(Challenge challenge, UA ua, Task_PerformChallenge task_PerformChallenge)

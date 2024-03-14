@@ -1313,7 +1313,11 @@ namespace CommunityLib
                         ChallengeData d = new ChallengeData
                         {
                             aiChallenge = aiRituals[ritual.GetType()],
-                            challenge = ritual
+                            challenge = ritual,
+                            universalDelegates_Profile = aiData.aiChallenges_UniversalDelegates_Profile,
+                            universalDelegates_Valid = aiData.aiChallenges_UniversalDelegates_Valid,
+                            universalDelegates_ValidFor = aiData.aiChallenges_UniversalDelegates_ValidFor,
+                            universalDelegates_Utility = aiData.aiChallenges_UniversalDelegates_Utility
                         };
                         ritualData.Add(d);
                     }
@@ -1323,7 +1327,11 @@ namespace CommunityLib
                         {
                             aiChallenge = null,
                             challenge = ritual,
-                            location = ua.location
+                            location = ua.location,
+                            universalDelegates_Profile = aiData.aiChallenges_UniversalDelegates_Profile,
+                            universalDelegates_Valid = aiData.aiChallenges_UniversalDelegates_Valid,
+                            universalDelegates_ValidFor = aiData.aiChallenges_UniversalDelegates_ValidFor,
+                            universalDelegates_Utility = aiData.aiChallenges_UniversalDelegates_Utility
                         };
                         if (getChallengeIsValid(ua, d, aiData.controlParameters))
                         {
@@ -1386,7 +1394,11 @@ namespace CommunityLib
                         {
                             aiChallenge = rData.aiChallenge,
                             challenge = rData.challenge,
-                            location = location
+                            location = location,
+                            universalDelegates_Profile = aiData.aiChallenges_UniversalDelegates_Profile,
+                            universalDelegates_Valid = aiData.aiChallenges_UniversalDelegates_Valid,
+                            universalDelegates_ValidFor = aiData.aiChallenges_UniversalDelegates_ValidFor,
+                            universalDelegates_Utility = aiData.aiChallenges_UniversalDelegates_Utility
                         };
 
                         if (getChallengeIsValid(ua, d, aiData.controlParameters))
