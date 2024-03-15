@@ -1,10 +1,7 @@
 ﻿using Assets.Code;
-using Assets.Code.Modding;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -41,6 +38,12 @@ namespace CommunityLib
 
         private List<Type> wonderGenTypes;
 
+        public bool isPlayerTurn = false;
+
+        public Dictionary<HolyOrder, List<ReasonMsg>> influenceGainElder;
+
+        public Dictionary<HolyOrder, List<ReasonMsg>> influenceGainHuman;
+
         public ModData()
         {
             initialiseModIntegrationData();
@@ -54,6 +57,7 @@ namespace CommunityLib
             initialiseVampireTypes();
 
             initialiseWonderGenTypes();
+            initialiseInfluenceGain();
         }
 
         private void initialiseModIntegrationData()
@@ -120,6 +124,19 @@ namespace CommunityLib
             }
         }
 
+        private void initialiseInfluenceGain()
+        {
+            if (influenceGainElder == null)
+            {
+                influenceGainElder = new Dictionary<HolyOrder, List<ReasonMsg>>();
+            }
+
+            if (influenceGainHuman == null)
+            {
+                influenceGainHuman = new Dictionary<HolyOrder, List<ReasonMsg>>();
+            }
+        }
+
         public void clean()
         {
             if (isClean)
@@ -139,6 +156,11 @@ namespace CommunityLib
             vampireTypes.Clear();
 
             wonderGenTypes.Clear();
+
+            influenceGainElder.Clear();
+            influenceGainHuman.Clear();
+
+            isPlayerTurn = false;
 
             isClean = true;
         }
@@ -198,6 +220,7 @@ namespace CommunityLib
         public void onLoad(Map map)
         {
             this.map = map;
+            isPlayerTurn = true;
 
             if (saveData == null)
             {
@@ -217,6 +240,21 @@ namespace CommunityLib
             initialiseVampireTypes();
 
             initialiseWonderGenTypes();
+
+            initialiseInfluenceGain();
+        }
+
+        public void onTurnStart(Map map)
+        {
+            isPlayerTurn = true;
+        }
+
+        public void onTurnEnd(Map map)
+        {
+            isPlayerTurn = false;
+
+            influenceGainElder.Clear();
+            influenceGainHuman.Clear();
         }
 
         internal void addModIntegrationData(string key, ModIntegrationData intData)

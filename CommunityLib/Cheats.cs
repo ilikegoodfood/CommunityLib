@@ -230,22 +230,33 @@ namespace CommunityLib
             {
                 if (isElder)
                 {
+                    bool playerCanInfluenceFlag = order.influenceElder >= order.influenceElderReq;
+
                     if (value == 0)
                     {
                         order.influenceElder = order.influenceElderReq;
+
+                        ModCore.Get().AddInfluenceGainElder(order, new ReasonMsg("Console Command", order.influenceElderReq - order.influenceElder));
                     }
                     else
                     {
                         order.influenceElder += value;
 
+                        ModCore.Get().AddInfluenceGainElder(order, new ReasonMsg("Console Command", value));
+
                         if (order.influenceElder < 0)
                         {
                             order.influenceElder = 0;
                         }
-                        else if (order.influenceElder > order.influenceElderReq)
+                        else if (order.influenceElder >= order.influenceElderReq)
                         {
                             order.influenceElder = order.influenceElderReq;
                         }
+                    }
+
+                    if (!playerCanInfluenceFlag)
+                    {
+                        order.map.addUnifiedMessage(order, null, "Can Influence Holy Order", "You have enough influence to change the tenets of " + order.getName() + ", via the holy order screen", UnifiedMessage.messageType.CAN_INFLUENCE_ORDER);
                     }
                 }
                 else
@@ -253,16 +264,20 @@ namespace CommunityLib
                     if (value == 0)
                     {
                         order.influenceHuman = order.influenceHumanReq;
+
+                        ModCore.Get().AddInfluenceGainHuman(order, new ReasonMsg("Console Command", order.influenceHumanReq - order.influenceHuman));
                     }
                     else
                     {
                         order.influenceHuman += value;
 
+                        ModCore.Get().AddInfluenceGainHuman(order, new ReasonMsg("Console Command", value));
+
                         if (order.influenceHuman < 0)
                         {
                             order.influenceHuman = 0;
                         }
-                        else if (order.influenceHuman > order.influenceHumanReq)
+                        else if (order.influenceHuman >= order.influenceHumanReq)
                         {
                             order.influenceHuman = order.influenceHumanReq;
                         }

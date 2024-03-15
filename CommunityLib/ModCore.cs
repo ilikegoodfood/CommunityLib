@@ -193,26 +193,26 @@ namespace CommunityLib
         public override void afterLoading(Map map)
         {
             core = this;
-            this.map = map;
+            Get().map = map;
 
-            if (data == null)
+            if (Get().data == null)
             {
-                data = new ModData();
+                Get().data = new ModData();
             }
-            data.onLoad(map);
+            Get().data.onLoad(map);
             getModKernels(map);
             HarmonyPatches_Conditional.PatchingInit(map);
 
             // Set local variables
-            if (randStore == null)
+            if (Get().randStore == null)
             {
-                randStore = new Dictionary<Unit, Dictionary<object, Dictionary<string, double>>>();
+                Get().randStore = new Dictionary<Unit, Dictionary<object, Dictionary<string, double>>>();
             }
 
             //Initialize subclasses.
-            if (pathfinding == null)
+            if (Get().pathfinding == null)
             {
-                pathfinding = new Pathfinding();
+                Get().pathfinding = new Pathfinding();
             }
 
             agentAI = new AgentAI(map);
@@ -923,6 +923,11 @@ namespace CommunityLib
             //Console.WriteLine("CommunityLib: Revival complete");
         }
 
+        public override void onTurnStart(Map map)
+        {
+            Get().data.onTurnStart(map);
+        }
+
         public override void onTurnEnd(Map map)
         {
             cleanRandStore(map);
@@ -935,6 +940,8 @@ namespace CommunityLib
                     map.awarenessOfUnderground = 0.0;
                 }
             }
+
+            Get().data.onTurnEnd(map);
         }
 
         public override void onChallengeComplete(Challenge challenge, UA ua, Task_PerformChallenge task_PerformChallenge)
@@ -945,6 +952,96 @@ namespace CommunityLib
         public override void onCheatEntered(string command)
         {
             Cheats.parseCheat(command, map);
+        }
+
+        public override int adjustHolyInfluenceDark(HolyOrder order, int inf, List<ReasonMsg> msgs)
+        {
+            if (Get().data.influenceGainElder.TryGetValue(order, out List<ReasonMsg> reasons) && reasons.Count > 0)
+            {
+                foreach (ReasonMsg reason in reasons)
+                {
+                    if (msgs != null)
+                    {
+                        ReasonMsg msg = msgs.FirstOrDefault(m => m.msg == reason.msg);
+                        if (msg != null)
+                        {
+                            msg.value += reason.value;
+                        }
+                        else
+                        {
+                            msgs.Add(reason);
+                        }
+                    }
+
+                    inf += (int)Math.Floor(reason.value);
+                }
+            }
+
+            return inf;
+        }
+
+        public override int adjustHolyInfluenceGood(HolyOrder order, int inf, List<ReasonMsg> msgs)
+        {
+            if (Get().data.influenceGainHuman.TryGetValue(order, out List<ReasonMsg> reasons) && reasons.Count > 0)
+            {
+                foreach (ReasonMsg reason in reasons)
+                {
+                    if (msgs != null)
+                    {
+                        ReasonMsg msg = msgs.FirstOrDefault(m => m.msg == reason.msg);
+                        if (msg != null)
+                        {
+                            msg.value += reason.value;
+                        }
+                        else
+                        {
+                            msgs.Add(reason);
+                        }
+                    }
+
+                    inf += (int)Math.Floor(reason.value);
+                }
+            }
+
+            return inf;
+        }
+
+        public void AddInfluenceGainElder(HolyOrder order, ReasonMsg msg)
+        {
+            if (!Get().data.influenceGainElder.TryGetValue(order, out List<ReasonMsg> influenceGain) || influenceGain == null)
+            {
+                influenceGain = new List<ReasonMsg>();
+                Get().data.influenceGainElder.Add(order, influenceGain);
+            }
+
+            ReasonMsg gainMsg = influenceGain.FirstOrDefault(m => m.msg == msg.msg);
+            if (gainMsg != null)
+            {
+                gainMsg.value += msg.value;
+            }
+            else
+            {
+                influenceGain.Add(msg);
+            }
+        }
+
+        public void AddInfluenceGainHuman(HolyOrder order, ReasonMsg msg)
+        {
+            if (!Get().data.influenceGainHuman.TryGetValue(order, out List<ReasonMsg> influenceGain))
+            {
+                influenceGain = new List<ReasonMsg>();
+                Get().data.influenceGainHuman.Add(order, influenceGain);
+            }
+
+            ReasonMsg gainMsg = influenceGain.FirstOrDefault(m => m.msg == msg.msg);
+            if (gainMsg != null)
+            {
+                gainMsg.value += msg.value;
+            }
+            else
+            {
+                influenceGain.Add(msg);
+            }
         }
 
         public override void onGraphicalHexUpdated(GraphicalHex graphicalHex)
