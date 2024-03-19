@@ -1160,7 +1160,7 @@ namespace CommunityLib
             int travelTime;
 
             Location[] path = pathfinding.getPathTo(u.location, location, u);
-            if (path == null && path.Length < 2)
+            if (path == null || path.Length < 2)
             {
                 travelTime = (int)Math.Ceiling(u.map.getStepDist(u.location, location) / (double)u.getMaxMoves());
             }
