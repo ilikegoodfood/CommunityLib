@@ -24,7 +24,12 @@ namespace CommunityLib
         // Token: 0x060001BB RID: 443 RVA: 0x00008E1C File Offset: 0x0000701C
         public override string getLong()
         {
-            return "This deep one is returning to the Sea at " + target.getName();
+            if (target != null)
+            {
+                return "This deep one is returning to the Sea at " + target.getName();
+            }
+
+            return "This deep one is returning to the Sea";
         }
 
         public override void turnTick(Unit unit)
