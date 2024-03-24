@@ -956,6 +956,14 @@ namespace CommunityLib
 
         public override int adjustHolyInfluenceDark(HolyOrder order, int inf, List<ReasonMsg> msgs)
         {
+            int result = 0;
+
+            if (order.isGone())
+            {
+                Get().data.influenceGainElder.Remove(order);
+                return 0;
+            }
+
             if (Get().data.influenceGainElder.TryGetValue(order, out List<ReasonMsg> reasons) && reasons.Count > 0)
             {
                 foreach (ReasonMsg reason in reasons)
@@ -973,15 +981,22 @@ namespace CommunityLib
                         }
                     }
 
-                    inf += (int)Math.Floor(reason.value);
+                    result += (int)Math.Floor(reason.value);
                 }
             }
 
-            return inf;
+            return result;
         }
 
         public override int adjustHolyInfluenceGood(HolyOrder order, int inf, List<ReasonMsg> msgs)
         {
+            int result = 0;
+            if (order.isGone())
+            {
+                Get().data.influenceGainHuman.Remove(order);
+                return 0;
+            }
+
             if (Get().data.influenceGainHuman.TryGetValue(order, out List<ReasonMsg> reasons) && reasons.Count > 0)
             {
                 foreach (ReasonMsg reason in reasons)
@@ -999,11 +1014,11 @@ namespace CommunityLib
                         }
                     }
 
-                    inf += (int)Math.Floor(reason.value);
+                    result += (int)Math.Floor(reason.value);
                 }
             }
 
-            return inf;
+            return result;
         }
 
         public void AddInfluenceGainElder(HolyOrder order, ReasonMsg msg)
