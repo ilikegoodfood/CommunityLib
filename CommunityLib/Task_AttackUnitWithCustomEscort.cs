@@ -40,6 +40,13 @@ namespace CommunityLib
                 return;
             }
 
+            if (customEscort == null || customEscort.isDead || customEscort.location != unit.location)
+            {
+                //Console.WriteLine("CommunityLib: Escort is not at escrotee's location");
+                unit.task = null;
+                return;
+            }
+
             if (unit.location == target.location)
             {
                 //Console.WriteLine("CommunityLib: Reached target");
