@@ -19,7 +19,6 @@ namespace CommunityLib
         {
             goToLand = false;
             this.safeMove = safeMove;
-            mapLayers = new int[0];
         }
 
         public Task_GoToWilderness(bool goToLandOnly = false, bool safeMove = false)

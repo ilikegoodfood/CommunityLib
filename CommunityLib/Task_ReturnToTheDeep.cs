@@ -11,38 +11,9 @@ namespace CommunityLib
     {
         public Location target = null;
 
-        public int[] mapLayers;
-
         public Task_ReturnToTheDeep(Location location)
         {
             target = location;
-            mapLayers = new int[0];
-        }
-
-        public Task_ReturnToTheDeep(int mapLayer = -1)
-        {
-            target = null;
-
-            if (mapLayer == -1)
-            {
-                mapLayers = new int[0];
-            }
-            else
-            {
-                mapLayers = new int[1] { mapLayer };
-            }
-        }
-
-        public Task_ReturnToTheDeep(int[] mapLayers = null)
-        {
-            target = null;
-
-            if (mapLayers == null)
-            {
-                mapLayers = new int[0];
-            }
-
-            this.mapLayers = mapLayers;
         }
 
         public override string getShort()
@@ -95,7 +66,7 @@ namespace CommunityLib
                                 {
                                     continue;
                                 }
-                                stepDistance = pathTo.Length;
+                                stepDistance = pathTo.Length - 1;
                             }
 
                             if (distance == -1 || stepDistance <= distance)

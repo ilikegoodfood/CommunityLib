@@ -9,8 +9,6 @@ namespace CommunityLib
 {
     public class UAENOverrideAI
     {
-        private List<AITask> aiTasks_CaveSpider;
-
         private List<AIChallenge> aiChallenges_DeepOne;
 
         private List<AIChallenge> aiChallenges_Ghast;
@@ -25,7 +23,6 @@ namespace CommunityLib
         {
             this.map = map;
 
-            populateCaveSpider();
             populateDeepOne();
             populateGhast();
             populateOrcUpstart();
@@ -38,95 +35,6 @@ namespace CommunityLib
             }
 
             // Test Articles
-        }
-
-        private void populateCaveSpider()
-        {
-            aiTasks_CaveSpider = new List<AITask>
-            {
-                new AITask(taskType: typeof(Task_GoToLocation), title: "Stalk the Caverns", map: map, delegate_Instantiate: delegate_Instantiate_GoToLocation, targetCategory: AITask.TargetCategory.Location, foregroundSprite: map.world.textureStore.hex_terrain_underground[0]),
-                new AITask(taskType: typeof(Task_GoToWilderness), title: "Retreat to the Wilds", map: map, delegate_Instantiate: delegate_Instantiate_GoToWilderness, foregroundSprite: map.world.textureStore.hex_terrain_underground[0])
-            };
-
-            aiTasks_CaveSpider[0].delegates_Valid.Add(delegate_Validity_Wander);
-            aiTasks_CaveSpider[0].delegates_Utility.Add(delegate_Utility_Wander);
-
-            aiTasks_CaveSpider[1].delegates_Valid.Add(delegate_Validity_GoToWilderness);
-            aiTasks_CaveSpider[1].delegates_Utility.Add(delegate_Utility_GoToWilderness);
-
-            AgentAI.ControlParameters controlParams = new AgentAI.ControlParameters(true);
-            controlParams.respectDanger = false;
-            controlParams.respectArmyIntercept = false;
-            controlParams.includeDangerousFoe = false;
-
-            ModCore.Get().GetAgentAI().RegisterAgentType(typeof(UAEN_CaveSpider), controlParams);
-            ModCore.Get().GetAgentAI().AddTasksToAgentType(typeof(UAEN_CaveSpider), aiTasks_CaveSpider);
-        }
-
-        private Task delegate_Instantiate_GoToLocation(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData taskData)
-        {
-            return new Task_GoToLocation(taskData.targetLocation);
-        }
-
-        private bool delegate_Validity_Wander(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData taskData)
-        {
-            if (taskData.targetCategory == AITask.TargetCategory.None)
-            {
-                return ua.location.getNeighbours().Any(n => n.hex.z == 1 && (n.units.Any(u => u is UA && !(u is UAEN_CaveSpider)) || !n.isOcean && n.settlement == null));
-            }
-
-            if (taskData.targetLocation.hex.z == 1 && taskData.targetLocation.getNeighbours().Contains(ua.location) && (taskData.targetLocation.units.Any(u => u is UA && !(u is UAEN_CaveSpider)) || (!taskData.targetLocation.isOcean && taskData.targetLocation.settlement == null)))
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        private double delegate_Utility_Wander(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData taskData, List<ReasonMsg> reasonMsgs)
-        {
-            double utility = 0.0;
-
-            double val = 25.0;
-            if (taskData.targetLocation.units.Any(u => u is UA && !(u is UAEN_CaveSpider)))
-            {
-                reasonMsgs?.Add(new ReasonMsg("Potential prey", val));
-                utility += val;
-                return utility;
-            }
-
-            if (!taskData.targetLocation.isOcean && taskData.targetLocation.settlement == null)
-            {
-                val = 20.0;
-                reasonMsgs?.Add(new ReasonMsg("Base", val));
-                utility += val;
-                return utility;
-            }
-
-            return utility;
-        }
-
-        private Task delegate_Instantiate_GoToWilderness(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData taskData)
-        {
-            return new Task_GoToWilderness(true, 1);
-        }
-
-        private bool delegate_Validity_GoToWilderness(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData taskData)
-        {
-            if (targetCategory == AITask.TargetCategory.None)
-            {
-                return (ua.location.isOcean || ua.location.settlement != null) && !ua.location.getNeighbours().Any(n => n.hex.z == 1 && (n.units.Any(u => u is UA && !(u is UAEN_CaveSpider)) || !n.isOcean && n.settlement == null)); ;
-            }
-
-            return false;
-        }
-
-        private double delegate_Utility_GoToWilderness(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData taskData, List<ReasonMsg> reasonMsgs)
-        {
-            double utility = 100.0;
-            reasonMsgs?.Add(new ReasonMsg("Base", utility));
-
-            return utility;
         }
 
         private void populateDeepOne()
@@ -356,21 +264,6 @@ namespace CommunityLib
 
             ModCore.Get().GetAgentAI().RegisterAgentType(typeof(UAEN_OrcUpstart), new AgentAI.ControlParameters(true));
             ModCore.Get().GetAgentAI().AddChallengesToAgentType(typeof(UAEN_OrcUpstart), aiChallenges_OrcUpstart);
-
-            if (ModCore.Get().GetAgentAI().TryGetAgentType(typeof(UAEN_OrcUpstart), out AgentAI.AIData aiData) && aiData != null)
-            {
-                aiData.aiChallenges_UniversalDelegates_ValidFor.Add(universalDelegate_ValidFor_Underground);
-            }
-        }
-
-        private bool universalDelegate_ValidFor_Underground(AgentAI.ChallengeData challengeData, UA ua)
-        {
-            if (challengeData.location.hex.z == 1 && ua.society is SG_Orc orcs && !orcs.canGoUnderground())
-            {
-                return false;
-            }
-
-            return true;
         }
 
         private double delegate_Utility_Ch_OrcRaiding(AgentAI.ChallengeData challengeData, UA ua, double utility, List<ReasonMsg> reasonMsgs)

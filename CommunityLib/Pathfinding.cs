@@ -34,17 +34,6 @@ namespace CommunityLib
             return !location.isOcean;
         }
 
-        public static bool delegate_LAYERBOUND(Location[] currentPath, Location location, Unit u, Location origin, Location destination)
-        {
-            HashSet<int> layers = new HashSet<int> { origin.hex.z };
-            if (destination.hex.z != origin.hex.z)
-            {
-                layers.Add(destination.hex.z);
-            }
-
-            return layers.Contains(location.hex.z);
-        }
-
         public static bool delegate_SAFE_MOVE(Location[] currentPath, Location location, Unit u, Location origin, Location destination)
         {
             return u == null || location.soc == null || !location.soc.hostileTo(u);
@@ -84,7 +73,7 @@ namespace CommunityLib
                 return new Location[0];
             }
 
-            List<Func<Location[], Location, Unit, Location, Location, bool>>  pathfindingDelegates = new List<Func<Location[], Location, Unit, Location, Location, bool>> { delegate_LAYERBOUND };
+            List<Func<Location[], Location, Unit, Location, Location, bool>>  pathfindingDelegates = new List<Func<Location[], Location, Unit, Location, Location, bool>>();
 
             if (u != null)
             {
@@ -199,7 +188,7 @@ namespace CommunityLib
                 return new Location[0];
             }
 
-            List<Func<Location[], Location, Unit, Location, Location, bool>> pathfindingDelegates = new List<Func<Location[], Location, Unit, Location, Location, bool>> { delegate_LAYERBOUND };
+            List<Func<Location[], Location, Unit, Location, Location, bool>> pathfindingDelegates = new List<Func<Location[], Location, Unit, Location, Location, bool>>();
 
             if (u != null)
             {
