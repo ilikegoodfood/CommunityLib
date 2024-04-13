@@ -882,14 +882,14 @@ namespace CommunityLib
             foreach (ChallengeData cData in validChallengeData)
             {
                 List<ReasonMsg> reasonMsgs = null;
-                if (debugInternal.outputValidity_ValidChallenges)
+                if (debugInternal.debug && debugInternal.outputValidity_ValidChallenges)
                 {
                     reasonMsgs = new List<ReasonMsg>();
                 }
 
                 utility2 = getChallengeUtility(cData, ua, aiData, aiData.controlParameters, reasonMsgs);
 
-                if (debugInternal.outputValidity_ValidChallenges && reasonMsgs != null)
+                if (debugInternal.debug && debugInternal.outputValidity_ValidChallenges && reasonMsgs != null)
                 {
                     Console.WriteLine("CommunityLib: Utility for " + cData.challenge.getName() + " at " + cData.challenge.location.getName() + " (" + (cData.challenge.location.soc?.getName() ?? "Wilderness") + ")");
                     foreach (ReasonMsg reasonMsg in reasonMsgs)
@@ -926,7 +926,7 @@ namespace CommunityLib
                             Console.WriteLine("CommunityLib: Unit " + unit.getName() + " (" + (unit.society?.getName() ?? "No Society") + ") at " + unit.location.getName() + " (" + (unit.location.soc?.getName() ?? "No Society") + ")");
                         }
 
-                        if (debugInternal.outputProfile_VisibleAgents)
+                        if (debugInternal.debug && debugInternal.outputProfile_VisibleAgents)
                         {
                             Console.WriteLine("CommunityLib: Profile: " + agent.profile);
                         }
@@ -934,14 +934,14 @@ namespace CommunityLib
                         List<ReasonMsg> reasonMsgs = null;
                         if (!(agent.task is Task_InHiding))
                         {
-                            if (debugInternal.outputUtility_VisibleAgentsAttack)
+                            if (debugInternal.debug && debugInternal.outputUtility_VisibleAgentsAttack)
                             {
                                 reasonMsgs = new List<ReasonMsg>();
                             }
 
                             utility2 = ua.getAttackUtility(agent, reasonMsgs, aiData.controlParameters.includeDangerousFoe);
 
-                            if (debugInternal.outputUtility_VisibleAgentsAttack && reasonMsgs != null)
+                            if (debugInternal.debug && debugInternal.outputUtility_VisibleAgentsAttack && reasonMsgs != null)
                             {
                                 Console.WriteLine("CommunityLib: Attack Utility");
                                 foreach (ReasonMsg reasonMsg in reasonMsgs)
@@ -968,14 +968,14 @@ namespace CommunityLib
                         {
                             if (ua.society?.getRel(unit.society).state != DipRel.dipState.war)
                             {
-                                if (debugInternal.outputUtility_VisibleAgentsBodyguard)
+                                if (debugInternal.debug && debugInternal.outputUtility_VisibleAgentsBodyguard)
                                 {
                                     reasonMsgs = new List<ReasonMsg>();
                                 }
 
                                 utility2 = ua.getBodyguardUtility(unit, reasonMsgs);
 
-                                if (debugInternal.outputUtility_VisibleAgentsBodyguard && reasonMsgs != null)
+                                if (debugInternal.debug && debugInternal.outputUtility_VisibleAgentsBodyguard && reasonMsgs != null)
                                 {
                                     Console.WriteLine("CommunityLib: Bodyguard Utility");
                                     foreach (ReasonMsg reasonMsg in reasonMsgs)
@@ -1005,14 +1005,14 @@ namespace CommunityLib
                         Task_PerformChallenge task = unit.task as Task_PerformChallenge;
                         if (!(task?.challenge.isChannelled() ?? true))
                         {
-                            if (debugInternal.outputUtility_VisibleAgentsDisrupt)
+                            if (debugInternal.debug && debugInternal.outputUtility_VisibleAgentsDisrupt)
                             {
                                 reasonMsgs = new List<ReasonMsg>();
                             }
 
                             utility2 = ua.getDisruptUtility(unit, null);
 
-                            if (debugInternal.outputUtility_VisibleAgentsDisrupt && reasonMsgs != null)
+                            if (debugInternal.debug && debugInternal.outputUtility_VisibleAgentsDisrupt && reasonMsgs != null)
                             {
                                 Console.WriteLine("CommunityLib: Disrupt Utility");
                                 foreach (ReasonMsg reasonMsg in reasonMsgs)
@@ -1476,22 +1476,22 @@ namespace CommunityLib
                             {
                                 return true;
                             }
-                            else if (debugInternal.outputValidity_AllChallenges)
+                            else if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                             {
                                 Console.WriteLine("CommunityLib: Invalid: Challenge Not Valid, or Not Valid For " + ua.getName());
                             }
                         }
-                        else if (debugInternal.outputValidity_AllChallenges)
+                        else if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                         {
                             Console.WriteLine("CommunityLib: Invalid: Challenge Claimed by Other Agent");
                         }
                     }
-                    else if (debugInternal.outputValidity_AllChallenges)
+                    else if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                     {
                         Console.WriteLine("CommunityLib: Invalid: Evil Agent Vs Good Challenge");
                     }
                 }
-                else if (debugInternal.outputValidity_AllChallenges)
+                else if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                 {
                     Console.WriteLine("CommunityLib: Invalid: Good Agent Vs Evil Challenge");
                 }
