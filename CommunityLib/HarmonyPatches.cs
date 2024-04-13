@@ -3913,18 +3913,6 @@ namespace CommunityLib
             return utility;
         }
 
-        public static double UAEN_CaveSpider_getAttackUtility(double utility, UA ua, Unit other, List<ReasonMsg> reasonMsgs, bool includeDangerousFoe)
-        {
-            if (other is UA && !(other is UAEN_CaveSpider))
-            {
-                utility = 100.0;
-                reasonMsgs?.Add(new ReasonMsg("Base", utility));
-                //Console.WriteLine("CommunityLib: Attack Utility for " + other.getName() + " is 100.0");
-            }
-
-            return utility;
-        }
-
         public static double UAEN_Cordyceps_Haematophage_getAttackUtility(double utility, UA ua, Unit other, List<ReasonMsg> reasonMsgs, bool includeDangerousFoe)
         {
             if (other is UAG target && !other.isCommandable())
