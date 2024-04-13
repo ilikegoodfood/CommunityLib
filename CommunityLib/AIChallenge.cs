@@ -116,6 +116,14 @@ namespace CommunityLib
             }
 
             double result = profile;
+            if (challengeData.universalDelegates_Profile != null)
+            {
+                foreach (Func<AgentAI.ChallengeData, UA, double, double> delegate_Profile in challengeData.universalDelegates_Profile)
+                {
+                    result = delegate_Profile(challengeData, ua, profile);
+                }
+            }
+
             if (delegates_Profile != null)
             {
                 foreach (Func<AgentAI.ChallengeData, UA, double, double> delegate_Profile in delegates_Profile)
@@ -208,6 +216,34 @@ namespace CommunityLib
                 }
             }
 
+
+            if (challengeData.universalDelegates_Valid != null)
+            {
+                foreach (Func<AgentAI.ChallengeData, bool> delegate_Valid in challengeData.universalDelegates_Valid)
+                {
+                    if (!delegate_Valid(challengeData))
+                    {
+                        if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
+                        {
+                            Console.WriteLine("CommunityLib: Invalid: Failed Universal Valid delegates");
+                        }
+                        return false;
+                    }
+                }
+            }
+
+            foreach (Func<AgentAI.ChallengeData, UA, bool> delegate_ValidFor in challengeData.universalDelegates_ValidFor)
+            {
+                if (!delegate_ValidFor(challengeData, ua))
+                {
+                    if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
+                    {
+                        Console.WriteLine("CommunityLib: Invalid: Failed Universal ValidFor delegates");
+                    }
+                    return false;
+                }
+            }
+
             if (delegates_ValidFor != null)
             {
                 foreach (Func<AgentAI.ChallengeData, UA, bool> delegate_ValidFor in delegates_ValidFor)
@@ -239,7 +275,7 @@ namespace CommunityLib
 
                 if (pathTo == null || pathTo.Length < 2)
                 {
-                    if (debugInternal.outputValidity_AllChallenges)
+                    if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                     {
                         Console.WriteLine("CommunityLib: Invalid: Failed to find Path");
                     }
@@ -248,7 +284,7 @@ namespace CommunityLib
             }
             else if (safeMove && (challengeData.location.soc?.hostileTo(ua) ?? false))
             {
-                if (debugInternal.outputValidity_AllChallenges)
+                if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                 {
                     Console.WriteLine("CommunityLib: Invalid: Failed safeMove");
                 }
@@ -271,7 +307,7 @@ namespace CommunityLib
                     case ChallengeTags.BaseValid:
                         if (!challengeData.challenge.valid())
                         {
-                            if (debugInternal.outputValidity_AllChallenges)
+                            if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                             {
                                 Console.WriteLine("CommunityLib: Invalid: challenge.valid returned false");
                             }
@@ -281,7 +317,7 @@ namespace CommunityLib
                     case ChallengeTags.BaseValidFor:
                         if (!challengeData.challenge.validFor(ua))
                         {
-                            if (debugInternal.outputValidity_AllChallenges)
+                            if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                             {
                                 Console.WriteLine("CommunityLib: Invalid: challenge.validFor returned false");
                             }
@@ -289,7 +325,7 @@ namespace CommunityLib
                         }
                         break;
                     case ChallengeTags.Forbidden:
-                        if (debugInternal.outputValidity_AllChallenges)
+                        if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                         {
                             Console.WriteLine("CommunityLib: Invalid: Challenge Forbidden");
                         }
@@ -298,7 +334,7 @@ namespace CommunityLib
                         Pr_Death death = challengeData.location.properties.OfType<Pr_Death>().FirstOrDefault();
                         if (death == null || death.charge <= 0.0)
                         {
-                            if (debugInternal.outputValidity_AllChallenges)
+                            if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                             {
                                 Console.WriteLine("CommunityLib: Invalid: No Death at location");
                             }
@@ -308,7 +344,7 @@ namespace CommunityLib
                     case ChallengeTags.RequiresShadow:
                         if (challengeData.location.getShadow() < 0.05)
                         {
-                            if (debugInternal.outputValidity_AllChallenges)
+                            if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                             {
                                 Console.WriteLine("CommunityLib: Invalid: No shadow at location");
                             }
@@ -318,7 +354,7 @@ namespace CommunityLib
                     case ChallengeTags.RequiresInfiltrated:
                         if (challengeData.location.settlement?.infiltration < 1.0)
                         {
-                            if (debugInternal.outputValidity_AllChallenges)
+                            if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                             {
                                 Console.WriteLine("CommunityLib: Invalid: Settlement not infiltrated");
                             }
@@ -328,7 +364,7 @@ namespace CommunityLib
                     case ChallengeTags.Enshadows:
                         if (challengeData.location.getShadow() >= 1.0)
                         {
-                            if (debugInternal.outputValidity_AllChallenges)
+                            if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                             {
                                 Console.WriteLine("CommunityLib: Invalid: No shadow at location");
                             }
@@ -339,7 +375,7 @@ namespace CommunityLib
                         {
                             if (settlement.shadowPolicy == Settlement.shadowResponse.DENY)
                             {
-                                if (debugInternal.outputValidity_AllChallenges)
+                                if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                                 {
                                     Console.WriteLine("CommunityLib: Invalid: Settlement cannot be ensahdowed");
                                 }
@@ -349,7 +385,7 @@ namespace CommunityLib
                             SettlementHuman settlementHuman = settlement as SettlementHuman;
                             if (settlementHuman?.ophanimTakeOver ?? false)
                             {
-                                if (debugInternal.outputValidity_AllChallenges)
+                                if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                                 {
                                     Console.WriteLine("CommunityLib: Invalid: Perfected settlement cannot be enshadowed");
                                 }
@@ -359,7 +395,7 @@ namespace CommunityLib
                         Society society = challengeData.location.soc as Society;
                         if (society != null && (society.isAlliance && challengeData.challenge.map.opt_allianceState == 1))
                         {
-                            if (debugInternal.outputValidity_AllChallenges)
+                            if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                             {
                                 Console.WriteLine("CommunityLib: Invalid: Alliance cannot be enshadowed");
                             }
@@ -369,7 +405,7 @@ namespace CommunityLib
                     case ChallengeTags.PushesShadow:
                         if (challengeData.location.getShadow() < 0.05)
                         {
-                            if (debugInternal.outputValidity_AllChallenges)
+                            if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                             {
                                 Console.WriteLine("CommunityLib: Invalid: No shadow at location");
                             }
@@ -415,7 +451,7 @@ namespace CommunityLib
                         }
                         if (deltaShadow < 0.05)
                         {
-                            if (debugInternal.outputValidity_AllChallenges)
+                            if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                             {
                                 Console.WriteLine("CommunityLib: Invalid: No potential to push shadow to neighbouring locations");
                             }
@@ -429,7 +465,7 @@ namespace CommunityLib
                             SettlementHuman settlementHuman = settlement as SettlementHuman;
                             if (settlementHuman?.ophanimTakeOver ?? false)
                             {
-                                if (debugInternal.outputValidity_AllChallenges)
+                                if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                                 {
                                     Console.WriteLine("CommunityLib: Invalid: Perfected settlements cannot be enshadowed");
                                 }
@@ -439,7 +475,7 @@ namespace CommunityLib
                         society = challengeData.location.soc as Society;
                         if (society != null && society.isAlliance && challengeData.challenge.map.opt_allianceState == 1)
                         {
-                            if (debugInternal.outputValidity_AllChallenges)
+                            if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                             {
                                 Console.WriteLine("CommunityLib: Alliance cannot be enshadowed");
                             }
@@ -447,7 +483,7 @@ namespace CommunityLib
                         }
                         if (challengeData.location.getShadow() < 0.05)
                         {
-                            if (debugInternal.outputValidity_AllChallenges)
+                            if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                             {
                                 Console.WriteLine("CommunityLib: No shadow at location");
                             }
@@ -461,7 +497,7 @@ namespace CommunityLib
                             SettlementHuman settlementHuman = settlement as SettlementHuman;
                             if (settlementHuman?.ophanimTakeOver ?? false)
                             {
-                                if (debugInternal.outputValidity_AllChallenges)
+                                if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                                 {
                                     Console.WriteLine("CommunityLib: Invalid: Perfected settlements cannot be enshadowed");
                                 }
@@ -471,7 +507,7 @@ namespace CommunityLib
                         society = challengeData.location.soc as Society;
                         if (society != null && (society.isAlliance && challengeData.challenge.map.opt_allianceState == 1))
                         {
-                            if (debugInternal.outputValidity_AllChallenges)
+                            if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                             {
                                 Console.WriteLine("CommunityLib: Invalid: Alliance cannot be enshadowed");
                             }
@@ -479,7 +515,7 @@ namespace CommunityLib
                         }
                         if (challengeData.location.getShadow() >= 1.0)
                         {
-                            if (debugInternal.outputValidity_AllChallenges)
+                            if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                             {
                                 Console.WriteLine("CommunityLib: Invalid: Location alreadt enshadowed");
                             }
@@ -488,7 +524,7 @@ namespace CommunityLib
                         ward = challengeData.location.properties.OfType<Pr_Ward>().FirstOrDefault();
                         if (ward?.charge >= 99)
                         {
-                            if (debugInternal.outputValidity_AllChallenges)
+                            if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                             {
                                 Console.WriteLine("CommunityLib: Invalid: Location protected by ward");
                             }
@@ -502,7 +538,7 @@ namespace CommunityLib
                         {
                             if (ua.person?.gold < recruitMinion.exemplar.getGoldCost())
                             {
-                                if (debugInternal.outputValidity_AllChallenges)
+                                if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                                 {
                                     Console.WriteLine("CommunityLib: Invalid: Insufficient Gold");
                                 }
@@ -513,7 +549,7 @@ namespace CommunityLib
                         {
                             if (ua.person?.gold < recruitOgre.exemplar.getGoldCost())
                             {
-                                if (debugInternal.outputValidity_AllChallenges)
+                                if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                                 {
                                     Console.WriteLine("CommunityLib: Invalid: Insufficient Gold");
                                 }
@@ -524,7 +560,7 @@ namespace CommunityLib
                     case ChallengeTags.ManageMenace:
                         if (ua.menace <= ua.inner_menaceMin)
                         {
-                            if (debugInternal.outputValidity_AllChallenges)
+                            if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                             {
                                 Console.WriteLine("CommunityLib: Invalid: Menace at minimum");
                             }
@@ -534,7 +570,7 @@ namespace CommunityLib
                     case ChallengeTags.ManageProfile:
                         if (ua.profile <= ua.inner_profileMin)
                         {
-                            if (debugInternal.outputValidity_AllChallenges)
+                            if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                             {
                                 Console.WriteLine("CommunityLib: Invalid: Profile at minimum");
                             }
@@ -544,7 +580,7 @@ namespace CommunityLib
                     case ChallengeTags.ManageMenaceProfile:
                         if (ua.menace + ua.profile <= ua.inner_menaceMin + ua.inner_profileMin)
                         {
-                            if (debugInternal.outputValidity_AllChallenges)
+                            if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                             {
                                 Console.WriteLine("CommunityLib: Invalid: Menace and Profile are at minimum");
                             }
@@ -554,7 +590,7 @@ namespace CommunityLib
                     case ChallengeTags.ManageSocietyMenace:
                         if (ua.society?.menace <= 0.05)
                         {
-                            if (debugInternal.outputValidity_AllChallenges)
+                            if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                             {
                                 Console.WriteLine("CommunityLib: Invalid: No society menace");
                             }
@@ -566,7 +602,7 @@ namespace CommunityLib
                         {
                             if (tagIndex == Tags.UNDEAD || tagIndex == Tags.ORC)
                             {
-                                if (debugInternal.outputValidity_AllChallenges)
+                                if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                                 {
                                     Console.WriteLine("CommunityLib: Invalid: UA is Orc or Undead");
                                 }
@@ -577,7 +613,7 @@ namespace CommunityLib
                     case ChallengeTags.RequiresSociety:
                         if (ua.location.soc == null)
                         {
-                            if (debugInternal.outputValidity_AllChallenges)
+                            if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                             {
                                 Console.WriteLine("CommunityLib: Invalid: Location is wilderness");
                             }
@@ -587,7 +623,7 @@ namespace CommunityLib
                     case ChallengeTags.RequiresNoSociety:
                         if (ua.location.soc != null)
                         {
-                            if (debugInternal.outputValidity_AllChallenges)
+                            if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                             {
                                 Console.WriteLine("CommunityLib: Invalid: Location is not wilderness");
                             }
@@ -597,7 +633,7 @@ namespace CommunityLib
                     case ChallengeTags.RequiresOwnSociety:
                         if (ua.society == null ||  ua.society != challengeData.location.soc)
                         {
-                            if (debugInternal.outputValidity_AllChallenges)
+                            if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                             {
                                 Console.WriteLine("CommunityLib: Invalid: Location does not belong to own soceity");
                             }
@@ -607,7 +643,7 @@ namespace CommunityLib
                     case ChallengeTags.ForbidOwnSociety:
                         if (ua.society != null && ua.society == challengeData.location.soc)
                         {
-                            if (debugInternal.outputValidity_AllChallenges)
+                            if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                             {
                                 Console.WriteLine("CommunityLib: Invalid: Location belongs to own soceity");
                             }
@@ -619,7 +655,7 @@ namespace CommunityLib
                         {
                             if (challengeData.location.soc != null && ua.society.relations.ContainsKey(challengeData.location.soc) && ua.society.relations[challengeData.location.soc].state == DipRel.dipState.war)
                             {
-                                if (debugInternal.outputValidity_AllChallenges)
+                                if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                                 {
                                     Console.WriteLine("CommunityLib: Invalid: Is at war with society that controls location");
                                 }
@@ -634,7 +670,7 @@ namespace CommunityLib
                         }
                         else if (challengeData.location.soc != null && ua.society.relations.ContainsKey(challengeData.location.soc) && ua.society.relations[challengeData.location.soc].state != DipRel.dipState.war)
                         {
-                            if (debugInternal.outputValidity_AllChallenges)
+                            if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                             {
                                 Console.WriteLine("CommunityLib: Invalid: Is not at war with soceity that controls location");
                             }
@@ -644,7 +680,7 @@ namespace CommunityLib
                     case ChallengeTags.Aquaphibious:
                         if (!challengeData.location.isOcean && !challengeData.location.isCoastal)
                         {
-                            if (debugInternal.outputValidity_AllChallenges)
+                            if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
                             {
                                 Console.WriteLine("CommunityLib: Invalid: Location is not coastal or ocean");
                             }
@@ -693,6 +729,14 @@ namespace CommunityLib
                 {
                     reasonMsgs?.Add(new ReasonMsg("Cannot find path to challenge", -10000.0));
                     result -= 10000.0;
+                }
+            }
+
+            if (challengeData.universalDelegates_Utility != null)
+            {
+                foreach (Func<AgentAI.ChallengeData, UA, double, List<ReasonMsg>, double> delegate_Utility in challengeData.universalDelegates_Utility)
+                {
+                    result = delegate_Utility(challengeData, ua, result, reasonMsgs);
                 }
             }
 

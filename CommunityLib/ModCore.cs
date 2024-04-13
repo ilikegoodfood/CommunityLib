@@ -105,9 +105,6 @@ namespace CommunityLib
                 case "Enhanced Trade Route Links":
                     opt_enhancedTradeRouteLinks = value;
                     break;
-                case "Allow Culture-Specific Minor Settlement Graphics":
-                    opt_allowCulturalMinorSettelementGraphics = value;
-                    break;
                 case "God Sort: Alphabetise":
                     opt_godSort_Alphabetise = value;
                     break;
@@ -135,6 +132,9 @@ namespace CommunityLib
                 case "Use Precise Distance Divisor":
                     opt_usePreciseDIstanceDivisor = value;
                     break;
+                case "Allow Culture-Specific Minor Settlement Graphics":
+                    opt_allowCulturalMinorSettelementGraphics = value;
+                    break;
                 default:
                     break;
             }
@@ -157,7 +157,7 @@ namespace CommunityLib
 
         public override void onStartGamePresssed(Map map, List<God> gods)
         {
-            data.clean();
+            Get().data.clean();
         }
 
         public override void beforeMapGen(Map map)
@@ -193,26 +193,26 @@ namespace CommunityLib
         public override void afterLoading(Map map)
         {
             core = this;
-            this.map = map;
+            Get().map = map;
 
-            if (data == null)
+            if (Get().data == null)
             {
-                data = new ModData();
+                Get().data = new ModData();
             }
-            data.onLoad(map);
+            Get().data.onLoad(map);
             getModKernels(map);
             HarmonyPatches_Conditional.PatchingInit(map);
 
             // Set local variables
-            if (randStore == null)
+            if (Get().randStore == null)
             {
-                randStore = new Dictionary<Unit, Dictionary<object, Dictionary<string, double>>>();
+                Get().randStore = new Dictionary<Unit, Dictionary<object, Dictionary<string, double>>>();
             }
 
             //Initialize subclasses.
-            if (pathfinding == null)
+            if (Get().pathfinding == null)
             {
-                pathfinding = new Pathfinding();
+                Get().pathfinding = new Pathfinding();
             }
 
             agentAI = new AgentAI(map);
@@ -322,6 +322,28 @@ namespace CommunityLib
                             else
                             {
                                 Console.WriteLine("CommunityLib: Failed to get Go Home task Type (ShadowsInsectGod.Code.Task_GoHome)");
+                            }
+
+                            Type haematophageType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.UAEN_Haematophage", false);
+                            if (droneType != null)
+                            {
+                                intDataCord.typeDict.Add("Haematophage", haematophageType);
+                                intDataCord.constructorInfoDict.Add("Haematophage", AccessTools.Constructor(haematophageType, new Type[] { typeof(Location), typeof(SocialGroup), typeof(Person) }));
+                                intDataCord.methodInfoDict.Add("Haematophage.turnTickAI", AccessTools.Method(haematophageType, "turnTickAI", new Type[0]));
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Haematophage agent Type (ShadowsInsectGod.Code.UAEN_Haematophage)");
+                            }
+
+                            Type slowHealingType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.Task_SlowHealing", false);
+                            if (seekType != null)
+                            {
+                                intDataCord.typeDict.Add("SlowHealTask", slowHealingType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Slow healing task Type (ShadowsInsectGod.Code.Task_SlowHealing)");
                             }
                         }
                         break;
@@ -901,9 +923,17 @@ namespace CommunityLib
             //Console.WriteLine("CommunityLib: Revival complete");
         }
 
+        public override void onTurnStart(Map map)
+        {
+            Get().data.onTurnStart(map);
+        }
+
+
         public override void onTurnEnd(Map map)
         {
             cleanRandStore(map);
+
+            Get().data.onTurnEnd(map);
         }
 
         public override void onChallengeComplete(Challenge challenge, UA ua, Task_PerformChallenge task_PerformChallenge)
@@ -914,6 +944,111 @@ namespace CommunityLib
         public override void onCheatEntered(string command)
         {
             Cheats.parseCheat(command, map);
+        }
+
+        public override int adjustHolyInfluenceDark(HolyOrder order, int inf, List<ReasonMsg> msgs)
+        {
+            int result = 0;
+
+            if (order.isGone())
+            {
+                Get().data.influenceGainElder.Remove(order);
+                return 0;
+            }
+
+            if (Get().data.influenceGainElder.TryGetValue(order, out List<ReasonMsg> reasons) && reasons.Count > 0)
+            {
+                foreach (ReasonMsg reason in reasons)
+                {
+                    if (msgs != null)
+                    {
+                        ReasonMsg msg = msgs.FirstOrDefault(m => m.msg == reason.msg);
+                        if (msg != null)
+                        {
+                            msg.value += reason.value;
+                        }
+                        else
+                        {
+                            msgs.Add(reason);
+                        }
+                    }
+
+                    result += (int)Math.Floor(reason.value);
+                }
+            }
+
+            return result;
+        }
+
+        public override int adjustHolyInfluenceGood(HolyOrder order, int inf, List<ReasonMsg> msgs)
+        {
+            int result = 0;
+            if (order.isGone())
+            {
+                Get().data.influenceGainHuman.Remove(order);
+                return 0;
+            }
+
+            if (Get().data.influenceGainHuman.TryGetValue(order, out List<ReasonMsg> reasons) && reasons.Count > 0)
+            {
+                foreach (ReasonMsg reason in reasons)
+                {
+                    if (msgs != null)
+                    {
+                        ReasonMsg msg = msgs.FirstOrDefault(m => m.msg == reason.msg);
+                        if (msg != null)
+                        {
+                            msg.value += reason.value;
+                        }
+                        else
+                        {
+                            msgs.Add(reason);
+                        }
+                    }
+
+                    result += (int)Math.Floor(reason.value);
+                }
+            }
+
+            return result;
+        }
+
+        public void AddInfluenceGainElder(HolyOrder order, ReasonMsg msg)
+        {
+            if (!Get().data.influenceGainElder.TryGetValue(order, out List<ReasonMsg> influenceGain) || influenceGain == null)
+            {
+                influenceGain = new List<ReasonMsg>();
+                Get().data.influenceGainElder.Add(order, influenceGain);
+            }
+
+            ReasonMsg gainMsg = influenceGain.FirstOrDefault(m => m.msg == msg.msg);
+            if (gainMsg != null)
+            {
+                gainMsg.value += msg.value;
+            }
+            else
+            {
+                influenceGain.Add(msg);
+            }
+        }
+
+        public void AddInfluenceGainHuman(HolyOrder order, ReasonMsg msg)
+        {
+            if (!Get().data.influenceGainHuman.TryGetValue(order, out List<ReasonMsg> influenceGain))
+            {
+                influenceGain = new List<ReasonMsg>();
+                Get().data.influenceGainHuman.Add(order, influenceGain);
+            }
+
+            ReasonMsg gainMsg = influenceGain.FirstOrDefault(m => m.msg == msg.msg);
+            if (gainMsg != null)
+            {
+                gainMsg.value += msg.value;
+            }
+            else
+            {
+                influenceGain.Add(msg);
+            }
         }
 
         public override void onGraphicalHexUpdated(GraphicalHex graphicalHex)
@@ -1166,7 +1301,7 @@ namespace CommunityLib
             }
             else
             {
-                travelTime = (int)Math.Ceiling(path.Length / (double)u.getMaxMoves());
+                travelTime = (int)Math.Ceiling((path.Length - 1) / (double)u.getMaxMoves());
             }
 
             if (travelTime > 0)
