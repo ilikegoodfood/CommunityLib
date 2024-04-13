@@ -190,26 +190,33 @@ namespace CommunityLib
             return null;
         }
 
-        public override bool onPathfinding_AllowMultiLayerPathfinding(Unit u)
+        public override bool onPathfinding_AllowSecondPass(Location locA, Location locB, Unit u, List<Func<Location[], Location, Unit, Location, Location, bool>> pathfindingDelegates)
         {
+            bool result = false;
+
             if (u.map.awarenessOfUnderground >= 1.0)
             {
-                return true;
+                result = true;
             }
             else if (u.society is Society society && (society.isOphanimControlled || society.isDarkEmpire))
             {
-                return true;
+                result = true;
             }
             else if (u.society == u.map.soc_dark || u.society == u.map.soc_neutral)
             {
-                return true;
+                result = true;
             }
             else if (u.society is SG_Orc orcSociety && orcSociety.canGoUnderground())
             {
-                return true;
+                result = true;
             }
 
-            return false;
+            if (result)
+            {
+                pathfindingDelegates.Remove(Pathfinding.delegate_LAYERBOUND);
+            }
+
+            return result;
         }
 
         public override bool interceptAgentAI(UA ua, AgentAI.AIData aiData, List<AgentAI.ChallengeData> challengeData, List<AgentAI.TaskData> taskData, List<Unit> visibleUnits)

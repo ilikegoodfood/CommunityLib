@@ -135,7 +135,7 @@ namespace CommunityLib
         /// </summary>
         /// <param name="u"></param>
         /// <returns></returns>
-        public virtual bool onPathfinding_AllowMultiLayerPathfinding(Unit u)
+        public virtual bool onPathfinding_AllowSecondPass(Location locA, Location locB, Unit u, List<Func<Location[], Location, Unit, Location, Location, bool>> pathfindingDelegates)
         {
             return false;
         }

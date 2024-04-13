@@ -115,11 +115,8 @@ namespace CommunityLib
             List<Location> locations = new List<Location> { locA };
             List<Location[]> paths = new List<Location[]> { new Location[] { locA } };
 
-            int passCount = 0;
-            while (passCount < 2)
+            for (int pass = 0; pass < 2; pass++)
             {
-                passCount++;
-
                 int i = 0;
                 while (i < 128)
                 {
@@ -172,13 +169,13 @@ namespace CommunityLib
                     shuffle(locations, paths);
                 }
 
-                bool allowPass = true;
+                bool allowPass = false;
                 if (u != null && !u.isCommandable())
                 {
                     allowPass = false;
                     foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                     {
-                        if (hook.onPathfinding_AllowMultiLayerPathfinding(u))
+                        if (hook.onPathfinding_AllowSecondPass(locA, locB, u, pathfindingDelegates))
                         {
                             allowPass = true;
                             break;
@@ -189,11 +186,6 @@ namespace CommunityLib
                 if (!allowPass)
                 {
                     break;
-                }
-
-                if (passCount == 1)
-                {
-                    pathfindingDelegates.Remove(delegate_LAYERBOUND);
                 }
             }
 
@@ -237,11 +229,8 @@ namespace CommunityLib
             List<Location> locations = new List<Location> { locA };
             List<Location[]> paths = new List<Location[]> { new Location[] { locA } };
 
-            int passCount = 0;
-            while (passCount < 2)
+            for (int pass = 0; pass < 2; pass++)
             {
-                passCount++;
-
                 int i = 0;
                 while (i < 128)
                 {
@@ -294,13 +283,13 @@ namespace CommunityLib
                     shuffle(locations, paths);
                 }
 
-                bool allowPass = true;
+                bool allowPass = false;
                 if (u != null && !u.isCommandable())
                 {
                     allowPass = false;
                     foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                     {
-                        if (hook.onPathfinding_AllowMultiLayerPathfinding(u))
+                        if (hook.onPathfinding_AllowSecondPass(locA, locB, u, pathfindingDelegates))
                         {
                             allowPass = true;
                             break;
@@ -311,11 +300,6 @@ namespace CommunityLib
                 if (!allowPass)
                 {
                     break;
-                }
-
-                if (passCount == 1)
-                {
-                    pathfindingDelegates.Remove(delegate_LAYERBOUND);
                 }
             }
 
@@ -330,23 +314,21 @@ namespace CommunityLib
             {
                 if (loc.settlement is Set_MinorOther && loc.settlement.subs.Any(sub => sub is Sub_Wonder_Doorway))
                 {
-                    Location tomb = null;
                     foreach (Location location in u.map.locations)
                     {
-                        if (ModCore.Get().checkIsElderTomb(location))
+                        if (ModCore.Get().checkIsElderTomb(location) && !result.Contains(location))
                         {
-                            tomb = location;
+                            result.Add(location);
                         }
-                    }
-
-                    if (tomb != null)
-                    {
-                        result.Add(tomb);
                     }
 
                     if (u.homeLocation != -1)
                     {
-                        result.Add(u.map.locations[u.homeLocation]);
+                        Location homeLoc = u.map.locations[u.homeLocation];
+                        if (!result.Contains(homeLoc))
+                        {
+                            result.Add(homeLoc);
+                        }
                     }
                 }
             }
@@ -361,11 +343,17 @@ namespace CommunityLib
                 for (int i = 0; i < locations.Count; i++)
                 {
                     int index = Eleven.random.Next(locations.Count);
+
+                    if (index == i)
+                    {
+                        continue;
+                    }
+
                     Location valA = locations[index];
                     Location[] valB = paths[index];
                     locations[index] = locations[i];
-                    locations[i] = valA;
                     paths[index] = paths[i];
+                    locations[i] = valA;
                     paths[i] = valB;
                 }
             }
