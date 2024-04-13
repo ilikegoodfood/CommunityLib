@@ -1309,7 +1309,7 @@ namespace CommunityLib
             }
             else
             {
-                travelTime = (int)Math.Ceiling(path.Length / (double)u.getMaxMoves());
+                travelTime = (int)Math.Ceiling((path.Length - 1) / (double)u.getMaxMoves());
             }
 
             if (travelTime > 0)
