@@ -1,6 +1,7 @@
 ﻿using Assets.Code;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 
@@ -175,7 +176,7 @@ namespace CommunityLib
                 return true;
             }
 
-            if (debugInternal.outputVisibility_AllChallenges)
+            if (debugInternal.debug && debugInternal.outputVisibility_AllChallenges)
             {
                 Console.WriteLine("CommunityLib: NOT Visible");
             }
@@ -199,6 +200,36 @@ namespace CommunityLib
             if (!validTags(challengeData, ua, controlParams))
             {
                 return false;
+            }
+
+            if (challengeData.universalDelegates_Valid != null)
+            {
+                foreach (Func<AgentAI.ChallengeData, bool> delegate_Valid in challengeData.universalDelegates_Valid)
+                {
+                    if (!delegate_Valid(challengeData))
+                    {
+                        if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
+                        {
+                            Console.WriteLine("CommunityLib: Invalid: Failed Universal Valid delegates");
+                        }
+                        return false;
+                    }
+                }
+            }
+
+            if (challengeData.universalDelegates_ValidFor != null)
+            {
+                foreach (Func<AgentAI.ChallengeData, UA, bool> delegate_ValidFor in challengeData.universalDelegates_ValidFor)
+                {
+                    if (!delegate_ValidFor(challengeData, ua))
+                    {
+                        if (debugInternal.debug && debugInternal.outputValidity_AllChallenges)
+                        {
+                            Console.WriteLine("CommunityLib: Invalid: Failed Universal ValidFor delegates");
+                        }
+                        return false;
+                    }
+                }
             }
 
             if (delegates_Valid != null)

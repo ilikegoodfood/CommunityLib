@@ -166,7 +166,7 @@ namespace CommunityLib
 
             // UAEN OVERRIDE AI //
             // Negate unit interactions.
-            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getAttackUtility), new Type[] { typeof(Unit), typeof(List<ReasonMsg>), typeof(bool) }), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getAttackUtility), new Type[] { typeof(Unit), typeof(List<ReasonMsg>), typeof(bool) }), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)), postfix: new HarmonyMethod(patchType, nameof(UAEN_getAttackUtility_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getBodyguardUtility), new Type[] { typeof(Unit), typeof(List<ReasonMsg>) }), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getDisruptUtility), new Type[] { typeof(Unit), typeof(List<ReasonMsg>) }), prefix: new HarmonyMethod(patchType, nameof(UAEN_UnitInteraction_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getVisibleUnits), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UA_getVisibleUnits_Prefix)), postfix: new HarmonyMethod(patchType, nameof(UA_getVisibleUnits_Postfix)));
@@ -176,7 +176,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Constructor(typeof(UAEN_DeepOne), new Type[] { typeof(Location), typeof(Society), typeof(Person) }), postfix: new HarmonyMethod(patchType, nameof(UAEN_DeepOne_ctor_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(UAEN_Ghast), nameof(UAEN_Ghast.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_Ghast_turnTickAI_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UAEN_OrcUpstart), nameof(UAEN_OrcUpstart.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_OrcUpstart_turnTickAI_Prefix)));
-            harmony.Patch(original: AccessTools.Method(typeof(UAEN_Vampire), nameof(UAEN_Vampire.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_OrcUpstart_turnTickAI_Prefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UAEN_Vampire), nameof(UAEN_Vampire.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_Vampire_turnTickAI_Prefix)));
 
             // Deep ones
             harmony.Patch(original: AccessTools.Method(typeof(Rt_DescendIntoTheSea), nameof(Rt_DescendIntoTheSea.validFor), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Rt_DescendIntoTheSea_validFor_Postfix)));
@@ -205,10 +205,10 @@ namespace CommunityLib
         // Graphical unit updated hook
         private static void GraphicalUnit_checkData_Postfix(GraphicalUnit __instance)
         {
-            Console.WriteLine("CommunityLib: Calling onGraphicalUnitUpdated hook");
+            //Console.WriteLine("CommunityLib: Calling onGraphicalUnitUpdated hook");
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                Console.WriteLine("CommunityLib: Calling hook from " + hook.GetType().Namespace);
+                //Console.WriteLine("CommunityLib: Calling hook from " + hook.GetType().Namespace);
                 hook.onGraphicalUnitUpdated(__instance);
             }
         }
@@ -2644,6 +2644,7 @@ namespace CommunityLib
             MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(SG_Orc_canSettle_TranspilerBody));
 
             yield return new CodeInstruction(OpCodes.Nop);
+            yield return new CodeInstruction(OpCodes.Ldarg_0);
             yield return new CodeInstruction(OpCodes.Ldarg_1);
             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
             yield return new CodeInstruction(OpCodes.Ret);
@@ -2651,7 +2652,7 @@ namespace CommunityLib
             Console.WriteLine("CommunityLib: Completed complete function replacement transpiler SG_Orc_canSettle_Transpiler");
         }
 
-        private static bool SG_Orc_canSettle_TranspilerBody(Location location)
+        private static bool SG_Orc_canSettle_TranspilerBody(SG_Orc orcs, Location location)
         {
             if (location.isOcean || location.hex.getHabilitability() < location.map.opt_orcHabMult * location.map.param.orc_habRequirement)
             {
@@ -3167,7 +3168,7 @@ namespace CommunityLib
 
         private static int UA_distanceDivisor_TranspilerBody(UA ua, Challenge c, int distance)
         {
-            if (!ModCore.opt_usePreciseDIstanceDivisor)
+            if (!ModCore.opt_usePreciseDistanceDivisor)
             {
                 return distance;
             }
@@ -3175,6 +3176,7 @@ namespace CommunityLib
             if (distance > 0 && !(c is Ritual))
             {
                 Location[] pathTo;
+
                 if (lastPath != null && lastPath.Item1 == ua && lastPath.Item2 == c.location && lastPath.Item3 == ua.map.turn)
                 {
                     pathTo = lastPath.Item4;
@@ -3324,9 +3326,9 @@ namespace CommunityLib
                 return false;
             }
 
-            if (ModCore.Get().GetAgentAI().TryGetAgentType(ua.GetType(), out AgentAI.AIData? aiData) && aiData is AgentAI.AIData data)
+            if (ModCore.Get().GetAgentAI().TryGetAgentType(ua.GetType(), out AgentAI.AIData aiData) && aiData != null)
             {
-                if (data.controlParameters.hideThoughts)
+                if (aiData.controlParameters.hideThoughts)
                 {
                     return true;
                 }
@@ -3338,7 +3340,7 @@ namespace CommunityLib
                     //Console.WriteLine("CommunityLib: Iterating " + challengeData.challenge.getName());
                     SortableTaskBlock_Advanced block = new SortableTaskBlock_Advanced();
                     block.challenge = challengeData.challenge;
-                    block.utility = ModCore.Get().GetAgentAI().getChallengeUtility(challengeData, ua, data, data.controlParameters, block.msgs);
+                    block.utility = ModCore.Get().GetAgentAI().getChallengeUtility(challengeData, ua, aiData, aiData.controlParameters, block.msgs);
                     block.challengeData = challengeData;
                     blocks.Add(block);
 
@@ -3353,7 +3355,7 @@ namespace CommunityLib
                     SortableTaskBlock_Advanced blockTask = new SortableTaskBlock_Advanced();
                     blockTask.challenge = null;
                     blockTask.taskType = taskData.aiTask.taskType;
-                    blockTask.utility = ModCore.Get().GetAgentAI().checkTaskUtility(taskData, ua, data, data.controlParameters, blockTask.msgs);
+                    blockTask.utility = ModCore.Get().GetAgentAI().checkTaskUtility(taskData, ua, aiData, aiData.controlParameters, blockTask.msgs);
                     blockTask.taskData = taskData;
 
                     switch(taskData.targetCategory)
@@ -3393,7 +3395,7 @@ namespace CommunityLib
                             //Console.WriteLine("CommunityLib: Unit is UA");
                             UIScroll_Unit.SortableTaskBlock blockAttack = new UIScroll_Unit.SortableTaskBlock();
                             blockAttack.unitToAttack = unit;
-                            blockAttack.utility = ua.getAttackUtility(unit, blockAttack.msgs, data.controlParameters.includeDangerousFoe);
+                            blockAttack.utility = ua.getAttackUtility(unit, blockAttack.msgs, aiData.controlParameters.includeDangerousFoe);
                             if (blockAttack.utility >= -1000)
                             {
                                 blocks.Add(blockAttack);
@@ -3674,9 +3676,9 @@ namespace CommunityLib
 
         private static bool UIScroll_Unit_Update_TranspilerBody_TimeStats()
         {
-            if (GraphicalMap.selectedUnit is UA ua && ModCore.Get().GetAgentAI().TryGetAgentType(ua.GetType(), out AgentAI.AIData? aiData) && aiData is AgentAI.AIData data)
+            if (GraphicalMap.selectedUnit is UA ua && ModCore.Get().GetAgentAI().TryGetAgentType(ua.GetType(), out AgentAI.AIData aiData) && aiData != null)
             {
-                if (!data.controlParameters.valueTimeCost)
+                if (!aiData.controlParameters.valueTimeCost)
                 {
                     return true;
                 }
@@ -3879,7 +3881,48 @@ namespace CommunityLib
                 default:
                     break;
             }
+
+            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord != null)
+            {
+                if (intDataCord.typeDict.TryGetValue("Haematophage", out Type haematophageType) && haematophageType != null)
+                {
+                    if (__instance.GetType() == haematophageType)
+                    {
+                        __result = double.MinValue;
+                        return false;
+                    }
+                }
+            }
+
             return true;
+        }
+
+        private static double UAEN_getAttackUtility_Postfix(double utility, UA __instance, Unit other, List<ReasonMsg> reasons, bool includeDangerousFoe)
+        {
+            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord != null)
+            {
+                if (intDataCord.typeDict.TryGetValue("Haematophage", out Type haematophageType) && haematophageType != null)
+                {
+                    if (__instance.GetType() == haematophageType)
+                    {
+                        return UAEN_Cordyceps_Haematophage_getAttackUtility(utility, __instance, other, reasons, includeDangerousFoe);
+                    }
+                }
+            }
+
+            return utility;
+        }
+
+        public static double UAEN_CaveSpider_getAttackUtility(double utility, UA ua, Unit other, List<ReasonMsg> reasonMsgs, bool includeDangerousFoe)
+        {
+            if (other is UA && !(other is UAEN_CaveSpider))
+            {
+                utility = 100.0;
+                reasonMsgs?.Add(new ReasonMsg("Base", utility));
+                //Console.WriteLine("CommunityLib: Attack Utility for " + other.getName() + " is 100.0");
+            }
+
+            return utility;
         }
 
         public static double UAEN_Cordyceps_Haematophage_getAttackUtility(double utility, UA ua, Unit other, List<ReasonMsg> reasonMsgs, bool includeDangerousFoe)

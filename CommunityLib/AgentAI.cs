@@ -235,6 +235,8 @@ namespace CommunityLib
                 aiChallenges_UniversalDelegates_Valid = new List<Func<ChallengeData, bool>>();
                 aiChallenges_UniversalDelegates_ValidFor = new List<Func<ChallengeData, UA, bool>>();
                 aiChallenges_UniversalDelegates_Utility = new List<Func<ChallengeData, UA, double, List<ReasonMsg>, double>>();
+                this.aiTasks = aiTasks;
+                this.controlParameters = controlParameters;
             }
         }
 
@@ -1393,7 +1395,11 @@ namespace CommunityLib
                         {
                             aiChallenge = rData.aiChallenge,
                             challenge = rData.challenge,
-                            location = location
+                            location = location,
+                            universalDelegates_Profile = aiData.aiChallenges_UniversalDelegates_Profile,
+                            universalDelegates_Valid = aiData.aiChallenges_UniversalDelegates_Valid,
+                            universalDelegates_ValidFor = aiData.aiChallenges_UniversalDelegates_ValidFor,
+                            universalDelegates_Utility = aiData.aiChallenges_UniversalDelegates_Utility
                         };
 
                         if (getChallengeIsValid(ua, d, aiData.controlParameters))

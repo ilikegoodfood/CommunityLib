@@ -14,32 +14,43 @@ namespace CommunityLib
 
         }
 
-        public static bool delegate_AQUAPHIBIOUS(Location[] currentPath, Location location, Unit u)
+        public static bool delegate_AQUAPHIBIOUS(Location[] currentPath, Location location, Unit u, Location origin, Location destination)
         {
             return location.isOcean || location.isCoastal;
         }
 
-        public static bool delegate_AQUATIC(Location[] currentPath, Location location, Unit u)
+        public static bool delegate_AQUATIC(Location[] currentPath, Location location, Unit u, Location origin, Location destination)
         {
             return location.isOcean;
         }
 
-        public static bool delegate_DESERT_ONLY(Location[] currentPath, Location location, Unit u)
+        public static bool delegate_DESERT_ONLY(Location[] currentPath, Location location, Unit u, Location origin, Location destination)
         {
             return location.hex.terrain == Hex.terrainType.ARID || location.hex.terrain == Hex.terrainType.DESERT || location.hex.terrain == Hex.terrainType.DRY;
         }
 
-        public static bool delegate_LANDLOCKED(Location[] currentPath, Location location, Unit u)
+        public static bool delegate_LANDLOCKED(Location[] currentPath, Location location, Unit u, Location origin, Location destination)
         {
             return !location.isOcean;
         }
 
-        public static bool delegate_SAFE_MOVE(Location[] currentPath, Location location, Unit u)
+        public static bool delegate_LAYERBOUND(Location[] currentPath, Location location, Unit u, Location origin, Location destination)
+        {
+            HashSet<int> layers = new HashSet<int> { origin.hex.z };
+            if (destination.hex.z != origin.hex.z)
+            {
+                layers.Add(destination.hex.z);
+            }
+
+            return layers.Contains(location.hex.z);
+        }
+
+        public static bool delegate_SAFE_MOVE(Location[] currentPath, Location location, Unit u, Location origin, Location destination)
         {
             return u == null || location.soc == null || !location.soc.hostileTo(u);
         }
 
-        public static bool delegate_SHADOWBOUND(Location[] currentPath, Location location, Unit u)
+        public static bool delegate_SHADOWBOUND(Location[] currentPath, Location location, Unit u, Location origin, Location destination)
         {
             int hp = 0;
 
@@ -61,7 +72,7 @@ namespace CommunityLib
             return true;
         }
 
-        public static bool delegate_SHADOW_ONLY(Location[] currentPath, Location location, Unit u)
+        public static bool delegate_SHADOW_ONLY(Location[] currentPath, Location location, Unit u, Location origin, Location destination)
         {
             return location.getShadow() >= 0.5;
         }
@@ -73,7 +84,7 @@ namespace CommunityLib
                 return new Location[0];
             }
 
-            List<Func<Location[], Location, Unit, bool>>  pathfindingDelegates = new List<Func<Location[], Location, Unit, bool>>();
+            List<Func<Location[], Location, Unit, Location, Location, bool>>  pathfindingDelegates = new List<Func<Location[], Location, Unit, Location, Location, bool>> { delegate_LAYERBOUND };
 
             if (u != null)
             {
@@ -104,56 +115,78 @@ namespace CommunityLib
             List<Location> locations = new List<Location> { locA };
             List<Location[]> paths = new List<Location[]> { new Location[] { locA } };
 
-            int i = 0;
-            while (i < 128)
+            for (int pass = 0; pass < 2; pass++)
             {
-                List<Location> newLocations = new List<Location>();
-                List<Location[]> newPaths = new List<Location[]>();
-                i++;
-
-                for (int j = 0; j < locations.Count; j++)
+                int i = 0;
+                while (i < 128)
                 {
-                    foreach (Location neighbour in getNeighboursConditional(locations[j], u))
+                    List<Location> newLocations = new List<Location>();
+                    List<Location[]> newPaths = new List<Location[]>();
+                    i++;
+
+                    for (int j = 0; j < locations.Count; j++)
                     {
-                        if (!locationHashes.Contains(neighbour))
+                        foreach (Location neighbour in getNeighboursConditional(locations[j], u))
                         {
-                            bool valid = true;
-                            foreach (Func<Location[], Location, Unit, bool> pathfindingDelegate in pathfindingDelegates)
+                            if (!locationHashes.Contains(neighbour))
                             {
-                                if (!pathfindingDelegate(paths[j], neighbour, u))
+                                bool valid = true;
+                                foreach (Func<Location[], Location, Unit, Location, Location, bool> pathfindingDelegate in pathfindingDelegates)
                                 {
-                                    valid = false;
-                                    break;
+                                    if (!pathfindingDelegate(paths[j], neighbour, u, locA, locB))
+                                    {
+                                        valid = false;
+                                        break;
+                                    }
                                 }
-                            }
 
-                            if (!valid)
-                            {
-                                continue;
-                            }
+                                if (!valid)
+                                {
+                                    continue;
+                                }
 
-                            Location[] newPathArray = new Location[paths[j].Length + 1];
-                            for (int k = 0; k < paths[j].Length; k++)
-                            {
-                                newPathArray[k] = paths[j][k];
-                            }
-                            newPathArray[newPathArray.Length - 1] = neighbour;
+                                Location[] newPathArray = new Location[paths[j].Length + 1];
+                                for (int k = 0; k < paths[j].Length; k++)
+                                {
+                                    newPathArray[k] = paths[j][k];
+                                }
+                                newPathArray[newPathArray.Length - 1] = neighbour;
 
-                            if (neighbour == locB)
-                            {
-                                return newPathArray;
-                            }
+                                if (neighbour == locB)
+                                {
+                                    return newPathArray;
+                                }
 
-                            newLocations.Add(neighbour);
-                            newPaths.Add(newPathArray);
-                            locationHashes.Add(neighbour);
+                                newLocations.Add(neighbour);
+                                newPaths.Add(newPathArray);
+                                locationHashes.Add(neighbour);
+                            }
+                        }
+                    }
+
+                    locations = newLocations;
+                    paths = newPaths;
+                    shuffle(locations, paths);
+                }
+
+                bool allowPass = false;
+                if (u != null && !u.isCommandable())
+                {
+                    allowPass = false;
+                    foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                    {
+                        if (hook.onPathfinding_AllowSecondPass(locA, locB, u, pathfindingDelegates))
+                        {
+                            allowPass = true;
+                            break;
                         }
                     }
                 }
 
-                locations = newLocations;
-                paths = newPaths;
-                shuffle(locations, paths);
+                if (!allowPass)
+                {
+                    break;
+                }
             }
 
             return null;
@@ -166,7 +199,7 @@ namespace CommunityLib
                 return new Location[0];
             }
 
-            List<Func<Location[], Location, Unit, bool>> pathfindingDelegates = new List<Func<Location[], Location, Unit, bool>>();
+            List<Func<Location[], Location, Unit, Location, Location, bool>> pathfindingDelegates = new List<Func<Location[], Location, Unit, Location, Location, bool>> { delegate_LAYERBOUND };
 
             if (u != null)
             {
@@ -190,60 +223,84 @@ namespace CommunityLib
                 hook.onPopulatingPathfindingDelegates_SocialGroup(locA, sg, u, pathfindingDelegates);
             }
 
+            Location locB = sg.getCapitalHex().location;
+
             HashSet<Location> locationHashes = new HashSet<Location> { locA };
             List<Location> locations = new List<Location> { locA };
             List<Location[]> paths = new List<Location[]> { new Location[] { locA } };
 
-            int i = 0;
-            while (i < 128)
+            for (int pass = 0; pass < 2; pass++)
             {
-                List<Location> newLocations = new List<Location>();
-                List<Location[]> newPaths = new List<Location[]>();
-                i++;
-
-                for (int j = 0; j < locations.Count; j++)
+                int i = 0;
+                while (i < 128)
                 {
-                    foreach (Location neighbour in getNeighboursConditional(locations[j], u))
+                    List<Location> newLocations = new List<Location>();
+                    List<Location[]> newPaths = new List<Location[]>();
+                    i++;
+
+                    for (int j = 0; j < locations.Count; j++)
                     {
-                        if (!locationHashes.Contains(neighbour))
+                        foreach (Location neighbour in getNeighboursConditional(locations[j], u))
                         {
-                            bool valid = true;
-                            foreach (Func<Location[], Location, Unit, bool> pathfindingDelegate in pathfindingDelegates)
+                            if (!locationHashes.Contains(neighbour))
                             {
-                                if (!pathfindingDelegate(paths[j], neighbour, u))
+                                bool valid = true;
+                                foreach (Func<Location[], Location, Unit, Location, Location, bool> pathfindingDelegate in pathfindingDelegates)
                                 {
-                                    valid = false;
-                                    break;
+                                    if (!pathfindingDelegate(paths[j], neighbour, u, locA, locB))
+                                    {
+                                        valid = false;
+                                        break;
+                                    }
                                 }
-                            }
 
-                            if (!valid)
-                            {
-                                continue;
-                            }
+                                if (!valid)
+                                {
+                                    continue;
+                                }
 
-                            Location[] newPathArray = new Location[paths[j].Length + 1];
-                            for (int k = 0; k < paths[j].Length; k++)
-                            {
-                                newPathArray[k] = paths[j][k];
-                            }
-                            newPathArray[newPathArray.Length - 1] = neighbour;
+                                Location[] newPathArray = new Location[paths[j].Length + 1];
+                                for (int k = 0; k < paths[j].Length; k++)
+                                {
+                                    newPathArray[k] = paths[j][k];
+                                }
+                                newPathArray[newPathArray.Length - 1] = neighbour;
 
-                            if (neighbour.soc == sg)
-                            {
-                                return newPathArray;
-                            }
+                                if (neighbour.soc == sg)
+                                {
+                                    return newPathArray;
+                                }
 
-                            newLocations.Add(neighbour);
-                            newPaths.Add(newPathArray);
-                            locationHashes.Add(neighbour);
+                                newLocations.Add(neighbour);
+                                newPaths.Add(newPathArray);
+                                locationHashes.Add(neighbour);
+                            }
+                        }
+                    }
+
+                    locations = newLocations;
+                    paths = newPaths;
+                    shuffle(locations, paths);
+                }
+
+                bool allowPass = false;
+                if (u != null && !u.isCommandable())
+                {
+                    allowPass = false;
+                    foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                    {
+                        if (hook.onPathfinding_AllowSecondPass(locA, locB, u, pathfindingDelegates))
+                        {
+                            allowPass = true;
+                            break;
                         }
                     }
                 }
 
-                locations = newLocations;
-                paths = newPaths;
-                shuffle(locations, paths);
+                if (!allowPass)
+                {
+                    break;
+                }
             }
 
             return null;
@@ -257,23 +314,21 @@ namespace CommunityLib
             {
                 if (loc.settlement is Set_MinorOther && loc.settlement.subs.Any(sub => sub is Sub_Wonder_Doorway))
                 {
-                    Location tomb = null;
                     foreach (Location location in u.map.locations)
                     {
-                        if (ModCore.Get().checkIsElderTomb(location))
+                        if (ModCore.Get().checkIsElderTomb(location) && !result.Contains(location))
                         {
-                            tomb = location;
+                            result.Add(location);
                         }
-                    }
-
-                    if (tomb != null)
-                    {
-                        result.Add(tomb);
                     }
 
                     if (u.homeLocation != -1)
                     {
-                        result.Add(u.map.locations[u.homeLocation]);
+                        Location homeLoc = u.map.locations[u.homeLocation];
+                        if (!result.Contains(homeLoc))
+                        {
+                            result.Add(homeLoc);
+                        }
                     }
                 }
             }
@@ -288,11 +343,17 @@ namespace CommunityLib
                 for (int i = 0; i < locations.Count; i++)
                 {
                     int index = Eleven.random.Next(locations.Count);
+
+                    if (index == i)
+                    {
+                        continue;
+                    }
+
                     Location valA = locations[index];
                     Location[] valB = paths[index];
                     locations[index] = locations[i];
-                    locations[i] = valA;
                     paths[index] = paths[i];
+                    locations[i] = valA;
                     paths[i] = valB;
                 }
             }

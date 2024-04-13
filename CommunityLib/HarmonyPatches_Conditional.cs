@@ -78,7 +78,7 @@ namespace CommunityLib
                 return true;
             }
 
-            if (ModCore.Get().GetAgentAI().TryGetAgentType(__instance.GetType(), out AgentAI.AIData? aiData) && aiData is AgentAI.AIData data)
+            if (ModCore.Get().GetAgentAI().TryGetAgentType(__instance.GetType(), out AgentAI.AIData aiData) && aiData != null)
             {
                 AIChallenge aiChallenge = ModCore.Get().GetAgentAI().GetAIChallengeFromAgentType(__instance.GetType(), c.GetType());
 
@@ -86,7 +86,7 @@ namespace CommunityLib
                 {
                     if (c is Ritual)
                     {
-                        if (data.controlParameters.considerAllRituals)
+                        if (aiData.controlParameters.considerAllRituals)
                         {
                             return true;
                         }
@@ -96,7 +96,7 @@ namespace CommunityLib
                             return false;
                         }
                     }
-                    else if (data.controlParameters.considerAllChallenges)
+                    else if (aiData.controlParameters.considerAllChallenges)
                     {
                         return true;
                     }
@@ -119,7 +119,7 @@ namespace CommunityLib
                     cData.location = __instance.location;
                 }
 
-                __result = ModCore.Get().GetAgentAI().getChallengeUtility(cData, __instance, data, data.controlParameters, reasons);
+                __result = ModCore.Get().GetAgentAI().getChallengeUtility(cData, __instance, aiData, aiData.controlParameters, reasons);
                 return false;
             }
 
@@ -135,11 +135,37 @@ namespace CommunityLib
                 harmony.Patch(original: MI_turnTickAI, prefix: new HarmonyMethod(patchType, nameof(UAEN_Drone_turnTickAI_Prefix)));
             }
 
+            if (intData.constructorInfoDict.TryGetValue("Haematophage", out ConstructorInfo CI_Haematophage) && CI_Haematophage != null)
+            {
+                harmony.Patch(original: CI_Haematophage, postfix: new HarmonyMethod(patchType, nameof(UAEN_Haematophage_ctor_Postfix)));
+            }
+
+            if (intData.methodInfoDict.TryGetValue("Haematophage.turnTickAI", out MethodInfo MI_turnTickAI2) && MI_turnTickAI2 != null)
+            {
+                //Console.WriteLine("CommunityLib: Replacing UAEN_Drone AI");
+                harmony.Patch(original: MI_turnTickAI2, prefix: new HarmonyMethod(patchType, nameof(UAEN_Haematophage_turnTickAI_Prefix)));
+            }
+
             // Template Patch
             // harmony.Patch(original: AccessTools.Method(typeof(), nameof(), new Type[] { typeof() }), postfix: new HarmonyMethod(patchType, nameof()));
         }
 
         private static bool UAEN_Drone_turnTickAI_Prefix(UA __instance)
+        {
+            if (ModCore.Get().GetAgentAI().ContainsAgentType(__instance.GetType()))
+            {
+                ModCore.Get().GetAgentAI().turnTickAI(__instance);
+                return false;
+            }
+            return true;
+        }
+
+        private static void UAEN_Haematophage_ctor_Postfix(Location loc, UA __instance)
+        {
+            __instance.rituals.Add(new Rt_SlowHealing(loc));
+        }
+
+        private static bool UAEN_Haematophage_turnTickAI_Prefix(UA __instance)
         {
             if (ModCore.Get().GetAgentAI().ContainsAgentType(__instance.GetType()))
             {

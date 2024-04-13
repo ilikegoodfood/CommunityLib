@@ -1,10 +1,7 @@
 ﻿using Assets.Code;
-using Assets.Code.Modding;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -46,7 +43,6 @@ namespace CommunityLib
         public Dictionary<HolyOrder, List<ReasonMsg>> influenceGainElder;
 
         public Dictionary<HolyOrder, List<ReasonMsg>> influenceGainHuman;
-
 
         public ModData()
         {
@@ -141,7 +137,6 @@ namespace CommunityLib
             }
         }
 
-
         public void clean()
         {
             if (isClean)
@@ -161,6 +156,7 @@ namespace CommunityLib
             vampireTypes.Clear();
 
             wonderGenTypes.Clear();
+
             influenceGainElder.Clear();
             influenceGainHuman.Clear();
 
@@ -244,6 +240,7 @@ namespace CommunityLib
             initialiseVampireTypes();
 
             initialiseWonderGenTypes();
+
             initialiseInfluenceGain();
         }
 

@@ -45,6 +45,8 @@ namespace CommunityLib
 
         public static bool opt_enhancedTradeRouteLinks = true;
 
+        public static bool opt_forceCommunityLibraryPathfinding = true;
+
         public static bool opt_DynamicOrcCount = false;
 
         public static int opt_targetOrcCount = 2;
@@ -67,9 +69,7 @@ namespace CommunityLib
 
         public static bool opt_godSort_lastPlayedFirst = false;
 
-        public static bool opt_forceCommunityLibraryPathfinding = true;
-
-        public static bool opt_usePreciseDIstanceDivisor = true;
+        public static bool opt_usePreciseDistanceDivisor = true;
 
         public static ModCore Get() => core;
 
@@ -105,6 +105,15 @@ namespace CommunityLib
                 case "Enhanced Trade Route Links":
                     opt_enhancedTradeRouteLinks = value;
                     break;
+                case "Force Community Library Pathfinding":
+                    opt_forceCommunityLibraryPathfinding = value;
+                    break;
+                case "Use Precise Distance Divisor":
+                    opt_usePreciseDistanceDivisor = value;
+                    break;
+                case "Allow Culture-Specific Minor Settlement Graphics":
+                    opt_allowCulturalMinorSettelementGraphics = value;
+                    break;
                 case "God Sort: Alphabetise":
                     opt_godSort_Alphabetise = value;
                     break;
@@ -125,15 +134,6 @@ namespace CommunityLib
                     break;
                 case "God Sort: Last Played First":
                     opt_godSort_lastPlayedFirst = value;
-                    break;
-                case "Force Community Library Pathfinding":
-                    opt_forceCommunityLibraryPathfinding = value;
-                    break;
-                case "Use Precise Distance Divisor":
-                    opt_usePreciseDIstanceDivisor = value;
-                    break;
-                case "Allow Culture-Specific Minor Settlement Graphics":
-                    opt_allowCulturalMinorSettelementGraphics = value;
                     break;
                 default:
                     break;
@@ -927,7 +927,6 @@ namespace CommunityLib
         {
             Get().data.onTurnStart(map);
         }
-
 
         public override void onTurnEnd(Map map)
         {

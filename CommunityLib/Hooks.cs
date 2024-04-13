@@ -111,7 +111,7 @@ namespace CommunityLib
         /// <param name="locB"></param>
         /// <param name="u"></param>
         /// <param name="pathfindingDelegates"></param>
-        public virtual void onPopulatingPathfindingDelegates_Location(Location locA, Location locB, Unit u, List<Func<Location[], Location, Unit, bool>> pathfindingDelegates)
+        public virtual void onPopulatingPathfindingDelegates_Location(Location locA, Location locB, Unit u, List<Func<Location[], Location, Unit, Location, Location, bool>> pathfindingDelegates)
         {
             return;
         }
@@ -124,9 +124,20 @@ namespace CommunityLib
         /// <param name="sg"></param>
         /// <param name="u"></param>
         /// <param name="pathfindingDelegates"></param>
-        public virtual void onPopulatingPathfindingDelegates_SocialGroup(Location loc, SocialGroup sg, Unit u, List<Func<Location[], Location, Unit, bool>> pathfindingDelegates)
+        public virtual void onPopulatingPathfindingDelegates_SocialGroup(Location loc, SocialGroup sg, Unit u, List<Func<Location[], Location, Unit, Location, Location, bool>> pathfindingDelegates)
         {
             return;
+        }
+
+        /// <summary>
+        /// This hook fires when the pathfinding system has failed to find a valid path to the destination via only the layers of the path's origin and destination. It recieves the unit that is attempting to find a valid path (u). It returns if the unit should be allowed to path via other layers to try and reach the destination, as a bool. <br></br>
+        /// After the first to return true, no other instance of this hook will be called.
+        /// </summary>
+        /// <param name="u"></param>
+        /// <returns></returns>
+        public virtual bool onPathfinding_AllowSecondPass(Location locA, Location locB, Unit u, List<Func<Location[], Location, Unit, Location, Location, bool>> pathfindingDelegates)
+        {
+            return false;
         }
 
         /// <summary>

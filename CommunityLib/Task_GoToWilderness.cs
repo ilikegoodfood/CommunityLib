@@ -19,6 +19,7 @@ namespace CommunityLib
         {
             goToLand = false;
             this.safeMove = safeMove;
+            mapLayers = new int[0];
         }
 
         public Task_GoToWilderness(bool goToLandOnly = false, bool safeMove = false)
@@ -62,7 +63,7 @@ namespace CommunityLib
                             {
                                 continue;
                             }
-                            stepDistance = pathTo.Length;
+                            stepDistance = pathTo.Length - 1;
                         }
 
                         if (steps == -1 || stepDistance <= steps)
