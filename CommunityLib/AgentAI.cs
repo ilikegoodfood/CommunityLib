@@ -1752,7 +1752,7 @@ namespace CommunityLib
                 return distance;
             }
 
-            distance = (int)Math.Ceiling((double)pathTo.Length / (double)ua.getMaxMoves());
+            distance = (int)Math.Ceiling((double)(pathTo.Length - 1) / (double)ua.getMaxMoves());
 
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {

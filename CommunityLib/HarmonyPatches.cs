@@ -3193,7 +3193,7 @@ namespace CommunityLib
                 }
                 else
                 {
-                    distance = (int)Math.Ceiling((double)pathTo.Length / ua.getMaxMoves());
+                    distance = (int)Math.Ceiling((double)(pathTo.Length - 1) / ua.getMaxMoves());
                 }
 
                 if (distance > 0 && ua != null)
