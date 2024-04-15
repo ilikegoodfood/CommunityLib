@@ -15,6 +15,11 @@ namespace CommunityLib
             
         }
 
+        public override bool isUnitSubsumed(Unit uOriginal, Unit uSubsuming)
+        {
+            return uSubsuming is UM_OrcRaiders raiders && raiders.subsumedUnit == uOriginal;
+        }
+
         public override void onUnitDeath_StartOfProcess(Unit u, string v, Person killer)
         {
             if (ModCore.opt_forceShipwrecks || ModCore.opt_spawnShipwrecks)

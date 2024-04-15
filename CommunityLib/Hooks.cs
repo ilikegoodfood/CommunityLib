@@ -186,6 +186,18 @@ namespace CommunityLib
         }
 
         /// <summary>
+        /// This hook fires when a mod needs to check if a unit is subsumed (marked as dead but is actually alive as part of another unit). It recieves the original unit (uOriginal), and the current unit that is assigned to the person of the original unit (uSubsuming). It returns if the original unit is subsumed by the subsuming unit as a bool. <br></br>
+        /// No instance of this hook is called after the first to retun true.
+        /// </summary>
+        /// <param name="u"></param>
+        /// <param name="subsumingUnit"></param>
+        /// <returns></returns>
+        public virtual bool isUnitSubsumed(Unit uOriginal, Unit uSubsuming)
+        {
+            return false;
+        }
+
+        /// <summary>
         /// This hook fires when a unit is instructed to die. It recieves the Unit (u), a string representation of the cause (v), and the person, if applicable, that casued their death (killer). <br></br>
         /// If this hook returns true, the rest of the death proccess will not happen. If you wish to keep the unit alive and prevent this check being performed multiple times per turn, make sure that their health is greater than 0, or their cause of death has been removed. The process which initially instructed the unit to die will still continue, so if you wish to keep the unit alive, make to sure to account for, and act in response to, the method of its death.
         /// <para>Instances of this hook will be called up to the first to return true, aborting the death process.</para>
