@@ -75,7 +75,7 @@ namespace CommunityLib
 
         /// <summary>
         /// This hook fires when a patch is requested between two locations. It receives the location the path is from (locA), the location the path is aiming to reach (locB), the unit that is seeking the path (u), which is null if not applicable, and whether to consider safeMove (safeMove). <br></br>
-        /// If this hook returns any Location[] other than null, the rest of the pathFinding process will not happen. Instead, the function will return the array returned by this hook.
+        /// If this hook returns any Location[] other than null, the rest of the pathfinding process will not happen. Instead, the function will return the array returned by this hook.
         /// <para>No instances of this hook will run after one which has not returned null.</para>
         /// </summary>
         /// <param name="locA"></param>
@@ -83,14 +83,14 @@ namespace CommunityLib
         /// <param name="u"></param>
         /// <param name="safeMove"></param>
         /// <returns></returns>
-        public virtual Location[] interceptGetPathTo_Location(Location locA, Location locB, Unit u, bool safeMove)
+        public virtual Location[] interceptGetPathTo(Location locA, Location locB, Unit u, bool safeMove)
         {
             return null;
         }
 
         /// <summary>
         /// This hook fires when a patch is requested between a location and a social group. It recieves the location the path is from (loc), the social group the path is trying to reach (sg), the unit that is seeking the path (u), which is null if not applicable, and whether to consider safeMove (safeMove). <br></br>
-        /// If this hook returns any Location[] other than null, the rest of the pathFinding process will not happen. Instead, the function will return the array returned by this hook.
+        /// If this hook returns any Location[] other than null, the rest of the pathfinding process will not happen. Instead, the function will return the array returned by this hook.
         /// <para>No instances of this hook will run after one which has not returned null.</para>
         /// </summary>
         /// <param name="loc"></param>
@@ -98,7 +98,7 @@ namespace CommunityLib
         /// <param name="u"></param>
         /// <param name="safeMove"></param>
         /// <returns></returns>
-        public virtual Location[] interceptGetPathTo_SocialGroup(Location loc, SocialGroup sg, Unit u, bool safeMove)
+        public virtual Location[] interceptGetPathTo(Location loc, SocialGroup sg, Unit u, bool safeMove)
         {
             return null;
         }
@@ -111,31 +111,50 @@ namespace CommunityLib
         /// <param name="locB"></param>
         /// <param name="u"></param>
         /// <param name="pathfindingDelegates"></param>
-        public virtual void onPopulatingPathfindingDelegates_Location(Location locA, Location locB, Unit u, List<Func<Location[], Location, Unit, Location, Location, bool>> pathfindingDelegates)
+        public virtual void onPopulatingPathfindingDelegates(Location locA, Location locB, Unit u, List<Func<Location[], Location, Unit, Location, Location, bool>> pathfindingDelegates)
         {
             return;
         }
 
         /// <summary>
-        /// This hook fires when the Community Library's pathfiding algorithm is called. It recieves the location the path is from (loc), the social group the path is trying to reach (sg), the unit that is seeking the path (u), which is null if not applicable, and the list of pathfinding delegates that have alsready been assigned to the path (pathfindingDelegates), including the unit's movement type and safemove requirements. <br></br>
+        /// This hook fires when the Community Library's pathfiding algorithm is called. It recieves the location the path is from (loc), the social group the path is aiming to reach (sg), the unit that is seeking the path (u), which is null if not applicable, and the list of pathfinding delegates that have alsready been assigned to the path (pathfindingDelegates), including the unit's movement type and safemove requirements. <br></br>
         /// In order to modify how the path is calculated, add one or more new pathfinding delegates to the pathfindingDelegates variable.
         /// </summary>
         /// <param name="loc"></param>
         /// <param name="sg"></param>
         /// <param name="u"></param>
         /// <param name="pathfindingDelegates"></param>
-        public virtual void onPopulatingPathfindingDelegates_SocialGroup(Location loc, SocialGroup sg, Unit u, List<Func<Location[], Location, Unit, Location, Location, bool>> pathfindingDelegates)
+        public virtual void onPopulatingPathfindingDelegates(Location loc, SocialGroup sg, Unit u, List<Func<Location[], Location, Unit, Location, Location, bool>> pathfindingDelegates)
         {
             return;
         }
 
         /// <summary>
-        /// This hook fires when the pathfinding system has failed to find a valid path to the destination via only the layers of the path's origin and destination. It recieves the unit that is attempting to find a valid path (u). It returns if the unit should be allowed to path via other layers to try and reach the destination, as a bool. <br></br>
-        /// After the first to return true, no other instance of this hook will be called.
+        /// This hook fires when the pathfinding system has failed to find a valid path to the destination in the first pass. By default, this is via only the layers of the path's origin and destination. It recieves the location the path is from (locA), the location the path is aiming to reach (locB), the unit that is seeking the path (u), which is null if not applicable, and the list of pathfinding delegates that have alsready been assigned to the path (pathfindingDelegates), including the unit's movement type and safemove requirements. It returns if the unit should be allowed to path via other layers to try and reach the destination, as a bool. <br></br>
+        /// In order to modify how the path is calculated, remove one or more pathfinding delegates from the pathfindingDelegates variable. <br></br>
+        /// All instances of this hook are called, even after one returns true, so that all required delegates get removed.
         /// </summary>
+        /// <param name="locA"></param>
+        /// <param name="locB"></param>
         /// <param name="u"></param>
+        /// <param name="pathfindingDelegates"></param>
         /// <returns></returns>
         public virtual bool onPathfinding_AllowSecondPass(Location locA, Location locB, Unit u, List<Func<Location[], Location, Unit, Location, Location, bool>> pathfindingDelegates)
+        {
+            return false;
+        }
+
+        /// <summary>
+        /// This hook fires when the pathfinding system has failed to find a valid path to the destination in the first pass. By default, this is via only the layers of the path's origin and destination. It recieves the location the path is from (loc), the social group the path is aiming to reach (sg), the unit that is seeking the path (u), which is null if not applicable, and the list of pathfinding delegates that have alsready been assigned to the path (pathfindingDelegates), including the unit's movement type and safemove requirements. It returns if the unit should be allowed to path via other layers to try and reach the destination, as a bool. <br></br>
+        /// In order to modify how the path is calculated, remove one or more pathfinding delegates from the pathfindingDelegates variable. <br></br>
+        /// All instances of this hook are called, even after one returns true, so that all required delegates get removed.
+        /// </summary>
+        /// <param name="loc"></param>
+        /// <param name="sg"></param>
+        /// <param name="u"></param>
+        /// <param name="pathfindingDelegates"></param>
+        /// <returns></returns>
+        public virtual bool onPathfinding_AllowSecondPass(Location loc, SocialGroup sg, Unit u, List<Func<Location[], Location, Unit, Location, Location, bool>> pathfindingDelegates)
         {
             return false;
         }

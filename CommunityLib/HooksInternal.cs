@@ -170,7 +170,7 @@ namespace CommunityLib
             return false;
         }
 
-        public override Location[] interceptGetPathTo_Location(Location locA, Location locB, Unit u, bool safeMove)
+        public override Location[] interceptGetPathTo(Location locA, Location locB, Unit u, bool safeMove)
         {
             if (ModCore.opt_forceCommunityLibraryPathfinding)
             {
@@ -180,7 +180,7 @@ namespace CommunityLib
             return null;
         }
 
-        public override Location[] interceptGetPathTo_SocialGroup(Location loc, SocialGroup sg, Unit u, bool safeMove)
+        public override Location[] interceptGetPathTo(Location loc, SocialGroup sg, Unit u, bool safeMove)
         {
             if (ModCore.opt_forceCommunityLibraryPathfinding)
             {
@@ -191,6 +191,35 @@ namespace CommunityLib
         }
 
         public override bool onPathfinding_AllowSecondPass(Location locA, Location locB, Unit u, List<Func<Location[], Location, Unit, Location, Location, bool>> pathfindingDelegates)
+        {
+            bool result = false;
+
+            if (u.map.awarenessOfUnderground >= 1.0)
+            {
+                result = true;
+            }
+            else if (u.society is Society society && (society.isOphanimControlled || society.isDarkEmpire))
+            {
+                result = true;
+            }
+            else if (u.society == u.map.soc_dark || u.society == u.map.soc_neutral)
+            {
+                result = true;
+            }
+            else if (u.society is SG_Orc orcSociety && orcSociety.canGoUnderground())
+            {
+                result = true;
+            }
+
+            if (result)
+            {
+                pathfindingDelegates.Remove(Pathfinding.delegate_LAYERBOUND);
+            }
+
+            return result;
+        }
+
+        public override bool onPathfinding_AllowSecondPass(Location loc, SocialGroup sg, Unit u, List<Func<Location[], Location, Unit, Location, Location, bool>> pathfindingDelegates)
         {
             bool result = false;
 

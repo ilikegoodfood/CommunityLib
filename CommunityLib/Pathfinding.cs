@@ -108,7 +108,7 @@ namespace CommunityLib
 
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                hook.onPopulatingPathfindingDelegates_Location(locA, locB, u, pathfindingDelegates);
+                hook.onPopulatingPathfindingDelegates(locA, locB, u, pathfindingDelegates);
             }
 
             HashSet<Location> locationHashes = new HashSet<Location> { locA };
@@ -178,7 +178,6 @@ namespace CommunityLib
                         if (hook.onPathfinding_AllowSecondPass(locA, locB, u, pathfindingDelegates))
                         {
                             allowPass = true;
-                            break;
                         }
                     }
                 }
@@ -220,7 +219,7 @@ namespace CommunityLib
 
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                hook.onPopulatingPathfindingDelegates_SocialGroup(locA, sg, u, pathfindingDelegates);
+                hook.onPopulatingPathfindingDelegates(locA, sg, u, pathfindingDelegates);
             }
 
             Location locB = sg.getCapitalHex().location;
@@ -289,10 +288,9 @@ namespace CommunityLib
                     allowPass = false;
                     foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                     {
-                        if (hook.onPathfinding_AllowSecondPass(locA, locB, u, pathfindingDelegates))
+                        if (hook.onPathfinding_AllowSecondPass(locA, sg, u, pathfindingDelegates))
                         {
                             allowPass = true;
-                            break;
                         }
                     }
                 }

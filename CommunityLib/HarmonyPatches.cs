@@ -2438,7 +2438,7 @@ namespace CommunityLib
 
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                Location[] newPath = hook.interceptGetPathTo_Location(locA, locB, u, safeMove) ?? null;
+                Location[] newPath = hook.interceptGetPathTo(locA, locB, u, safeMove) ?? null;
 
                 if (newPath != null)
                 {
@@ -2509,7 +2509,7 @@ namespace CommunityLib
 
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                Location[] newPath = hook.interceptGetPathTo_SocialGroup(loc, sg, u, safeMove) ?? null;
+                Location[] newPath = hook.interceptGetPathTo(loc, sg, u, safeMove) ?? null;
 
                 if (newPath != null)
                 {
