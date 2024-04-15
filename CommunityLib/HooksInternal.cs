@@ -15,6 +15,11 @@ namespace CommunityLib
             
         }
 
+        public override bool isUnitSubsumed(Unit uOriginal, Unit uSubsuming)
+        {
+            return uSubsuming is UM_OrcRaiders raiders && raiders.subsumedUnit == uOriginal;
+        }
+
         public override void onUnitDeath_StartOfProcess(Unit u, string v, Person killer)
         {
             if (ModCore.opt_forceShipwrecks || ModCore.opt_spawnShipwrecks)
@@ -166,7 +171,7 @@ namespace CommunityLib
             return false;
         }
 
-        public override Location[] interceptGetPathTo_Location(Location locA, Location locB, Unit u, bool safeMove)
+        public override Location[] interceptGetPathTo(Location locA, Location locB, Unit u, bool safeMove)
         {
             if (ModCore.opt_forceCommunityLibraryPathfinding)
             {
@@ -176,7 +181,7 @@ namespace CommunityLib
             return null;
         }
 
-        public override Location[] interceptGetPathTo_SocialGroup(Location loc, SocialGroup sg, Unit u, bool safeMove)
+        public override Location[] interceptGetPathTo(Location loc, SocialGroup sg, Unit u, bool safeMove)
         {
             if (ModCore.opt_forceCommunityLibraryPathfinding)
             {

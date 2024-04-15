@@ -1266,6 +1266,22 @@ namespace CommunityLib
             return false;
         }
 
+        public bool isUnitSubsumed(Unit u)
+        {
+            if (u.isDead && u.person != null && !u.person.isDead && u.person.unit != u && !u.person.unit.isDead)
+            {
+                foreach (Hooks hook in Get().GetRegisteredHooks())
+                {
+                    if (hook.isUnitSubsumed(u, u.person.unit))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
         public void registerLocusType(Type type) => Get().data.addLocusType(type);
 
         public bool checkHasLocus(Location location) => Get().data.isLocusType(location);
