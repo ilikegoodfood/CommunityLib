@@ -138,6 +138,9 @@ namespace CommunityLib
             // Holy Order Fixes
             harmony.Patch(original: AccessTools.Method(typeof(HolyOrder), nameof(HolyOrder.turnTick), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(HolyOrder_turnTick_Transpiler)));
 
+            // Fallen Human rename
+            harmony.Patch(original: AccessTools.Method(typeof(Pr_FallenHuman), nameof(Pr_FallenHuman.getInvariantName), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Pr_FallenHuman_getInvariantName_Postfix)));
+
             // Overmind modifications
             harmony.Patch(original: AccessTools.Method(typeof(Overmind), nameof(Overmind.getThreats), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Overmind_getThreats_Transpiler)));
 
@@ -2342,6 +2345,12 @@ namespace CommunityLib
         private static bool HolyOrder_turnTick_TranspilerBody(Unit u)
         {
             return ModCore.Get().isUnitSubsumed(u);
+        }
+
+        // Fallen Human rename
+        private static void Pr_FallenHuman_getInvariantName_Postfix(ref string __result)
+        {
+            __result = "Soul";
         }
 
         // Overmind modification 
