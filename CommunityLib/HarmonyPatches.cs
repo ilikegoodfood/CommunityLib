@@ -2325,6 +2325,8 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Ldfld, FI_Prophet);
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_0);
+                            yield return new CodeInstruction(OpCodes.Ceq);
                         }
                     }
                 }
