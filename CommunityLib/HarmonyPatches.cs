@@ -37,7 +37,7 @@ namespace CommunityLib
 
         private static void Patching()
         {
-            Harmony.DEBUG = false;
+            Harmony.DEBUG = true;
             string harmonyID = "ILikeGoodFood.SOFG.CommunityLib";
             Harmony harmony = new Harmony(harmonyID);
 
@@ -2307,7 +2307,7 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i+1].opcode == OpCodes.Ldfld && instructionList[i+2].opcode == OpCodes.Ldfld && instructionList[i+3].opcode == OpCodes.Br_S)
+                        if (instructionList[i].opcode == OpCodes.Ldfld && instructionList[i+1].opcode == OpCodes.Ldfld && instructionList[i+2].opcode == OpCodes.Br_S)
                         {
                             i++;
                         }
