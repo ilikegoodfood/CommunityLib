@@ -37,7 +37,7 @@ namespace CommunityLib
 
         private static void Patching()
         {
-            Harmony.DEBUG = true;
+            Harmony.DEBUG = false;
             string harmonyID = "ILikeGoodFood.SOFG.CommunityLib";
             Harmony harmony = new Harmony(harmonyID);
 
