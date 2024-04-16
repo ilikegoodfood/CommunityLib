@@ -2295,8 +2295,8 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_ModCoreGet = AccessTools.Method(typeof(ModCore), nameof(ModCore.Get), new Type[] { typeof(Unit) });
-            MethodInfo MI_IsSubsumed = AccessTools.Method(typeof(ModCore), nameof(ModCore.isUnitSubsumed));
+            MethodInfo MI_ModCoreGet = AccessTools.Method(typeof(ModCore), nameof(ModCore.Get), new Type[0]);
+            MethodInfo MI_IsSubsumed = AccessTools.Method(typeof(ModCore), nameof(ModCore.isUnitSubsumed), new Type[] { typeof(Unit) });
 
             FieldInfo FI_Prophet = AccessTools.Field(typeof(HolyOrder), nameof(HolyOrder.prophet));
 
@@ -2318,18 +2318,17 @@ namespace CommunityLib
                     {
                         if (instructionList[i].opcode == OpCodes.Br_S)
                         {
-                            targetIndex = 0;
-
                             label = (Label)instructionList[i].operand;
 
                             yield return new CodeInstruction(OpCodes.Brfalse_S, label);
-                            yield return new CodeInstruction(OpCodes.Pop);
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Ldfld, FI_Prophet);
                             yield return new CodeInstruction(OpCodes.Call, MI_ModCoreGet);
                             yield return new CodeInstruction(OpCodes.Callvirt, MI_IsSubsumed);
                             yield return new CodeInstruction(OpCodes.Ldc_I4_0);
                             yield return new CodeInstruction(OpCodes.Ceq);
+
+                            targetIndex = 0;
                         }
                     }
                 }
