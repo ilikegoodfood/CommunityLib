@@ -2295,7 +2295,8 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(HolyOrder_turnTick_TranspilerBody), new Type[] { typeof(Unit) });
+            MethodInfo MI_ModCoreGet = AccessTools.Method(typeof(ModCore), nameof(ModCore.Get), new Type[] { typeof(Unit) });
+            MethodInfo MI_IsSubsumed = AccessTools.Method(typeof(ModCore), nameof(ModCore.isUnitSubsumed));
 
             FieldInfo FI_Prophet = AccessTools.Field(typeof(HolyOrder), nameof(HolyOrder.prophet));
 
@@ -2308,9 +2309,9 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldfld && instructionList[i+1].opcode == OpCodes.Ldfld && instructionList[i+2].opcode == OpCodes.Br_S)
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i+1].opcode == OpCodes.Ldfld && instructionList[i+2].opcode == OpCodes.Ldfld && instructionList[i+3].opcode == OpCodes.Br_S)
                         {
-                            i++;
+                            targetIndex++;
                         }
                     }
                     else if (targetIndex == 2)
@@ -2325,7 +2326,8 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Pop);
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Ldfld, FI_Prophet);
-                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                            yield return new CodeInstruction(OpCodes.Call, MI_ModCoreGet);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_IsSubsumed);
                             yield return new CodeInstruction(OpCodes.Ldc_I4_0);
                             yield return new CodeInstruction(OpCodes.Ceq);
                         }
@@ -2340,11 +2342,6 @@ namespace CommunityLib
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
-        }
-
-        private static bool HolyOrder_turnTick_TranspilerBody(Unit u)
-        {
-            return ModCore.Get().isUnitSubsumed(u);
         }
 
         // Fallen Human rename
