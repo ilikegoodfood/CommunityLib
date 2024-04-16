@@ -119,6 +119,9 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(PrefabStore), nameof(PrefabStore.popHolyOrder), new Type[] { typeof(HolyOrder) }), prefix: new HarmonyMethod(patchType, nameof(Prefab_popHolyOrder_Prefix)));
 
             // SYSTEM MODIFICATIONS //
+            // AgentBattle Fixes
+            harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), "retreatOrFlee", new Type[] { typeof(UA), typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_retreatOrFlee_Transpiler)));
+
             // Assign Killer to Miscellaneous causes of death
             harmony.Patch(original: AccessTools.Method(typeof(UM_HumanArmy), nameof(UM_HumanArmy.turnTickInner)), transpiler: new HarmonyMethod(patchType, nameof(UM_HumanArmy_turnTickInner_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Ch_SkirmishAttacking), nameof(Ch_SkirmishAttacking.skirmishDanger), new Type[] { typeof(UA), typeof(int) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_SkirmishAttacking_skirmishDanger_Transpiler)));
@@ -126,6 +129,9 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Mg_Volcano), nameof(Mg_Volcano.complete), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Mg_Volcano_Complete_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(God_Snake), nameof(God_Snake.awaken), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(God_Snake_Awaken_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Person), nameof(Person.die), new Type[] { typeof(string), typeof(bool), typeof(object), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(Person_die_Transpiler)));
+
+            // Realtionship Interaction Fixes
+            harmony.Patch(original: AccessTools.Method(typeof(Society), nameof(Society.populateActions), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Society_populateActions_Transpiler)));
 
             // Religion UI Screen modification
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bPrev), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
@@ -1196,6 +1202,78 @@ namespace CommunityLib
             return dmg;
         }
 
+        private static IEnumerable<CodeInstruction> BattleAgents_retreatOrFlee_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(BattleAgents_retreatOrFlee_TranspilerBody), new Type[] { typeof(UA) });
+
+            bool returnCode = true;
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldnull && instructionList[i + 1].opcode == OpCodes.Stloc_1)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Callvirt && instructionList[i-1].opcode == OpCodes.Ldarg_1)
+                        {
+                            targetIndex++;
+                            returnCode = false;
+
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                            yield return new CodeInstruction(OpCodes.Stloc_1);
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_1 && instructionList[i - 1].opcode == OpCodes.Endfinally)
+                        {
+                            targetIndex = 0;
+                            returnCode = true;
+                        }
+                    }
+                }
+
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
+            }
+
+            Console.WriteLine("CommunityLib: Completed BattleAgents__retreatOrFlee_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static Location BattleAgents_retreatOrFlee_TranspilerBody(UA ua)
+        {
+            List<Location> neighbours = ua.location.getNeighbours();
+            
+            if (neighbours.Count == 0)
+            {
+                return null;
+            }
+
+            List<Location> layerNeighboures = neighbours.Where(loc => loc.hex.z == ua.location.hex.z).ToList();
+
+            if (layerNeighboures.Count > 0)
+            {
+                return layerNeighboures[Eleven.random.Next(layerNeighboures.Count)];
+            }
+
+            return neighbours[Eleven.random.Next(neighbours.Count)];
+        }
+
         // Raze Location Hooks
         private static void Task_RazeLocation_turnTick_Prefix()
         {
@@ -2197,6 +2275,126 @@ namespace CommunityLib
             }
         }
 
+        // Relationship Interaction Fixes
+        private static IEnumerable<CodeInstruction> Society_populateActions_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_getCapitolHex = AccessTools.Method(typeof(SocialGroup), nameof(SocialGroup.getCapitalHex), new Type[0]);
+            MethodInfo MI_DipRelOther = AccessTools.Method(typeof(DipRel), nameof(DipRel.other), new Type[] { typeof(SocialGroup) });
+
+            FieldInfo FI_z = AccessTools.Field(typeof(Hex), nameof(Hex.z));
+            FieldInfo FI_SocietyMap = AccessTools.Field(typeof(Society), nameof(Society.map));
+            FieldInfo FI_MapAwarenessOfUnderground = AccessTools.Field(typeof(Map), nameof(Map.awarenessOfUnderground));
+
+            Label skipLabel = ilg.DefineLabel();
+            Label checkOther = ilg.DefineLabel();
+            Label checkAwareness = ilg.DefineLabel();
+            Label startLabel = ilg.DefineLabel();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Br_S && instructionList[i+1].opcode == OpCodes.Ldarg_0 && instructionList[i-1].opcode == OpCodes.Nop)
+                        {
+                            targetIndex++;
+
+                            skipLabel = (Label)instructionList[i].operand;
+                        }
+                    }
+                    if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldfld)
+                        {
+                            // If capital hex is null, skip
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_getCapitolHex);
+                            yield return new CodeInstruction(OpCodes.Ldnull);
+                            yield return new CodeInstruction(OpCodes.Cgt_Un);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, startLabel);
+
+                            // If other capital hex is null, skip
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 5);
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_DipRelOther);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_getCapitolHex);
+                            yield return new CodeInstruction(OpCodes.Ldnull);
+                            yield return new CodeInstruction(OpCodes.Cgt_Un);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, startLabel);
+
+                            // if capitol hex is 0, check if other capitol hex is 1
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_getCapitolHex);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_z);
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_0);
+                            yield return new CodeInstruction(OpCodes.Ceq);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, checkOther);
+
+                            // if capitol hex is 1, check if other capitol hex is 0
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_getCapitolHex);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_z);
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_1);
+                            yield return new CodeInstruction(OpCodes.Ceq);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, startLabel);
+
+                            // check if other capitol hex is 0
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 5);
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_DipRelOther);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_getCapitolHex);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_z);
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_0);
+                            yield return new CodeInstruction(OpCodes.Ceq);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, startLabel);
+
+                            // check if other capitol hex is 1
+                            CodeInstruction code = new CodeInstruction(OpCodes.Nop);
+                            code.labels.Add(checkOther);
+                            yield return code;
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 5);
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_DipRelOther);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_getCapitolHex);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_z);
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_1);
+                            yield return new CodeInstruction(OpCodes.Ceq);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, checkAwareness);
+                            yield return new CodeInstruction(OpCodes.Br_S, startLabel);
+
+                            // if capitol hexes are on surface an underground, check awareness
+                            code = new CodeInstruction(OpCodes.Nop);
+                            code.labels.Add(checkAwareness);
+                            yield return code;
+                            yield return new CodeInstruction(OpCodes.Ldc_R8, 1d);
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_SocietyMap);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_MapAwarenessOfUnderground);
+                            yield return new CodeInstruction(OpCodes.Cgt);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, skipLabel);
+
+                            code = new CodeInstruction(OpCodes.Ldarg_0);
+                            code.labels.Add(startLabel);
+                            yield return code;
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Society_populateActions_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
         // Religion UI Screen modification
         private static IEnumerable<CodeInstruction> PopupHolyOrder_bPrevNext_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
         {
@@ -2294,7 +2492,9 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(HolyOrder_turnTick_TranspilerBody), new Type[] { typeof(Unit) });
+            MethodInfo MI_ModCoreGet = AccessTools.Method(typeof(ModCore), nameof(ModCore.Get), new Type[0]);
+            MethodInfo MI_IsSubsumed = AccessTools.Method(typeof(ModCore), nameof(ModCore.isUnitSubsumed), new Type[] { typeof(Unit) });
+
 
             FieldInfo FI_Prophet = AccessTools.Field(typeof(HolyOrder), nameof(HolyOrder.prophet));
 
@@ -2307,26 +2507,27 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldfld && instructionList[i+1].opcode == OpCodes.Ldfld && instructionList[i+2].opcode == OpCodes.Br_S)
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i+1].opcode == OpCodes.Ldfld && instructionList[i+2].opcode == OpCodes.Ldfld && instructionList[i+3].opcode == OpCodes.Br)
                         {
-                            i++;
+                            targetIndex++;
                         }
                     }
                     else if (targetIndex == 2)
                     {
                         if (instructionList[i].opcode == OpCodes.Br_S)
                         {
-                            targetIndex = 0;
-
                             label = (Label)instructionList[i].operand;
 
                             yield return new CodeInstruction(OpCodes.Brfalse_S, label);
                             yield return new CodeInstruction(OpCodes.Pop);
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Ldfld, FI_Prophet);
-                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                            yield return new CodeInstruction(OpCodes.Call, MI_ModCoreGet);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_IsSubsumed);
                             yield return new CodeInstruction(OpCodes.Ldc_I4_0);
                             yield return new CodeInstruction(OpCodes.Ceq);
+
+                            targetIndex = 0;
                         }
                     }
                 }
@@ -2339,11 +2540,6 @@ namespace CommunityLib
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
-        }
-
-        private static bool HolyOrder_turnTick_TranspilerBody(Unit u)
-        {
-            return ModCore.Get().isUnitSubsumed(u);
         }
 
         // Overmind modification 
