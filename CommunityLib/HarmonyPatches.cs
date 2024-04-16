@@ -2507,7 +2507,7 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i+1].opcode == OpCodes.Ldfld && instructionList[i+2].opcode == OpCodes.Ldfld && instructionList[i+3].opcode == OpCodes.Br)
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i+1].opcode == OpCodes.Ldfld && instructionList[i+2].opcode == OpCodes.Ldfld && instructionList[i+3].opcode == OpCodes.Br_S)
                         {
                             targetIndex++;
                         }
@@ -2519,7 +2519,6 @@ namespace CommunityLib
                             label = (Label)instructionList[i].operand;
 
                             yield return new CodeInstruction(OpCodes.Brfalse_S, label);
-                            yield return new CodeInstruction(OpCodes.Pop);
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Ldfld, FI_Prophet);
                             yield return new CodeInstruction(OpCodes.Call, MI_ModCoreGet);
