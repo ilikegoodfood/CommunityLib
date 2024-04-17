@@ -2518,7 +2518,9 @@ namespace CommunityLib
                         {
                             label = (Label)instructionList[i].operand;
 
+                            yield return new CodeInstruction(OpCodes.Dup);
                             yield return new CodeInstruction(OpCodes.Brfalse_S, label);
+                            yield return new CodeInstruction(OpCodes.Pop);
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Ldfld, FI_Prophet);
                             yield return new CodeInstruction(OpCodes.Call, MI_ModCoreGet);
@@ -2603,7 +2605,10 @@ namespace CommunityLib
                         {
                             targetIndex = 0;
 
-                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            CodeInstruction code = new CodeInstruction(OpCodes.Ldarg_0);
+                            code.labels.Add(instructionList[i].labels[0]);
+                            instructionList[i].labels.Clear();
+                            yield return code;
                             yield return new CodeInstruction(OpCodes.Ldfld, FI_Order);
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_HolyOrderGone);
                             yield return new CodeInstruction(OpCodes.Brtrue_S, instructionList[i - 1].labels[0]);
