@@ -139,7 +139,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(HolyOrder), nameof(HolyOrder.turnTick), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(HolyOrder_turnTick_Transpiler)));
 
             // Fallen Human rename
-            harmony.Patch(original: AccessTools.Method(typeof(Pr_FallenHuman), nameof(Pr_FallenHuman.getInvariantName), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Pr_FallenHuman_getInvariantName_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(Property), nameof(Property.getInvariantName), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Property_getInvariantName_Postfix)));
 
             // Overmind modifications
             harmony.Patch(original: AccessTools.Method(typeof(Overmind), nameof(Overmind.getThreats), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Overmind_getThreats_Transpiler)));
@@ -2298,6 +2298,7 @@ namespace CommunityLib
             MethodInfo MI_ModCoreGet = AccessTools.Method(typeof(ModCore), nameof(ModCore.Get), new Type[0]);
             MethodInfo MI_IsSubsumed = AccessTools.Method(typeof(ModCore), nameof(ModCore.isUnitSubsumed), new Type[] { typeof(Unit) });
 
+
             FieldInfo FI_Prophet = AccessTools.Field(typeof(HolyOrder), nameof(HolyOrder.prophet));
 
             Label label = ilg.DefineLabel();
@@ -2309,7 +2310,7 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i+1].opcode == OpCodes.Ldfld && instructionList[i+2].opcode == OpCodes.Ldfld && instructionList[i+3].opcode == OpCodes.Br_S)
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i + 1].opcode == OpCodes.Ldfld && instructionList[i + 2].opcode == OpCodes.Ldfld && instructionList[i + 3].opcode == OpCodes.Br_S)
                         {
                             targetIndex++;
                         }
@@ -2320,7 +2321,9 @@ namespace CommunityLib
                         {
                             label = (Label)instructionList[i].operand;
 
+                            yield return new CodeInstruction(OpCodes.Dup);
                             yield return new CodeInstruction(OpCodes.Brfalse_S, label);
+                            yield return new CodeInstruction(OpCodes.Pop);
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Ldfld, FI_Prophet);
                             yield return new CodeInstruction(OpCodes.Call, MI_ModCoreGet);
@@ -2344,10 +2347,14 @@ namespace CommunityLib
         }
 
         // Fallen Human rename
-        private static void Pr_FallenHuman_getInvariantName_Postfix(ref string __result)
+        private static void Property_getInvariantName_Postfix(Property __instance, ref string __result)
         {
-            __result = "Soul";
+            if (__instance is Pr_FallenHuman)
+            {
+                __result = "Soul";
+            }
         }
+
 
         // Overmind modification 
         private static IEnumerable<CodeInstruction> Overmind_getThreats_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
@@ -2371,13 +2378,13 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 2)
                     {
-                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i-1].opcode == OpCodes.Brfalse_S)
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i - 1].opcode == OpCodes.Brfalse_S)
                         {
                             targetIndex = 0;
 
                             yield return new CodeInstruction(OpCodes.Ldloc_S, 46);
                             yield return new CodeInstruction(OpCodes.Callvirt, MI_TranspilerBody_HolyOrderGone);
-                            yield return new CodeInstruction(OpCodes.Brtrue_S, instructionList[i-1].operand);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, instructionList[i - 1].operand);
                         }
                     }
                 }
@@ -2407,11 +2414,14 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (i > 2 && instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i-1].opcode == OpCodes.Br && instructionList[i-2].opcode == OpCodes.Stfld)
+                        if (i > 2 && instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i - 1].opcode == OpCodes.Br && instructionList[i - 2].opcode == OpCodes.Stfld)
                         {
                             targetIndex = 0;
 
-                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            CodeInstruction code = new CodeInstruction(OpCodes.Ldarg_0);
+                            code.labels.Add(instructionList[i].labels[0]);
+                            instructionList[i].labels.Clear();
+                            yield return code;
                             yield return new CodeInstruction(OpCodes.Ldfld, FI_Order);
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_HolyOrderGone);
                             yield return new CodeInstruction(OpCodes.Brtrue_S, instructionList[i - 1].labels[0]);
