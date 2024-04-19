@@ -990,7 +990,7 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_Intercept = AccessTools.Method(patchType, nameof(BattleAgents_step_Intercept), new Type[] { typeof(BattleAgents) });
+            MethodInfo MI_Intercept = AccessTools.Method(patchType, nameof(BattleAgents_step_Intercept), new Type[] { typeof(PopupBattleAgent), typeof(BattleAgents) });
             MethodInfo MI_Reinforce = AccessTools.Method(patchType, nameof(BattleAgents_step_ReinforceFromEscort), new Type[] { typeof(UA), typeof(UM) });
 
             FieldInfo FI_EscortLeft = AccessTools.Field(typeof(BattleAgents), nameof(BattleAgents.escortL));
@@ -1014,6 +1014,7 @@ namespace CommunityLib
                         {
                             Label retLabel = (Label)instructionList[i-1].operand;
 
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Call, MI_Intercept);
                             yield return new CodeInstruction(OpCodes.Brtrue_S, retLabel);
@@ -1059,11 +1060,11 @@ namespace CommunityLib
             }
         }
 
-        private static bool BattleAgents_step_Intercept(BattleAgents battle)
+        private static bool BattleAgents_step_Intercept(PopupBattleAgent popup, BattleAgents battle)
         {
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                if (hook.interceptAgentBattleStep(battle))
+                if (hook.interceptAgentBattleStep(popup, battle))
                 {
                     return true;
                 }
