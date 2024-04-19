@@ -356,7 +356,7 @@ namespace CommunityLib
         /// </summary>
         /// <param name="battle"></param>
         /// <returns></returns>
-        public virtual bool interceptAgentBattleStep(PopupBattleAgent popupBattle, BattleAgents battle)
+        public virtual bool interceptAgentBattleStep(PopupBattleAgent popupBattle, BattleAgents battle, out bool battleOver)
         {
             battleOver = false;
             return false;
