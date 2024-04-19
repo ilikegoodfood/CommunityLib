@@ -1096,11 +1096,11 @@ namespace CommunityLib
             }
         }
 
-        private static int BattleAgents_step_Intercept(PopupBattleAgent popup, BattleAgents battle)
+        private static bool BattleAgents_step_Intercept(PopupBattleAgent popup, BattleAgents battle)
         {
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                if (hook.interceptAgentBattleStep(popup, battle, out bool battleOver))
+                if (hook.interceptAgentBattleStep(popup, battle))
                 {
                     if (battleOver)
                     {
