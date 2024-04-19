@@ -341,6 +341,27 @@ namespace CommunityLib
         }
 
         /// <summary>
+        /// This hook fires when an agent battle completes setup. It recieves thte battle that has just completed setup (battle).
+        /// </summary>
+        /// <param name="battle"></param>
+        public virtual void onAgentBattle_Setup(BattleAgents battle)
+        {
+            return;
+        }
+
+        /// <summary>
+        /// This hook fires during the step processing of an agent battle (`BattleAgents`). It recieves the batle being processed (battle), and it returns if the normal battle process should proceed, as a bool. <br></br>
+        /// If the normal battle process is skipped, this hook can be used to run an entirely diferent battle logic system. <br></br>
+        /// No instance of this hook fires after the first to return true.
+        /// </summary>
+        /// <param name="battle"></param>
+        /// <returns></returns>
+        public virtual bool interceptAgentBattleStep(BattleAgents battle)
+        {
+            return false;
+        }
+
+        /// <summary>
         /// This hook fires once for each dead minion or empty minion slot of each agent in the battle that has an escort. It recieves the agent who is attempting to reinforce (ua), and the military escort (escort). It returns the Minion that will fill the agent's minion slot. <br></br>
         /// No instance of this hook will fire after the first to return a result that is not null.
         /// </summary>
@@ -350,6 +371,15 @@ namespace CommunityLib
         public virtual Minion onAgentBattle_ReinforceFromEscort(UA ua, UM escort)
         {
             return null;
+        }
+
+        /// <summary>
+        /// This hook fires after a PopupBattleAgent, the UI panel for a BattleAgents, has peformed a step. It recieves the UI panel (popupBattle), and the battle itself (battle).
+        /// </summary>
+        /// <param name="popupBattle"></param>
+        public virtual void onPopupBattleAgent_Step(PopupBattleAgent popupBattle, BattleAgents battle)
+        {
+            return;
         }
 
         /// <summary>
