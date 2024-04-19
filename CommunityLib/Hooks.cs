@@ -374,6 +374,15 @@ namespace CommunityLib
         }
 
         /// <summary>
+        /// This hook fires after a PopupBattleAgent, the UI panel for a BattleAgents, has peformed a step. It recieves the UI panel (popupBattle), and the battle itself (battle).
+        /// </summary>
+        /// <param name="popupBattle"></param>
+        public virtual void onPopupBattleAgent_Step(PopupBattleAgent popupBattle, BattleAgents battle)
+        {
+            return;
+        }
+
+        /// <summary>
         /// This hook fires when a minion in a minion battle is about to make an attack. It receives the Minion that is about to attack (attacker), the enemy Agent (other), the Battle Popup Window (battle), which is null if history is generating or popups are otherwise disabled, the agent battle (battle), the damage that it si about to deal (dmg), and the row that it is attick down (row). It returns the damage that the minion will do.<br></br>
         /// The Row directly corrisponds to the index of the minions on both agents. If "other.minions[row]" is equal to null, then the damage will be dealt to the enemy agent.
         /// <para>If another mod has already modified the damage value using this hook, that change will be in the damage value that you receive.</para>

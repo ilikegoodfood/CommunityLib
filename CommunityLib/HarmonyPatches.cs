@@ -68,6 +68,9 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.attackDownRow), new Type[] { typeof(int), typeof (UA), typeof(UA), typeof(PopupBattleAgent) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_AttackDownRow_Minion_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.attackDownRow), new Type[] { typeof(int), typeof (int), typeof(AgentCombatInterface), typeof(UA), typeof(UA), typeof(PopupBattleAgent) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_AttackDownRow_Agent_Transpiler)));
 
+            // Agent Barttle Popup Hooks
+            harmony.Patch(original: AccessTools.Method(typeof(PopupBattleAgent), nameof(PopupBattleAgent.bStep), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(PopupBattleAgent_bStep_Postfix)));
+
             // Raze Location hooks
             harmony.Patch(original: AccessTools.Method(typeof(Task_RazeLocation), nameof(Task_RazeLocation.turnTick), new Type[] { typeof(Unit) }), prefix: new HarmonyMethod(patchType, nameof(Task_RazeLocation_turnTick_Prefix)), postfix: new HarmonyMethod(patchType, nameof(Task_RazeLocation_turnTick_Postfix)), transpiler: new HarmonyMethod(patchType, nameof(Task_RazeLocation_turnTick_Transpiler)));
 
@@ -1238,6 +1241,15 @@ namespace CommunityLib
             }
 
             return dmg;
+        }
+
+        // Popup Battle Agent hooks
+        private static void PopupBattleAgent_bStep_Postfix(PopupBattleAgent __instance)
+        {
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            {
+                hook.onPopupBattleAgent_Step(__instance, __instance.battle);
+            }
         }
 
         // Raze Location Hooks
