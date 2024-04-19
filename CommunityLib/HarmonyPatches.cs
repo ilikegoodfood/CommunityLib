@@ -986,7 +986,7 @@ namespace CommunityLib
             }
         }
 
-        private static IEnumerable<CodeInstruction> BattleAgents_step_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        private static IEnumerable<CodeInstruction> BattleAgents_step_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
@@ -995,6 +995,11 @@ namespace CommunityLib
 
             FieldInfo FI_EscortLeft = AccessTools.Field(typeof(BattleAgents), nameof(BattleAgents.escortL));
             FieldInfo FI_EscortRight = AccessTools.Field(typeof(BattleAgents), nameof(BattleAgents.escortR));
+
+            Label retLabel = ilg.DefineLabel();
+
+            Label noInterceptLabel = ilg.DefineLabel();
+            Label interceptLabel = ilg.DefineLabel();
 
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
@@ -1012,12 +1017,34 @@ namespace CommunityLib
                     {
                         if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i-1].opcode == OpCodes.Br)
                         {
-                            Label retLabel = (Label)instructionList[i-1].operand;
+                            retLabel = (Label)instructionList[i-1].operand;
 
                             yield return new CodeInstruction(OpCodes.Ldarg_1);
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Call, MI_Intercept);
-                            yield return new CodeInstruction(OpCodes.Brtrue_S, retLabel);
+                            yield return new CodeInstruction(OpCodes.Dup);
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_0);
+                            yield return new CodeInstruction(OpCodes.Ceq);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, noInterceptLabel);
+
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_1);
+                            yield return new CodeInstruction(OpCodes.Ceq);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, interceptLabel);
+
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_1);
+                            yield return new CodeInstruction(OpCodes.Stloc_1);
+                            yield return new CodeInstruction(OpCodes.Br_S, retLabel);
+
+                            CodeInstruction code = new CodeInstruction(OpCodes.Nop);
+                            code.labels.Add(interceptLabel);
+                            yield return code;
+                            yield return new CodeInstruction(OpCodes.Pop);
+                            yield return new CodeInstruction(OpCodes.Br_S, retLabel);
+
+                            code = new CodeInstruction(OpCodes.Nop);
+                            code.labels.Add(noInterceptLabel);
+                            yield return code;
+                            yield return new CodeInstruction(OpCodes.Pop);
 
                             targetIndex++;
                         }
@@ -1026,26 +1053,35 @@ namespace CommunityLib
                     {
                         if (instructionList[i].opcode == OpCodes.Ldfld && instructionList[i+1].opcode == OpCodes.Newobj)
                         {
-                            targetIndex++;
-
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Ldfld, FI_EscortLeft);
                             yield return new CodeInstruction(OpCodes.Call, MI_Reinforce);
 
                             i += 2;
+
+                            targetIndex++;
                         }
                     }
                     else if (targetIndex == 4)
                     {
                         if (instructionList[i].opcode == OpCodes.Ldfld && instructionList[i + 1].opcode == OpCodes.Newobj)
                         {
-                            targetIndex = 0;
-
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Ldfld, FI_EscortRight);
                             yield return new CodeInstruction(OpCodes.Call, MI_Reinforce);
 
                             i += 2;
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 5)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ret)
+                        {
+                            instructionList[i].labels.Add(retLabel);
+
+                            targetIndex = 0;
                         }
                     }
                 }
@@ -1060,17 +1096,22 @@ namespace CommunityLib
             }
         }
 
-        private static bool BattleAgents_step_Intercept(PopupBattleAgent popup, BattleAgents battle)
+        private static int BattleAgents_step_Intercept(PopupBattleAgent popup, BattleAgents battle)
         {
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                if (hook.interceptAgentBattleStep(popup, battle))
+                if (hook.interceptAgentBattleStep(popup, battle, out bool battleOver))
                 {
-                    return true;
+                    if (battleOver)
+                    {
+                        return 2;
+                    }
+
+                    return 1;
                 }
             }
 
-            return false;
+            return 0;
         }
 
         private static Minion BattleAgents_step_ReinforceFromEscort(UA ua, UM escort)
