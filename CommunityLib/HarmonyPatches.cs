@@ -63,6 +63,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(BattleArmy), "allocateDamage", new Type[] { typeof(List<UM>), typeof(int[]) }), transpiler: new HarmonyMethod(patchType, nameof(BattleArmy_allocateDamage_Transpiler)));
 
             // Agent Battle hooks
+            harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.setupBattle), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(BattleAgents_setupBattle_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.step), new Type[] { typeof(PopupBattleAgent) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_step_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.attackDownRow), new Type[] { typeof(int), typeof (UA), typeof(UA), typeof(PopupBattleAgent) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_AttackDownRow_Minion_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.attackDownRow), new Type[] { typeof(int), typeof (int), typeof(AgentCombatInterface), typeof(UA), typeof(UA), typeof(PopupBattleAgent) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_AttackDownRow_Agent_Transpiler)));
@@ -979,10 +980,20 @@ namespace CommunityLib
             }
         }
 
+        // BattleAgent hooks
+        private static void BattleAgents_setupBattle_Postfix(BattleAgents __instance)
+        {
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            {
+                hook.onAgentBattle_Setup(__instance);
+            }
+        }
+
         private static IEnumerable<CodeInstruction> BattleAgents_step_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
+            MethodInfo MI_Intercept = AccessTools.Method(patchType, nameof(BattleAgents_step_Intercept), new Type[] { typeof(BattleAgents) });
             MethodInfo MI_Reinforce = AccessTools.Method(patchType, nameof(BattleAgents_step_ReinforceFromEscort), new Type[] { typeof(UA), typeof(UM) });
 
             FieldInfo FI_EscortLeft = AccessTools.Field(typeof(BattleAgents), nameof(BattleAgents.escortL));
@@ -995,6 +1006,26 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
+                        if (instructionList[i].opcode == OpCodes.Br)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i-1].opcode == OpCodes.Br)
+                        {
+                            Label retLabel = (Label)instructionList[i-1].operand;
+
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Call, MI_Intercept);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, retLabel);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
                         if (instructionList[i].opcode == OpCodes.Ldfld && instructionList[i+1].opcode == OpCodes.Newobj)
                         {
                             targetIndex++;
@@ -1006,7 +1037,7 @@ namespace CommunityLib
                             i += 2;
                         }
                     }
-                    else if (targetIndex == 2)
+                    else if (targetIndex == 4)
                     {
                         if (instructionList[i].opcode == OpCodes.Ldfld && instructionList[i + 1].opcode == OpCodes.Newobj)
                         {
@@ -1029,6 +1060,19 @@ namespace CommunityLib
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
+        }
+
+        private static bool BattleAgents_step_Intercept(BattleAgents battle)
+        {
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            {
+                if (hook.interceptAgentBattleStep(battle))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static Minion BattleAgents_step_ReinforceFromEscort(UA ua, UM escort)
