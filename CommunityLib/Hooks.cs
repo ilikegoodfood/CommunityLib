@@ -350,13 +350,13 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires during the step processing of an agent battle (`BattleAgents`). It recieves the batle being processed (battle), and it returns if the normal battle process should proceed, as a bool. <br></br>
+        /// This hook fires during the step processing of an agent battle (`BattleAgents`). It recieves the Popup battle agent (popupBattle), which is the UI panel for the battle, and the batle being processed (battle). It returns if the normal battle process should proceed, as a bool. <br></br>
         /// If the normal battle process is skipped, this hook can be used to run an entirely diferent battle logic system. <br></br>
         /// No instance of this hook fires after the first to return true.
         /// </summary>
         /// <param name="battle"></param>
         /// <returns></returns>
-        public virtual bool interceptAgentBattleStep(BattleAgents battle)
+        public virtual bool interceptAgentBattleStep(PopupBattleAgent popupBattle, BattleAgents battle)
         {
             return false;
         }
