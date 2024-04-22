@@ -341,6 +341,19 @@ namespace CommunityLib
         }
 
         /// <summary>
+        /// This hook fires when the crossed sswords icon in the agent roster is pressed to beging a pending agent battle between a player controlled agent and another agent. It recieves the commandable agent that the UI panel belongs to, the attacker, and the defender. It returns the custom battle, if any, or null. <br></br>
+        /// No instance of this hook fires after the first that returns a BattleAgents other than null.
+        /// </summary>
+        /// <param name="agent"></param>
+        /// <param name="att"></param>
+        /// <param name="def"></param>
+        /// <returns></returns>
+        public virtual BattleAgents onPlayerStartsPendingAgentBattle(UA agent, UA att, UA def)
+        {
+            return null;
+        }
+
+        /// <summary>
         /// This hook fires when an agent battle completes setup. It recieves thte battle that has just completed setup (battle).
         /// </summary>
         /// <param name="battle"></param>
@@ -375,10 +388,10 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires after a PopupBattleAgent, the UI panel for a BattleAgents, has peformed a step. It recieves the UI panel (popupBattle), and the battle itself (battle).
+        /// This hook fires after a PopupBattleAgent, the UI panel for a BattleAgents, populates itself with data from the battle it is duisplaying. This occurs both when the battle is intially setup, and during each battle step, for displayed battles.
         /// </summary>
         /// <param name="popupBattle"></param>
-        public virtual void onPopupBattleAgent_Step(PopupBattleAgent popupBattle, BattleAgents battle)
+        public virtual void onPopupBattleAgent_Populate(PopupBattleAgent popupBattle, BattleAgents battle)
         {
             return;
         }
