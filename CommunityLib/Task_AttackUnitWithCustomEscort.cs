@@ -50,7 +50,7 @@ namespace CommunityLib
             if (unit.location == target.location)
             {
                 //Console.WriteLine("CommunityLib: Reached target");
-                if (target.engagedBy == null && target.turnLastEngaged != unit.map.turn)
+                if (target.engagedBy == null && target.engaging == null && target.turnLastEngaged != unit.map.turn)
                 {
                     //Console.WriteLine("CommunityLib: Targetcan be engaged");
                     UA ua = unit as UA;
