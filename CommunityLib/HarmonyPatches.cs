@@ -1310,6 +1310,45 @@ namespace CommunityLib
             return dmg;
         }
 
+        private static bool BattleAgents_automatic_Prefix(BattleAgents __instance)
+        {
+            BattleAgents battle = null;
+            if (__instance.GetType().IsSubclassOf(typeof(BattleAgents)))
+            {
+                battle = __instance;
+            }
+            else
+            {
+                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                {
+                    BattleAgents retValue = hook.onAgentBattleStarts(__instance.att, __instance.def);
+                    if (retValue != null)
+                    {
+                        battle = retValue;
+                        break;
+                    }
+                }
+            }
+
+            if (battle == null)
+            {
+                return true;
+            }
+            else
+            {
+                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                {
+                    bool retValue = hook.interceptAgentBattleAutomatic(battle);
+                    if (retValue)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
         // Popup Battle Agent hooks
         private static void PopupBattleAgent_populate_Postfix(PopupBattleAgent __instance)
         {
