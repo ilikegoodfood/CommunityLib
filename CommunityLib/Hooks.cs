@@ -341,14 +341,14 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when the crossed sswords icon in the agent roster is pressed to beging a pending agent battle between a player controlled agent and another agent. It recieves the commandable agent that the UI panel belongs to, the attacker, and the defender. It returns the custom battle, if any, or null. <br></br>
+        /// This hook fires when an agent battle is about to start. It recieves the attacking agent (att), and the defending agent (def). It returns a custom battle, if the battle should be of a custom type, or null. <br></br>
         /// No instance of this hook fires after the first that returns a BattleAgents other than null.
         /// </summary>
         /// <param name="agent"></param>
         /// <param name="att"></param>
         /// <param name="def"></param>
         /// <returns></returns>
-        public virtual BattleAgents onPlayerStartsPendingAgentBattle(UA agent, UA att, UA def)
+        public virtual BattleAgents onAgentBattleStarts(UA att, UA def)
         {
             return null;
         }
@@ -363,7 +363,19 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires during the step processing of an agent battle (`BattleAgents`). It recieves the Popup battle agent (popupBattle), which is the UI panel for the battle, and the batle being processed (battle). It returns if the normal battle process should proceed, as a bool. <br></br>
+        /// This hook fires when an agent battle has been replaced by a custom agent battle and is about to resolve automatically (without player involvement). It recieves the battle that is processing (battle). It returns is the normal battle logic should be skipped, as a bool. <br></br>
+        /// If the normal battle process is skipped, this hook can be used to run an entirely diferent battle logic system. <br></br>
+        /// No instance of this hook fires after the first to return true.
+        /// </summary>
+        /// <param name="battle"></param>
+        /// <returns></returns>
+        public virtual bool interceptAgentBattleAutomatic(BattleAgents battle)
+        {
+            return false;
+        }
+
+        /// <summary>
+        /// This hook fires during the step processing of an agent battle (`BattleAgents`). It recieves the Popup battle agent (popupBattle), which is the UI panel for the battle, and the batle being processed (battle). It returns if the normal battle process should be skipped, as a bool. <br></br>
         /// If the normal battle process is skipped, this hook can be used to run an entirely diferent battle logic system. <br></br>
         /// No instance of this hook fires after the first to return true.
         /// </summary>
