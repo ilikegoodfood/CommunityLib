@@ -369,6 +369,7 @@ namespace CommunityLib
                             if (heroicBootsType != null)
                             {
                                 intDataCCC.typeDict.Add("HeroicBoots", heroicBootsType);
+                                intDataCCC.methodInfoDict.Add("HeroicBoots.turnTick", AccessTools.Method(heroicBootsType, "turnTick", new Type[] { typeof(Person) }));
                             }
                             else
                             {
@@ -461,6 +462,25 @@ namespace CommunityLib
                             else
                             {
                                 Console.WriteLine("CommunityLib: Failed to get Vampire noble agent Type (LivingCharacters.UAEN_Chars_VampireNoble)");
+                            }
+                        }
+                        break;
+                    case "ShadowsLib":
+                        Console.WriteLine("CommunityLib: Ixthus is Enabled");
+                        ModIntegrationData intDataIxthus = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        Get().data.addModIntegrationData("Ixthus", intDataIxthus);
+
+                        if (Get().data.tryGetModIntegrationData("ixthus", out intDataLC))
+                        {
+                            Type settlementCryptType = intDataIxthus.assembly.GetType("ShadowsLib.Set_Crypt", false);
+                            if (settlementCryptType != null)
+                            {
+                                intDataIxthus.typeDict.Add("Crypt", settlementCryptType);
+                                intDataIxthus.methodInfoDict.Add("Set_Crypt.turnTick", AccessTools.Method(settlementCryptType, "turnTick", new Type[0]));
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Settement crypt settlement Type (ShadowsLib.Set_Crypt)");
                             }
                         }
                         break;

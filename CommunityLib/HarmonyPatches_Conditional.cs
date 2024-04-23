@@ -35,6 +35,16 @@ namespace CommunityLib
             {
                 Patching_Cordyceps(intDataCord);
             }
+
+            if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC) && intDataCCC.assembly != null)
+            {
+                Patching_CovensCursesCurios(intDataCCC);
+            }
+
+            if (ModCore.Get().data.tryGetModIntegrationData("Ixthus", out ModIntegrationData intDataIxthus) && intDataIxthus.assembly != null)
+            {
+                Patching_Ixthus(intDataIxthus);
+            }
         }
 
         private static void getChallengeUtility_BulkPatch(Map map)
@@ -173,6 +183,97 @@ namespace CommunityLib
                 return false;
             }
             return true;
+        }
+
+        private static void Patching_CovensCursesCurios(ModIntegrationData intData)
+        {
+            if (intData.methodInfoDict.TryGetValue("HeroicBoots.turnTick", out MethodInfo MI_BootsTurnTick))
+            {
+                harmony.Patch(original: MI_BootsTurnTick, transpiler: new HarmonyMethod(patchType, nameof(I_heroicBoots_turnTick_Transpiler)));
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> I_heroicBoots_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            FieldInfo FI_unit = AccessTools.Field(typeof(Person), nameof(Person.unit));
+            FieldInfo FI_engaging = AccessTools.Field(typeof(Unit), nameof(Unit.engaging));
+
+            Label falseLabel;
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Brfalse && instructionList[i-1].opcode == OpCodes.Ldloc_1)
+                        {
+                            falseLabel = (Label)instructionList[i].operand;
+
+                            yield return new CodeInstruction(OpCodes.Brfalse, falseLabel);
+
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_unit);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_engaging);
+                            yield return new CodeInstruction(OpCodes.Ldnull);
+                            yield return new CodeInstruction(OpCodes.Ceq);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed I_heroicBoots_turnTick_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static void Patching_Ixthus(ModIntegrationData intData)
+        {
+            if (intData.methodInfoDict.TryGetValue("Set_Crypt.turnTick", out MethodInfo MI_CryptTurnTick))
+            {
+                harmony.Patch(original: MI_CryptTurnTick, transpiler: new HarmonyMethod(patchType, nameof(Set_Crypt_turnTick_Transpiler)));
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> Set_Crypt_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_ToList = AccessTools.Method(typeof(Enumerable), nameof(Enumerable.ToList), new Type[0]);
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Callvirt && instructionList[i+1].opcode == OpCodes.Stloc_S)
+                        {
+                            yield return new CodeInstruction(OpCodes.Call, MI_ToList);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Set_Crypt_turnTick_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
         }
     }
 }

@@ -67,6 +67,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.step), new Type[] { typeof(PopupBattleAgent) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_step_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.attackDownRow), new Type[] { typeof(int), typeof (UA), typeof(UA), typeof(PopupBattleAgent) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_AttackDownRow_Minion_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.attackDownRow), new Type[] { typeof(int), typeof (int), typeof(AgentCombatInterface), typeof(UA), typeof(UA), typeof(PopupBattleAgent) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_AttackDownRow_Agent_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.automatic), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(BattleAgents_automatic_Prefix)));
 
             // Agent Barttle Popup Hooks
             harmony.Patch(original: AccessTools.Method(typeof(PopupBattleAgent), nameof(PopupBattleAgent.populate), new Type[] { typeof(BattleAgents) }), postfix: new HarmonyMethod(patchType, nameof(PopupBattleAgent_populate_Postfix)));
@@ -4377,7 +4378,7 @@ namespace CommunityLib
                 {
                     foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                     {
-                        BattleAgents retValue = hook.onPlayerStartsPendingAgentBattle(ua, ua, other);
+                        BattleAgents retValue = hook.onAgentBattleStarts(ua, other);
 
                         if (retValue != null)
                         {
@@ -4390,7 +4391,7 @@ namespace CommunityLib
                 {
                     foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                     {
-                        BattleAgents retValue = hook.onPlayerStartsPendingAgentBattle(ua, other, ua);
+                        BattleAgents retValue = hook.onAgentBattleStarts(other, ua);
 
                         if (retValue != null)
                         {
