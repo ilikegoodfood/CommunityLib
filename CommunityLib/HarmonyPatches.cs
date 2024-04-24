@@ -1988,10 +1988,19 @@ namespace CommunityLib
 
         private static int PopupHolyOrder_setTo_TranspilerBody_ProcessIncome(HolyOrder order, List<ReasonMsg> msgs)
         {
-            MethodInfo MI_processIncome = AccessTools.DeclaredMethod(order.GetType(), "processIncome", new Type[] { typeof(List<ReasonMsg>) });
-            if (MI_processIncome != null)
+            Type orderType = order.GetType();
+            if (orderType.IsSubclassOf(typeof(HolyOrder)))
             {
-                return (int)MI_processIncome.Invoke(order, new object[] { msgs });
+                while (orderType.IsSubclassOf(typeof(HolyOrder)))
+                {
+                    MethodInfo MI_processIncome = AccessTools.DeclaredMethod(orderType, "processIncome", new Type[] { typeof(List<ReasonMsg>) });
+                    if (MI_processIncome != null)
+                    {
+                        return (int)MI_processIncome.Invoke(order, new object[] { msgs });
+                    }
+
+                    orderType = orderType.BaseType;
+                }
             }
 
             return order.processIncome(msgs);
@@ -2058,11 +2067,21 @@ namespace CommunityLib
             return result;
         }
 
-        private static int PopupHolyOrder_setTo_TranspilerBody_ComputeInfluenceDark(HolyOrder order,  List<ReasonMsg> msgs)
+        private static int PopupHolyOrder_setTo_TranspilerBody_ComputeInfluenceDark(HolyOrder order, List<ReasonMsg> msgs)
         {
-            if (AccessTools.DeclaredMethod(order.GetType(), "computeInfluenceDark", new Type[] { typeof(List<ReasonMsg>) }) != null)
+            Type orderType = order.GetType();
+            if (orderType.IsSubclassOf(typeof(HolyOrder)))
             {
-                return (int)AccessTools.DeclaredMethod(order.GetType(), "computeInfluenceDark", new Type[] { typeof(List<ReasonMsg>) }).Invoke(order, new object[] { msgs });
+                while (orderType.IsSubclassOf(typeof(HolyOrder)))
+                {
+                    MethodInfo MI_computeInfluenceDark = AccessTools.DeclaredMethod(orderType, "computeInfluenceDark", new Type[] { typeof(List<ReasonMsg>) });
+                    if (MI_computeInfluenceDark != null)
+                    {
+                        return (int)MI_computeInfluenceDark.Invoke(orderType, new object[] { msgs });
+                    }
+
+                    orderType = orderType.BaseType;
+                }
             }
 
             return order.computeInfluenceDark(msgs);
@@ -2070,9 +2089,19 @@ namespace CommunityLib
 
         private static int PopupHolyOrder_setTo_TranspilerBody_ComputeInfluenceHuman(HolyOrder order,  List<ReasonMsg> msgs)
         {
-            if (AccessTools.DeclaredMethod(order.GetType(), "computeInfluenceHuman", new Type[] { typeof(List<ReasonMsg>) }) != null)
+            Type orderType = order.GetType();
+            if (orderType.IsSubclassOf(typeof(HolyOrder)))
             {
-                return (int)AccessTools.DeclaredMethod(order.GetType(), "computeInfluenceHuman", new Type[] { typeof(List<ReasonMsg>) }).Invoke(order, new object[] { msgs });
+                while (orderType.IsSubclassOf(typeof(HolyOrder)))
+                {
+                    MethodInfo MI_computerInluenceHuman = AccessTools.DeclaredMethod(orderType, "computeInfluenceHuman", new Type[] { typeof(List<ReasonMsg>) });
+                    if (MI_computerInluenceHuman != null)
+                    {
+                        return (int)MI_computerInluenceHuman.Invoke(orderType, new object[] { msgs });
+                    }
+
+                    orderType = orderType.BaseType;
+                }
             }
 
             return order.computeInfluenceHuman(msgs);
