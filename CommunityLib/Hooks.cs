@@ -753,6 +753,11 @@ namespace CommunityLib
             return null;
         }
 
+        public virtual void onUIScroll_Unit_endOfProcess(UIScroll_Unit UnitUI, Unit u)
+        {
+            return;
+        }
+
         /// <summary>
         /// This hook fires when you hover your mouse over an action button in the UIScroll_Unit interface (the panel on the right that shows challenges and tasks available to the selected unit), excluding buttons for challenges, for a commandable military unit. It receives the military unit (um), a partial reconstruction of the TaskData object that could have been used to create it, not the original object. It does not include the onClick delegate, profile gain, or menace gain. <br></br>
         /// If the partially reconstructed TaskData matches a task that your mod adds, populate the popoutData (TaskData_Popout) and return true. Otherwise, return false to allow another mod or the base game to handle the challenge popout screen for that action button.
