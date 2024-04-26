@@ -2488,7 +2488,7 @@ namespace CommunityLib
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
             MethodInfo MI_ModCoreGet = AccessTools.Method(typeof(ModCore), nameof(ModCore.Get), new Type[0]);
-            MethodInfo MI_IsSubsumed = AccessTools.Method(typeof(ModCore), nameof(ModCore.isUnitSubsumed), new Type[] { typeof(Unit) });
+            MethodInfo MI_IsSubsumed = AccessTools.Method(typeof(ModCore), nameof(ModCore.checkIsUnitSubsumed), new Type[] { typeof(Unit) });
 
             FieldInfo FI_Prophet = AccessTools.Field(typeof(HolyOrder), nameof(HolyOrder.prophet));
 

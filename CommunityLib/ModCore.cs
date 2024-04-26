@@ -1286,7 +1286,7 @@ namespace CommunityLib
             return false;
         }
 
-        public bool isUnitSubsumed(Unit u)
+        public bool checkIsUnitSubsumed(Unit u)
         {
             if (u.isDead && u.person != null && !u.person.isDead && u.person.unit != u && !u.person.unit.isDead)
             {
