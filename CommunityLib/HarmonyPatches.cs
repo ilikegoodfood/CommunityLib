@@ -164,7 +164,7 @@ namespace CommunityLib
 
             // AGENT UI //
             // UIScroll_Unit (Challenge utility panel)
-            harmony.Patch(original: AccessTools.Method(typeof(UIScroll_Unit), nameof(UIScroll_Unit.checkData), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UIScroll_Unit_checkData_Prefix)), postfix: new HarmonyMethod(patchType, nameof(UIScroll_Unit_checkData_Postfix)), transpiler: new HarmonyMethod(patchType, nameof(UIScroll_Unit_checkData_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIScroll_Unit), nameof(UIScroll_Unit.checkData), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UIScroll_Unit_checkData_Prefix)), transpiler: new HarmonyMethod(patchType, nameof(UIScroll_Unit_checkData_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(UIScroll_Unit), nameof(UIScroll_Unit.Update), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(UIScroll_Unit_Update_Transpiler)));
 
             // RECRUITABILITY //
@@ -2488,7 +2488,7 @@ namespace CommunityLib
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
             MethodInfo MI_ModCoreGet = AccessTools.Method(typeof(ModCore), nameof(ModCore.Get), new Type[0]);
-            MethodInfo MI_IsSubsumed = AccessTools.Method(typeof(ModCore), nameof(ModCore.checkIsUnitSubsumed), new Type[] { typeof(Unit) });
+            MethodInfo MI_IsSubsumed = AccessTools.Method(typeof(ModCore), nameof(ModCore.isUnitSubsumed), new Type[] { typeof(Unit) });
 
             FieldInfo FI_Prophet = AccessTools.Field(typeof(HolyOrder), nameof(HolyOrder.prophet));
 
@@ -3513,17 +3513,6 @@ namespace CommunityLib
         private static void UIScroll_Unit_checkData_Prefix()
         {
             populatedUM = false;
-        }
-
-        private static void UIScroll_Unit_checkData_Postfix(UIScroll_Unit __instance)
-        {
-            if (GraphicalMap.selectedUnit != null)
-            {
-                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
-                {
-                    hook.onUIScroll_Unit_endOfProcess(__instance, GraphicalMap.selectedUnit);
-                }
-            }
         }
 
         private static IEnumerable<CodeInstruction> UIScroll_Unit_checkData_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
