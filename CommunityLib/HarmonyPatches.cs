@@ -1989,7 +1989,7 @@ namespace CommunityLib
                     MethodInfo MI_computeInfluenceDark = AccessTools.DeclaredMethod(orderType, "computeInfluenceDark", new Type[] { typeof(List<ReasonMsg>) });
                     if (MI_computeInfluenceDark != null)
                     {
-                        return (int)MI_computeInfluenceDark.Invoke(orderType, new object[] { msgs });
+                        return (int)MI_computeInfluenceDark.Invoke(order, new object[] { msgs });
                     }
 
                     orderType = orderType.BaseType;
@@ -2009,7 +2009,7 @@ namespace CommunityLib
                     MethodInfo MI_computerInluenceHuman = AccessTools.DeclaredMethod(orderType, "computeInfluenceHuman", new Type[] { typeof(List<ReasonMsg>) });
                     if (MI_computerInluenceHuman != null)
                     {
-                        return (int)MI_computerInluenceHuman.Invoke(orderType, new object[] { msgs });
+                        return (int)MI_computerInluenceHuman.Invoke(order, new object[] { msgs });
                     }
 
                     orderType = orderType.BaseType;
