@@ -137,7 +137,7 @@ namespace CommunityLib
 
             // Challenge fixes
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_OpportunisticEncroachment), nameof(Ch_Orcs_OpportunisticEncroachment.valid), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Ch_Orcs_OpportunisticEncroachment_valid_Transpiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_OpportunisticEncroachment), nameof(Ch_Orcs_OpportunisticEncroachment.complete), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Ch_Orcs_OpportunisticEncroachment_complete_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_OpportunisticEncroachment), nameof(Ch_Orcs_OpportunisticEncroachment.complete), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_Orcs_OpportunisticEncroachment_complete_Transpiler)));
 
             // Realtionship Interaction Fixes
             harmony.Patch(original: AccessTools.Method(typeof(Society), nameof(Society.populateActions), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Society_populateActions_Transpiler)));
@@ -507,8 +507,9 @@ namespace CommunityLib
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
             MethodInfo MI_LayerCheck = AccessTools.Method(patchType, nameof(Ch_Orcs_OpportunisticEncroachment_LayerComparison), new Type[] { typeof(Location), typeof(Location) });
+            MethodInfo MI_GetLocation = AccessTools.PropertyGetter(typeof(Challenge), nameof(Challenge.location));
 
-            FieldInfo FI_Location = AccessTools.Field(typeof(Challenge), nameof(Challenge.location));
+            FieldInfo FI_Settlement = AccessTools.Field(typeof(Location), nameof(Location.settlement));
 
             int targetIndex = 1;
 
@@ -518,35 +519,36 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (targetIndex == 2)
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S)
                         {
-                            if (instructionList[i].opcode == OpCodes.Ldloc_S)
-                            {
-                                targetIndex++;
-                            }
+                            targetIndex++;
                         }
-                        else if (targetIndex == 2)
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S)
                         {
-                            if (instructionList[i].opcode == OpCodes.Ldloc_S)
-                            {
-                                Label falseLabel = (Label)instructionList[i + 3].operand;
+                            Label falseLabel = (Label)instructionList[i+3].operand;
 
-                                yield return new CodeInstruction(OpCodes.Ldarg_0);
-                                yield return new CodeInstruction(OpCodes.Ldfld, FI_Location);
-                                yield return new CodeInstruction(OpCodes.Ldloc_S, 5);
-                                yield return new CodeInstruction(OpCodes.Call, MI_LayerCheck);
-                                yield return new CodeInstruction(OpCodes.Brfalse_S, falseLabel);
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_GetLocation);
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 6);
+                            yield return new CodeInstruction(OpCodes.Call, MI_LayerCheck);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, falseLabel);
 
-                                targetIndex++;
-                            }
+                            targetIndex++;
                         }
-                        else if (targetIndex == 3)
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldnull && instructionList[i-1].opcode == OpCodes.Isinst)
                         {
-                            Label falseLabel = (Label)instructionList[i-3].operand;
+                            Label falseLabel = (Label)instructionList[i-4].operand;
 
                             yield return new CodeInstruction(OpCodes.Brtrue_S, falseLabel);
 
                             yield return new CodeInstruction(OpCodes.Ldloc_S, 6);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Settlement);
                             yield return new CodeInstruction(OpCodes.Isinst, typeof(Set_DwarvenCity));
 
                             targetIndex = 0;
@@ -569,8 +571,9 @@ namespace CommunityLib
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
             MethodInfo MI_LayerCheck = AccessTools.Method(patchType, nameof(Ch_Orcs_OpportunisticEncroachment_LayerComparison), new Type[] { typeof(Location), typeof(Location) });
+            MethodInfo MI_GetLocation = AccessTools.PropertyGetter(typeof(Challenge), nameof(Challenge.location));
 
-            FieldInfo FI_Location = AccessTools.Field(typeof(Challenge), nameof(Challenge.location));
+            FieldInfo FI_Settlement = AccessTools.Field(typeof(Location), nameof(Location.settlement));
 
             int targetIndex = 1;
 
@@ -585,7 +588,7 @@ namespace CommunityLib
                             Label falseLabel = (Label)instructionList[i+3].operand;
 
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Location);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_GetLocation);
                             yield return new CodeInstruction(OpCodes.Ldloc_S, 5);
                             yield return new CodeInstruction(OpCodes.Call, MI_LayerCheck);
                             yield return new CodeInstruction(OpCodes.Brfalse_S, falseLabel);
@@ -595,13 +598,14 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 2)
                     {
-                        if (instructionList[i].opcode == OpCodes.Isinst && instructionList[i+1].opcode == OpCodes.Ldnull)
+                        if (instructionList[i].opcode == OpCodes.Ldnull && instructionList[i-1].opcode == OpCodes.Isinst)
                         {
-                            Label falseLabel = (Label)instructionList[i-3].operand;
+                            Label falseLabel = (Label)instructionList[i-4].operand;
 
                             yield return new CodeInstruction(OpCodes.Brtrue_S, falseLabel);
 
-                            yield return new CodeInstruction(OpCodes.Ldloc_S, 6);
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 5);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Settlement);
                             yield return new CodeInstruction(OpCodes.Isinst, typeof(Set_DwarvenCity));
 
                             targetIndex = 0;
