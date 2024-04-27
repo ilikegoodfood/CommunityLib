@@ -137,6 +137,7 @@ namespace CommunityLib
 
             // Challenge fixes
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_OpportunisticEncroachment), nameof(Ch_Orcs_OpportunisticEncroachment.valid), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Ch_Orcs_OpportunisticEncroachment_valid_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_OpportunisticEncroachment), nameof(Ch_Orcs_OpportunisticEncroachment.complete), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Ch_Orcs_OpportunisticEncroachment_complete_Transpiler)));
 
             // Realtionship Interaction Fixes
             harmony.Patch(original: AccessTools.Method(typeof(Society), nameof(Society.populateActions), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Society_populateActions_Transpiler)));
