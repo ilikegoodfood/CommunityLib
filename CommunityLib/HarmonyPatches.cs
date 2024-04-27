@@ -135,6 +135,9 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(God_Snake), nameof(God_Snake.awaken), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(God_Snake_Awaken_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Person), nameof(Person.die), new Type[] { typeof(string), typeof(bool), typeof(object), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(Person_die_Transpiler)));
 
+            // Challenge fixes
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_OpportunisticEncroachment), nameof(Ch_Orcs_OpportunisticEncroachment.valid), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Ch_Orcs_OpportunisticEncroachment_valid_Transpiler)));
+
             // Realtionship Interaction Fixes
             harmony.Patch(original: AccessTools.Method(typeof(Society), nameof(Society.populateActions), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Society_populateActions_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(SG_Orc), nameof(SG_Orc.getActions), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(SG_Orc_getActions_Transpiler)));
@@ -495,6 +498,142 @@ namespace CommunityLib
             }
 
             return null;
+        }
+
+        // CHallenge Fixes
+        private static IEnumerable<CodeInstruction> Ch_Orcs_OpportunisticEncroachment_valid_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_LayerCheck = AccessTools.Method(patchType, nameof(Ch_Orcs_OpportunisticEncroachment_LayerComparison), new Type[] { typeof(Location), typeof(Location) });
+
+            FieldInfo FI_Location = AccessTools.Field(typeof(Challenge), nameof(Challenge.location));
+
+            int targetIndex = 1;
+
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (targetIndex == 2)
+                        {
+                            if (instructionList[i].opcode == OpCodes.Ldloc_S)
+                            {
+                                targetIndex++;
+                            }
+                        }
+                        else if (targetIndex == 2)
+                        {
+                            if (instructionList[i].opcode == OpCodes.Ldloc_S)
+                            {
+                                Label falseLabel = (Label)instructionList[i + 3].operand;
+
+                                yield return new CodeInstruction(OpCodes.Ldarg_0);
+                                yield return new CodeInstruction(OpCodes.Ldfld, FI_Location);
+                                yield return new CodeInstruction(OpCodes.Ldloc_S, 5);
+                                yield return new CodeInstruction(OpCodes.Call, MI_LayerCheck);
+                                yield return new CodeInstruction(OpCodes.Brfalse_S, falseLabel);
+
+                                targetIndex++;
+                            }
+                        }
+                        else if (targetIndex == 3)
+                        {
+                            Label falseLabel = (Label)instructionList[i-3].operand;
+
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, falseLabel);
+
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 6);
+                            yield return new CodeInstruction(OpCodes.Isinst, typeof(Set_DwarvenCity));
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Ch_Orcs_OpportunisticEncroachment_valid_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> Ch_Orcs_OpportunisticEncroachment_complete_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_LayerCheck = AccessTools.Method(patchType, nameof(Ch_Orcs_OpportunisticEncroachment_LayerComparison), new Type[] { typeof(Location), typeof(Location) });
+
+            FieldInfo FI_Location = AccessTools.Field(typeof(Challenge), nameof(Challenge.location));
+
+            int targetIndex = 1;
+
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S)
+                        {
+                            Label falseLabel = (Label)instructionList[i+3].operand;
+
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Location);
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 5);
+                            yield return new CodeInstruction(OpCodes.Call, MI_LayerCheck);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, falseLabel);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Isinst && instructionList[i+1].opcode == OpCodes.Ldnull)
+                        {
+                            Label falseLabel = (Label)instructionList[i-3].operand;
+
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, falseLabel);
+
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 6);
+                            yield return new CodeInstruction(OpCodes.Isinst, typeof(Set_DwarvenCity));
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Ch_Orcs_OpportunisticEncroachment_complete_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static bool Ch_Orcs_OpportunisticEncroachment_LayerComparison(Location loc, Location neighbour)
+        {
+            if (loc.soc is SG_Orc orcs && !orcs.canGoUnderground())
+            {
+                if (loc.hex.z == 0 && neighbour.hex.z == 1)
+                {
+                    return false;
+                }
+
+                if (loc.hex.z == 1 && neighbour.hex.z == 0)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         // Unit death hooks
