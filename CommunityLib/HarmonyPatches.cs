@@ -3564,9 +3564,9 @@ namespace CommunityLib
                         {
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Callvirt, MI_TranspilerBody_UM);
-                        }
 
-                        targetIndex = 0;
+                            targetIndex = 0;
+                        }
                     }
                 }
 
@@ -3798,18 +3798,24 @@ namespace CommunityLib
                 populatedUM = true;
             }
 
+            //Console.WriteLine("CommunityLib: UI_Scroll_Unit_checkData_TranspilerBody_UM");
+
             UM um = GraphicalMap.selectedUnit as UM;
 
             List<Hooks.TaskData> data = new List<Hooks.TaskData>();
 
             if (um != null && um.isCommandable())
             {
-                foreach(Hooks hook in ModCore.Get().GetRegisteredHooks())
+                //Console.WriteLine("CommunityLib: UM is commandable");
+                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
+                    //Console.WriteLine("CommunityLib: calling onUIScroll_unit_populateUM hook for " + hook.GetType().Namespace);
                     List<Hooks.TaskData> retData = hook?.onUIScroll_Unit_populateUM(um);
+                    //Console.WriteLine("CommunityLib: " + (retData?.ToString() ?? "ret data is null") + " " + (retData?.Count.ToString() ?? ""));
 
-                    if (retData?.Count > 0)
+                    if (retData != null && retData.Count > 0)
                     {
+                        //Console.WriteLine("CommunityLib: Recieved " + retData.Count + " TaskData objects");
                         data.AddRange(retData);
                     }
                 }
