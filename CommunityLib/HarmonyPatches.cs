@@ -68,6 +68,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.attackDownRow), new Type[] { typeof(int), typeof (UA), typeof(UA), typeof(PopupBattleAgent) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_AttackDownRow_Minion_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.attackDownRow), new Type[] { typeof(int), typeof (int), typeof(AgentCombatInterface), typeof(UA), typeof(UA), typeof(PopupBattleAgent) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_AttackDownRow_Agent_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.automatic), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(BattleAgents_automatic_Prefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(World), nameof(World.bEndTurn), new Type[] { typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(World_bEndTurn_Transpiler)));
 
             // Agent Barttle Popup Hooks
             harmony.Patch(original: AccessTools.Method(typeof(PopupBattleAgent), nameof(PopupBattleAgent.populate), new Type[] { typeof(BattleAgents) }), postfix: new HarmonyMethod(patchType, nameof(PopupBattleAgent_populate_Postfix)));
@@ -1506,7 +1507,7 @@ namespace CommunityLib
                 }
             }
 
-            Console.WriteLine("CommunityLib: Completed BattleAgents__retreatOrFlee_Transpiler");
+            Console.WriteLine("CommunityLib: Completed BattleAgents_retreatOrFlee_Transpiler");
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
@@ -1579,6 +1580,130 @@ namespace CommunityLib
             }
 
             return true;
+        }
+
+        private static IEnumerable<CodeInstruction> World_bEndTurn_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody_PopBattleAgent = AccessTools.Method(patchType, nameof(World_bEndTurn_TranspilerBody_PopAgentBattle), new Type[] { typeof(UA) });
+
+            bool returnCode = true;
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (i > 1)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i-1].opcode == OpCodes.Nop && instructionList[i+1].opcode == OpCodes.Ldloc_S)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 11);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_PopBattleAgent);
+
+                            returnCode = false;
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i+1].opcode == OpCodes.Nop)
+                        {
+                            returnCode = true;
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
+            }
+
+            Console.WriteLine("CommunityLib: Completed World_bEndTurn_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static void World_bEndTurn_TranspilerBody_PopAgentBattle(UA ua)
+        {
+            UA other = null;
+            bool amAttacker = false;
+            if (ua.engaging is UA engagedAgent)
+            {
+                other = engagedAgent;
+                amAttacker = true;
+            }
+            else if (ua.engagedBy is UA engagingAgent)
+            {
+                other = engagingAgent;
+            }
+
+            if (other != null)
+            {
+                BattleAgents battle = null;
+                if (amAttacker)
+                {
+                    foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                    {
+                        BattleAgents retValue = hook.onAgentBattleStarts(ua, other);
+
+                        if (retValue != null)
+                        {
+                            battle = retValue;
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                    {
+                        BattleAgents retValue = hook.onAgentBattleStarts(other, ua);
+
+                        if (retValue != null)
+                        {
+                            battle = retValue;
+                            break;
+                        }
+                    }
+                }
+
+                if (battle == null)
+                {
+                    if (amAttacker)
+                    {
+                        battle = new BattleAgents(ua, other);
+                    }
+                    else
+                    {
+                        battle = new BattleAgents(other, ua);
+                    }
+                }
+
+                ua.map.world.prefabStore.popBattle(battle);
+
+                if (ua.engaging != null)
+                {
+                    ua.engaging.engagedBy = null;
+                    ua.engaging = null;
+                }
+                else if (ua.engagedBy != null)
+                {
+                    ua.engagedBy.engaging = null;
+                    ua.engagedBy = null;
+                }
+            }
         }
 
         // Popup Battle Agent hooks
