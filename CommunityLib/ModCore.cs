@@ -484,6 +484,21 @@ namespace CommunityLib
                             }
                         }
                         break;
+                    case "Whisperer":
+                        Console.WriteLine("CommunityLib: The Whisperer is Enabled");
+                        ModIntegrationData intDataWhisperer = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        Get().data.addModIntegrationData("Whisperer", intDataWhisperer);
+
+                        if (Get().data.tryGetModIntegrationData("Whisperer", out intDataWhisperer))
+                        {
+                            Type whispererType = intDataWhisperer.assembly.GetType("Whisperer.UAE_Whisperer", false);
+                            if (whispererType != null)
+                            {
+                                intDataWhisperer.typeDict.Add("Whisperer", whispererType);
+                                Get().registerVampireType(whispererType);
+                            }
+                        }
+                        break;
                     default:
                         break;
                 }

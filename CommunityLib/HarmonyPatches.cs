@@ -133,6 +133,9 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(God_Snake), nameof(God_Snake.awaken), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(God_Snake_Awaken_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Person), nameof(Person.die), new Type[] { typeof(string), typeof(bool), typeof(object), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(Person_die_Transpiler)));
 
+            // Challenge fixes
+            harmony.Patch(original: AccessTools.Method(typeof(Rti_Orc_AttackHere), nameof(Rti_Orc_AttackHere.valid), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Rti_Orc_AttackHere_Postfix)));
+
             // Religion UI Screen modification
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bPrev), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bNext), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
@@ -155,6 +158,12 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.moveTowards), new Type[] { typeof(Unit), typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(Map_moveTowards_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.getPathTo), new Type[] { typeof(Location), typeof(Location), typeof(Unit), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(Map_getPathTo_Location_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.getPathTo), new Type[] { typeof(Location), typeof(SocialGroup), typeof(Unit), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(Map_getPathTo_SocialGroup_Transpiler)));
+
+            // House Search Fix
+            harmony.Patch(original: AccessTools.Method(typeof(UIScrollThreats), nameof(UIScrollThreats.checkData), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(UIScrollThreats_checkData_Transpiler)));
+
+            // Victory Point Fixes
+            harmony.Patch(original: AccessTools.Method(typeof(Overmind), nameof(Overmind.computeVictoryProgress), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Overming_computeVictoryProgress_Transpiler)));
 
             // Orc Expansion modifications
             harmony.Patch(original: AccessTools.Method(typeof(SG_Orc), nameof(SG_Orc.canSettle), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(SG_Orc_canSettle_Transpiler)));
@@ -490,6 +499,15 @@ namespace CommunityLib
             }
 
             return null;
+        }
+
+        // CHallenge Fixes
+        private static void Rti_Orc_AttackHere_Postfix(Rti_Orc_AttackHere __instance, ref bool __result)
+        {
+            if (__instance.caster == null || __instance.caster.orcs == null || __instance.caster.orcs.isGone())
+            {
+                __result = false;
+            }
         }
 
         // Unit death hooks
@@ -3022,6 +3040,168 @@ namespace CommunityLib
             }
 
             Console.WriteLine("CommunityLib: Completed Map_moveTowards_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        // House Search Fix
+        private static IEnumerable<CodeInstruction> UIScrollThreats_checkData_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_WriteLine = AccessTools.Method(typeof(Console), nameof(Console.WriteLine), new Type[] { typeof(string) });
+            MethodInfo MI_NullOrWhitespace = AccessTools.Method(typeof(string), nameof(string.IsNullOrWhiteSpace), new Type[] { typeof(string) });
+            MethodInfo MI_ConcatStringS2 = AccessTools.Method(typeof(string), nameof(string.Concat), new Type[] { typeof(string), typeof(string) });
+
+            FieldInfo FI_House = AccessTools.Field(typeof(Person), nameof(Person.house));
+            FieldInfo FI_HouseName = AccessTools.Field(typeof(House), nameof(House.name));
+
+            Label continueLabel = ilg.DefineLabel();
+            Label continueLabelB = ilg.DefineLabel();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldstr && instructionList[i].operand is string str && str == "House Finder")
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i+1].opcode == OpCodes.Ldloc_S)
+                        {
+                            continueLabel = (Label)instructionList[i-1].operand;
+
+                            CodeInstruction code = new CodeInstruction(OpCodes.Ldloc_S, 53);
+                            code.labels.AddRange(instructionList[i].labels);
+                            instructionList[i].labels.Clear();
+                            yield return code;
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_House);
+                            yield return new CodeInstruction(OpCodes.Ldnull);
+                            yield return new CodeInstruction(OpCodes.Ceq);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, continueLabel);
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i+1].opcode == OpCodes.Ldloc_S)
+                        {
+                            // Logging
+                            /*yield return new CodeInstruction(OpCodes.Ldstr, "CommunityLib: House is ");
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 53);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_House);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_HouseName);
+                            yield return new CodeInstruction(OpCodes.Call, MI_ConcatStringS2);
+                            yield return new CodeInstruction(OpCodes.Call, MI_WriteLine);*/
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 4)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Endfinally)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 5)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 58);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_House);
+                            yield return new CodeInstruction(OpCodes.Ldnull);
+                            yield return new CodeInstruction(OpCodes.Ceq);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, continueLabelB);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 6)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 58);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_House);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_HouseName);
+                            yield return new CodeInstruction(OpCodes.Call, MI_NullOrWhitespace);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, continueLabelB);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 7)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloca_S)
+                        {
+                            instructionList[i].labels.Add(continueLabelB);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed UIScrollThreats_checkData_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        // Victory Point Fixes
+        private static IEnumerable<CodeInstruction> Overming_computeVictoryProgress_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            FieldInfo FI_isDarkEmpire = AccessTools.Field(typeof(Society), nameof(Society.isDarkEmpire));
+
+            Label skip = ilg.DefineLabel();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i+1].opcode == OpCodes.Ldc_I4_4)
+                        {
+                            CodeInstruction code = new CodeInstruction(OpCodes.Ldloc_S, 20);
+                            code.labels.AddRange(instructionList[i].labels);
+                            instructionList[i].labels.Clear();
+                            yield return code;
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_isDarkEmpire);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, skip);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i-1].opcode == OpCodes.Stind_R8)
+                        {
+                            instructionList[i].labels.Add(skip);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Overming_computeVictoryProgress_Transpiler");
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);

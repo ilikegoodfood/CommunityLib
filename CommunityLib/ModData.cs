@@ -454,11 +454,6 @@ namespace CommunityLib
                 return true;
             }
 
-            if (u is UAE_Baroness || u is UAEN_Vampire)
-            {
-                return true;
-            }
-
             foreach (Type type in vampireTypes)
             {
                 if (u.GetType() == type || u.GetType().IsSubclassOf(type))
