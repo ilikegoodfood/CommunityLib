@@ -168,6 +168,9 @@ namespace CommunityLib
             // House Search Fix
             harmony.Patch(original: AccessTools.Method(typeof(UIScrollThreats), nameof(UIScrollThreats.checkData), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(UIScrollThreats_checkData_Transpiler)));
 
+            // Dismiss Key Fix
+            harmony.Patch(original: AccessTools.Method(typeof(PopupMsg), nameof(PopupMsg.dismissKeyHit), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(PopupMsg_dismissKeyHit_Prefix)));
+
             // Victory Point Fixes
             harmony.Patch(original: AccessTools.Method(typeof(Overmind), nameof(Overmind.computeVictoryProgress), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Overming_computeVictoryProgress_Transpiler)));
 
@@ -3707,6 +3710,17 @@ namespace CommunityLib
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
+        }
+
+        // Dismiss Key fix
+        private static bool PopupMsg_dismissKeyHit_Prefix(PopupMsg __instance)
+        {
+            if (__instance.ui == null)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         // Victory Point Fixes
