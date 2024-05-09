@@ -283,6 +283,7 @@ namespace CommunityLib
         {
             if (__instance.dirty)
             {
+                PopupModConfig.loadModConfigFromFile(__instance.modsSeen, true);
                 if (ModCore.opt_autoRelaunch)
                 {
                     __instance.bDismiss.GetComponentInChildren<Text>().text = "Accept (Restart)";
