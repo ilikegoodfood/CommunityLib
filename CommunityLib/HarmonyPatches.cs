@@ -127,6 +127,10 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(PrefabStore), nameof(PrefabStore.popHolyOrder), new Type[] { typeof(HolyOrder) }), prefix: new HarmonyMethod(patchType, nameof(Prefab_popHolyOrder_Prefix)));
 
             // SYSTEM MODIFICATIONS //
+            // Mod Config Button Update
+            // Auto Relaunch
+            harmony.Patch(original: AccessTools.Method(typeof(PopupModConfig), nameof(PopupModConfig.Update), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(PopupModConfig_update_postfix)));
+
             // Auto Relaunch
             harmony.Patch(original: AccessTools.Method(typeof(PopupModConfig), nameof(PopupModConfig.dismiss), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(PopupModConfig_dismiss_transpiler)));
 
@@ -263,6 +267,27 @@ namespace CommunityLib
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onGraphicalLinkUpdated(__instance);
+            }
+        }
+
+        // Mod Config button update
+        private static void PopupModConfig_update_postfix(PopupModConfig __instance)
+        {
+            if (__instance.dirty)
+            {
+                if (ModCore.opt_autoRelaunch)
+                {
+                    __instance.bDismiss.GetComponentInChildren<Text>().text = "Accept (Restart)";
+                }
+                else
+                {
+                    __instance.bDismiss.GetComponentInChildren<Text>().text = "Accept";
+                }
+                
+            }
+            else
+            {
+                __instance.bDismiss.GetComponentInChildren<Text>().text = "Back";
             }
         }
 
