@@ -1,6 +1,5 @@
 ﻿using Assets.Code;
 using HarmonyLib;
-using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -321,23 +320,15 @@ namespace CommunityLib
             string exePath = __instance.GetType().Assembly.FullName;
             string viaSteamParam = SteamManager.s_EverInitialized ? "true" : "false";
             string branchParam = "NA";
-            string steamPath;
-
-            if (Environment.Is64BitOperatingSystem)
+            if (exePath.Contains("BaseGame"))
             {
-                steamPath = Registry.GetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Wow6432Node\\Valve\\Steam", "InstallPath", "") as String;
+                branchParam = "BaseGame";
             }
-            else
-            {
-                steamPath = Registry.GetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Valve\\Steam", "InstallPath", "") as String;
-            }
-            steamPath = Path.Combine(steamPath, "steam.exe");
-            Console.WriteLine("CommunityLib: " + steamPath);
 
             string batchFile = Path.Combine(Path.GetDirectoryName(ModCore.Get().GetType().Assembly.Location), "..", "relauncher.bat");
             try
             {
-                Process.Start(batchFile, $"\"{exePath}\" {viaSteamParam} {branchParam} \"{steamPath}\"");
+                Process.Start(batchFile, $"\"{exePath}\" {viaSteamParam} {branchParam}");
             }
             catch (Exception ex)
             {
