@@ -328,10 +328,6 @@ namespace CommunityLib
             string exePath = __instance.GetType().Assembly.FullName;
             string viaSteamParam = SteamManager.s_EverInitialized ? "true" : "false";
             string branchParam = "NA";
-            if (exePath.Contains("BaseGame"))
-            {
-                branchParam = "BaseGame";
-            }
 
             string batchFile = Path.Combine(Path.GetDirectoryName(ModCore.Get().GetType().Assembly.Location), "..", "relauncher.bat");
             try
@@ -343,7 +339,6 @@ namespace CommunityLib
                 Console.WriteLine("CommunityLib: Error starting relauncher process: " + ex.Message);
             }
             
-
             if (SteamManager.s_EverInitialized)
             {
                 SteamManager.shutdownSteamAPI();
