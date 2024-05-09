@@ -317,25 +317,18 @@ namespace CommunityLib
                 return false;
             }
 
-            string exePath = __instance.GetType().Assembly.FullName;
-            string viaSteamParam = SteamManager.s_EverInitialized ? "true" : "false";
-            string branchParam = "NA";
-            if (exePath.Contains("BaseGame"))
-            {
-                branchParam = "BaseGame";
-            }
-
-            string batchFile = Path.Combine(Path.GetDirectoryName(ModCore.Get().GetType().Assembly.Location), "..", "relauncher.bat");
+            string exePath = Path.Combine(Path.GetDirectoryName(__instance.GetType().Assembly.Location), "..", "..", "ShadowsOfForbiddenGods.exe");
+            string batchFile = Path.Combine(Path.GetDirectoryName(patchType.Assembly.Location), "..", "relauncher.bat");
             try
             {
-                Process.Start(batchFile, $"\"{exePath}\" {viaSteamParam} {branchParam}");
+                Process.Start(batchFile, $"\"{exePath}\"");
             }
             catch (Exception ex)
             {
                 Console.WriteLine("CommunityLib: Error starting relauncher process: " + ex.Message);
             }
-            
 
+            __instance.ui.removeBlocker(__instance.gameObject);
             if (SteamManager.s_EverInitialized)
             {
                 SteamManager.shutdownSteamAPI();
