@@ -328,7 +328,7 @@ namespace CommunityLib
 
             string exePath = __instance.GetType().Assembly.FullName;
             string viaSteamParam = SteamManager.s_EverInitialized ? "true" : "false";
-            string branchParam = "DLC";
+            string branchParam = "NA";
             string steamPath;
 
             if (Environment.Is64BitOperatingSystem)
