@@ -33,6 +33,8 @@ namespace CommunityLib
 
         private UAENOverrideAI overrideAI;
 
+        public static bool opt_autoRelaunch = false;
+
         public static bool opt_spawnShipwrecks = false;
 
         public static bool opt_forceShipwrecks = false;
@@ -87,6 +89,9 @@ namespace CommunityLib
         {
             switch(optName)
             {
+                case "Auto-Relaunch on Mod List Change":
+                    opt_autoRelaunch = value;
+                    break;
                 case "Dynamic Orc Horde Count":
                     opt_DynamicOrcCount = value;
                     break;

@@ -1,7 +1,10 @@
 ﻿using Assets.Code;
 using HarmonyLib;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -125,6 +128,9 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(PrefabStore), nameof(PrefabStore.popHolyOrder), new Type[] { typeof(HolyOrder) }), prefix: new HarmonyMethod(patchType, nameof(Prefab_popHolyOrder_Prefix)));
 
             // SYSTEM MODIFICATIONS //
+            // Auto Relaunch
+            harmony.Patch(original: AccessTools.Method(typeof(PopupModConfig), nameof(PopupModConfig.dismiss), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(PopupModConfig_dismiss_transpiler)));
+
             // AgentBattle Fixes
             harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), "retreatOrFlee", new Type[] { typeof(UA), typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_retreatOrFlee_Transpiler)));
 
@@ -267,6 +273,93 @@ namespace CommunityLib
             {
                 hook.onGraphicalLinkUpdated(__instance);
             }
+        }
+
+        // Auto-Relaunch 
+        private static IEnumerable<CodeInstruction> PopupModConfig_dismiss_transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(PopupModConfig_dismiss_transpilerBody), new Type[] { typeof(PopupModConfig) });
+
+            Label skip = ilg.DefineLabel();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i-1].opcode == OpCodes.Leave_S && instructionList[i+1].opcode == OpCodes.Ldfld)
+                        {
+                            CodeInstruction code = new CodeInstruction(OpCodes.Ldarg_0);
+                            code.labels.AddRange(instructionList[i].labels);
+                            instructionList[i].labels.Clear();
+                            yield return code;
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_TranspilerBody);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, skip);
+                            yield return new CodeInstruction(OpCodes.Ret);
+                            code = new CodeInstruction(OpCodes.Nop);
+                            code.labels.Add(skip);
+                            yield return code;
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed PopupModConfig_dismiss_transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static bool PopupModConfig_dismiss_transpilerBody(PopupModConfig __instance)
+        {
+            if (!ModCore.opt_autoRelaunch)
+            {
+                return false;
+            }
+
+            string exePath = __instance.GetType().Assembly.FullName;
+            string viaSteamParam = SteamManager.s_EverInitialized ? "true" : "false";
+            string branchParam = "DLC";
+            string steamPath;
+
+            if (Environment.Is64BitOperatingSystem)
+            {
+                steamPath = Registry.GetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Wow6432Node\\Valve\\Steam", "InstallPath", "") as String;
+            }
+            else
+            {
+                steamPath = Registry.GetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Valve\\Steam", "InstallPath", "") as String;
+            }
+            steamPath = Path.Combine(steamPath, "steam.exe");
+            Console.WriteLine("CommunityLib: " + steamPath);
+
+            string batchFile = Path.Combine(Path.GetDirectoryName(ModCore.Get().GetType().Assembly.Location), "..", "relauncher.bat");
+            try
+            {
+                Process.Start(batchFile, $"\"{exePath}\" {viaSteamParam} {branchParam} \"{steamPath}\"");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("CommunityLib: Error starting relauncher process: " + ex.Message);
+            }
+            
+
+            if (SteamManager.s_EverInitialized)
+            {
+                SteamManager.shutdownSteamAPI();
+            }
+            Application.Quit();
+
+            return true;
         }
 
         // Assign Killer to Miscellaneous causes of death
