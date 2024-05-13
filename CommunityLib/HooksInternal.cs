@@ -109,8 +109,23 @@ namespace CommunityLib
                         alpha *= 0.15f;
                     }
 
-                    graphicalLink.lineRenderer.startColor = new Color(graphicalLink.lineRenderer.startColor.r, graphicalLink.lineRenderer.startColor.g, graphicalLink.lineRenderer.startColor.b, alpha);
-                    graphicalLink.lineRenderer.endColor = new Color(graphicalLink.lineRenderer.endColor.r, graphicalLink.lineRenderer.endColor.g, graphicalLink.lineRenderer.endColor.b, alpha);
+                    float alphaA = alpha;
+                    float alphaB = alpha;
+
+                    if (graphicalLink.link.a.hex.z != graphicalLink.link.b.hex.z)
+                    {
+                        if (graphicalLink.link.a.hex.z != GraphicalMap.z)
+                        {
+                            alphaA = 0f;
+                        }
+                        else if (graphicalLink.link.b.hex.z != GraphicalMap.z)
+                        {
+                            alphaB = 0f;
+                        }
+                    }
+
+                    graphicalLink.lineRenderer.startColor = new Color(graphicalLink.lineRenderer.startColor.r, graphicalLink.lineRenderer.startColor.g, graphicalLink.lineRenderer.startColor.b, alphaA);
+                    graphicalLink.lineRenderer.endColor = new Color(graphicalLink.lineRenderer.endColor.r, graphicalLink.lineRenderer.endColor.g, graphicalLink.lineRenderer.endColor.b, alphaB);
                     graphicalLink.lineRenderer.startWidth = width;
                     graphicalLink.lineRenderer.endWidth = width;
                 }

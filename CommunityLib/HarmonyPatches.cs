@@ -150,6 +150,9 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_OpportunisticEncroachment), nameof(Ch_Orcs_OpportunisticEncroachment.complete), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_Orcs_OpportunisticEncroachment_complete_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Rti_Orc_AttackHere), nameof(Rti_Orc_AttackHere.valid), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Rti_Orc_AttackHere_Postfix)));
 
+            // Local Action Fixes
+            harmony.Patch(original: AccessTools.Method(typeof(Act_FundOutpost), nameof(Act_FundOutpost.valid), new Type[] { typeof(Person), typeof(SettlementHuman) }), postfix: new HarmonyMethod(patchType, nameof(Act_FundOutpost_valid_Postfix)));
+
             // Realtionship Interaction Fixes
             harmony.Patch(original: AccessTools.Method(typeof(Society), nameof(Society.populateActions), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Society_populateActions_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(SG_Orc), nameof(SG_Orc.getActions), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(SG_Orc_getActions_Transpiler)));
@@ -761,6 +764,26 @@ namespace CommunityLib
             if (__instance.caster == null || __instance.caster.orcs == null || __instance.caster.orcs.isGone())
             {
                 __result = false;
+            }
+        }
+
+        // Local Action Fixes
+        private static void Act_FundOutpost_valid_Postfix(Act_FundOutpost __instance, ref bool __result, Person ruler, SettlementHuman settlementHuman)
+        {
+            if (__result && __instance.map.awarenessOfUnderground < 1.0f)
+            {
+                int targetZ = __instance.outpost.location.hex.z;
+                int sourceZ = -1;
+
+                if (ruler.rulerOf != -1)
+                {
+                    sourceZ = ruler.map.locations[ruler.rulerOf].hex.z;
+                }
+
+                if ((targetZ == 0 && sourceZ == 1) || (targetZ == 1 && sourceZ == 0))
+                {
+                    __result = false;
+                }
             }
         }
 
