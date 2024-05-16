@@ -68,14 +68,17 @@
     <Compile Include="Ch_DestroyShipwreck.cs" />
     <Compile Include="Ch_PlunderShipwreck.cs" />
     <Compile Include="Ch_RecoverShipwreck.cs" />
+    <Compile Include="ItemPriorityPair.cs" />
     <Compile Include="I_Test_DeathSave.cs" />
     <Compile Include="ModCultureData.cs" />
     <Compile Include="ModIntegrationData.cs" />
     <Compile Include="OnChallengeComplete.cs" />
+    <Compile Include="PriorityQueue.cs" />
     <Compile Include="Rt_DeepOnes_TravelBeneath.cs" />
     <Compile Include="SaveData.cs" />
     <Compile Include="Rt_SlowHealing.cs" />
     <Compile Include="Set_Shipwreck.cs" />
+    <Compile Include="ShuffleExtensions.cs" />
     <Compile Include="SortableTaskBlock_Advanced.cs" />
     <Compile Include="Sub_Shipwreck.cs" />
     <Compile Include="Task_AttackUnitWithCustomEscort.cs" />

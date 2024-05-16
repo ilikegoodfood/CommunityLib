@@ -45,6 +45,12 @@ namespace CommunityLib
             this.mapLayers = mapLayers;
         }
 
+
+        public static bool delegate_VALID_OCEAN(Location[] currentPath, Location location, Unit u, List<int> targetMapLayers)
+        {
+            return location.isOcean;
+        }
+
         public override string getShort()
         {
             return "Return to the Deep";
@@ -78,74 +84,26 @@ namespace CommunityLib
                     return;
                 }
 
-                if (target == null || !target.isOcean)
+                Location[] pathTo = Pathfinding.getPathTo(unit.location, delegate_VALID_OCEAN, unit, null, false);
+                if (pathTo == null || pathTo.Length < 2)
                 {
-                    target = null;
-                    List<Location> nearbyOceanLocations = new List<Location>();
-                    int distance = -1;
-                    foreach (Location loc in deepOne.map.locations)
-                    {
-                        if (loc.isOcean)
-                        {
-                            int stepDistance = deepOne.map.getStepDist(deepOne.location, loc);
-                            if (loc != deepOne.location)
-                            {
-                                Location[] pathTo = deepOne.map.getPathTo(deepOne.location, loc, deepOne);
-                                if (pathTo == null || pathTo.Length < 2)
-                                {
-                                    continue;
-                                }
-                                stepDistance = pathTo.Length;
-                            }
-
-                            if (distance == -1 || stepDistance <= distance)
-                            {
-                                if (stepDistance < distance)
-                                {
-                                    nearbyOceanLocations.Clear();
-                                }
-                                nearbyOceanLocations.Add(loc);
-                                distance = stepDistance;
-                            }
-                        }
-                    }
-
-                    if (nearbyOceanLocations.Count == 1)
-                    {
-                        target = nearbyOceanLocations[0];
-                    }
-                    else if (nearbyOceanLocations.Count > 1)
-                    {
-                        target = nearbyOceanLocations[Eleven.random.Next(nearbyOceanLocations.Count)];
-                    }
-
-                    if (target == null)
-                    {
-                        deepOne.die(deepOne.map, "Unable to reach the ocean");
-                        return;
-                    }
+                    deepOne.die(deepOne.map, "Unable to reach the ocean");
+                    return;
                 }
+                target = pathTo[pathTo.Length - 1];
 
-                if (target != null)
+                int index = 1;
+                while (unit.movesTaken < unit.getMaxMoves())
                 {
-                    while (unit.movesTaken < unit.getMaxMoves())
+                    deepOne.map.adjacentMoveTo(unit, pathTo[index]);
+                    deepOne.movesTaken++;
+                    index++;
+
+                    if (deepOne.location == target)
                     {
-                        Location[] pathTo = deepOne.map.getPathTo(deepOne.location, target, deepOne);
-                        if (pathTo == null || pathTo.Length < 2)
-                        {
-                            deepOne.die(deepOne.map, "Unable to reach the ocean");
-                            return;
-                        }
-
-                        deepOne.map.adjacentMoveTo(unit, pathTo[1]);
-                        deepOne.movesTaken++;
-
-                        if (deepOne.location == target)
-                        {
-                            deepOne.moveType = Unit.MoveType.AQUAPHIBIOUS;
-                            deepOne.task = null;
-                            return;
-                        }
+                        deepOne.moveType = Unit.MoveType.AQUAPHIBIOUS;
+                        deepOne.task = null;
+                        return;
                     }
                 }
             }

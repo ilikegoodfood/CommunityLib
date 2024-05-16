@@ -73,22 +73,37 @@ namespace CommunityLib
 
         public override void onGraphicalLinkUpdated(GraphicalLink graphicalLink)
         {
-
             if (ModCore.opt_enhancedTradeRouteLinks)
             {
-                TradeRoute route = map.tradeManager.routes.FirstOrDefault(tr => tr.path.Contains(graphicalLink.link.a) && tr.path.Contains(graphicalLink.link.b));
-                if (route != null)
+                List<TradeRoute> routes = new List<TradeRoute>();
+                foreach (TradeRoute route in graphicalLink.link.a.map.tradeManager.routes)
+                {
+                    int indexA = route.path.IndexOf(graphicalLink.link.a);
+                    int indexB = route.path.IndexOf(graphicalLink.link.b);
+
+                    if (indexA != -1 && indexB != -1)
+                    {
+                        if (indexB >= indexA - 1 && indexB <= indexA + 1)
+                        {
+                            routes.Add(route);
+                        }
+                    }
+                }
+
+                if (routes.Count > 0)
                 {
                     float width = 0.04f;
                     float alpha = 1f;
 
+                    bool raidDim = false;
                     if (graphicalLink.link.disabled)
                     {
                         alpha = 0.2f;
                     }
-                    else if (route.raidingCooldown > 0)
+                    else if (routes.All(tr => tr.raidingCooldown > 0))
                     {
                         alpha *= 0.8f;
+                        raidDim = true;
                     }
 
                     if (graphicalLink.link.map.masker.mask > MapMaskManager.maskType.NONE)
@@ -103,10 +118,18 @@ namespace CommunityLib
                         }
                     }
 
-                    if (graphicalLink.link.map.world.ui.uiScrollables.scrollable_threats.targetRoute != null && graphicalLink.link.map.world.ui.uiScrollables.scrollable_threats.targetRoute != route)
+                    TradeRoute selectedRoute = graphicalLink.link.map.world.ui.uiScrollables.scrollable_threats.targetRoute;
+                    if (selectedRoute != null)
                     {
-                        width = 0.04f;
-                        alpha *= 0.15f;
+                        if (!routes.Contains(selectedRoute))
+                        {
+                            width = 0.04f;
+                            alpha *= 0.15f;
+                        }
+                        else if (!raidDim && selectedRoute.raidingCooldown > 0)
+                        {
+                            alpha *= 0.8f;
+                        }
                     }
 
                     float alphaA = alpha;
@@ -194,7 +217,7 @@ namespace CommunityLib
         {
             if (ModCore.opt_forceCommunityLibraryPathfinding)
             {
-                return ModCore.Get().pathfinding.getPathTo(locA, locB, u, safeMove);
+                return Pathfinding.getPathTo(locA, locB, u, safeMove);
             }
 
             return null;
@@ -204,31 +227,34 @@ namespace CommunityLib
         {
             if (ModCore.opt_forceCommunityLibraryPathfinding)
             {
-                return ModCore.Get().pathfinding.getPathTo(loc, sg, u, safeMove);
+                return Pathfinding.getPathTo(loc, sg, u, safeMove);
             }
 
             return null;
         }
 
-        public override bool onPathfinding_AllowSecondPass(Location locA, Location locB, Unit u, List<Func<Location[], Location, Unit, Location, Location, bool>> pathfindingDelegates)
+        public override bool onPathfinding_AllowSecondPass(Location locA, Unit u, List<int> mapLayers, List<Func<Location[], Location, Unit, List<int>, double>> pathfindingDelegates)
         {
             bool result = false;
 
-            if (u.map.awarenessOfUnderground >= 1.0)
+            if (locA.map.awarenessOfUnderground >= 1.0)
             {
                 result = true;
             }
-            else if (u.society is Society society && (society.isOphanimControlled || society.isDarkEmpire))
+            else if (u != null)
             {
-                result = true;
-            }
-            else if (u.society == u.map.soc_dark || u.society == u.map.soc_neutral)
-            {
-                result = true;
-            }
-            else if (u.society is SG_Orc orcSociety && orcSociety.canGoUnderground())
-            {
-                result = true;
+                if (u.society is Society society && (society.isOphanimControlled || society.isDarkEmpire))
+                {
+                    result = true;
+                }
+                else if (u.society == u.map.soc_dark || u.society == u.map.soc_neutral)
+                {
+                    result = true;
+                }
+                else if (u.society is SG_Orc orcSociety && orcSociety.canGoUnderground())
+                {
+                    result = true;
+                }
             }
 
             if (result)
@@ -239,33 +265,76 @@ namespace CommunityLib
             return result;
         }
 
-        public override bool onPathfinding_AllowSecondPass(Location loc, SocialGroup sg, Unit u, List<Func<Location[], Location, Unit, Location, Location, bool>> pathfindingDelegates)
+        public override bool onPathfindingTadeRoute_AllowSecondPass(Location start, List<int> endPointMapLayers, List<Func<Location[], Location, List<int>, double>> pathfindingDelegates, List<Func<Location[], Location, List<int>, bool>> destinationValidityDelegates)
         {
             bool result = false;
 
-            if (u.map.awarenessOfUnderground >= 1.0)
-            {
-                result = true;
-            }
-            else if (u.society is Society society && (society.isOphanimControlled || society.isDarkEmpire))
-            {
-                result = true;
-            }
-            else if (u.society == u.map.soc_dark || u.society == u.map.soc_neutral)
-            {
-                result = true;
-            }
-            else if (u.society is SG_Orc orcSociety && orcSociety.canGoUnderground())
+            if (start.map.awarenessOfUnderground >= 1.0)
             {
                 result = true;
             }
 
             if (result)
             {
-                pathfindingDelegates.Remove(Pathfinding.delegate_LAYERBOUND);
+                pathfindingDelegates.Remove(Pathfinding.delegate_TRADE_LAYERBOUND);
             }
 
             return result;
+        }
+
+        public override void onPopulatingTradeRoutePathfindingDelegates(Location start, List<int> endPointMapLayers, List<Func<Location[], Location, List<int>, double>> pathfindingDelegates, List<Func<Location[], Location, List<int>, bool>> destinationValidityDelegates)
+        {
+            if (start.settlement is Set_TombOfGods && start.map.overmind.god is God_Mammon)
+            {
+                pathfindingDelegates.Remove(Pathfinding.delegate_TRADE_UNDERGROUNDAWARENESS);
+            }
+        }
+
+        public override void onBuildTradeNetwork_EndOfProcess(Map map, ManagerTrade tradeManager, List<Location> endpoints)
+        {
+            if (map.overmind.god is God_Mammon)
+            {
+                Location tomb = endpoints.FirstOrDefault(l => l.settlement is Set_TombOfGods);
+                if (tomb != null)
+                {
+                    List<int> linkedLayerIDs = new List<int>();
+                    foreach (TradeRoute route in tradeManager.routes)
+                    {
+                        if (route.start() == tomb)
+                        {
+                            if (!linkedLayerIDs.Contains(route.end().hex.z))
+                            {
+                                linkedLayerIDs.Add(route.end().hex.z);
+                            }
+                        }
+                        else if (route.end() == tomb)
+                        {
+                            if (!linkedLayerIDs.Contains(route.start().hex.z))
+                            {
+                                linkedLayerIDs.Add(route.start().hex.z);
+                            }
+                        }
+                    }
+
+                    if (!linkedLayerIDs.Contains(0))
+                    {
+                        Location[] routePath = Pathfinding.getTradeRouteFrom(tomb, 0);
+                        if (routePath != null && routePath.Length >= 2)
+                        {
+                            tradeManager.routes.Add(new TradeRoute(routePath.ToList()));
+                        }
+                    }
+
+                    if (!linkedLayerIDs.Contains(1))
+                    {
+                        Location[] routePath = Pathfinding.getTradeRouteFrom(tomb, 1);
+                        if (routePath != null && routePath.Length >= 2)
+                        {
+                            tradeManager.routes.Add(new TradeRoute(routePath.ToList()));
+                        }
+                    }
+                }
+            }
         }
 
         public override bool interceptAgentAI(UA ua, AgentAI.AIData aiData, List<AgentAI.ChallengeData> challengeData, List<AgentAI.TaskData> taskData, List<Unit> visibleUnits)

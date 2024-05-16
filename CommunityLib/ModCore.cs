@@ -29,8 +29,6 @@ namespace CommunityLib
 
         private Hooks hooks;
 
-        public Pathfinding pathfinding;
-
         private UAENOverrideAI overrideAI;
 
         public static bool opt_autoRelaunch = false;
@@ -73,6 +71,8 @@ namespace CommunityLib
 
         public static bool opt_usePreciseDistanceDivisor = true;
 
+        public static bool opt_realisticTradeRoutes = false;
+
         public static ModCore Get() => core;
 
         public override void onModsInitiallyLoaded()
@@ -109,6 +109,9 @@ namespace CommunityLib
                     break;
                 case "Enhanced Trade Route Links":
                     opt_enhancedTradeRouteLinks = value;
+                    break;
+                case "Realistic Trade Routes":
+                    opt_realisticTradeRoutes = value;
                     break;
                 case "Force Community Library Pathfinding":
                     opt_forceCommunityLibraryPathfinding = value;
@@ -182,8 +185,6 @@ namespace CommunityLib
             getModKernels(map);
             HarmonyPatches_Conditional.PatchingInit(map);
 
-            pathfinding = new Pathfinding();
-
             agentAI = new AgentAI(map);
 
             overrideAI = new UAENOverrideAI(map);
@@ -212,12 +213,6 @@ namespace CommunityLib
             if (Get().randStore == null)
             {
                 Get().randStore = new Dictionary<Unit, Dictionary<object, Dictionary<string, double>>>();
-            }
-
-            //Initialize subclasses.
-            if (Get().pathfinding == null)
-            {
-                Get().pathfinding = new Pathfinding();
             }
 
             agentAI = new AgentAI(map);
@@ -1358,7 +1353,7 @@ namespace CommunityLib
 
             int travelTime;
 
-            Location[] path = pathfinding.getPathTo(u.location, location, u);
+            Location[] path = Pathfinding.getPathTo(u.location, location, u);
             if (path == null || path.Length < 2)
             {
                 travelTime = (int)Math.Ceiling(u.map.getStepDist(u.location, location) / (double)u.getMaxMoves());

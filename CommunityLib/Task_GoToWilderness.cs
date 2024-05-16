@@ -70,73 +70,21 @@ namespace CommunityLib
                 return;
             }
 
-            if (target == null || target.soc != null)
+            Location[] pathTo = Pathfinding.getPathTo(unit.location, (SocialGroup)null, unit, mapLayers.ToList(), safeMove);
+            if (pathTo == null || pathTo.Length < 2)
             {
-                target = null;
-                int steps = -1;
-                List<Location> targetLocations = new List<Location>();
-                foreach (Location loc in unit.map.locations)
-                {
-                    if (loc.soc == null && (!goToLand || !loc.isOcean))
-                    {
-                        if (mapLayers.Length == 0 || mapLayers.Contains(loc.hex.z))
-                        {
-                            int stepDistance = unit.map.getStepDist(unit.location, loc);
-                            if (loc != unit.location)
-                            {
-                                Location[] pathTo = unit.map.getPathTo(unit.location, loc, unit);
-                                if (pathTo == null || pathTo.Length < 2)
-                                {
-                                    continue;
-                                }
-                                stepDistance = pathTo.Length;
-                            }
-
-                            if (steps == -1 || stepDistance <= steps)
-                            {
-                                if (stepDistance < steps)
-                                {
-                                    targetLocations.Clear();
-                                }
-
-                                targetLocations.Add(loc);
-                                steps = stepDistance;
-                            }
-                        }
-                    }
-                }
-
-
-                if (targetLocations.Count == 1)
-                {
-                    target = targetLocations[0];
-                }
-                else if (targetLocations.Count > 1)
-                {
-                    target = targetLocations[Eleven.random.Next(targetLocations.Count)];
-                }
+                unit.task = null;
+                return;
             }
+            target = pathTo[pathTo.Length - 1];
 
+            int index = 1;
             while (unit.movesTaken < unit.getMaxMoves())
             {
-                Location[] pathTo;
-                if (target == null)
-                {
-                    pathTo = unit.map.getPathTo(unit.location, (SocialGroup)null, unit, safeMove);
-                }
-                else
-                {
-                    pathTo = unit.map.getPathTo(unit.location, target, unit, safeMove);
-                }
-
-                if (pathTo == null || pathTo.Length < 2)
-                {
-                    unit.task = null;
-                    break;
-                }
-
-                unit.location.map.adjacentMoveTo(unit, pathTo[1]);
+                unit.location.map.adjacentMoveTo(unit, pathTo[index]);
                 unit.movesTaken++;
+                index++;
+
                 if (unit.location == target)
                 {
                     unit.task = null;
