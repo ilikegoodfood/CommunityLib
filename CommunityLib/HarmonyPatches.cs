@@ -53,7 +53,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(GraphicalUnit), nameof(GraphicalUnit.checkData), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(GraphicalUnit_checkData_Postfix)));
 
             // Graphical link updated hook
-            harmony.Patch(original: AccessTools.Method(typeof(GraphicalLink), nameof(GraphicalLink.Update), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(GraphicalLink_Update_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(GraphicalLink), nameof(GraphicalLink.Update), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(GraphicalLink_Update_Postfix)), transpiler: new HarmonyMethod(patchType, nameof(GraphicalLink_Update_Transpiler)));
 
             // Unit death hooks
             harmony.Patch(original: AccessTools.Method(typeof(Unit), nameof(Unit.die), new Type[] { typeof(Map), typeof(string), typeof(Person) }), prefix: new HarmonyMethod(patchType, nameof(Unit_die_Prefix)), transpiler: new HarmonyMethod(patchType, nameof(Unit_die_Transpiler)));
@@ -67,8 +67,8 @@ namespace CommunityLib
             // Agent Battle hooks
             harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.setupBattle), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(BattleAgents_setupBattle_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.step), new Type[] { typeof(PopupBattleAgent) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_step_Transpiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.attackDownRow), new Type[] { typeof(int), typeof (UA), typeof(UA), typeof(PopupBattleAgent) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_AttackDownRow_Minion_Transpiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.attackDownRow), new Type[] { typeof(int), typeof (int), typeof(AgentCombatInterface), typeof(UA), typeof(UA), typeof(PopupBattleAgent) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_AttackDownRow_Agent_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.attackDownRow), new Type[] { typeof(int), typeof(UA), typeof(UA), typeof(PopupBattleAgent) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_AttackDownRow_Minion_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.attackDownRow), new Type[] { typeof(int), typeof(int), typeof(AgentCombatInterface), typeof(UA), typeof(UA), typeof(PopupBattleAgent) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_AttackDownRow_Agent_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.automatic), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(BattleAgents_automatic_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(World), nameof(World.bEndTurn), new Type[] { typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(World_bEndTurn_Transpiler)));
 
@@ -148,6 +148,10 @@ namespace CommunityLib
             // Religion UI Screen modification
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bPrev), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bNext), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
+
+            // Trade Route Fixes
+            harmony.Patch(original: AccessTools.Method(typeof(ManagerTrade), nameof(ManagerTrade.checkTradeNetwork), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(ManagerTrade_checkTradeNetwork_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(PrefabStore), nameof(PrefabStore.popUnderground), new Type[] { typeof(bool), typeof(bool) }), postfix: new HarmonyMethod(patchType, nameof(PrefabStore_popUnderground_Postfix)));
 
             // Pan to Holy Order Screen
             harmony.Patch(original: AccessTools.Method(typeof(PopupMsgUnified), nameof(PopupMsgUnified.dismissAgentA), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(PopupMsgUnified_dismissAgentA_Postfix)));
@@ -262,6 +266,84 @@ namespace CommunityLib
             }
         }
 
+        private static IEnumerable<CodeInstruction> GraphicalLink_Update_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            FieldInfo FI_MapZ = AccessTools.Field(typeof(GraphicalMap), nameof(GraphicalMap.z));
+
+            Label skipA = ilg.DefineLabel();
+            Label skipB = ilg.DefineLabel();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldsfld && (FieldInfo)instructionList[i].operand == FI_MapZ && instructionList[i + 1].opcode == OpCodes.Ceq)
+                        {
+
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Brfalse_S)
+                        {
+                            instructionList[i].operand = skipA;
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0)
+                        {
+                            instructionList[i].labels.Add(skipA);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 4)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldsfld && (FieldInfo)instructionList[i].operand == FI_MapZ && instructionList[i + 1].opcode == OpCodes.Ceq)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 5)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Brfalse_S)
+                        {
+                            instructionList[i].operand = skipB;
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 6)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0)
+                        {
+                            instructionList[i].labels.Add(skipB);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed GraphicalLink_Update_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
         private static void GraphicalLink_Update_Postfix(GraphicalLink __instance)
         {
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
@@ -283,7 +365,7 @@ namespace CommunityLib
                 {
                     __instance.bDismiss.GetComponentInChildren<Text>().text = "Accept";
                 }
-                
+
             }
             else
             {
@@ -307,7 +389,7 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i-1].opcode == OpCodes.Leave_S && instructionList[i+1].opcode == OpCodes.Ldfld)
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i - 1].opcode == OpCodes.Leave_S && instructionList[i + 1].opcode == OpCodes.Ldfld)
                         {
                             CodeInstruction code = new CodeInstruction(OpCodes.Ldarg_0);
                             code.labels.AddRange(instructionList[i].labels);
@@ -414,7 +496,7 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldnull && instructionList[i-1].opcode == OpCodes.Call && instructionList[i-2].opcode == OpCodes.Callvirt)
+                        if (instructionList[i].opcode == OpCodes.Ldnull && instructionList[i - 1].opcode == OpCodes.Call && instructionList[i - 2].opcode == OpCodes.Callvirt)
                         {
                             targetIndex = 0;
 
@@ -545,7 +627,7 @@ namespace CommunityLib
                                 targetIndex = 0;
 
                                 yield return new CodeInstruction(OpCodes.Ldarg_0);
-                                
+
                                 i++;
                             }
                         }
@@ -570,13 +652,13 @@ namespace CommunityLib
 
             int targetIndex = 1;
 
-            for (int i = 0; i< instructionList.Count; i++)
+            for (int i = 0; i < instructionList.Count; i++)
             {
                 if (targetIndex > 0)
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldnull && instructionList[i-1].opcode == OpCodes.Ldarg_0 && instructionList[i+1].opcode == OpCodes.Ldstr)
+                        if (instructionList[i].opcode == OpCodes.Ldnull && instructionList[i - 1].opcode == OpCodes.Ldarg_0 && instructionList[i + 1].opcode == OpCodes.Ldstr)
                         {
                             targetIndex = 0;
 
@@ -721,7 +803,7 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i+1].opcode == OpCodes.Ldfld && instructionList[i+2].opcode == OpCodes.Callvirt && instructionList[i+3].opcode == OpCodes.Brfalse_S)
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i + 1].opcode == OpCodes.Ldfld && instructionList[i + 2].opcode == OpCodes.Callvirt && instructionList[i + 3].opcode == OpCodes.Brfalse_S)
                         {
                             targetIndex++;
 
@@ -873,7 +955,7 @@ namespace CommunityLib
             List<UM> victorUnits = new List<UM>();
             List<UA> victorComs = new List<UA>();
             List<UM> defeatedUnits = new List<UM>();
-            List<UA> defeatedComs= new List<UA>();
+            List<UA> defeatedComs = new List<UA>();
 
             if (battle.attackers.Count == 0 && battle.defenders.Count == 0)
             {
@@ -951,7 +1033,7 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i+3].opcode == OpCodes.Callvirt && instructionList[i+4].opcode == OpCodes.Pop)
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i + 3].opcode == OpCodes.Callvirt && instructionList[i + 4].opcode == OpCodes.Pop)
                         {
                             targetIndex++;
 
@@ -1161,9 +1243,9 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 2)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i-1].opcode == OpCodes.Br)
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i - 1].opcode == OpCodes.Br)
                         {
-                            retLabel = (Label)instructionList[i-1].operand;
+                            retLabel = (Label)instructionList[i - 1].operand;
 
                             CodeInstruction code = new CodeInstruction(OpCodes.Ldarg_1);
                             code.labels.AddRange(instructionList[i].labels);
@@ -1184,7 +1266,7 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Stloc_1);
                             yield return new CodeInstruction(OpCodes.Br_S, retLabel);
 
-                             code = new CodeInstruction(OpCodes.Br_S, retLabel);
+                            code = new CodeInstruction(OpCodes.Br_S, retLabel);
                             code.labels.Add(interceptLabel);
                             yield return code;
 
@@ -1197,7 +1279,7 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 3)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldfld && instructionList[i+1].opcode == OpCodes.Newobj)
+                        if (instructionList[i].opcode == OpCodes.Ldfld && instructionList[i + 1].opcode == OpCodes.Newobj)
                         {
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Ldfld, FI_EscortLeft);
@@ -1300,7 +1382,7 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldloc_3 && instructionList[i-1].opcode == OpCodes.Endfinally)
+                        if (instructionList[i].opcode == OpCodes.Ldloc_3 && instructionList[i - 1].opcode == OpCodes.Endfinally)
                         {
                             targetIndex++;
 
@@ -1326,7 +1408,7 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 3)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i-1].opcode == OpCodes.Endfinally)
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i - 1].opcode == OpCodes.Endfinally)
                         {
                             targetIndex = 0;
 
@@ -1390,7 +1472,7 @@ namespace CommunityLib
             {
                 if (targetIndex > 0)
                 {
-                    if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Ldarg_S && instructionList[i-1].opcode == OpCodes.Endfinally)
+                    if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Ldarg_S && instructionList[i - 1].opcode == OpCodes.Endfinally)
                     {
                         targetIndex = 0;
 
@@ -1496,7 +1578,7 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 2)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i-1].opcode == OpCodes.Nop && instructionList[i+1].opcode == OpCodes.Ldloc_S)
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i - 1].opcode == OpCodes.Nop && instructionList[i + 1].opcode == OpCodes.Ldloc_S)
                         {
                             yield return new CodeInstruction(OpCodes.Ldloc_S, 11);
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_PopBattleAgent);
@@ -1507,7 +1589,7 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 3)
                     {
-                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i+1].opcode == OpCodes.Nop)
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i + 1].opcode == OpCodes.Nop)
                         {
                             returnCode = true;
                             targetIndex = 0;
@@ -1862,7 +1944,7 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 2)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i-1].opcode == OpCodes.Nop && instructionList[i-2].opcode == OpCodes.Endfinally)
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i - 1].opcode == OpCodes.Nop && instructionList[i - 2].opcode == OpCodes.Endfinally)
                         {
                             targetIndex++;
 
@@ -1874,7 +1956,7 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 3)
                     {
-                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i+1].opcode == OpCodes.Ret)
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i + 1].opcode == OpCodes.Ret)
                         {
                             targetIndex = 0;
 
@@ -1896,7 +1978,7 @@ namespace CommunityLib
         private static bool UIRightLocation_bViewFaith_TranspilerBody(Location loc)
         {
             HolyOrder order = null;
-            foreach(Hooks hook in ModCore.Get().GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 order = hook?.onLocationViewFaithButton_GetHolyOrder(loc);
 
@@ -2010,7 +2092,7 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 3)
                     {
-                        if(instructionList[i].opcode == OpCodes.Callvirt && instructionList[i - 1].opcode == OpCodes.Ldloc_3)
+                        if (instructionList[i].opcode == OpCodes.Callvirt && instructionList[i - 1].opcode == OpCodes.Ldloc_3)
                         {
                             targetIndex++;
 
@@ -2249,7 +2331,7 @@ namespace CommunityLib
             return order.computeInfluenceDark(msgs);
         }
 
-        private static int PopupHolyOrder_setTo_TranspilerBody_ComputeInfluenceHuman(HolyOrder order,  List<ReasonMsg> msgs)
+        private static int PopupHolyOrder_setTo_TranspilerBody_ComputeInfluenceHuman(HolyOrder order, List<ReasonMsg> msgs)
         {
             Type orderType = order.GetType();
             if (orderType.IsSubclassOf(typeof(HolyOrder)))
@@ -2381,7 +2463,7 @@ namespace CommunityLib
                 {
                     if (targetIndex < 3)
                     {
-                        if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i-1].opcode == OpCodes.Ldloc_S)
+                        if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i - 1].opcode == OpCodes.Ldloc_S)
                         {
                             targetIndex++;
 
@@ -2486,7 +2568,7 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 4)
                     {
-                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i-1].opcode == OpCodes.Stfld)
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i - 1].opcode == OpCodes.Stfld)
                         {
                             targetIndex = 0;
 
@@ -2496,7 +2578,7 @@ namespace CommunityLib
                         }
                     }
                 }
-                
+
                 yield return instructionList[i];
             }
 
@@ -2568,7 +2650,7 @@ namespace CommunityLib
 
         private static List<MonsterAction> SG_ActionTakingMonster_turnTick_TranspilerBody_populate(SG_ActionTakingMonster monster, List<MonsterAction> actions)
         {
-            foreach(Hooks hook in ModCore.Get().GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook?.populatingMonsterActions(monster, actions);
             }
@@ -2610,7 +2692,7 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Stfld && instructionList[i-1].opcode == OpCodes.Ldloc_S)
+                        if (instructionList[i].opcode == OpCodes.Stfld && instructionList[i - 1].opcode == OpCodes.Ldloc_S)
                         {
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Ldloc_S, 5);
@@ -2707,6 +2789,271 @@ namespace CommunityLib
             }
         }
 
+        // Tade Route Fixes 
+        private static IEnumerable<CodeInstruction> ManagerTrade_checkTradeNetwork_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(ManagerTrade_checkTradeNetwork_TranspilerBody), new Type[] { typeof(ManagerTrade) });
+
+            yield return new CodeInstruction(OpCodes.Nop);
+            yield return new CodeInstruction(OpCodes.Ldarg_0);
+            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+            yield return new CodeInstruction(OpCodes.Ret);
+
+            Console.WriteLine("CommunityLib: Completed complete function replacement transpiler ManagerTrade_checkTradeNetwork_Transpiler");
+        }
+
+        private static void ManagerTrade_checkTradeNetwork_TranspilerBody(ManagerTrade tradeManager)
+        {
+            List<Location> endpoints = Pathfinding.getTradeRouteEndPoints(tradeManager.map);
+
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            {
+                hook.onGetTradeRouteEndpoints(tradeManager.map, endpoints);
+            }
+
+            bool dirty = false;
+            if (endpoints.Count != tradeManager.cached.Count)
+            {
+                dirty = true;
+            }
+            else
+            {
+                for (int i = 0; i < endpoints.Count; i++)
+                {
+                    if (endpoints[i].index != tradeManager.cached[i])
+                    {
+                        dirty = true;
+                    }
+                }
+            }
+
+            if (dirty)
+            {
+                rebuildTradeRoutes(tradeManager, endpoints);
+
+                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                {
+                    hook.onBuildTradeNetwork_EndOfProcess(tradeManager.map, tradeManager, endpoints);
+                }
+            }
+
+            foreach (TradeRoute route in tradeManager.routes)
+            {
+                route.turnTick(tradeManager.map);
+            }
+        }
+
+        private static void rebuildTradeRoutes(ManagerTrade tradeManager, List<Location> endpoints)
+        {
+            if (endpoints == null || endpoints.Count < 2)
+            {
+                endpoints = Pathfinding.getTradeRouteEndPoints(tradeManager.map);
+            }
+
+            tradeManager.cached.Clear();
+            foreach (Location endpoint in endpoints)
+            {
+                tradeManager.cached.Add(endpoint.index);
+            }
+
+            foreach (TradeRoute route in tradeManager.routes.ToList())
+            {
+                if (!endpoints.Contains(route.start()) || !endpoints.Contains(route.end()))
+                {
+                    tradeManager.routes.Remove(route);
+                }
+            }
+
+            List<HashSet<int>> connectedSets = findAllConnectedSets(tradeManager);
+            List<Location> endpointsConected = new List<Location>();
+            List<Location> endpointsDisconnected = endpoints.ToList();
+            foreach (HashSet<int> connectedSet in connectedSets)
+            {
+                foreach (int index in connectedSet)
+                {
+                    Location loc = tradeManager.map.locations[index];
+                    if (!endpointsConected.Contains(loc))
+                    {
+                        endpointsConected.Add(loc);
+                    }
+                }
+            }
+
+            foreach (Location endpointConnected in endpointsConected)
+            {
+                endpointsDisconnected.Remove(endpointConnected);
+            }
+
+            World.log($"CommunityLib: Found {endpointsDisconnected.Count} endpoints for trade routes that aree not connected to a trade route. Createing 1 new trade route for each of them...");
+            while (endpointsDisconnected.Count > 0)
+            {
+                List<Location> newlyConnectedEndpoints = new List<Location>();
+                foreach (Location endpointDisconnected in endpointsDisconnected)
+                {
+                    Location[] routePath = Pathfinding.getTradeRouteFrom(endpointDisconnected, null, endpoints);
+                    if (routePath == null || routePath.Length < 2)
+                    {
+                        newlyConnectedEndpoints.Add(endpointDisconnected);
+                        break;
+                    }
+                    else
+                    {
+                        newlyConnectedEndpoints.Add(endpointDisconnected);
+                        newlyConnectedEndpoints.Add(routePath[routePath.Length - 1]);
+                        tradeManager.routes.Add(new TradeRoute(routePath.ToList()));
+                        break;
+                    }
+                }
+
+                foreach (Location endpoint in newlyConnectedEndpoints)
+                {
+                    endpointsDisconnected.Remove(endpoint);
+                }
+            }
+
+            connectedSets = findAllConnectedSets(tradeManager);
+
+            List<List<int>> indexGroups = new List<List<int>>();
+            foreach (HashSet<int> set in connectedSets)
+            {
+                indexGroups.Add(set.ToList());
+            }
+
+            bool loop = true;
+            int i = 0;
+            while (loop && i < 5 * tradeManager.map.locations.Count)
+            {
+                loop = false;
+                i++;
+
+                if (indexGroups.Count > 1)
+                {
+                    indexGroups.Shuffle();
+                    List<List<int>> unifiedIndexGroups = new List<List<int>>();
+
+                    foreach (List<int> indexGroup in indexGroups)
+                    {
+                        foreach (List<int> otherGroup in indexGroups)
+                        {
+                            if (indexGroup == otherGroup)
+                            {
+                                continue;
+                            }
+
+                            Location[] routePath = Pathfinding.getTradeRouteTo(tradeManager.map.locations[indexGroup[0]], tradeManager.map.locations[otherGroup[0]]);
+
+                            if (routePath == null || routePath.Length < 2)
+                            {
+                                World.log($"CommunityLib: Trade Route from set {tradeManager.map.locations[indexGroup[0]].getName()} (size {indexGroup.Count}) to {tradeManager.map.locations[otherGroup[0]].getName()} (size {otherGroup.Count}) is not possible. Checking against next group...");
+                                continue;
+                            }
+
+                            World.log($"CommunityLib: Adding Trade Routes to set {tradeManager.map.locations[indexGroup[0]].getName()} (size {indexGroup.Count}) until a connection is made to another set");
+                            bool connectionInvalid = false;
+                            int iterations = 0;
+                            while (iterations < 25)
+                            {
+                                iterations++;
+
+                                Location loc = tradeManager.map.locations[indexGroup[Eleven.random.Next(indexGroup.Count)]];
+                                routePath = Pathfinding.getTradeRouteFrom(loc, endpoints);
+
+                                if (routePath == null || routePath.Length < 2)
+                                {
+                                    World.log($"CommunityLib: Failed Trade Route from indexGroup {tradeManager.map.locations[indexGroup[0]].getName()} (size {indexGroup.Count}). Skippig group...");
+                                    connectionInvalid = true;
+                                    break;
+                                }
+
+                                tradeManager.routes.Add(new TradeRoute(routePath.ToList()));
+
+                                List<int> connectedGroup = indexGroups.FirstOrDefault(group => group != indexGroup && group.Contains(routePath[routePath.Length - 1].index));
+                                if (connectedGroup != null)
+                                {
+                                    World.log($"CommunityLib: Trade Route made connecting index Group {tradeManager.map.locations[indexGroup[0]].getName()} (size {indexGroup.Count}) to {tradeManager.map.locations[connectedGroup[0]].getName()} (size {connectedGroup.Count}) after {iterations} trade route(s) were added");
+                                    
+                                    foreach (int index in connectedGroup)
+                                    {
+                                        if (!indexGroup.Contains(index))
+                                        {
+                                            indexGroup.Add(index);
+                                        }
+                                    }
+                                    unifiedIndexGroups.Add(connectedGroup);
+
+                                    loop = true;
+                                }
+
+                                if (loop)
+                                {
+                                    break;
+                                }
+                            }
+
+                            if (connectionInvalid)
+                            {
+                                continue;
+                            }
+
+                            if (loop)
+                            {
+                                break;
+                            }
+
+                            World.log($"CommunityLib: Timed out connecting from indexGroup {tradeManager.map.locations[indexGroup[0]].getName()} (size {indexGroup.Count}) to another index group after adding {iterations} additional trade routes.");
+                        }
+
+                        if (loop)
+                        {
+                            break;
+                        }
+
+                        World.log($"CommunityLib: IndexGroup {tradeManager.map.locations[indexGroup[0]].getName()} (size {indexGroup.Count}) cannot form any trade routes to other groups. Skipping Group...");
+                    }
+
+                    foreach (List<int> unifiedIndexGroup in unifiedIndexGroups)
+                    {
+                        indexGroups.Remove(unifiedIndexGroup);
+                    }
+                }
+            }
+        }
+
+        private static List<HashSet<int>> findAllConnectedSets(ManagerTrade tradeManager)
+        {
+            List<HashSet<int>> connectedSets = new List<HashSet<int>>();
+            HashSet<int> visited = new HashSet<int>();
+
+            World.log("Rebuilding all connected sets");
+            foreach (TradeRoute route in tradeManager.routes)
+            {
+                if (!visited.Contains(route.start().index))
+                {
+                    HashSet<int> set = tradeManager.buildConnectedSet(route.start().index);
+                    World.log("Rebuilding connected set from " + route.start().getName(true) + " size " + set.Count.ToString());
+                    connectedSets.Add(set);
+                    visited.UnionWith(set);
+                }
+
+                if (!visited.Contains(route.end().index))
+                {
+                    HashSet<int> set = tradeManager.buildConnectedSet(route.end().index);
+                    World.log("Rebuilding connected set from " + route.end().getName(true) + " size " + set.Count.ToString());
+                    connectedSets.Add(set);
+                    visited.UnionWith(set);
+                }
+            }
+
+            return connectedSets;
+        }
+
+        private static void PrefabStore_popUnderground_Postfix(PrefabStore __instance)
+        {
+            rebuildTradeRoutes(__instance.world.map.tradeManager, null);
+        }
+
         // Pan To Holy Order
         private static void PopupMsgUnified_dismissAgentA_Postfix(PopupMsgUnified __instance)
         {
@@ -2751,7 +3098,7 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i+1].opcode == OpCodes.Ldfld && instructionList[i+2].opcode == OpCodes.Ldfld && instructionList[i+3].opcode == OpCodes.Br_S)
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i + 1].opcode == OpCodes.Ldfld && instructionList[i + 2].opcode == OpCodes.Ldfld && instructionList[i + 3].opcode == OpCodes.Br_S)
                         {
                             targetIndex++;
                         }
@@ -2818,13 +3165,13 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 2)
                     {
-                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i-1].opcode == OpCodes.Brfalse_S)
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i - 1].opcode == OpCodes.Brfalse_S)
                         {
                             targetIndex = 0;
 
                             yield return new CodeInstruction(OpCodes.Ldloc_S, 46);
                             yield return new CodeInstruction(OpCodes.Callvirt, MI_TranspilerBody_HolyOrderGone);
-                            yield return new CodeInstruction(OpCodes.Brtrue_S, instructionList[i-1].operand);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, instructionList[i - 1].operand);
                         }
                     }
                 }
@@ -2854,7 +3201,7 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (i > 2 && instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i-1].opcode == OpCodes.Br && instructionList[i-2].opcode == OpCodes.Stfld)
+                        if (i > 2 && instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i - 1].opcode == OpCodes.Br && instructionList[i - 2].opcode == OpCodes.Stfld)
                         {
                             targetIndex = 0;
 
@@ -2934,7 +3281,7 @@ namespace CommunityLib
                     }
                 }
 
-            
+
                 yield return instructionList[i];
             }
 
@@ -3004,8 +3351,8 @@ namespace CommunityLib
                         yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_EntranceWonder);
                     }
                 }
-            
-            
+
+
                 yield return instructionList[i];
             }
 
@@ -3103,7 +3450,7 @@ namespace CommunityLib
             {
                 u.movesTaken--;
 
-                foreach(Unit unit in __instance.units)
+                foreach (Unit unit in __instance.units)
                 {
                     if ((unit.task is Task_AttackUnit attack && attack.target == u) || (unit.task is Task_DisruptUA disrupt && disrupt.other == u) || (unit.task is Task_AttackUnitWithEscort attackEscort && attackEscort.target == u))
                     {
@@ -3182,9 +3529,9 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 2)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i+1].opcode == OpCodes.Ldloc_S)
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i + 1].opcode == OpCodes.Ldloc_S)
                         {
-                            continueLabel = (Label)instructionList[i-1].operand;
+                            continueLabel = (Label)instructionList[i - 1].operand;
 
                             CodeInstruction code = new CodeInstruction(OpCodes.Ldloc_S, 53);
                             code.labels.AddRange(instructionList[i].labels);
@@ -3199,7 +3546,7 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 3)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i+1].opcode == OpCodes.Ldloc_S)
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i + 1].opcode == OpCodes.Ldloc_S)
                         {
                             // Logging
                             /*yield return new CodeInstruction(OpCodes.Ldstr, "CommunityLib: House is ");
@@ -3293,7 +3640,7 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i+1].opcode == OpCodes.Ldc_I4_4)
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i + 1].opcode == OpCodes.Ldc_I4_4)
                         {
                             CodeInstruction code = new CodeInstruction(OpCodes.Ldloc_S, 20);
                             code.labels.AddRange(instructionList[i].labels);
@@ -3307,7 +3654,7 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 2)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i-1].opcode == OpCodes.Stind_R8)
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i - 1].opcode == OpCodes.Stind_R8)
                         {
                             instructionList[i].labels.Add(skip);
 
@@ -3409,7 +3756,7 @@ namespace CommunityLib
                 //Console.WriteLine("CommunityLib: Testing Claim Territory against Permitted Settlements");
                 if (ModCore.Get().getSettlementTypesForOrcExpanion().TryGetValue(ua.location.settlement.GetType(), out HashSet<Type> subsettlementBlacklist))
                 {
-                    if (subsettlementBlacklist!= null && subsettlementBlacklist.Count > 0)
+                    if (subsettlementBlacklist != null && subsettlementBlacklist.Count > 0)
                     {
                         //Console.WriteLine("CommunityLib: Settlement of Type " + ua.location.settlement.GetType().Name + " may be expanded onto");
                         foreach (Subsettlement sub in ua.location.settlement.subs)
@@ -3435,13 +3782,13 @@ namespace CommunityLib
                 //Console.WriteLine("CommunityLib: Orcs have no locations");
                 return true;
             }
-            
+
             if (ua.location.getNeighbours().Any(l => l.soc == orcSociety && l.settlement is Set_OrcCamp))
             {
                 //Console.WriteLine("CommunityLib: Location neighbours orc society");
                 return true;
             }
-            
+
             if (ua.location.isCoastal)
             {
                 //Console.WriteLine("CommunityLib: Location is coastal");
@@ -3658,7 +4005,7 @@ namespace CommunityLib
 
                         for (int j = instructionList.Count - 1; j >= 0; j--)
                         {
-                            if (instructionList[j].opcode == OpCodes.Nop && instructionList[j-1].opcode == OpCodes.Nop && instructionList[j-2].opcode == OpCodes.Nop)
+                            if (instructionList[j].opcode == OpCodes.Nop && instructionList[j - 1].opcode == OpCodes.Nop && instructionList[j - 2].opcode == OpCodes.Nop)
                             {
                                 instructionList[j].labels.Add(nextUnit);
                                 break;
@@ -3666,7 +4013,7 @@ namespace CommunityLib
                         }
                     }
 
-                    if (targetIndex == 2 && instructionList[i].opcode == OpCodes.Brfalse && instructionList[i-1].opcode == OpCodes.Ldloc_S && instructionList[i+1].opcode == OpCodes.Nop)
+                    if (targetIndex == 2 && instructionList[i].opcode == OpCodes.Brfalse && instructionList[i - 1].opcode == OpCodes.Ldloc_S && instructionList[i + 1].opcode == OpCodes.Nop)
                     {
                         targetIndex++;
 
@@ -3744,7 +4091,7 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i-1].opcode == OpCodes.Pop)
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i - 1].opcode == OpCodes.Pop)
                         {
                             targetIndex = 0;
 
@@ -3781,7 +4128,7 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i+1].opcode == OpCodes.Dup && instructionList[i-1].opcode == OpCodes.Nop)
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i + 1].opcode == OpCodes.Dup && instructionList[i - 1].opcode == OpCodes.Nop)
                         {
                             targetIndex = 0;
 
@@ -3807,7 +4154,7 @@ namespace CommunityLib
 
         private static string P_Eternity_CreateAgent_createAgent_TranspilerBody(Curse curse, Person person, Location loc, string text)
         {
-            foreach(Hooks hook in ModCore.Get().GetRegisteredHooks())
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 if (hook != null)
                 {
@@ -3983,7 +4330,7 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 4)
                     {
-                        if (instructionList[i].opcode == OpCodes.Br_S && instructionList[i-1].opcode == OpCodes.Nop)
+                        if (instructionList[i].opcode == OpCodes.Br_S && instructionList[i - 1].opcode == OpCodes.Nop)
                         {
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Callvirt, MI_TranspilerBody_UM);
@@ -4007,7 +4354,7 @@ namespace CommunityLib
         {
             UA ua = GraphicalMap.selectedUnit as UA;
             //Console.WriteLine("CommunityLib: Got unit");
-            
+
             if (ua == null)
             {
                 //Console.WriteLine("CommunityLib: Unit is not UA");
@@ -4046,7 +4393,7 @@ namespace CommunityLib
                     blockTask.utility = ModCore.Get().GetAgentAI().checkTaskUtility(taskData, ua, aiData, aiData.controlParameters, blockTask.msgs);
                     blockTask.taskData = taskData;
 
-                    switch(taskData.targetCategory)
+                    switch (taskData.targetCategory)
                     {
                         case AITask.TargetCategory.Location:
                             if (taskData.targetLocation != null)
@@ -4122,7 +4469,7 @@ namespace CommunityLib
                 foreach (UIScroll_Unit.SortableTaskBlock block in blocks)
                 {
                     bool compression = ui.tHeroCompression.isOn;
-                    
+
                     if (block is SortableTaskBlock_Advanced advBlock)
                     {
                         if (compression)
@@ -4298,7 +4645,7 @@ namespace CommunityLib
                 {
                     ui.textTabDesc.text = "Commandable Military can Raze Human Settlements or cause heroes to retreat";
                 }
-                
+
             }
         }
 
@@ -4322,12 +4669,12 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (i > 2 && instructionList[i].opcode == OpCodes.Nop && instructionList[i-1].opcode == OpCodes.Brfalse && instructionList[i-2].opcode == OpCodes.Ldloc_S && instructionList[i+2].opcode == OpCodes.Ldfld && instructionList[i+2].operand as FieldInfo == FI_UIScroll_Unit_Master && instructionList[i+3].opcode == OpCodes.Ldfld && instructionList[i+3].operand as FieldInfo == FI_UIMaster_World)
+                        if (i > 2 && instructionList[i].opcode == OpCodes.Nop && instructionList[i - 1].opcode == OpCodes.Brfalse && instructionList[i - 2].opcode == OpCodes.Ldloc_S && instructionList[i + 2].opcode == OpCodes.Ldfld && instructionList[i + 2].operand as FieldInfo == FI_UIScroll_Unit_Master && instructionList[i + 3].opcode == OpCodes.Ldfld && instructionList[i + 3].operand as FieldInfo == FI_UIMaster_World)
                         {
                             targetIndex++;
 
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_TimeStats);
-                            yield return new CodeInstruction(OpCodes.Brtrue, instructionList[i-1].operand);
+                            yield return new CodeInstruction(OpCodes.Brtrue, instructionList[i - 1].operand);
                         }
                     }
                     else if (targetIndex < 6)
@@ -4420,7 +4767,7 @@ namespace CommunityLib
             Hooks.TaskData_Popout popoutData = new Hooks.TaskData_Popout();
             popoutData.title = challenge.title.text;
             popoutData.icon = challenge.icon.sprite;
-            
+
             if (challenge.target != null)
             {
                 popoutData.iconBackground = challenge.target.getPortraitBackground();
@@ -4484,7 +4831,7 @@ namespace CommunityLib
                     {
                         __instance.challengePopout.tComplexity.text = "";
                     }
-                    
+
 
                     if (popoutData.progressReasonMsgs?.Count > 0)
                     {
@@ -4737,7 +5084,7 @@ namespace CommunityLib
             FieldInfo FI_engaging = AccessTools.Field(typeof(Unit), nameof(Unit.engaging));
 
             Label falseLabel;
-            Label skipLabel= ilg.DefineLabel();
+            Label skipLabel = ilg.DefineLabel();
 
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
@@ -4746,7 +5093,7 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i-1].opcode == OpCodes.Ldfld)
+                        if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i - 1].opcode == OpCodes.Ldfld)
                         {
                             falseLabel = (Label)instructionList[i].operand;
 
@@ -4756,7 +5103,7 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Ldfld, FI_engaging);
                             yield return new CodeInstruction(OpCodes.Brfalse_S, falseLabel);
 
-                            instructionList[i+1].labels.Add(skipLabel);
+                            instructionList[i + 1].labels.Add(skipLabel);
 
                             i++;
                             targetIndex = 0;
@@ -4791,7 +5138,7 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i-1].opcode == OpCodes.Ldfld)
+                        if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i - 1].opcode == OpCodes.Ldfld)
                         {
                             falseLabel = (Label)instructionList[i].operand;
 
@@ -4802,7 +5149,7 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Ldfld, FI_engaging);
                             yield return new CodeInstruction(OpCodes.Brfalse_S, falseLabel);
 
-                            instructionList[i+1].labels.Add(skipLabel);
+                            instructionList[i + 1].labels.Add(skipLabel);
 
                             i++;
                             targetIndex = 0;
@@ -4947,14 +5294,14 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i-1].opcode == OpCodes.Ldfld)
+                        if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i - 1].opcode == OpCodes.Ldfld)
                         {
                             yield return new CodeInstruction(OpCodes.Brtrue_S, skipLabel);
 
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Ldfld, FI_engaging);
 
-                            instructionList[i+1].labels.Add(skipLabel);
+                            instructionList[i + 1].labels.Add(skipLabel);
                             targetIndex++;
                         }
                     }
@@ -4970,7 +5317,7 @@ namespace CommunityLib
                     }
                     if (targetIndex == 3)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldc_I4_0 && instructionList[i-1].opcode == OpCodes.Call)
+                        if (instructionList[i].opcode == OpCodes.Ldc_I4_0 && instructionList[i - 1].opcode == OpCodes.Call)
                         {
                             returnCode = true;
                             targetIndex = 0;
@@ -5024,14 +5371,14 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i-1].opcode == OpCodes.Ldfld)
+                        if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i - 1].opcode == OpCodes.Ldfld)
                         {
                             targetIndex++;
                         }
                     }
                     else if (targetIndex == 2)
                     {
-                        if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i-1].opcode == OpCodes.Ldfld)
+                        if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i - 1].opcode == OpCodes.Ldfld)
                         {
                             FieldInfo FI_procU = (FieldInfo)instructionList[i - 2].operand;
 
@@ -5041,7 +5388,7 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Ldfld, FI_procU);
                             yield return new CodeInstruction(OpCodes.Ldfld, FI_engaging);
 
-                            instructionList[i+1].labels.Add(skipLabel);
+                            instructionList[i + 1].labels.Add(skipLabel);
                             targetIndex++;
                         }
                     }
@@ -5057,7 +5404,7 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 4)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldc_I4_0 && instructionList[i-1].opcode == OpCodes.Call)
+                        if (instructionList[i].opcode == OpCodes.Ldc_I4_0 && instructionList[i - 1].opcode == OpCodes.Call)
                         {
                             returnCode = true;
                             targetIndex = 0;
@@ -5084,7 +5431,7 @@ namespace CommunityLib
             {
                 return u.getName() + " cannot move as they are currently under attack by " + u.engagedBy.getName() + ". You must resolve this combat before they can act.";
             }
-            
+
             if (u.engaging != null)
             {
                 return u.getName() + " cannot move as they are currently attacking " + u.engaging.getName() + ". You must resolve this combat before they can act.";
@@ -5123,7 +5470,7 @@ namespace CommunityLib
             List<int> moddedGodIndexes = new List<int>();
 
             //Console.WriteLine("Community Lib: Inital God Order:");
-            for(int i = 0; i < gods.Count; i++)
+            for (int i = 0; i < gods.Count; i++)
             {
                 //Console.WriteLine("CommunityLin: " + gods[i].getName());
                 godsArray[i] = gods[i];
@@ -5172,6 +5519,7 @@ namespace CommunityLib
                     }
                 }
             }
+
             List<int> sortBlock = new List<int>();
             sortBlock.AddRange(godIndexes);
 

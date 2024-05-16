@@ -73,22 +73,37 @@ namespace CommunityLib
 
         public override void onGraphicalLinkUpdated(GraphicalLink graphicalLink)
         {
-
             if (ModCore.opt_enhancedTradeRouteLinks)
             {
-                TradeRoute route = map.tradeManager.routes.FirstOrDefault(tr => tr.path.Contains(graphicalLink.link.a) && tr.path.Contains(graphicalLink.link.b));
-                if (route != null)
+                List<TradeRoute> routes = new List<TradeRoute>();
+                foreach (TradeRoute route in graphicalLink.link.a.map.tradeManager.routes)
+                {
+                    int indexA = route.path.IndexOf(graphicalLink.link.a);
+                    int indexB = route.path.IndexOf(graphicalLink.link.b);
+
+                    if (indexA != -1 && indexB != -1)
+                    {
+                        if (indexB >= indexA - 1 && indexB <= indexA + 1)
+                        {
+                            routes.Add(route);
+                        }
+                    }
+                }
+
+                if (routes.Count > 0)
                 {
                     float width = 0.04f;
                     float alpha = 1f;
 
+                    bool raidDim = false;
                     if (graphicalLink.link.disabled)
                     {
                         alpha = 0.2f;
                     }
-                    else if (route.raidingCooldown > 0)
+                    else if (routes.All(tr => tr.raidingCooldown > 0))
                     {
                         alpha *= 0.8f;
+                        raidDim = true;
                     }
 
                     if (graphicalLink.link.map.masker.mask > MapMaskManager.maskType.NONE)
@@ -103,10 +118,18 @@ namespace CommunityLib
                         }
                     }
 
-                    if (graphicalLink.link.map.world.ui.uiScrollables.scrollable_threats.targetRoute != null && graphicalLink.link.map.world.ui.uiScrollables.scrollable_threats.targetRoute != route)
+                    TradeRoute selectedRoute = graphicalLink.link.map.world.ui.uiScrollables.scrollable_threats.targetRoute;
+                    if (selectedRoute != null)
                     {
-                        width = 0.04f;
-                        alpha *= 0.15f;
+                        if (!routes.Contains(selectedRoute))
+                        {
+                            width = 0.04f;
+                            alpha *= 0.15f;
+                        }
+                        else if (!raidDim && selectedRoute.raidingCooldown > 0)
+                        {
+                            alpha *= 0.8f;
+                        }
                     }
 
                     graphicalLink.lineRenderer.startColor = new Color(graphicalLink.lineRenderer.startColor.r, graphicalLink.lineRenderer.startColor.g, graphicalLink.lineRenderer.startColor.b, alpha);
@@ -175,7 +198,7 @@ namespace CommunityLib
         {
             if (ModCore.opt_forceCommunityLibraryPathfinding)
             {
-                return ModCore.Get().pathfinding.getPathTo(locA, locB, u, safeMove);
+                return Pathfinding.getPathTo(locA, locB, u, safeMove);
             }
 
             return null;
@@ -185,7 +208,7 @@ namespace CommunityLib
         {
             if (ModCore.opt_forceCommunityLibraryPathfinding)
             {
-                return ModCore.Get().pathfinding.getPathTo(loc, sg, u, safeMove);
+                return Pathfinding.getPathTo(loc, sg, u, safeMove);
             }
 
             return null;
