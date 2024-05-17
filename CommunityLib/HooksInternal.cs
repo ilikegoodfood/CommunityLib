@@ -213,26 +213,6 @@ namespace CommunityLib
             return false;
         }
 
-        public override Location[] interceptGetPathTo(Location locA, Location locB, Unit u, bool safeMove)
-        {
-            if (ModCore.opt_forceCommunityLibraryPathfinding)
-            {
-                return Pathfinding.getPathTo(locA, locB, u, safeMove);
-            }
-
-            return null;
-        }
-
-        public override Location[] interceptGetPathTo(Location loc, SocialGroup sg, Unit u, bool safeMove)
-        {
-            if (ModCore.opt_forceCommunityLibraryPathfinding)
-            {
-                return Pathfinding.getPathTo(loc, sg, u, safeMove);
-            }
-
-            return null;
-        }
-
         public override bool onPathfinding_AllowSecondPass(Location locA, Unit u, List<int> mapLayers, List<Func<Location[], Location, Unit, List<int>, double>> pathfindingDelegates)
         {
             bool result = false;

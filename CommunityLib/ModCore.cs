@@ -45,8 +45,6 @@ namespace CommunityLib
 
         public static bool opt_enhancedTradeRouteLinks = true;
 
-        public static bool opt_forceCommunityLibraryPathfinding = true;
-
         public static bool opt_DynamicOrcCount = false;
 
         public static int opt_targetOrcCount = 2;
@@ -112,9 +110,6 @@ namespace CommunityLib
                     break;
                 case "Realistic Trade Routes":
                     opt_realisticTradeRoutes = value;
-                    break;
-                case "Force Community Library Pathfinding":
-                    opt_forceCommunityLibraryPathfinding = value;
                     break;
                 case "Use Precise Distance Divisor":
                     opt_usePreciseDistanceDivisor = value;

@@ -3833,11 +3833,7 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Ldarg_3);
                             yield return new CodeInstruction(OpCodes.Ldarg_S, 4);
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Intercept);
-                            yield return new CodeInstruction(OpCodes.Dup);
-                            yield return new CodeInstruction(OpCodes.Ldnull);
-                            yield return new CodeInstruction(OpCodes.Cgt_Un);
-                            yield return new CodeInstruction(OpCodes.Brtrue_S, end);
-                            yield return new CodeInstruction(OpCodes.Pop);
+                            yield return new CodeInstruction(OpCodes.Br_S, end);
                         }
                     }
                     else if (targetIndex == 2)
@@ -3867,20 +3863,7 @@ namespace CommunityLib
 
         private static Location[] Map_getPathTo_Location_TranspilerBody_Intercept(Location locA, Location locB, Unit u, bool safeMove)
         {
-            Location[] path = null;
-
-            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
-            {
-                Location[] newPath = hook.interceptGetPathTo(locA, locB, u, safeMove) ?? null;
-
-                if (newPath != null)
-                {
-                    path = newPath;
-                    break;
-                }
-            }
-
-            return path;
+            return Pathfinding.getPathTo(locA, locB, u ,safeMove);
         }
 
         private static IEnumerable<CodeInstruction> Map_getPathTo_SocialGroup_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
@@ -3908,11 +3891,7 @@ namespace CommunityLib
                         yield return new CodeInstruction(OpCodes.Ldarg_3);
                         yield return new CodeInstruction(OpCodes.Ldarg_S, 4);
                         yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
-                        yield return new CodeInstruction(OpCodes.Dup);
-                        yield return new CodeInstruction(OpCodes.Ldnull);
-                        yield return new CodeInstruction(OpCodes.Cgt_Un);
-                        yield return new CodeInstruction(OpCodes.Brtrue_S, end);
-                        yield return new CodeInstruction(OpCodes.Pop);
+                        yield return new CodeInstruction(OpCodes.Br_S, end);
                     }
 
                     if (targetIndex == 2 && instructionList[i].opcode == OpCodes.Call && instructionList[i + 1].opcode == OpCodes.Callvirt)
@@ -3938,20 +3917,7 @@ namespace CommunityLib
 
         private static Location[] Map_getPathTo_SocialGroup_TranspilerBody_Intercept(Location loc, SocialGroup sg, Unit u, bool safeMove)
         {
-            Location[] path = null;
-
-            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
-            {
-                Location[] newPath = hook.interceptGetPathTo(loc, sg, u, safeMove) ?? null;
-
-                if (newPath != null)
-                {
-                    path = newPath;
-                    break;
-                }
-            }
-
-            return path;
+            return Pathfinding.getPathTo(loc, sg, u, safeMove);
         }
 
         private static List<Location> Map_getPathTo_TranspilerBody_EntranceWonder(Location loc, Unit u)
@@ -3962,15 +3928,19 @@ namespace CommunityLib
             {
                 if (loc.settlement is Set_MinorOther && loc.settlement.subs.Any(sub => sub is Sub_Wonder_Doorway))
                 {
-                    Location tomb = u.map.locations.FirstOrDefault(l => l.settlement is Set_TombOfGods);
-                    if (tomb != null)
+                    Location tomb = u.map.locations.FirstOrDefault(l => ModCore.Get().checkIsElderTomb(l));
+                    if (tomb != null && !result.Contains(tomb))
                     {
                         result.Add(tomb);
                     }
 
                     if (u.homeLocation != -1)
                     {
-                        result.Add(u.map.locations[u.homeLocation]);
+                        Location home = u.map.locations[u.homeLocation];
+                        if (!result.Contains(home))
+                        {
+                            result.Add(home);
+                        }
                     }
                 }
             }
@@ -3987,25 +3957,7 @@ namespace CommunityLib
             {
                 if (u.location.settlement is Set_MinorOther && u.location.settlement.subs.Any(sub => sub is Sub_Wonder_Doorway))
                 {
-                    Location tomb = null;
-
-                    foreach (Location location in __instance.locations)
-                    {
-                        if (location.settlement is Set_TombOfGods)
-                        {
-                            tomb = location;
-                            break;
-                        }
-
-                        foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
-                        {
-                            if (hook.onEvent_IsLocationElderTomb(location))
-                            {
-                                tomb = location;
-                                break;
-                            }
-                        }
-                    }
+                    Location tomb = u.map.locations.FirstOrDefault(l => ModCore.Get().checkIsElderTomb(l));
 
                     if (tomb != null && loc == tomb)
                     {
