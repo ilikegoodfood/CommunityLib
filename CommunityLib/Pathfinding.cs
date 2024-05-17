@@ -487,10 +487,10 @@ namespace CommunityLib
 
                     if (u.homeLocation != -1)
                     {
-                        Location homeLoc = u.map.locations[u.homeLocation];
-                        if (!result.Contains(homeLoc))
+                        Location home = u.map.locations[u.homeLocation];
+                        if (!result.Contains(home))
                         {
-                            result.Add(homeLoc);
+                            result.Add(home);
                         }
                     }
                 }

@@ -193,27 +193,6 @@ namespace CommunityLib
 
             return false;
         }
-
-        public override Location[] interceptGetPathTo(Location locA, Location locB, Unit u, bool safeMove)
-        {
-            if (ModCore.opt_forceCommunityLibraryPathfinding)
-            {
-                return Pathfinding.getPathTo(locA, locB, u, safeMove);
-            }
-
-            return null;
-        }
-
-        public override Location[] interceptGetPathTo(Location loc, SocialGroup sg, Unit u, bool safeMove)
-        {
-            if (ModCore.opt_forceCommunityLibraryPathfinding)
-            {
-                return Pathfinding.getPathTo(loc, sg, u, safeMove);
-            }
-
-            return null;
-        }
-
         public override bool interceptAgentAI(UA ua, AgentAI.AIData aiData, List<AgentAI.ChallengeData> challengeData, List<AgentAI.TaskData> taskData, List<Unit> visibleUnits)
         {
             switch (ua)

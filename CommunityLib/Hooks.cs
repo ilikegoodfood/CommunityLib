@@ -74,36 +74,6 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when a patch is requested between two locations. It receives the location the path is from (locA), the location the path is aiming to reach (locB), the unit that is seeking the path (u), which is null if not applicable, and whether to consider safeMove (safeMove). <br></br>
-        /// If this hook returns any Location[] other than null, the rest of the pathfinding process will not happen. Instead, the function will return the array returned by this hook.
-        /// <para>No instances of this hook will run after one which has not returned null.</para>
-        /// </summary>
-        /// <param name="locA"></param>
-        /// <param name="locB"></param>
-        /// <param name="u"></param>
-        /// <param name="safeMove"></param>
-        /// <returns></returns>
-        public virtual Location[] interceptGetPathTo(Location locA, Location locB, Unit u, bool safeMove)
-        {
-            return null;
-        }
-
-        /// <summary>
-        /// This hook fires when a patch is requested between a location and a social group. It recieves the location the path is from (loc), the social group the path is trying to reach (sg), the unit that is seeking the path (u), which is null if not applicable, and whether to consider safeMove (safeMove). <br></br>
-        /// If this hook returns any Location[] other than null, the rest of the pathfinding process will not happen. Instead, the function will return the array returned by this hook.
-        /// <para>No instances of this hook will run after one which has not returned null.</para>
-        /// </summary>
-        /// <param name="loc"></param>
-        /// <param name="sg"></param>
-        /// <param name="u"></param>
-        /// <param name="safeMove"></param>
-        /// <returns></returns>
-        public virtual Location[] interceptGetPathTo(Location loc, SocialGroup sg, Unit u, bool safeMove)
-        {
-            return null;
-        }
-
-        /// <summary>
         /// This hook fires when the Community Library's pathfiding algorithm is called. It recieves the location the path is from (locA), the location the path is aiming to reach (locB), the unit that is seeking the path (u), which is null if not applicable, and the list of pathfinding delegates that have alsready been assigned to the path (pathfindingDelegates), including the unit's movement type and safemove requirements. <br></br>
         /// In order to modify how the path is calculated, add one or more new pathfinding delegates to the pathfindingDelegates variable.
         /// </summary>
