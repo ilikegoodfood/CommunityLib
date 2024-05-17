@@ -271,6 +271,7 @@ namespace CommunityLib
             for (int pass = 0; pass < 2; pass++)
             {
                 PriorityQueue<Location[], double> destinations = new PriorityQueue<Location[], double>();
+                double destinationPriority = -1.0;
 
                 int i = 0;
                 while (i < 5 * loc.map.locations.Count && paths.Count > 0)
@@ -308,6 +309,10 @@ namespace CommunityLib
                             if (neighbour.soc == sg)
                             {
                                 destinations.Enqueue(newPathArray, newPathCost);
+                                if (destinationPriority == -1.0 || newPathCost < destinationPriority)
+                                {
+                                    destinationPriority = newPathCost;
+                                }
                             }
 
                             locationHashes.Add(neighbour);
@@ -315,14 +320,13 @@ namespace CommunityLib
                         }
                     }
 
-                    if (destinations.Count > 0 && (!paths.TryPeekWithPriority(out _, out double nextPairPriority) || nextPairPriority > pair.Priority))
+                    if (destinations.Count > 0 && (!paths.TryPeekWithPriority(out _, out double nextPairPriority) || nextPairPriority > destinationPriority))
                     {
                         List<Location[]> destinationPaths = new List<Location[]>();
-                        double destinationPriority = -1.0;
                         while (destinations.Count > 0)
                         {
                             ItemPriorityPair<Location[], double> destinationPair = destinations.DequeueWithPriority();
-                            if (destinationPriority == -1.0 || destinationPair.Priority == destinationPriority)
+                            if (destinationPair.Priority == destinationPriority)
                             {
                                 destinationPaths.Add(destinationPair.Item);
                             }
@@ -403,6 +407,7 @@ namespace CommunityLib
             for (int pass = 0; pass < 2; pass++)
             {
                 PriorityQueue<Location[], double> destinations = new PriorityQueue<Location[], double>();
+                double destinationPriority = -1.0;
 
                 int i = 0;
                 while (i < 5 * loc.map.locations.Count && paths.Count > 0)
@@ -450,6 +455,10 @@ namespace CommunityLib
                             if (valid)
                             {
                                 destinations.Enqueue(newPathArray, newPathCost);
+                                if (destinationPriority == -1.0 || newPathCost < destinationPriority)
+                                {
+                                    destinationPriority = newPathCost;
+                                }
                             }
 
                             locationHashes.Add(neighbour);
@@ -457,14 +466,13 @@ namespace CommunityLib
                         }
                     }
 
-                    if (destinations.Count > 0 && (!paths.TryPeekWithPriority(out _, out double nextPairPriority) || nextPairPriority > pair.Priority))
+                    if (destinations.Count > 0 && (!paths.TryPeekWithPriority(out _, out double nextPairPriority) || nextPairPriority > destinationPriority))
                     {
                         List<Location[]> destinationPaths = new List<Location[]>();
-                        double destinationPriority = -1.0;
                         while (destinations.Count > 0)
                         {
                             ItemPriorityPair<Location[], double> destinationPair = destinations.DequeueWithPriority();
-                            if (destinationPriority == -1.0 || destinationPair.Priority == destinationPriority)
+                            if (destinationPair.Priority == destinationPriority)
                             {
                                 destinationPaths.Add(destinationPair.Item);
                             }
@@ -769,6 +777,7 @@ namespace CommunityLib
             for (int pass = 0; pass < 2; pass++)
             {
                 PriorityQueue<Location[], double> destinations = new PriorityQueue<Location[], double>();
+                double destinationPriority = -1.0;
 
                 int i = 0;
                 while (i < 5 * start.map.locations.Count && paths.Count > 0)
@@ -819,6 +828,10 @@ namespace CommunityLib
                                 {
                                     //Console.WriteLine($"Found valid trade route from {start.getName()} ({start.hex.z}) to {newPathArray[newPathArray.Length - 1].getName()} ({newPathArray[newPathArray.Length - 1].hex.z})");
                                     destinations.Enqueue(new ItemPriorityPair<Location[], double>(newPathArray, newPathCost));
+                                    if (destinationPriority == -1.0 || newPathCost < destinationPriority)
+                                    {
+                                        destinationPriority = newPathCost;
+                                    }
                                 }
                             }
 
@@ -827,10 +840,9 @@ namespace CommunityLib
                         }
                     }
 
-                    if (destinations.Count > 0 && (!paths.TryPeekWithPriority(out _, out double nextPairPriority) || nextPairPriority > pair.Priority))
+                    if (destinations.Count > 0 && (!paths.TryPeekWithPriority(out _, out double nextPairPriority) || nextPairPriority > destinationPriority))
                     {
                         List<Location[]> destinationPaths = new List<Location[]>();
-                        double destinationPriority = -1.0;
                         while (destinations.Count > 0)
                         {
                             ItemPriorityPair<Location[], double> destinationPair = destinations.DequeueWithPriority();
