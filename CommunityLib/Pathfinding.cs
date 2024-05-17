@@ -314,9 +314,10 @@ namespace CommunityLib
                         }
                     }
 
-                    if (destinations.Count > 0)
+                    if (destinations.Count > 0 && paths.PeekWithPriority().Priority > pair.Priority)
                     {
-                        return destinations.Dequeue();
+                        List<Location[]> destinationPaths = destinations.ToList();
+                        return destinationPaths[Eleven.random.Next(destinationPaths.Count)];
                     }
                 }
 
@@ -445,9 +446,10 @@ namespace CommunityLib
                         }
                     }
 
-                    if (destinations.Count > 0)
+                    if (destinations.Count > 0 && paths.PeekWithPriority().Priority > pair.Priority)
                     {
-                        return destinations.Dequeue();
+                        List<Location[]> destinationPaths = destinations.ToList();
+                        return destinationPaths[Eleven.random.Next(destinationPaths.Count)];
                     }
                 }
 
@@ -800,9 +802,10 @@ namespace CommunityLib
                         }
                     }
 
-                    if (destinations.Count > 0)
+                    if (destinations.Count > 0 && paths.PeekWithPriority().Priority > pair.Priority)
                     {
-                        return destinations.Dequeue();
+                        List<Location[]> destinationPaths = destinations.ToList();
+                        return destinationPaths[Eleven.random.Next(destinationPaths.Count)];
                     }
                 }
 
