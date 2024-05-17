@@ -270,13 +270,14 @@ namespace CommunityLib
 
             for (int pass = 0; pass < 2; pass++)
             {
+                PriorityQueue<Location[], double> destinations = new PriorityQueue<Location[], double>();
+
                 int i = 0;
                 while (i < 5 * loc.map.locations.Count && paths.Count > 0)
                 {
                     i++;
 
                     ItemPriorityPair<Location[], double> pair = paths.DequeueWithPriority();
-                    PriorityQueue<Location[], double> destinations = new PriorityQueue<Location[], double>();
                     foreach (Location neighbour in getNeighboursConditional(pair.Item[pair.Item.Length - 1], u))
                     {
                         if (!locationHashes.Contains(neighbour))
@@ -314,9 +315,23 @@ namespace CommunityLib
                         }
                     }
 
-                    if (destinations.Count > 0 && paths.PeekWithPriority().Priority > pair.Priority)
+                    if (destinations.Count > 0 && (!paths.TryPeekWithPriority(out _, out double nextPairPriority) || nextPairPriority > pair.Priority))
                     {
-                        List<Location[]> destinationPaths = destinations.ToList();
+                        List<Location[]> destinationPaths = new List<Location[]>();
+                        double destinationPriority = -1.0;
+                        while (destinations.Count > 0)
+                        {
+                            ItemPriorityPair<Location[], double> destinationPair = destinations.DequeueWithPriority();
+                            if (destinationPriority == -1.0 || destinationPair.Priority == destinationPriority)
+                            {
+                                destinationPaths.Add(destinationPair.Item);
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+
                         return destinationPaths[Eleven.random.Next(destinationPaths.Count)];
                     }
                 }
@@ -392,13 +407,14 @@ namespace CommunityLib
 
             for (int pass = 0; pass < 2; pass++)
             {
+                PriorityQueue<Location[], double> destinations = new PriorityQueue<Location[], double>();
+
                 int i = 0;
                 while (i < 5 * loc.map.locations.Count && paths.Count > 0)
                 {
                     i++;
 
                     ItemPriorityPair<Location[], double> pair = paths.DequeueWithPriority();
-                    PriorityQueue<Location[], double> destinations = new PriorityQueue<Location[], double>();
                     foreach (Location neighbour in getNeighboursConditional(pair.Item[pair.Item.Length - 1], u))
                     {
                         if (!locationHashes.Contains(neighbour))
@@ -446,9 +462,23 @@ namespace CommunityLib
                         }
                     }
 
-                    if (destinations.Count > 0 && paths.PeekWithPriority().Priority > pair.Priority)
+                    if (destinations.Count > 0 && (!paths.TryPeekWithPriority(out _, out double nextPairPriority) || nextPairPriority > pair.Priority))
                     {
-                        List<Location[]> destinationPaths = destinations.ToList();
+                        List<Location[]> destinationPaths = new List<Location[]>();
+                        double destinationPriority = -1.0;
+                        while (destinations.Count > 0)
+                        {
+                            ItemPriorityPair<Location[], double> destinationPair = destinations.DequeueWithPriority();
+                            if (destinationPriority == -1.0 || destinationPair.Priority == destinationPriority)
+                            {
+                                destinationPaths.Add(destinationPair.Item);
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+
                         return destinationPaths[Eleven.random.Next(destinationPaths.Count)];
                     }
                 }
@@ -641,7 +671,7 @@ namespace CommunityLib
                     i++;
 
                     ItemPriorityPair<Location[], double> pair = paths.DequeueWithPriority();
-                    foreach (Location neighbour in getNeighboursConditional(pair.Item[pair.Item.Length - 1], null))
+                    foreach (Location neighbour in pair.Item[pair.Item.Length - 1].getNeighbours())
                     {
                         if (!locationHashes.Contains(neighbour))
                         {
@@ -745,14 +775,15 @@ namespace CommunityLib
 
             for (int pass = 0; pass < 2; pass++)
             {
+                PriorityQueue<Location[], double> destinations = new PriorityQueue<Location[], double>();
+
                 int i = 0;
                 while (i < 5 * start.map.locations.Count && paths.Count > 0)
                 {
                     i++;
 
                     ItemPriorityPair<Location[], double> pair = paths.DequeueWithPriority();
-                    PriorityQueue<Location[], double> destinations = new PriorityQueue<Location[], double>();
-                    foreach (Location neighbour in getNeighboursConditional(pair.Item[pair.Item.Length - 1], null))
+                    foreach (Location neighbour in pair.Item[pair.Item.Length - 1].getNeighbours())
                     {
                         if (!locationHashes.Contains(neighbour))
                         {
@@ -793,6 +824,7 @@ namespace CommunityLib
 
                                 if (valid)
                                 {
+                                    //Console.WriteLine($"Found valid trade route from {start.getName()} ({start.hex.z}) to {newPathArray[newPathArray.Length - 1].getName()} ({newPathArray[newPathArray.Length - 1].hex.z})");
                                     destinations.Enqueue(new ItemPriorityPair<Location[], double>(newPathArray, newPathCost));
                                 }
                             }
@@ -802,12 +834,28 @@ namespace CommunityLib
                         }
                     }
 
-                    if (destinations.Count > 0 && paths.PeekWithPriority().Priority > pair.Priority)
+                    if (destinations.Count > 0 && (!paths.TryPeekWithPriority(out _, out double nextPairPriority) || nextPairPriority > pair.Priority))
                     {
-                        List<Location[]> destinationPaths = destinations.ToList();
+                        List<Location[]> destinationPaths = new List<Location[]>();
+                        double destinationPriority = -1.0;
+                        while (destinations.Count > 0)
+                        {
+                            ItemPriorityPair<Location[], double> destinationPair = destinations.DequeueWithPriority();
+                            if (destinationPriority == -1.0 || destinationPair.Priority == destinationPriority)
+                            {
+                                destinationPaths.Add(destinationPair.Item);
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+
                         return destinationPaths[Eleven.random.Next(destinationPaths.Count)];
                     }
                 }
+
+                //World.Log($"CommunityLib: getTradeRouteFrom {start.getName()} failed after {i}/{5 * start.map.locations.Count} iterations.");
 
                 bool allowPass = false;
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())

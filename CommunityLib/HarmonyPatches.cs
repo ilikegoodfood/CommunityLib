@@ -691,6 +691,41 @@ namespace CommunityLib
         }
 
         // CHallenge Fixes
+        private static IEnumerable<CodeInstruction> Ch_Infiltrate_getComplexity_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            FieldInfo FI_Sub = AccessTools.Field(typeof(Ch_Infiltrate), nameof(Ch_Infiltrate.sub));
+            FieldInfo FI_Settlment = AccessTools.Field(typeof(Subsettlement), nameof(Subsettlement.settlement));
+
+            int targetIndex = 1;
+
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Call)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Sub);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Settlment);
+
+                            i += 2;
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Ch_Infiltrate_getComplexity_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
         private static void Rti_Orc_AttackHere_Postfix(Rti_Orc_AttackHere __instance, ref bool __result)
         {
             if (__instance.caster == null || __instance.caster.orcs == null || __instance.caster.orcs.isGone())
@@ -2896,7 +2931,7 @@ namespace CommunityLib
                     if (routePath == null || routePath.Length < 2)
                     {
                         newlyConnectedEndpoints.Add(endpointDisconnected);
-                        World.log($"CommunityLib: Trade Route created from {endpointDisconnected.getName()} failed to link to anywhere. Skipping enpoint...");
+                        World.log($"CommunityLib: Trade Route from {endpointDisconnected.getName()} failed to link to anywhere. Skipping endpoint...");
                         break;
                     }
                     else
