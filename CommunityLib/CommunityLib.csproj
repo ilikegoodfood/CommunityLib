@@ -77,7 +77,6 @@
     <Compile Include="Rt_DeepOnes_TravelBeneath.cs" />
     <Compile Include="Rt_SlowHealing.cs" />
     <Compile Include="SaveData.cs" />
-    <Compile Include="Rt_SlowHealing.cs" />
     <Compile Include="Set_Shipwreck.cs" />
     <Compile Include="ShuffleExtensions.cs" />
     <Compile Include="SortableTaskBlock_Advanced.cs" />

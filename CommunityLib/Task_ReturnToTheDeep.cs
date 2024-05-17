@@ -19,17 +19,10 @@ namespace CommunityLib
         public Task_ReturnToTheDeep()
         {
             target = null;
-
-            if (mapLayers == null)
-            {
-                mapLayers = new int[0];
-            }
-
-            this.mapLayers = mapLayers;
         }
 
 
-        public static bool delegate_VALID_OCEAN(Location[] currentPath, Location location, Unit u, List<int> targetMapLayers)
+        public static bool delegate_VALID_OCEAN(Location[] currentPath, Location location, Unit u)
         {
             return location.isOcean;
         }
@@ -66,8 +59,16 @@ namespace CommunityLib
                     deepOne.task = null;
                     return;
                 }
-
-                Location[] pathTo = Pathfinding.getPathTo(unit.location, delegate_VALID_OCEAN, unit, false);
+                Location[] pathTo;
+                if (target == null)
+                {
+                    pathTo = Pathfinding.getPathTo(unit.location, delegate_VALID_OCEAN, unit, false);
+                }
+                else
+                {
+                    pathTo = Pathfinding.getPathTo(unit.location, target, unit, false);
+                }
+                
                 if (pathTo == null || pathTo.Length < 2)
                 {
                     deepOne.die(deepOne.map, "Unable to reach the ocean");

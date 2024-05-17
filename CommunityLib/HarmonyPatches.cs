@@ -53,7 +53,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(GraphicalUnit), nameof(GraphicalUnit.checkData), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(GraphicalUnit_checkData_Postfix)));
 
             // Graphical link updated hook
-            harmony.Patch(original: AccessTools.Method(typeof(GraphicalLink), nameof(GraphicalLink.Update), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(GraphicalLink_Update_Postfix)), transpiler: new HarmonyMethod(patchType, nameof(GraphicalLink_Update_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(GraphicalLink), nameof(GraphicalLink.Update), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(GraphicalLink_Update_Postfix)));
 
             // Unit death hooks
             harmony.Patch(original: AccessTools.Method(typeof(Unit), nameof(Unit.die), new Type[] { typeof(Map), typeof(string), typeof(Person) }), prefix: new HarmonyMethod(patchType, nameof(Unit_die_Prefix)), transpiler: new HarmonyMethod(patchType, nameof(Unit_die_Transpiler)));
@@ -151,7 +151,6 @@ namespace CommunityLib
 
             // Trade Route Fixes
             harmony.Patch(original: AccessTools.Method(typeof(ManagerTrade), nameof(ManagerTrade.checkTradeNetwork), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(ManagerTrade_checkTradeNetwork_Transpiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(PrefabStore), nameof(PrefabStore.popUnderground), new Type[] { typeof(bool), typeof(bool) }), postfix: new HarmonyMethod(patchType, nameof(PrefabStore_popUnderground_Postfix)));
 
             // Pan to Holy Order Screen
             harmony.Patch(original: AccessTools.Method(typeof(PopupMsgUnified), nameof(PopupMsgUnified.dismissAgentA), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(PopupMsgUnified_dismissAgentA_Postfix)));
@@ -263,84 +262,6 @@ namespace CommunityLib
             {
                 //Console.WriteLine("CommunityLib: Calling hook from " + hook.GetType().Namespace);
                 hook.onGraphicalUnitUpdated(__instance);
-            }
-        }
-
-        private static IEnumerable<CodeInstruction> GraphicalLink_Update_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
-        {
-            List<CodeInstruction> instructionList = codeInstructions.ToList();
-
-            FieldInfo FI_MapZ = AccessTools.Field(typeof(GraphicalMap), nameof(GraphicalMap.z));
-
-            Label skipA = ilg.DefineLabel();
-            Label skipB = ilg.DefineLabel();
-
-            int targetIndex = 1;
-            for (int i = 0; i < instructionList.Count; i++)
-            {
-                if (targetIndex > 0)
-                {
-                    if (targetIndex == 1)
-                    {
-                        if (instructionList[i].opcode == OpCodes.Ldsfld && (FieldInfo)instructionList[i].operand == FI_MapZ && instructionList[i + 1].opcode == OpCodes.Ceq)
-                        {
-
-
-                            targetIndex++;
-                        }
-                    }
-                    else if (targetIndex == 2)
-                    {
-                        if (instructionList[i].opcode == OpCodes.Brfalse_S)
-                        {
-                            instructionList[i].operand = skipA;
-
-                            targetIndex++;
-                        }
-                    }
-                    else if (targetIndex == 3)
-                    {
-                        if (instructionList[i].opcode == OpCodes.Ldarg_0)
-                        {
-                            instructionList[i].labels.Add(skipA);
-
-                            targetIndex++;
-                        }
-                    }
-                    else if (targetIndex == 4)
-                    {
-                        if (instructionList[i].opcode == OpCodes.Ldsfld && (FieldInfo)instructionList[i].operand == FI_MapZ && instructionList[i + 1].opcode == OpCodes.Ceq)
-                        {
-                            targetIndex++;
-                        }
-                    }
-                    else if (targetIndex == 5)
-                    {
-                        if (instructionList[i].opcode == OpCodes.Brfalse_S)
-                        {
-                            instructionList[i].operand = skipB;
-
-                            targetIndex++;
-                        }
-                    }
-                    else if (targetIndex == 6)
-                    {
-                        if (instructionList[i].opcode == OpCodes.Ldarg_0)
-                        {
-                            instructionList[i].labels.Add(skipB);
-
-                            targetIndex = 0;
-                        }
-                    }
-                }
-
-                yield return instructionList[i];
-            }
-
-            Console.WriteLine("CommunityLib: Completed GraphicalLink_Update_Transpiler");
-            if (targetIndex != 0)
-            {
-                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
@@ -2927,7 +2848,7 @@ namespace CommunityLib
                 List<Location> newlyConnectedEndpoints = new List<Location>();
                 foreach (Location endpointDisconnected in endpointsDisconnected)
                 {
-                    Location[] routePath = Pathfinding.getTradeRouteFrom(endpointDisconnected, null, endpoints);
+                    Location[] routePath = Pathfinding.getTradeRouteFrom(endpointDisconnected, endpoints);
                     if (routePath == null || routePath.Length < 2)
                     {
                         newlyConnectedEndpoints.Add(endpointDisconnected);
@@ -3084,11 +3005,6 @@ namespace CommunityLib
             }
 
             return connectedSets;
-        }
-
-        private static void PrefabStore_popUnderground_Postfix(PrefabStore __instance)
-        {
-            rebuildTradeRoutes(__instance.world.map.tradeManager, null);
         }
 
         // Pan To Holy Order

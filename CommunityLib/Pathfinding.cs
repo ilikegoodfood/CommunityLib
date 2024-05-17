@@ -7,7 +7,7 @@ namespace CommunityLib
 {
     public static class Pathfinding
     {
-        public static double delegate_AQUAPHIBIOUS(Location[] currentPath, Location location, Unit u, List<int> targetMapLayers)
+        public static double delegate_AQUAPHIBIOUS(Location[] currentPath, Location location, Unit u)
         {
             if (location.isOcean || location.isCoastal)
             {
@@ -16,7 +16,7 @@ namespace CommunityLib
             return 10000.0;
         }
 
-        public static double delegate_AQUATIC(Location[] currentPath, Location location, Unit u, List<int> targetMapLayers)
+        public static double delegate_AQUATIC(Location[] currentPath, Location location, Unit u)
         {
             if (location.isOcean)
             {
@@ -25,7 +25,7 @@ namespace CommunityLib
             return 10000.0;
         }
 
-        public static double delegate_AVOID_TRESSPASS(Location[] currentPath, Location location, Unit u, List<int> targetMapLayers)
+        public static double delegate_AVOID_TRESSPASS(Location[] currentPath, Location location, Unit u)
         {
             if (u == null || location.soc == null || location.soc == u.society || u.society.getRel(location.soc).state != DipRel.dipState.hostile)
             {
@@ -35,7 +35,7 @@ namespace CommunityLib
             return 30.0;
         }
 
-        public static double delegate_DESERT_ONLY(Location[] currentPath, Location location, Unit u, List<int> targetMapLayers)
+        public static double delegate_DESERT_ONLY(Location[] currentPath, Location location, Unit u)
         {
             if (location.hex.terrain == Hex.terrainType.ARID || location.hex.terrain == Hex.terrainType.DESERT || location.hex.terrain == Hex.terrainType.DRY)
             {
@@ -44,7 +44,7 @@ namespace CommunityLib
             return 10000.0;
         }
 
-        public static double delegate_FAVOURABLE_WIND(Location[] currentPath, Location location, Unit u, List<int> targetMapLayers)
+        public static double delegate_FAVOURABLE_WIND(Location[] currentPath, Location location, Unit u)
         {
             if (u != null && u.isCommandable() && location.isOcean)
             {
@@ -53,7 +53,7 @@ namespace CommunityLib
             return 0.0;
         }
 
-        public static double delegate_LANDLOCKED(Location[] currentPath, Location location, Unit u, List<int> targetMapLayers)
+        public static double delegate_LANDLOCKED(Location[] currentPath, Location location, Unit u)
         {
             if (location.isOcean)
             {
@@ -62,7 +62,7 @@ namespace CommunityLib
             return 0.0;
         }
 
-        public static double delegate_SAFE_MOVE(Location[] currentPath, Location location, Unit u, List<int> targetMapLayers)
+        public static double delegate_SAFE_MOVE(Location[] currentPath, Location location, Unit u)
         {
             if (u == null || location.soc == null || !location.soc.hostileTo(u))
             {
@@ -71,7 +71,7 @@ namespace CommunityLib
             return 10000.0;
         }
 
-        public static double delegate_SHADOWBOUND(Location[] currentPath, Location location, Unit u, List<int> targetMapLayers)
+        public static double delegate_SHADOWBOUND(Location[] currentPath, Location location, Unit u)
         {
             int hp = 0;
 
@@ -93,7 +93,7 @@ namespace CommunityLib
             return 0.0;
         }
 
-        public static double delegate_SHADOW_ONLY(Location[] currentPath, Location location, Unit u, List<int> targetMapLayers)
+        public static double delegate_SHADOW_ONLY(Location[] currentPath, Location location, Unit u)
         {
             if (location.getShadow() < 0.5)
             {
@@ -114,7 +114,7 @@ namespace CommunityLib
                 return new Location[0];
             }
 
-            List<Func<Location[], Location, Unit, List<int>, double>>  pathfindingDelegates = new List<Func<Location[], Location, Unit, List<int>, double>>();
+            List<Func<Location[], Location, Unit, double>>  pathfindingDelegates = new List<Func<Location[], Location, Unit, double>>();
 
             if (u != null)
             {
@@ -147,7 +147,7 @@ namespace CommunityLib
 
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                hook.onPopulatingPathfindingDelegates(locA, u, expectedMapLayers, pathfindingDelegates);
+                hook.onPopulatingPathfindingDelegates(locA, u, pathfindingDelegates);
             }
 
             HashSet<Location> locationHashes = new HashSet<Location> { locA };
@@ -167,9 +167,9 @@ namespace CommunityLib
                         if (!locationHashes.Contains(neighbour))
                         {
                             double stepCost = 10.0;
-                            foreach (Func<Location[], Location, Unit, List<int>, double> pathfindingDelegate in pathfindingDelegates)
+                            foreach (Func<Location[], Location, Unit, double> pathfindingDelegate in pathfindingDelegates)
                             {
-                                double cost = pathfindingDelegate(pair.Item, neighbour, u, expectedMapLayers);
+                                double cost = pathfindingDelegate(pair.Item, neighbour, u);
                                 if (cost >= 10000.0)
                                 {
                                     stepCost = cost;
@@ -230,7 +230,7 @@ namespace CommunityLib
                 return new Location[0];
             }
 
-            List<Func<Location[], Location, Unit, List<int>, double>> pathfindingDelegates = new List<Func<Location[], Location, Unit, List<int>, double>>();
+            List<Func<Location[], Location, Unit, double>> pathfindingDelegates = new List<Func<Location[], Location, Unit, double>>();
 
             if (u != null)
             {
@@ -283,9 +283,9 @@ namespace CommunityLib
                         if (!locationHashes.Contains(neighbour))
                         {
                             double stepCost = 10.0;
-                            foreach (Func<Location[], Location, Unit, List<int>, double> pathfindingDelegate in pathfindingDelegates)
+                            foreach (Func<Location[], Location, Unit, double> pathfindingDelegate in pathfindingDelegates)
                             {
-                                double cost = pathfindingDelegate(pair.Item, neighbour, u, expectedMapLayers);
+                                double cost = pathfindingDelegate(pair.Item, neighbour, u);
                                 if (cost >= 10000.0)
                                 {
                                     stepCost = cost;
@@ -354,20 +354,15 @@ namespace CommunityLib
             return null;
         }
 
-        public static Location[] getPathTo(Location loc, Func<Location[], Location, Unit, List<int>, bool> destinationValidityDelegate, Unit u, List<int> targetMapLayers, bool safeMove)
+        public static Location[] getPathTo(Location loc, Func<Location[], Location, Unit, bool> destinationValidityDelegate, Unit u, bool safeMove)
         {
-            if (targetMapLayers == null)
-            {
-                targetMapLayers = new List<int>();
-            }
-
-            if (destinationValidityDelegate(new Location[0], loc, u, targetMapLayers))
+            if (destinationValidityDelegate(new Location[0], loc, u))
             {
                 return new Location[0];
             }
 
-            List<Func<Location[], Location, Unit, List<int>, double>> pathfindingDelegates = new List<Func<Location[], Location, Unit, List<int>, double>>();
-            List<Func<Location[], Location, Unit, List<int>, bool>> destinationValidityDelegates = new List<Func<Location[], Location, Unit, List<int>, bool>> { destinationValidityDelegate };
+            List<Func<Location[], Location, Unit, double>> pathfindingDelegates = new List<Func<Location[], Location, Unit, double>>();
+            List<Func<Location[], Location, Unit, bool>> destinationValidityDelegates = new List<Func<Location[], Location, Unit, bool>> { destinationValidityDelegate };
 
             if (u != null)
             {
@@ -397,7 +392,7 @@ namespace CommunityLib
 
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                hook.onPopulatingPathfindingDelegates(loc, u, targetMapLayers, pathfindingDelegates);
+                hook.onPopulatingPathfindingDelegates(loc, u, pathfindingDelegates);
             }
 
             HashSet<Location> locationHashes = new HashSet<Location> { loc };
@@ -420,9 +415,9 @@ namespace CommunityLib
                         if (!locationHashes.Contains(neighbour))
                         {
                             double stepCost = 10.0;
-                            foreach (Func<Location[], Location, Unit, List<int>, double> pathfindingDelegate in pathfindingDelegates)
+                            foreach (Func<Location[], Location, Unit, double> pathfindingDelegate in pathfindingDelegates)
                             {
-                                double cost = pathfindingDelegate(pair.Item, neighbour, u, targetMapLayers);
+                                double cost = pathfindingDelegate(pair.Item, neighbour, u);
                                 if (cost >= 10000.0)
                                 {
                                     stepCost = cost;
@@ -443,9 +438,9 @@ namespace CommunityLib
                             double newPathCost = pair.Priority + stepCost;
 
                             bool valid = true;
-                            foreach (Func<Location[], Location, Unit, int[], bool> validDelegate in destinationValidityDelegates)
+                            foreach (Func<Location[], Location, Unit, bool> validDelegate in destinationValidityDelegates)
                             {
-                                if (!destinationValidityDelegate(pair.Item, neighbour, u, targetMapLayers))
+                                if (!destinationValidityDelegate(pair.Item, neighbour, u))
                                 {
                                     valid = false;
                                     break;
@@ -531,7 +526,7 @@ namespace CommunityLib
             return result;
         }
 
-        public static double delegate_TRADE_VANILLA(Location[] currentPath, Location location, List<int> endPointMapLayers)
+        public static double delegate_TRADE_VANILLA(Location[] currentPath, Location location)
         {
             double result = 0.0;
             Location locLast = currentPath[currentPath.Length - 1];
@@ -541,7 +536,7 @@ namespace CommunityLib
                 {
                     if (location.isOcean)
                     {
-                        if ((locLast.settlement is Set_City || locLast.settlement is Set_DwarvenCity) && locLast.settlement.subs.Any(sub => sub is Sub_Docks))
+                        if (locLast.settlement is Set_City && locLast.settlement.subs.Any(sub => sub is Sub_Docks))
                         {
                             result += 2.5;
                         }
@@ -557,7 +552,7 @@ namespace CommunityLib
                 }
                 else if (location.soc is Society society)
                 {
-                    if (location.settlement is Set_City || location.settlement is Set_DwarvenCity)
+                    if (location.settlement is Set_City)
                     {
                         if (locLast.isOcean && location.settlement.subs.Any(sub => sub is Sub_Docks))
                         {
@@ -611,7 +606,7 @@ namespace CommunityLib
                 }
                 else if (location.soc is Society society)
                 {
-                    if (location.settlement is Set_City || location.settlement is Set_DwarvenCity)
+                    if (location.settlement is Set_City)
                     {
                         result += 10.0;
                     }
@@ -629,7 +624,7 @@ namespace CommunityLib
             return result;
         }
 
-        public static bool delegate_TRADEVALID_NODUPLICATES(Location[] currentPath, Location location, List<int> endPointMapLayers)
+        public static bool delegate_TRADEVALID_NODUPLICATES(Location[] currentPath, Location location)
         {
             return !location.map.tradeManager.routes.Any(r => (r.start() == currentPath[0] && r.end() == location) || (r.start() == location && r.end() == currentPath[0]));
         }
@@ -646,16 +641,14 @@ namespace CommunityLib
                 return new Location[0];
             }
 
-            List<int> endPointMapLayers = new List<int> { end.hex.z };
-
-            // Location[] currentPath, Location location, int[] endPointMapLayers, Location Start, return double stepCost
-            List<Func<Location[], Location, List<int>, double>> pathfindingDelegates = new List<Func<Location[], Location, List<int>, double>> { delegate_TRADE_VANILLA, delegate_TRADE_LAYERBOUND, delegate_TRADE_UNDERGROUNDAWARENESS };
-            // Location[] currentPath, Location location, int[] endPointMapLayers,, Location Start, return bool destinationValid
-            List<Func<Location[], Location, List<int>, bool>> destinationValidityDelegates = new List<Func<Location[], Location, List<int>, bool>> { delegate_TRADEVALID_LAYERBOUND, delegate_TRADEVALID_NODUPLICATES };
+            // Location[] currentPath, Location location, Location Start, return double stepCost
+            List<Func<Location[], Location, double>> pathfindingDelegates = new List<Func<Location[], Location, double>> { delegate_TRADE_VANILLA };
+            // Location[] currentPath, Location location, Location Start, return bool destinationValid
+            List<Func<Location[], Location, bool>> destinationValidityDelegates = new List<Func<Location[], Location, bool>> { delegate_TRADEVALID_NODUPLICATES };
 
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                hook.onPopulatingTradeRoutePathfindingDelegates(start, endPointMapLayers, pathfindingDelegates, destinationValidityDelegates);
+                hook.onPopulatingTradeRoutePathfindingDelegates(start, pathfindingDelegates, destinationValidityDelegates);
             }
 
             HashSet<Location> locationHashes = new HashSet<Location> { start };
@@ -676,9 +669,9 @@ namespace CommunityLib
                         if (!locationHashes.Contains(neighbour))
                         {
                             double stepCost = 0.0;
-                            foreach (Func<Location[], Location, List<int>, double> pathfindingDelegate in pathfindingDelegates)
+                            foreach (Func<Location[], Location, double> pathfindingDelegate in pathfindingDelegates)
                             {
-                                double cost = pathfindingDelegate(pair.Item, neighbour, endPointMapLayers);
+                                double cost = pathfindingDelegate(pair.Item, neighbour);
                                 if (cost >= 10000.0)
                                 {
                                     stepCost = cost;
@@ -701,9 +694,9 @@ namespace CommunityLib
                             if (neighbour == end)
                             {
                                 bool valid = true;
-                                foreach (Func<Location[], Location, List<int>, bool> validDelegate in destinationValidityDelegates)
+                                foreach (Func<Location[], Location, bool> validDelegate in destinationValidityDelegates)
                                 {
-                                    if (!validDelegate(newPathArray, neighbour, endPointMapLayers))
+                                    if (!validDelegate(newPathArray, neighbour))
                                     {
                                         valid = false;
                                         break;
@@ -759,9 +752,9 @@ namespace CommunityLib
             }
 
             // Location[] currentPath, Location location, Location Start, return double stepCost
-            List<Func<Location[], Location, double>> pathfindingDelegates = new List<Func<Location[], Location, List<int>, double>> { delegate_TRADE_VANILLA };
+            List<Func<Location[], Location, double>> pathfindingDelegates = new List<Func<Location[], Location, double>> { delegate_TRADE_VANILLA };
             // Location[] currentPath, Location location, Location Start, return bool destinationValid
-            List<Func<Location[], Location, bool>> destinationValidityDelegates = new List<Func<Location[], Location, List<int>, bool>> { delegate_TRADEVALID_NODUPLICATES };
+            List<Func<Location[], Location, bool>> destinationValidityDelegates = new List<Func<Location[], Location, bool>> { delegate_TRADEVALID_NODUPLICATES };
 
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
@@ -788,9 +781,9 @@ namespace CommunityLib
                         if (!locationHashes.Contains(neighbour))
                         {
                             double stepCost = 0.0;
-                            foreach (Func<Location[], Location, List<int>, double> pathfindingDelegate in pathfindingDelegates)
+                            foreach (Func<Location[], Location, double> pathfindingDelegate in pathfindingDelegates)
                             {
-                                double cost = pathfindingDelegate(pair.Item, neighbour, endPointMapLayers);
+                                double cost = pathfindingDelegate(pair.Item, neighbour);
                                 if (cost >= 10000.0)
                                 {
                                     stepCost = cost;
@@ -813,9 +806,9 @@ namespace CommunityLib
                             if (endpointsAll.Contains(neighbour))
                             {
                                 bool valid = true;
-                                foreach(Func<Location[], Location, List<int>, bool> validDelegate in destinationValidityDelegates)
+                                foreach(Func<Location[], Location, bool> validDelegate in destinationValidityDelegates)
                                 {
-                                    if (!validDelegate(newPathArray, neighbour, endPointMapLayers))
+                                    if (!validDelegate(newPathArray, neighbour))
                                     {
                                         valid = false;
                                         break;
@@ -860,7 +853,7 @@ namespace CommunityLib
                 bool allowPass = false;
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
-                    if (hook.onPathfindingTadeRoute_AllowSecondPass(start, endPointMapLayers, pathfindingDelegates, destinationValidityDelegates))
+                    if (hook.onPathfindingTadeRoute_AllowSecondPass(start, pathfindingDelegates, destinationValidityDelegates))
                     {
                         allowPass = true;
                     }
@@ -889,7 +882,7 @@ namespace CommunityLib
 
                 if (location.soc is Society society && location.index == society.capital && !society.isDarkEmpire && !society.isOphanimControlled)
                 {
-                    if (location.settlement is Set_City || location.settlement is Set_DwarvenCity)
+                    if (location.settlement is Set_City)
                     {
                         endPoints.Add(location);
                         continue;

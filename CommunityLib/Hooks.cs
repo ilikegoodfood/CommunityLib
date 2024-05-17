@@ -81,7 +81,7 @@ namespace CommunityLib
         /// <param name="locB"></param>
         /// <param name="u"></param>
         /// <param name="pathfindingDelegates"></param>
-        public virtual void onPopulatingPathfindingDelegates(Location loc, Unit u, List<int> expectedMapLayers, List<Func<Location[], Location, Unit, List<int>, double>> pathfindingDelegates)
+        public virtual void onPopulatingPathfindingDelegates(Location loc, Unit u, List<Func<Location[], Location, Unit, double>> pathfindingDelegates)
         {
             return;
         }
@@ -96,7 +96,7 @@ namespace CommunityLib
         /// <param name="u"></param>
         /// <param name="pathfindingDelegates"></param>
         /// <returns></returns>
-        public virtual bool onPathfinding_AllowSecondPass(Location locA, Unit u, List<int> expectedMapLayers, List<Func<Location[], Location, Unit, List<int>, double>> pathfindingDelegates)
+        public virtual bool onPathfinding_AllowSecondPass(Location locA, Unit u, List<Func<Location[], Location, Unit, double>> pathfindingDelegates)
         {
             return false;
         }
@@ -123,20 +123,20 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when the Community Library's pathfinding algorithm is called to generate a trade route from a location. It recieves the location the tarde route is from (start), the map layers that the destination should be on (endPointMapLayers), which is a size-zero array if not applicable, the list of pathfinding delegates that have already been assigned to the path (pathfndingDelegates), and the list of validity desligates that have already been assigned to determine if the destination is valid (destinationValidityDelegates). <br></br>
+        /// This hook fires when the Community Library's pathfinding algorithm is called to generate a trade route from a location. It recieves the location the tarde route is from (start), the list of pathfinding delegates that have already been assigned to the path (pathfndingDelegates), and the list of validity desligates that have already been assigned to determine if the destination is valid (destinationValidityDelegates). <br></br>
         /// In order to modify how the path is calculated, add one or more new pathfinding delegates to the pathfindingDelegates variable. In order to control the end point that is considered valid to form a trade route to, add one or more destination validity delegates to the destinationValidityDelegates variable.
         /// </summary>
         /// <param name="start"></param>
         /// <param name="endPointMapLayer"></param>
         /// <param name="pathfindingDelegates"></param>
         /// <param name="destinationValidityDelegates"></param>
-        public virtual void onPopulatingTradeRoutePathfindingDelegates(Location start, List<int> endPointMapLayers, List<Func<Location[], Location, List<int>, double>> pathfindingDelegates, List<Func<Location[], Location, List<int>, bool>> destinationValidityDelegates)
+        public virtual void onPopulatingTradeRoutePathfindingDelegates(Location start, List<Func<Location[], Location, double>> pathfindingDelegates, List<Func<Location[], Location, bool>> destinationValidityDelegates)
         {
 
         }
 
         /// <summary>
-        /// This hook fires when the pathfidning system has failed to find a valid path to the destination in the first pass. By default, this is via only the layers of the path's origin, and the end point map layers. It recieves the location the trade route is from (start), the acceptable map layers for the end point to be on (endPointMapLayers), the list of pathfinding delegates that have already been assigned to the path (pathfndingDelegates), and the list of validity desligates that have already been assigned to determine if the destination is valid (destinationValidityDelegates). <br></br>
+        /// This hook fires when the pathfidning system has failed to find a valid path to the destination in the first pass. By default, this is via only the layers of the path's origin, and the end point map layers. It recieves the location the trade route is from (start), the list of pathfinding delegates that have already been assigned to the path (pathfndingDelegates), and the list of validity desligates that have already been assigned to determine if the destination is valid (destinationValidityDelegates). <br></br>
         /// In order to modify how the path is calculated, remove one or more pathfinding delegates from the pathfindingDelegates variable. In order to modify what destinations are considered valid, remove one or more delegates from the destination validity delegates.<br></br>
         /// All instances of this hook are called, even after one returns true, so that all required delegates get removed.
         /// </summary>
@@ -145,7 +145,7 @@ namespace CommunityLib
         /// <param name="pathfindingDelegates"></param>
         /// <param name="destinationValidityDelegates"></param>
         /// <returns></returns>
-        public virtual bool onPathfindingTadeRoute_AllowSecondPass(Location start, List<int> endPointMapLayers, List<Func<Location[], Location, List<int>, double>> pathfindingDelegates, List<Func<Location[], Location, List<int>, bool>> destinationValidityDelegates)
+        public virtual bool onPathfindingTadeRoute_AllowSecondPass(Location start, List<Func<Location[], Location, double>> pathfindingDelegates, List<Func<Location[], Location, bool>> destinationValidityDelegates)
         {
             return false;
         }
