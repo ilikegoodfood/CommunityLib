@@ -557,13 +557,14 @@ namespace CommunityLib
         public static double delegate_TRADE_VANILLA(Location[] currentPath, Location location, List<int> endPointMapLayers)
         {
             double result = 0.0;
+            Location locLast = currentPath[currentPath.Length - 1];
             if (ModCore.opt_realisticTradeRoutes)
             {
                 if (location.soc == null)
                 {
                     if (location.isOcean)
                     {
-                        if ((currentPath[currentPath.Length - 1].settlement is Set_City || currentPath[currentPath.Length - 1].settlement is Set_DwarvenCity) && currentPath[currentPath.Length - 1].settlement.subs.Any(sub => sub is Sub_Docks))
+                        if ((locLast.settlement is Set_City || locLast.settlement is Set_DwarvenCity) && locLast.settlement.subs.Any(sub => sub is Sub_Docks))
                         {
                             result += 2.5;
                         }
@@ -581,7 +582,7 @@ namespace CommunityLib
                 {
                     if (location.settlement is Set_City || location.settlement is Set_DwarvenCity)
                     {
-                        if (currentPath[currentPath.Length - 1].isOcean && location.settlement.subs.Any(sub => sub is Sub_Docks))
+                        if (locLast.isOcean && location.settlement.subs.Any(sub => sub is Sub_Docks))
                         {
                             result += 2.5;
                         }

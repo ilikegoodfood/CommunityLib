@@ -3467,7 +3467,7 @@ namespace CommunityLib
                 endpointsDisconnected.Remove(endpointConnected);
             }
 
-            World.log($"CommunityLib: Found {endpointsDisconnected.Count} endpoints for trade routes that aree not connected to a trade route. Createing 1 new trade route for each of them...");
+            World.log($"CommunityLib: Found {endpointsDisconnected.Count} endpoints for trade routes that are not connected to a trade route.");
             while (endpointsDisconnected.Count > 0)
             {
                 List<Location> newlyConnectedEndpoints = new List<Location>();
@@ -3477,6 +3477,7 @@ namespace CommunityLib
                     if (routePath == null || routePath.Length < 2)
                     {
                         newlyConnectedEndpoints.Add(endpointDisconnected);
+                        World.log($"CommunityLib: Trade Route created from {endpointDisconnected.getName()} failed to link to anywhere. Skipping enpoint...");
                         break;
                     }
                     else
@@ -3484,6 +3485,7 @@ namespace CommunityLib
                         newlyConnectedEndpoints.Add(endpointDisconnected);
                         newlyConnectedEndpoints.Add(routePath[routePath.Length - 1]);
                         tradeManager.routes.Add(new TradeRoute(routePath.ToList()));
+                        World.log($"CommunityLib: Trade Route created from {endpointDisconnected.getName()} to {routePath[routePath.Length - 1].getName()}");
                         break;
                     }
                 }
