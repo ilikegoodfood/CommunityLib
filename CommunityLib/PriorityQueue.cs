@@ -118,7 +118,7 @@ namespace CommunityLib
 
         public bool TryPeekWithPriority(out T item, out U priority)
         {
-            if (heap.Count == 0)
+            if (Count == 0)
             {
                 item = default(T);
                 priority = default(U);

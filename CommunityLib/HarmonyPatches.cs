@@ -146,6 +146,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Person), nameof(Person.die), new Type[] { typeof(string), typeof(bool), typeof(object), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(Person_die_Transpiler)));
 
             // Challenge fixes
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_Infiltrate), nameof (Ch_Infiltrate.getComplexity), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Ch_Infiltrate_getComplexity_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_OpportunisticEncroachment), nameof(Ch_Orcs_OpportunisticEncroachment.valid), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Ch_Orcs_OpportunisticEncroachment_valid_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_OpportunisticEncroachment), nameof(Ch_Orcs_OpportunisticEncroachment.complete), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_Orcs_OpportunisticEncroachment_complete_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Rti_Orc_AttackHere), nameof(Rti_Orc_AttackHere.valid), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Rti_Orc_AttackHere_Postfix)));
@@ -702,6 +703,42 @@ namespace CommunityLib
         }
 
         // CHallenge Fixes
+        private static IEnumerable<CodeInstruction> Ch_Infiltrate_getComplexity_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            FieldInfo FI_Sub = AccessTools.Field(typeof(Ch_Infiltrate), nameof(Ch_Infiltrate.sub));
+            FieldInfo FI_Settlment = AccessTools.Field(typeof(Subsettlement), nameof(Subsettlement.settlement));
+
+            int targetIndex = 1;
+
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Call)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Sub);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Settlment);
+
+                            i += 2;
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Ch_Infiltrate_getComplexity_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
         private static IEnumerable<CodeInstruction> Ch_Orcs_OpportunisticEncroachment_valid_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
@@ -3477,7 +3514,7 @@ namespace CommunityLib
                     if (routePath == null || routePath.Length < 2)
                     {
                         newlyConnectedEndpoints.Add(endpointDisconnected);
-                        World.log($"CommunityLib: Trade Route created from {endpointDisconnected.getName()} failed to link to anywhere. Skipping enpoint...");
+                        World.log($"CommunityLib: Trade Route from {endpointDisconnected.getName()} failed to link to anywhere. Skipping endpoint...");
                         break;
                     }
                     else
