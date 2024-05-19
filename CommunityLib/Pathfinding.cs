@@ -538,85 +538,54 @@ namespace CommunityLib
         {
             double result = 0.0;
             Location locLast = currentPath[currentPath.Length - 1];
-            if (ModCore.opt_realisticTradeRoutes)
+            
+            if (location.soc == null)
             {
-                if (location.soc == null)
+                if (location.isOcean)
                 {
-                    if (location.isOcean)
-                    {
-                        if (locLast.settlement is Set_City && locLast.settlement.subs.Any(sub => sub is Sub_Docks))
-                        {
-                            result += 2.5;
-                        }
-                        else
-                        {
-                            result += 7.5;
-                        }
-                    }
-                    else
-                    {
-                        result += 15.0;
-                    }
-                }
-                else if (location.soc is Society society)
-                {
-                    if (location.settlement is Set_City)
-                    {
-                        if (locLast.isOcean && location.settlement.subs.Any(sub => sub is Sub_Docks))
-                        {
-                            result += 2.5;
-                        }
-                        else if (location.settlement.subs.Any(sub => sub is Sub_Market))
-                        {
-                            result += 2.5;
-                        }
-                        else
-                        {
-                            result += 5.0;
-                        }
-                    }
-                    else
-                    {
-                        result += 7.5;
-                    }
+                    result += 7.5;
                 }
                 else
                 {
-                    result += 30.0;
+                    result += 15.0;
                 }
-
-                // Consideration for low habitability. Strong avoidance of uninhabitable lands. Weak avoidance of low habitability lands. Ignored on ocean.
-                if (!location.isOcean)
+            }
+            else if (location.soc is Society society)
+            {
+                if (location.settlement is Set_City || location.settlement is Set_DwarvenCity)
                 {
-                    float habitability = location.hex.getHabilitability();
-                    if (habitability < currentPath[0].map.param.mapGen_minHabitabilityForHumans)
-                    {
-                        result += 30.0;
-                    }
-                    else if (habitability < currentPath[0].map.param.mapGen_minHabitabilityForHumans * 2)
-                    {
-                        result += 10.0;
-                    }
+                    result += 10.0;
+                }
+                else
+                {
+                    result += 7.5;
                 }
             }
             else
             {
-                if (location.soc == null)
+                result += 30.0;
+            }
+
+            // Even when not layerbound, there is preference to sticking to the layer or layers that the end points are on.
+            if (targetMapLayers != null && targetMapLayers.Count > 0 && !targetMapLayers.Contains(location.hex.z))
+            {
+                result += 5.0;
+            }
+
+            return result;
+        }
+
+        public static double delegate_TRADE_REALISTIC(Location[] currentPath, Location location)
+        {
+            double result = 0.0;
+            Location locLast = currentPath[currentPath.Length - 1];
+            if (location.soc == null)
+            {
+                if (location.isOcean)
                 {
-                    if (location.isOcean)
+                    if (locLast.settlement is Set_City && locLast.settlement.subs.Any(sub => sub is Sub_Docks))
                     {
-                        result += 7.5;
-                    }
-                    else
-                    {
-                        result += 15.0;
-                    }
-                }
-                else if (location.soc is Society society)
-                {
-                    if (location.settlement is Set_City)
-                    {
-                        result += 10.0;
+                        result += 2.5;
                     }
                     else
                     {
@@ -625,7 +594,47 @@ namespace CommunityLib
                 }
                 else
                 {
+                    result += 15.0;
+                }
+            }
+            else if (location.soc is Society society)
+            {
+                if (location.settlement is Set_City)
+                {
+                    if (locLast.isOcean && location.settlement.subs.Any(sub => sub is Sub_Docks))
+                    {
+                        result += 2.5;
+                    }
+                    else if (location.settlement.subs.Any(sub => sub is Sub_Market))
+                    {
+                        result += 2.5;
+                    }
+                    else
+                    {
+                        result += 5.0;
+                    }
+                }
+                else
+                {
+                    result += 7.5;
+                }
+            }
+            else
+            {
+                result += 30.0;
+            }
+
+            // Consideration for low habitability. Strong avoidance of uninhabitable lands. Weak avoidance of low habitability lands. Ignored on ocean.
+            if (!location.isOcean)
+            {
+                float habitability = location.hex.getHabilitability();
+                if (habitability < currentPath[0].map.param.mapGen_minHabitabilityForHumans)
+                {
                     result += 30.0;
+                }
+                else if (habitability < currentPath[0].map.param.mapGen_minHabitabilityForHumans * 2)
+                {
+                    result += 10.0;
                 }
             }
 
@@ -653,6 +662,19 @@ namespace CommunityLib
             List<Func<Location[], Location, double>> pathfindingDelegates = new List<Func<Location[], Location, double>> { delegate_TRADE_VANILLA };
             // Location[] currentPath, Location location, Location Start, return bool destinationValid
             List<Func<Location[], Location, bool>> destinationValidityDelegates = new List<Func<Location[], Location, bool>> { delegate_TRADEVALID_NODUPLICATES };
+
+            // Location[] currentPath, Location location, int[] endPointMapLayers, Location Start, return double stepCost
+            List<Func<Location[], Location, List<int>, double>> pathfindingDelegates = new List<Func<Location[], Location, List<int>, double>>()
+            if (ModCore.opt_realisticTradeRoutes)
+            {
+                pathfindingDelegates.Add(delegate_TRADE_REALISTIC);
+            }
+            else
+            {
+                pathfindingDelegates.Add(delegate_TRADE_VANILLA);
+            }
+            // Location[] currentPath, Location location, int[] endPointMapLayers,, Location Start, return bool destinationValid
+            List<Func<Location[], Location, List<int>, bool>> destinationValidityDelegates = new List<Func<Location[], Location, List<int>, bool>> { delegate_TRADEVALID_LAYERBOUND, delegate_TRADEVALID_NODUPLICATES };
 
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
@@ -759,10 +781,18 @@ namespace CommunityLib
                 return null;
             }
 
-            // Location[] currentPath, Location location, Location Start, return double stepCost
-            List<Func<Location[], Location, double>> pathfindingDelegates = new List<Func<Location[], Location, double>> { delegate_TRADE_VANILLA };
-            // Location[] currentPath, Location location, Location Start, return bool destinationValid
-            List<Func<Location[], Location, bool>> destinationValidityDelegates = new List<Func<Location[], Location, bool>> { delegate_TRADEVALID_NODUPLICATES };
+            // Location[] currentPath, Location location, int[] endPointMapLayers, Location Start, return double stepCost
+            List<Func<Location[], Location, List<int>, double>> pathfindingDelegates = new List<Func<Location[], Location, List<int>, double>>();
+            if (ModCore.opt_realisticTradeRoutes)
+            {
+                pathfindingDelegates.Add(delegate_TRADE_REALISTIC);
+            }
+            else
+            {
+                pathfindingDelegates.Add(delegate_TRADE_VANILLA);
+            }
+            // Location[] currentPath, Location location, int[] endPointMapLayers,, Location Start, return bool destinationValid
+            List<Func<Location[], Location, List<int>, bool>> destinationValidityDelegates = new List<Func<Location[], Location, List<int>, bool>> { delegate_TRADEVALID_NODUPLICATES };
 
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
