@@ -552,7 +552,7 @@ namespace CommunityLib
             }
             else if (location.soc is Society society)
             {
-                if (location.settlement is Set_City || location.settlement is Set_DwarvenCity)
+                if (location.settlement is Set_City)
                 {
                     result += 10.0;
                 }
@@ -564,12 +564,6 @@ namespace CommunityLib
             else
             {
                 result += 30.0;
-            }
-
-            // Even when not layerbound, there is preference to sticking to the layer or layers that the end points are on.
-            if (targetMapLayers != null && targetMapLayers.Count > 0 && !targetMapLayers.Contains(location.hex.z))
-            {
-                result += 5.0;
             }
 
             return result;
@@ -658,13 +652,8 @@ namespace CommunityLib
                 return new Location[0];
             }
 
-            // Location[] currentPath, Location location, Location Start, return double stepCost
-            List<Func<Location[], Location, double>> pathfindingDelegates = new List<Func<Location[], Location, double>> { delegate_TRADE_VANILLA };
-            // Location[] currentPath, Location location, Location Start, return bool destinationValid
-            List<Func<Location[], Location, bool>> destinationValidityDelegates = new List<Func<Location[], Location, bool>> { delegate_TRADEVALID_NODUPLICATES };
-
             // Location[] currentPath, Location location, int[] endPointMapLayers, Location Start, return double stepCost
-            List<Func<Location[], Location, List<int>, double>> pathfindingDelegates = new List<Func<Location[], Location, List<int>, double>>()
+            List<Func<Location[], Location, double>> pathfindingDelegates = new List<Func<Location[], Location, double>>();
             if (ModCore.opt_realisticTradeRoutes)
             {
                 pathfindingDelegates.Add(delegate_TRADE_REALISTIC);
@@ -674,7 +663,7 @@ namespace CommunityLib
                 pathfindingDelegates.Add(delegate_TRADE_VANILLA);
             }
             // Location[] currentPath, Location location, int[] endPointMapLayers,, Location Start, return bool destinationValid
-            List<Func<Location[], Location, List<int>, bool>> destinationValidityDelegates = new List<Func<Location[], Location, List<int>, bool>> { delegate_TRADEVALID_LAYERBOUND, delegate_TRADEVALID_NODUPLICATES };
+            List<Func<Location[], Location, bool>> destinationValidityDelegates = new List<Func<Location[], Location, bool>> { delegate_TRADEVALID_NODUPLICATES };
 
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
@@ -782,7 +771,7 @@ namespace CommunityLib
             }
 
             // Location[] currentPath, Location location, int[] endPointMapLayers, Location Start, return double stepCost
-            List<Func<Location[], Location, List<int>, double>> pathfindingDelegates = new List<Func<Location[], Location, List<int>, double>>();
+            List<Func<Location[], Location, double>> pathfindingDelegates = new List<Func<Location[], Location, double>>();
             if (ModCore.opt_realisticTradeRoutes)
             {
                 pathfindingDelegates.Add(delegate_TRADE_REALISTIC);
@@ -792,7 +781,7 @@ namespace CommunityLib
                 pathfindingDelegates.Add(delegate_TRADE_VANILLA);
             }
             // Location[] currentPath, Location location, int[] endPointMapLayers,, Location Start, return bool destinationValid
-            List<Func<Location[], Location, List<int>, bool>> destinationValidityDelegates = new List<Func<Location[], Location, List<int>, bool>> { delegate_TRADEVALID_NODUPLICATES };
+            List<Func<Location[], Location, bool>> destinationValidityDelegates = new List<Func<Location[], Location, bool>> { delegate_TRADEVALID_NODUPLICATES };
 
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
