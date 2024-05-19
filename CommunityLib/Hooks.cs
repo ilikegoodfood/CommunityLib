@@ -130,7 +130,7 @@ namespace CommunityLib
         /// <param name="endPointMapLayer"></param>
         /// <param name="pathfindingDelegates"></param>
         /// <param name="destinationValidityDelegates"></param>
-        public virtual void onPopulatingTradeRoutePathfindingDelegates(Location start, List<int> endPointMapLayers, List<Func<Location[], Location, List<int>, double>> pathfindingDelegates, List<Func<Location[], Location, List<int>, bool>> destinationValidityDelegates)
+        public virtual void onPopulatingTradeRoutePathfindingDelegates(Location start, List<int> expectedMapLayer, List<Func<Location[], Location, List<int>, double>> pathfindingDelegates, List<Func<Location[], Location, List<int>, bool>> destinationValidityDelegates)
         {
 
         }
@@ -145,7 +145,7 @@ namespace CommunityLib
         /// <param name="pathfindingDelegates"></param>
         /// <param name="destinationValidityDelegates"></param>
         /// <returns></returns>
-        public virtual bool onPathfindingTadeRoute_AllowSecondPass(Location start, List<int> endPointMapLayers, List<Func<Location[], Location, List<int>, double>> pathfindingDelegates, List<Func<Location[], Location, List<int>, bool>> destinationValidityDelegates)
+        public virtual bool onPathfindingTadeRoute_AllowSecondPass(Location start, List<int> expectedMapLayer, List<Func<Location[], Location, List<int>, double>> pathfindingDelegates, List<Func<Location[], Location, List<int>, bool>> destinationValidityDelegates)
         {
             return false;
         }

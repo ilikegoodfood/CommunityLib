@@ -594,138 +594,129 @@ namespace CommunityLib
             return result;
         }
 
-        public static double delegate_TRADE_VANILLA(Location[] currentPath, Location location, List<int> endPointMapLayers)
+        public static double delegate_TRADE_VANILLA(Location[] currentPath, Location location, List<int> targetMapLayers)
         {
             double result = 0.0;
             Location locLast = currentPath[currentPath.Length - 1];
-            if (ModCore.opt_realisticTradeRoutes)
+            
+            if (location.soc == null)
             {
-                if (location.soc == null)
+                if (location.isOcean)
                 {
-                    if (location.isOcean)
-                    {
-                        if ((locLast.settlement is Set_City || locLast.settlement is Set_DwarvenCity) && locLast.settlement.subs.Any(sub => sub is Sub_Docks))
-                        {
-                            result += 2.5;
-                        }
-                        else
-                        {
-                            result += 7.5;
-                        }
-                    }
-                    else
-                    {
-                        result += 15.0;
-                    }
-                }
-                else if (location.soc is Society society)
-                {
-                    if (location.settlement is Set_City || location.settlement is Set_DwarvenCity)
-                    {
-                        if (locLast.isOcean && location.settlement.subs.Any(sub => sub is Sub_Docks))
-                        {
-                            result += 2.5;
-                        }
-                        else if (location.settlement.subs.Any(sub => sub is Sub_Market))
-                        {
-                            result += 2.5;
-                        }
-                        else
-                        {
-                            result += 5.0;
-                        }
-                    }
-                    else
-                    {
-                        result += 7.5;
-                    }
+                    result += 7.5;
                 }
                 else
                 {
-                    result += 30.0;
+                    result += 15.0;
                 }
-
-                // Consideration for low habitability. Strong avoidance of uninhabitable lands. Weak avoidance of low habitability lands. Ignored on ocean.
-                if (!location.isOcean)
+            }
+            else if (location.soc is Society society)
+            {
+                if (location.settlement is Set_City || location.settlement is Set_DwarvenCity)
                 {
-                    float habitability = location.hex.getHabilitability();
-                    if (habitability < currentPath[0].map.param.mapGen_minHabitabilityForHumans)
-                    {
-                        result += 30.0;
-                    }
-                    else if (habitability < currentPath[0].map.param.mapGen_minHabitabilityForHumans * 2)
-                    {
-                        result += 10.0;
-                    }
+                    result += 10.0;
                 }
-
-                // Even when not layerbound, there is preference to sticking to the layer or layers that the end points are on.
-                if (endPointMapLayers != null && endPointMapLayers.Count > 0 && !endPointMapLayers.Contains(location.hex.z))
+                else
                 {
-                    result += 5.0;
+                    result += 7.5;
                 }
             }
             else
             {
-                if (location.soc == null)
-                {
-                    if (location.isOcean)
-                    {
-                        result += 7.5;
-                    }
-                    else
-                    {
-                        result += 15.0;
-                    }
-                }
-                else if (location.soc is Society society)
-                {
-                    if (location.settlement is Set_City || location.settlement is Set_DwarvenCity)
-                    {
-                        result += 10.0;
-                    }
-                    else
-                    {
-                        result += 7.5;
-                    }
-                }
-                else
-                {
-                    result += 30.0;
-                }
+                result += 30.0;
+            }
 
-                // Even when not layerbound, there is preference to sticking to the layer or layers that the end points are on.
-                if (endPointMapLayers != null && endPointMapLayers.Count > 0 && !endPointMapLayers.Contains(location.hex.z))
-                {
-                    result += 5.0;
-                }
+            // Even when not layerbound, there is preference to sticking to the layer or layers that the end points are on.
+            if (targetMapLayers != null && targetMapLayers.Count > 0 && !targetMapLayers.Contains(location.hex.z))
+            {
+                result += 5.0;
             }
 
             return result;
         }
 
-        public static double delegate_TRADE_LAYERBOUND(Location[] currentPath, Location location, List<int> endPointMapLayers)
+        public static double delegate_TRADE_REALISTIC(Location[] currentPath, Location location, List<int> targetMapLayers)
         {
-            HashSet<int> layers = new HashSet<int> { currentPath[0].hex.z };
-
-            foreach (int layerID in endPointMapLayers)
+            double result = 0.0;
+            Location locLast = currentPath[currentPath.Length - 1];
+            if (location.soc == null)
             {
-                if (!layers.Contains(layerID))
+                if (location.isOcean)
                 {
-                    layers.Add(layerID);
+                    if ((locLast.settlement is Set_City || locLast.settlement is Set_DwarvenCity) && locLast.settlement.subs.Any(sub => sub is Sub_Docks))
+                    {
+                        result += 2.5;
+                    }
+                    else
+                    {
+                        result += 7.5;
+                    }
+                }
+                else
+                {
+                    result += 15.0;
+                }
+            }
+            else if (location.soc is Society society)
+            {
+                if (location.settlement is Set_City || location.settlement is Set_DwarvenCity)
+                {
+                    if (locLast.isOcean && location.settlement.subs.Any(sub => sub is Sub_Docks))
+                    {
+                        result += 2.5;
+                    }
+                    else if (location.settlement.subs.Any(sub => sub is Sub_Market))
+                    {
+                        result += 2.5;
+                    }
+                    else
+                    {
+                        result += 5.0;
+                    }
+                }
+                else
+                {
+                    result += 7.5;
+                }
+            }
+            else
+            {
+                result += 30.0;
+            }
+
+            // Consideration for low habitability. Strong avoidance of uninhabitable lands. Weak avoidance of low habitability lands. Ignored on ocean.
+            if (!location.isOcean)
+            {
+                float habitability = location.hex.getHabilitability();
+                if (habitability < currentPath[0].map.param.mapGen_minHabitabilityForHumans)
+                {
+                    result += 30.0;
+                }
+                else if (habitability < currentPath[0].map.param.mapGen_minHabitabilityForHumans * 2)
+                {
+                    result += 10.0;
                 }
             }
 
-            if (!layers.Contains(location.hex.z))
+            // Even when not layerbound, there is preference to sticking to the layer or layers that the end points are on.
+            if (targetMapLayers != null && targetMapLayers.Count > 0 && !targetMapLayers.Contains(location.hex.z))
             {
-                //Console.WriteLine($"CommunityLib: Location {location.getName()} ({location.hex.z}) violates Layerbound rules for trade route originating from {currentPath[0].getName()} ({currentPath[0].hex.z})");
-                return 10000.0;
+                result += 5.0;
             }
 
-            return 0.0;
+            return result;
         }
 
-        public static double delegate_TRADE_UNDERGROUNDAWARENESS(Location[] currentPath, Location location, List<int> endPointMapLayers)
+        public static double delegate_TRADE_LAYERBOUND(Location[] currentPath, Location location, List<int> targetMapLayers)
+        {
+            if (targetMapLayers == null || targetMapLayers.Count == 0 || targetMapLayers.Contains(location.hex.z))
+            {
+                return 0.0;
+            }
+            return 10000.0;
+        }
+
+        public static double delegate_TRADE_UNDERGROUNDAWARENESS(Location[] currentPath, Location location, List<int> targetMapLayers)
         {
             Location start = currentPath[0];
             if (start.map.awarenessOfUnderground < 1.0)
@@ -740,32 +731,14 @@ namespace CommunityLib
             return 0.0;
         }
 
-        public static bool delegate_TRADEVALID_NODUPLICATES(Location[] currentPath, Location location, List<int> endPointMapLayers)
+        public static bool delegate_TRADEVALID_NODUPLICATES(Location[] currentPath, Location location, List<int> targetMapLayers)
         {
             return !location.map.tradeManager.routes.Any(r => (r.start() == currentPath[0] && r.end() == location) || (r.start() == location && r.end() == currentPath[0]));
         }
 
-        public static bool delegate_TRADEVALID_LAYERBOUND(Location[] currentPath, Location location, List<int> endPointMapLayers)
+        public static bool delegate_TRADEVALID_LAYERBOUND(Location[] currentPath, Location location, List<int> targetMapLayers)
         {
-            return endPointMapLayers == null || endPointMapLayers.Count == 0 || endPointMapLayers.Contains(location.hex.z);
-        }
-
-        public static Location[] getTradeRouteFrom(Location start, List<Location> endpointsAll = null)
-        {
-            int[] layers = new int[0];
-            return getTradeRouteFrom(start, null, endpointsAll);
-        }
-
-        public static Location[] getTradeRouteFrom(Location start, int endPointMapLayer, List<Location> endpointsAll = null)
-        {
-            if (endPointMapLayer < 0)
-            {
-                return getTradeRouteFrom(start, null, endpointsAll);
-            }
-            else
-            {
-                return getTradeRouteFrom(start, new List<int> { endPointMapLayer }, endpointsAll);
-            }
+            return targetMapLayers == null || targetMapLayers.Count == 0 || targetMapLayers.Contains(location.hex.z);
         }
 
         public static Location[] getTradeRouteTo(Location start, Location end)
@@ -781,15 +754,28 @@ namespace CommunityLib
             }
 
             List<int> endPointMapLayers = new List<int> { end.hex.z };
+            List<int> expectedMapLayers = new List<int> { start.hex.z };
+            if (!expectedMapLayers.Contains(end.hex.z))
+            {
+                expectedMapLayers.Add(end.hex.z);
+            }
 
             // Location[] currentPath, Location location, int[] endPointMapLayers, Location Start, return double stepCost
-            List<Func<Location[], Location, List<int>, double>> pathfindingDelegates = new List<Func<Location[], Location, List<int>, double>> { delegate_TRADE_VANILLA, delegate_TRADE_LAYERBOUND, delegate_TRADE_UNDERGROUNDAWARENESS };
+            List<Func<Location[], Location, List<int>, double>> pathfindingDelegates;
+            if (ModCore.opt_realisticTradeRoutes)
+            {
+                pathfindingDelegates = new List<Func<Location[], Location, List<int>, double>> { delegate_TRADE_REALISTIC, delegate_TRADE_LAYERBOUND, delegate_TRADE_UNDERGROUNDAWARENESS };
+            }
+            else
+            {
+                pathfindingDelegates = new List<Func<Location[], Location, List<int>, double>> { delegate_TRADE_VANILLA, delegate_TRADE_LAYERBOUND, delegate_TRADE_UNDERGROUNDAWARENESS };
+            }
             // Location[] currentPath, Location location, int[] endPointMapLayers,, Location Start, return bool destinationValid
             List<Func<Location[], Location, List<int>, bool>> destinationValidityDelegates = new List<Func<Location[], Location, List<int>, bool>> { delegate_TRADEVALID_LAYERBOUND, delegate_TRADEVALID_NODUPLICATES };
 
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                hook.onPopulatingTradeRoutePathfindingDelegates(start, endPointMapLayers, pathfindingDelegates, destinationValidityDelegates);
+                hook.onPopulatingTradeRoutePathfindingDelegates(start, expectedMapLayers, pathfindingDelegates, destinationValidityDelegates);
             }
 
             HashSet<Location> locationHashes = new HashSet<Location> { start };
@@ -875,16 +861,29 @@ namespace CommunityLib
             return null;
         }
 
+        public static Location[] getTradeRouteFrom(Location start, List<Location> endpointsAll = null)
+        {
+            int[] layers = new int[0];
+            return getTradeRouteFrom(start, null, endpointsAll);
+        }
+
+        public static Location[] getTradeRouteFrom(Location start, int endPointMapLayer, List<Location> endpointsAll = null)
+        {
+            if (endPointMapLayer < 0)
+            {
+                return getTradeRouteFrom(start, null, endpointsAll);
+            }
+            else
+            {
+                return getTradeRouteFrom(start, new List<int> { endPointMapLayer }, endpointsAll);
+            }
+        }
+
         public static Location[] getTradeRouteFrom(Location start, List<int> endPointMapLayers, List<Location> endpointsAll = null)
         {
             if (start == null)
             {
                 return null;
-            }
-
-            if (endPointMapLayers == null)
-            {
-                endPointMapLayers = new List<int>();
             }
 
             if (endpointsAll == null || endpointsAll.Count == 0)
@@ -897,14 +896,35 @@ namespace CommunityLib
                 return null;
             }
 
+            List<int> expectedMapLayers = new List<int>();
+            if (endPointMapLayers != null && endPointMapLayers.Count == 0)
+            {
+                expectedMapLayers.Add(start.hex.z);
+                foreach (Location endpoint in endpointsAll)
+                {
+                    if (!expectedMapLayers.Contains(endpoint.hex.z))
+                    {
+                        expectedMapLayers.Add(endpoint.hex.z);
+                    }
+                }
+            }
+
             // Location[] currentPath, Location location, int[] endPointMapLayers, Location Start, return double stepCost
-            List<Func<Location[], Location, List<int>, double>> pathfindingDelegates = new List<Func<Location[], Location, List<int>, double>> { delegate_TRADE_VANILLA, delegate_TRADE_LAYERBOUND, delegate_TRADE_UNDERGROUNDAWARENESS };
+            List<Func<Location[], Location, List<int>, double>> pathfindingDelegates;
+            if (ModCore.opt_realisticTradeRoutes)
+            {
+                pathfindingDelegates = new List<Func<Location[], Location, List<int>, double>> { delegate_TRADE_REALISTIC, delegate_TRADE_LAYERBOUND, delegate_TRADE_UNDERGROUNDAWARENESS };
+            }
+            else
+            {
+                pathfindingDelegates = new List<Func<Location[], Location, List<int>, double>> { delegate_TRADE_VANILLA, delegate_TRADE_LAYERBOUND, delegate_TRADE_UNDERGROUNDAWARENESS };
+            }
             // Location[] currentPath, Location location, int[] endPointMapLayers,, Location Start, return bool destinationValid
             List<Func<Location[], Location, List<int>, bool>> destinationValidityDelegates = new List<Func<Location[], Location, List<int>, bool>> { delegate_TRADEVALID_LAYERBOUND, delegate_TRADEVALID_NODUPLICATES };
 
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                hook.onPopulatingTradeRoutePathfindingDelegates(start, endPointMapLayers, pathfindingDelegates, destinationValidityDelegates);
+                hook.onPopulatingTradeRoutePathfindingDelegates(start, expectedMapLayers, pathfindingDelegates, destinationValidityDelegates);
             }
 
             HashSet<Location> locationHashes = new HashSet<Location> { start };

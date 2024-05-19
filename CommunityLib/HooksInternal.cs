@@ -247,19 +247,9 @@ namespace CommunityLib
 
         public override bool onPathfindingTadeRoute_AllowSecondPass(Location start, List<int> endPointMapLayers, List<Func<Location[], Location, List<int>, double>> pathfindingDelegates, List<Func<Location[], Location, List<int>, bool>> destinationValidityDelegates)
         {
-            bool result = false;
+            pathfindingDelegates.Remove(Pathfinding.delegate_TRADE_LAYERBOUND);
 
-            if (start.map.awarenessOfUnderground >= 1.0)
-            {
-                result = true;
-            }
-
-            if (result)
-            {
-                pathfindingDelegates.Remove(Pathfinding.delegate_TRADE_LAYERBOUND);
-            }
-
-            return result;
+            return true;
         }
 
         public override void onPopulatingTradeRoutePathfindingDelegates(Location start, List<int> endPointMapLayers, List<Func<Location[], Location, List<int>, double>> pathfindingDelegates, List<Func<Location[], Location, List<int>, bool>> destinationValidityDelegates)
