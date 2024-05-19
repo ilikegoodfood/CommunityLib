@@ -309,7 +309,7 @@ namespace CommunityLib
                             if (neighbour.soc == sg)
                             {
                                 destinations.Enqueue(newPathArray, newPathCost);
-                                if (destinationPriority == -1.0 || newPathCost < destinationPriority)
+                                if (destinations.Count == 0 || newPathCost < destinationPriority)
                                 {
                                     destinationPriority = newPathCost;
                                 }
@@ -455,7 +455,7 @@ namespace CommunityLib
                             if (valid)
                             {
                                 destinations.Enqueue(newPathArray, newPathCost);
-                                if (destinationPriority == -1.0 || newPathCost < destinationPriority)
+                                if (destinations.Count == 0 || newPathCost < destinationPriority)
                                 {
                                     destinationPriority = newPathCost;
                                 }
@@ -828,7 +828,7 @@ namespace CommunityLib
                                 {
                                     //Console.WriteLine($"Found valid trade route from {start.getName()} ({start.hex.z}) to {newPathArray[newPathArray.Length - 1].getName()} ({newPathArray[newPathArray.Length - 1].hex.z})");
                                     destinations.Enqueue(new ItemPriorityPair<Location[], double>(newPathArray, newPathCost));
-                                    if (destinationPriority == -1.0 || newPathCost < destinationPriority)
+                                    if (destinations.Count == 0 || newPathCost < destinationPriority)
                                     {
                                         destinationPriority = newPathCost;
                                     }
