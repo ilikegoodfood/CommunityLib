@@ -369,8 +369,7 @@ namespace CommunityLib
                     utility += val;
                     return utility;
                 }
-
-                if (orcMight - 10 >= enemyMight)
+                else if (orcMight - 10 >= enemyMight)
                 {
                     val = enemyMight - orcMight;
                     reasonMsgs?.Add(new ReasonMsg("Superior military", val));
@@ -380,13 +379,13 @@ namespace CommunityLib
                 {
                     if (offensiveWarCount >= warCount || offensiveEnemyMight >= enemyMight)
                     {
-                        val = 2 * (enemyMight - (orcMight - 10));
+                        val = 2 * (enemyMight - orcMight);
                         reasonMsgs?.Add(new ReasonMsg("Inferior military", val));
                         utility += val;
                     }
                     else
                     {
-                        val = enemyMight - (orcMight - 10);
+                        val = enemyMight - orcMight;
                         reasonMsgs?.Add(new ReasonMsg("Inferior military", val));
                         utility += val;
 
