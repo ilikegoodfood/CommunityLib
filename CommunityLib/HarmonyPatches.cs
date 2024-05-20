@@ -144,6 +144,7 @@ namespace CommunityLib
 
             // Challenge fixes
             harmony.Patch(original: AccessTools.Method(typeof(Rti_Orc_AttackHere), nameof(Rti_Orc_AttackHere.valid), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Rti_Orc_AttackHere_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(Rt_Orcs_RaidingParty), nameof(Rt_Orcs_RaidingParty.complete), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Rt_Orcs_RaidingParty_complete_Transpiler)));
 
             // Religion UI Screen modification
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bPrev), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
@@ -652,6 +653,50 @@ namespace CommunityLib
             if (__instance.caster == null || __instance.caster.orcs == null || __instance.caster.orcs.isGone())
             {
                 __result = false;
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> Rt_Orcs_RaidingParty_complete_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            FieldInfo FIS_SelectedUnit = AccessTools.Field(typeof(GraphicalMap), nameof(GraphicalMap.selectedUnit));
+
+            Label skipLabel = ilg.DefineLabel();
+
+            int targetIndex = 1;
+
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_1 && instructionList[i+1].opcode == OpCodes.Stsfld)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldsfld, FIS_SelectedUnit);
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Ceq);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, skipLabel);
+
+                            yield return new CodeInstruction(OpCodes.Ldloc_1);
+                            yield return new CodeInstruction(OpCodes.Stsfld, FIS_SelectedUnit);
+
+                            i += 2;
+                            instructionList[i].labels.Add(skipLabel);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Rt_Orcs_RaidingParty_complete_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
