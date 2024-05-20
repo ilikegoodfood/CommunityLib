@@ -279,14 +279,11 @@ namespace CommunityLib
             }
         }
 
-        private static IEnumerable<CodeInstruction> GraphicalLink_Update_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        private static IEnumerable<CodeInstruction> GraphicalLink_Update_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            FieldInfo FI_MapZ = AccessTools.Field(typeof(GraphicalMap), nameof(GraphicalMap.z));
-
-            Label skipA = ilg.DefineLabel();
-            Label skipB = ilg.DefineLabel();
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(GraphicalLink_Update_TranspilerBody), new Type[] { typeof(GraphicalLink), typeof(float) });
 
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
@@ -295,56 +292,28 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldsfld && (FieldInfo)instructionList[i].operand == FI_MapZ && instructionList[i + 1].opcode == OpCodes.Ceq)
+                        if (instructionList[i].opcode == OpCodes.Ldfld && instructionList[i+1].opcode == OpCodes.Ceq)
                         {
-
-
                             targetIndex++;
                         }
                     }
                     else if (targetIndex == 2)
                     {
-                        if (instructionList[i].opcode == OpCodes.Brfalse_S)
+                        if (instructionList[i].opcode == OpCodes.Brfalse)
                         {
-                            instructionList[i].operand = skipA;
+                            Label retLabel = (Label)instructionList[i].operand;
 
-                            targetIndex++;
-                        }
-                    }
-                    else if (targetIndex == 3)
-                    {
-                        if (instructionList[i].opcode == OpCodes.Ldarg_0)
-                        {
-                            instructionList[i].labels.Add(skipA);
+                            yield return new CodeInstruction(OpCodes.Brfalse, retLabel);
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldloc_0);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                            yield return new CodeInstruction(OpCodes.Br, retLabel);
 
-                            targetIndex++;
-                        }
-                    }
-                    else if (targetIndex == 4)
-                    {
-                        if (instructionList[i].opcode == OpCodes.Ldsfld && (FieldInfo)instructionList[i].operand == FI_MapZ && instructionList[i + 1].opcode == OpCodes.Ceq)
-                        {
-                            targetIndex++;
-                        }
-                    }
-                    else if (targetIndex == 5)
-                    {
-                        if (instructionList[i].opcode == OpCodes.Brfalse_S)
-                        {
-                            instructionList[i].operand = skipB;
-
-                            targetIndex++;
-                        }
-                    }
-                    else if (targetIndex == 6)
-                    {
-                        if (instructionList[i].opcode == OpCodes.Ldarg_0)
-                        {
-                            instructionList[i].labels.Add(skipB);
-
+                            i++;
                             targetIndex = 0;
                         }
                     }
+                    
                 }
 
                 yield return instructionList[i];
@@ -355,6 +324,25 @@ namespace CommunityLib
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
+        }
+
+        private static void GraphicalLink_Update_TranspilerBody(GraphicalLink gLink, float alpha)
+        {
+            float alphaA = alpha;
+            float alphaB = alpha;
+
+            int z = GraphicalMap.z;
+            if (gLink.link.a.hex.z != z)
+            {
+                alphaA = 0f;
+            }
+            gLink.lineRenderer.startColor = new Color(0.1f, 0.1f, 1f, alphaA);
+
+            if (gLink.link.b.hex.z != z)
+            {
+                alphaB = 0f;
+            }
+            gLink.lineRenderer.endColor = new Color(0.1f, 0.1f, 1f, alphaB);
         }
 
         private static void GraphicalLink_Update_Postfix(GraphicalLink __instance)
