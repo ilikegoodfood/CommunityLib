@@ -48,7 +48,7 @@ namespace CommunityLib
         {
             if (u != null && u.isCommandable() && location.isOcean)
             {
-                return -1.0;
+                return -0.5;
             }
             return 0.0;
         }
