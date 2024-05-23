@@ -183,6 +183,9 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.getPathTo), new Type[] { typeof(Location), typeof(Location), typeof(Unit), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(Map_getPathTo_Location_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.getPathTo), new Type[] { typeof(Location), typeof(SocialGroup), typeof(Unit), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(Map_getPathTo_SocialGroup_Transpiler)));
 
+            // Power Fixes
+            harmony.Patch(original: AccessTools.Method(typeof(P_Opha_Smite), nameof(P_Opha_Smite.cast), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(P_Opha_Smite_Opha_Smite_cast_Transpiler)));
+
             // House Search Fix
             harmony.Patch(original: AccessTools.Method(typeof(UIScrollThreats), nameof(UIScrollThreats.checkData), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(UIScrollThreats_checkData_Transpiler)));
 
@@ -4091,6 +4094,41 @@ namespace CommunityLib
             }
 
             Console.WriteLine("CommunityLib: Completed Map_moveTowards_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        // Power Fixes
+        private static IEnumerable<CodeInstruction> P_Opha_Smite_Opha_Smite_cast_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            FieldInfo FI_HexZ = AccessTools.Field(typeof(Hex), nameof(Hex.z));
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldc_I4_0 && instructionList[i-1].opcode == OpCodes.Ldfld)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldloc_0);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_HexZ);
+
+                            i++;
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed P_Opha_Smite_Opha_Smite_cast_Transpiler");
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
