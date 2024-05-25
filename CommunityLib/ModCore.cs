@@ -546,7 +546,7 @@ namespace CommunityLib
 
             if (!fields.ContainsKey("is_god_evilbeneath"))
             {
-                fields.Add("is_god_evilbeneath", new EventRuntime.TypedField<bool>((EventContext c) => c.map.overmind.god is God_Underground));
+                fields.Add("is_god_evilbeneath", new EventRuntime.TypedField<bool>((EventContext c) => false));
             }
 
             if (properties.ContainsKey("TELEPORT_TO_ELDER_TOMB"))
