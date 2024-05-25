@@ -529,6 +529,26 @@ namespace CommunityLib
                 fields["is_city_ruins"] = new EventRuntime.TypedField<bool>((EventContext c) => c.location != null && c.location.settlement != null && c.location.settlement is Set_CityRuins && !(c.location.settlement is Set_Shipwreck));
             }
 
+            if (!fields.ContainsKey("is_god_deathgame"))
+            {
+                fields.Add("is_god_deathgame", new EventRuntime.TypedField<bool>((EventContext c) => c.map.overmind.god is God_Cards));
+            }
+
+            if (!fields.ContainsKey("is_god_maker"))
+            {
+                fields.Add("is_god_maker", new EventRuntime.TypedField<bool>((EventContext c) => c.map.overmind.god is God_Eternity));
+            }
+
+            if (!fields.ContainsKey("is_god_cordyceps"))
+            {
+                fields.Add("is_god_cordyceps", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null && intDataCord.typeDict.TryGetValue("God", out Type godType) && (c.map.overmind.god.GetType() == godType || c.map.overmind.god.GetType().IsSubclassOf(godType))));
+            }
+
+            if (!fields.ContainsKey("is_god_evilbeneath"))
+            {
+                fields.Add("is_god_evilbeneath", new EventRuntime.TypedField<bool>((EventContext c) => c.map.overmind.god is God_Underground));
+            }
+
             if (properties.ContainsKey("TELEPORT_TO_ELDER_TOMB"))
             {
                 properties["TELEPORT_TO_ELDER_TOMB"] = new EventRuntime.TypedProperty<string>(delegate (EventContext c, string v)
