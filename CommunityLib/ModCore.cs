@@ -1327,7 +1327,7 @@ namespace CommunityLib
 
         public bool checkIsUnitSubsumed(Unit u)
         {
-            if (u.isDead && u.person != null && !u.person.isDead && u.person.unit != u && !u.person.unit.isDead)
+            if (u.isDead && u.person != null && !u.person.isDead && u.person.unit != null && u.person.unit != u && !u.person.unit.isDead)
             {
                 foreach (Hooks hook in Get().GetRegisteredHooks())
                 {
