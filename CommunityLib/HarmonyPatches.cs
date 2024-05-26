@@ -128,7 +128,6 @@ namespace CommunityLib
 
             // SYSTEM MODIFICATIONS //
             // Mod Config Button Update
-            // Auto Relaunch
             harmony.Patch(original: AccessTools.Method(typeof(PopupModConfig), nameof(PopupModConfig.Update), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(PopupModConfig_update_postfix)));
 
             // Auto Relaunch
@@ -184,7 +183,14 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.getPathTo), new Type[] { typeof(Location), typeof(SocialGroup), typeof(Unit), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(Map_getPathTo_SocialGroup_Transpiler)));
 
             // Power Fixes
-            harmony.Patch(original: AccessTools.Method(typeof(P_Opha_Smite), nameof(P_Opha_Smite.cast), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(P_Opha_Smite_Opha_Smite_cast_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(P_Opha_Smite), nameof(P_Opha_Smite.cast), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(P_Opha_Smite_cast_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(P_Under_BringTheFood), nameof(P_Under_BringTheFood.validTarget), new Type[] { typeof(Unit) }), postfix: new HarmonyMethod(patchType, nameof(P_Under_BringTheFood_validTarget_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(P_Under_DefendTheHeart), nameof(P_Under_DefendTheHeart.validTarget), new Type[] { typeof(Unit) }), postfix: new HarmonyMethod(patchType, nameof(P_Under_DefendTheHeart_validTarget_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(P_Under_DragBodiesUnder), nameof(P_Under_DragBodiesUnder.cast), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(P_Under_DragBodiesUnder_cast_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(P_Under_Sinkholes), nameof(P_Under_Sinkholes.validTarget), new Type[] { typeof(Location) }), postfix: new HarmonyMethod(patchType, nameof(P_Under_Sinkholes_validTarget_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(P_Under_Sinkholes), nameof(P_Under_Sinkholes.lash), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(P_Under_Sinkholes_lash_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(P_Under_VileSecretions), nameof(P_Under_VileSecretions.validTarget), new Type[] { typeof(Location) }), postfix: new HarmonyMethod(patchType, nameof(P_Under_VileSecretions_validTarget_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(P_Under_WithdrawAgent), nameof(P_Under_WithdrawAgent.validTarget), new Type[] { typeof(Unit) }), transpiler: new HarmonyMethod(patchType, nameof(P_Under_WithdrawAgent_validTraget_Transpiler)));
 
             // House Search Fix
             harmony.Patch(original: AccessTools.Method(typeof(UIScrollThreats), nameof(UIScrollThreats.checkData), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(UIScrollThreats_checkData_Transpiler)));
@@ -254,16 +260,16 @@ namespace CommunityLib
 
             harmony.Patch(original: AccessTools.Method(typeof(UIInputs), nameof(UIInputs.rightClickOnHex), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(UIInput_rightClickOnHex_Transpiler)));
 
-            // MOD OPTIONS //
-            // God-Sort
+            // --- MOD OPTIONS --- //
+            // God-Sort //
             // Patches for PrefabStore
             harmony.Patch(original: AccessTools.Method(typeof(PrefabStore), nameof(PrefabStore.getScrollSetGods), new Type[] { typeof(List<God>) }), prefix: new HarmonyMethod(patchType, nameof(PrefabStore_getScrollSetGods_Prefix)));
 
-            // Orc Horde Count
+            // Orc Horde Count //
             // Patches for ManagerMajorThreats
             harmony.Patch(original: AccessTools.Method(typeof(ManagerMajorThreats), nameof(ManagerMajorThreats.turnTick), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(ManagerMajorThreats_turnTick_Transpiler)));
 
-            // Natural Wonder Count
+            // Natural Wonder Count //
             // Patches for Map
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.placeWonders), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Map_placeWonders_Transpiler)));
 
@@ -875,6 +881,27 @@ namespace CommunityLib
             if (__instance.caster == null || __instance.caster.orcs == null || __instance.caster.orcs.isGone())
             {
                 __result = false;
+            }
+        }
+
+        private static void Ch_Orcs_BuildMines_validFor_Postfix(Ch_Orcs_BuildMines __instance, ref bool __result, UA ua)
+        {
+            if (__result)
+            {
+                int specialisedNeighbourCount = 2;
+                foreach (Location neighbour in __instance.location.getNeighbours())
+                {
+                    if (neighbour.settlement is Set_OrcCamp camp && camp.specialism != -1)
+                    {
+                        specialisedNeighbourCount++;
+                    }
+                }
+
+                int cost = __instance.map.param.ch_orc_buildFortressCostPerNeighbour * specialisedNeighbourCount;
+                if (ua.person == null || ua.person.gold < cost)
+                {
+                    __result = false;
+                }
             }
         }
 
@@ -4101,7 +4128,7 @@ namespace CommunityLib
         }
 
         // Power Fixes
-        private static IEnumerable<CodeInstruction> P_Opha_Smite_Opha_Smite_cast_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        private static IEnumerable<CodeInstruction> P_Opha_Smite_cast_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
@@ -4129,6 +4156,204 @@ namespace CommunityLib
             }
 
             Console.WriteLine("CommunityLib: Completed P_Opha_Smite_Opha_Smite_cast_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static void P_Under_BringTheFood_validTarget_Postfix(ref bool __result, Unit unit)
+        {
+            if (__result)
+            {
+                if (!unit.location.properties.Any(pr => pr is Pr_Death && pr.charge >= 1.0))
+                {
+                    __result = false;
+                }
+            }
+        }
+
+        private static void P_Under_DefendTheHeart_validTarget_Postfix(ref bool __result, Unit unit)
+        {
+            if (__result)
+            {
+                if (!unit.location.units.Any(u => u != unit && u is UM && u.society is Society society && u.society != u.map.soc_dark && !society.isDarkEmpire && !society.isOphanimControlled))
+                {
+                    __result = false;
+                }
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> P_Under_DragBodiesUnder_cast_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i+1].opcode == OpCodes.Ldloc_S && instructionList[i+2].opcode == OpCodes.Stloc_2)
+                        {
+                            i += 3;
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i+1].opcode == OpCodes.Ldloc_S && instructionList[1+2].opcode == OpCodes.Castclass)
+                        {
+                            yield return new CodeInstruction(OpCodes.Nop);
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 6);
+                            yield return new CodeInstruction(OpCodes.Stloc_2);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed P_Under_DragBodiesUnder_cast_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static void P_Under_Sinkholes_validTarget_Postfix(ref bool __result, Location loc)
+        {
+            if (__result)
+            {
+                HashSet<Location> visited = new HashSet<Location> { loc };
+                List<Location> outerLocations = new List<Location> { loc };
+                if (loc.units.Any(u => u is UM && u.society != u.map.soc_dark && !(u.task is Task_InBattle)))
+                {
+                    return;
+                }
+
+                for (int i = 0; i < 2; i++)
+                {
+                    List<Location> newOuterLocations = new List<Location>();
+
+                    foreach (Location outerLoc in outerLocations)
+                    {
+                        foreach (Location neighbour in outerLoc.getNeighbours())
+                        {
+                            if (!visited.Contains(neighbour))
+                            {
+                                visited.Add(neighbour);
+                                newOuterLocations.Add(neighbour);
+
+                                if (neighbour.units.Any(u => u is UM && u.society != u.map.soc_dark && !(u.task is Task_InBattle)))
+                                {
+                                    return;
+                                }
+                            }
+                        }
+                    }
+
+                    outerLocations = newOuterLocations;
+                }
+
+                __result = false;
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> P_Under_Sinkholes_lash_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            FieldInfo FI_UnitMap = AccessTools.Field(typeof(Unit), nameof(Unit.map));
+            FieldInfo FI_UnitSociety = AccessTools.Field(typeof(Unit), nameof(Unit.society));
+            FieldInfo FI_TheDark = AccessTools.Field(typeof(Map), nameof(Map.soc_dark));
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (i > 0)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i-1].opcode == OpCodes.Brfalse_S)
+                        {
+                            Label continueLabel = (Label)instructionList[i-1].operand;
+
+                            yield return new CodeInstruction(OpCodes.Nop);
+                            yield return new CodeInstruction(OpCodes.Ldloc_1);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_UnitSociety);
+                            yield return new CodeInstruction(OpCodes.Ldloc_1);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_UnitMap);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_TheDark);
+                            yield return new CodeInstruction(OpCodes.Ceq);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, continueLabel);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed P_Under_Sinkholes_lash_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static void P_Under_VileSecretions_validTarget_Postfix(ref bool __result, Location loc)
+        {
+            if (__result)
+            {
+                if (loc.hex.z == 1)
+                {
+                    __result = false;
+                }
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> P_Under_WithdrawAgent_validTraget_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            FieldInfo FI_UnitMap = AccessTools.Field(typeof(Unit), nameof(Unit.map));
+            FieldInfo FI_UnitSociety = AccessTools.Field(typeof(Unit), nameof(Unit.society));
+            FieldInfo FI_TheDark = AccessTools.Field(typeof(Map), nameof(Map.soc_dark));
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldc_I4_0)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_1);
+                            yield return new CodeInstruction(OpCodes.Ceq);
+
+                            i += 2;
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed P_Under_WithdrawAgent_validTraget_Transpiler");
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
