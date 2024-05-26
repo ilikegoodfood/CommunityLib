@@ -48,7 +48,7 @@ namespace CommunityLib
                 return;
             }
 
-            // HOOKS //
+            // --- HOOKS --- //
             // Graphical unit updated hook
             harmony.Patch(original: AccessTools.Method(typeof(GraphicalUnit), nameof(GraphicalUnit.checkData), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(GraphicalUnit_checkData_Postfix)));
 
@@ -126,7 +126,7 @@ namespace CommunityLib
             // Prefab Store hooks
             harmony.Patch(original: AccessTools.Method(typeof(PrefabStore), nameof(PrefabStore.popHolyOrder), new Type[] { typeof(HolyOrder) }), prefix: new HarmonyMethod(patchType, nameof(Prefab_popHolyOrder_Prefix)));
 
-            // SYSTEM MODIFICATIONS //
+            // --- SYSTEM MODIFICATIONS --- //
             // Mod Config Button Update
             // Auto Relaunch
             harmony.Patch(original: AccessTools.Method(typeof(PopupModConfig), nameof(PopupModConfig.Update), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(PopupModConfig_update_postfix)));
@@ -144,6 +144,13 @@ namespace CommunityLib
 
             // Challenge fixes
             harmony.Patch(original: AccessTools.Method(typeof(Rti_Orc_AttackHere), nameof(Rti_Orc_AttackHere.valid), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Rti_Orc_AttackHere_Postfix)));
+            // Orcs Build Menagerie
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_BuildMenagerie), nameof(Ch_Orcs_BuildMenagerie.getRestriction), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Ch_Orcs_BuildMenagerie_getRestriction_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_BuildMenagerie), nameof(Ch_Orcs_BuildMenagerie.validFor), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Ch_Orcs_BuildMenagerie_validFor_Postfix)));
+            // Orcs Build Mine
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_BuildMines), nameof(Ch_Orcs_BuildMines.getRestriction), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Ch_Orcs_BuildMines_getRestriction_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_BuildMines), nameof(Ch_Orcs_BuildMines.validFor), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Ch_Orcs_BuildMines_validFor_Postfix)));
+            // Orcs Raiding Party
             harmony.Patch(original: AccessTools.Method(typeof(Rt_Orcs_RaidingParty), nameof(Rt_Orcs_RaidingParty.complete), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Rt_Orcs_RaidingParty_complete_Transpiler)));
 
             // Religion UI Screen modification
@@ -654,6 +661,55 @@ namespace CommunityLib
             {
                 __result = false;
             }
+        }
+
+        private static void Ch_Orcs_BuildMenagerie_getRestriction_Postfix(Ch_Orcs_BuildMenagerie __instance, ref string __result)
+        {
+            int specialisedNeighbourCount = 2;
+            foreach (Location neighbour in __instance.location.getNeighbours())
+            {
+                if (neighbour.settlement is Set_OrcCamp camp && camp.specialism != -1)
+                {
+                    specialisedNeighbourCount++;
+                }
+            }
+
+            __result = "Requires an infiltrated orc camp (non specialised). Requires " + (__instance.map.param.ch_orc_buildFortressCostPerNeighbour * specialisedNeighbourCount).ToString() + " <b>gold</b>. Requires you to be carrying a Manticore Trophy (obtained by killing a manticore)";
+        }
+
+        private static void Ch_Orcs_BuildMenagerie_validFor_Postfix(Ch_Orcs_BuildMenagerie __instance,  ref bool __result, UA ua)
+        {
+            if (__result)
+            {
+                int specialisedNeighbourCount = 2;
+                foreach (Location neighbour in __instance.location.getNeighbours())
+                {
+                    if (neighbour.settlement is Set_OrcCamp camp && camp.specialism != -1)
+                    {
+                        specialisedNeighbourCount++;
+                    }
+                }
+
+                int cost = __instance.map.param.ch_orc_buildFortressCostPerNeighbour * specialisedNeighbourCount;
+                if (ua.person == null || ua.person.gold < cost)
+                {
+                    __result = false;
+                }
+            }
+        }
+
+        private static void Ch_Orcs_BuildMines_getRestriction_Postfix(Ch_Orcs_BuildMines __instance,  ref string __result)
+        {
+            int specialisedNeighbourCount = 2;
+            foreach (Location neighbour in __instance.location.getNeighbours())
+            {
+                if (neighbour.settlement is Set_OrcCamp camp && camp.specialism != -1)
+                {
+                    specialisedNeighbourCount++;
+                }
+            }
+
+            __result = "Requires an infiltrated orc camp (non specialised). Requires " + (__instance.map.param.ch_orc_buildFortressCostPerNeighbour * specialisedNeighbourCount).ToString() + " <b>gold</b>.";
         }
 
         private static IEnumerable<CodeInstruction> Rt_Orcs_RaidingParty_complete_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
