@@ -2841,7 +2841,6 @@ namespace CommunityLib
 
             Label falseLabel = ilg.DefineLabel();
             Label allowMultiSkipLabel = ilg.DefineLabel();
-            Label challengeFoundSkipLabel = ilg.DefineLabel();
 
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
