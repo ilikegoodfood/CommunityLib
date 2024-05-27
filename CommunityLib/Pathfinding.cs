@@ -358,11 +358,11 @@ namespace CommunityLib
 
                             if (neighbour.soc == sg && delegate_VALID_LAYERBOUND(newPathArray, neighbour, u, targetMapLayers))
                             {
-                                destinations.Enqueue(newPathArray, newPathCost);
                                 if (destinations.Count == 0 || newPathCost < destinationPriority)
                                 {
                                     destinationPriority = newPathCost;
                                 }
+                                destinations.Enqueue(newPathArray, newPathCost);
                             }
 
                             locationHashes.Add(neighbour);
@@ -462,7 +462,7 @@ namespace CommunityLib
             HashSet<Location> locationHashes = new HashSet<Location> { loc };
             PriorityQueue<Location[], double> paths = new PriorityQueue<Location[], double>();
 
-            paths.Enqueue(new Location[1] { loc }, 0.0);
+            paths.Enqueue(new Location[] { loc }, 0.0);
 
             for (int pass = 0; pass < 2; pass++)
             {
@@ -503,7 +503,7 @@ namespace CommunityLib
                             double newPathCost = pair.Priority + stepCost;
 
                             bool valid = true;
-                            foreach (Func<Location[], Location, Unit, int[], bool> validDelegate in destinationValidityDelegates)
+                            foreach (Func<Location[], Location, Unit, List<int>, bool> validDelegate in destinationValidityDelegates)
                             {
                                 if (!destinationValidityDelegate(pair.Item, neighbour, u, targetMapLayers))
                                 {
@@ -514,11 +514,11 @@ namespace CommunityLib
 
                             if (valid)
                             {
-                                destinations.Enqueue(newPathArray, newPathCost);
                                 if (destinations.Count == 0 || newPathCost < destinationPriority)
                                 {
                                     destinationPriority = newPathCost;
                                 }
+                                destinations.Enqueue(newPathArray, newPathCost);
                             }
 
                             locationHashes.Add(neighbour);
@@ -532,7 +532,7 @@ namespace CommunityLib
                         while (destinations.Count > 0)
                         {
                             ItemPriorityPair<Location[], double> destinationPair = destinations.DequeueWithPriority();
-                            if (destinationPair.Priority == destinationPriority)
+                            if (destinationPair.Priority <= destinationPriority)
                             {
                                 destinationPaths.Add(destinationPair.Item);
                             }
@@ -985,11 +985,11 @@ namespace CommunityLib
                                 if (valid)
                                 {
                                     //Console.WriteLine($"Found valid trade route from {start.getName()} ({start.hex.z}) to {newPathArray[newPathArray.Length - 1].getName()} ({newPathArray[newPathArray.Length - 1].hex.z})");
-                                    destinations.Enqueue(new ItemPriorityPair<Location[], double>(newPathArray, newPathCost));
                                     if (destinations.Count == 0 || newPathCost < destinationPriority)
                                     {
                                         destinationPriority = newPathCost;
                                     }
+                                    destinations.Enqueue(new ItemPriorityPair<Location[], double>(newPathArray, newPathCost));
                                 }
                             }
 

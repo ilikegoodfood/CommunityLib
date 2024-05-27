@@ -74,37 +74,35 @@ namespace CommunityLib
                 unit.task = null;
                 return;
             }
-            else
+
+            if (deepOne.location.isOcean)
             {
-                if (deepOne.location.isOcean)
+                //Console.WriteLine("CommunityLib: DeepOne is at ocean location");
+                deepOne.moveType = Unit.MoveType.AQUAPHIBIOUS;
+                deepOne.task = null;
+                return;
+            }
+
+            Location[] pathTo = Pathfinding.getPathTo(unit.location, delegate_VALID_OCEAN, deepOne, null, false);
+            if (pathTo == null || pathTo.Length < 2)
+            {
+                deepOne.die(deepOne.map, "Unable to reach the ocean");
+                return;
+            }
+            target = pathTo[pathTo.Length - 1];
+
+            int index = 1;
+            while (unit.movesTaken < unit.getMaxMoves())
+            {
+                deepOne.map.adjacentMoveTo(unit, pathTo[index]);
+                deepOne.movesTaken++;
+                index++;
+
+                if (deepOne.location == target)
                 {
-                    //Console.WriteLine("CommunityLib: DeepOne is at ocean location");
                     deepOne.moveType = Unit.MoveType.AQUAPHIBIOUS;
                     deepOne.task = null;
                     return;
-                }
-
-                Location[] pathTo = Pathfinding.getPathTo(unit.location, delegate_VALID_OCEAN, unit, null, false);
-                if (pathTo == null || pathTo.Length < 2)
-                {
-                    deepOne.die(deepOne.map, "Unable to reach the ocean");
-                    return;
-                }
-                target = pathTo[pathTo.Length - 1];
-
-                int index = 1;
-                while (unit.movesTaken < unit.getMaxMoves())
-                {
-                    deepOne.map.adjacentMoveTo(unit, pathTo[index]);
-                    deepOne.movesTaken++;
-                    index++;
-
-                    if (deepOne.location == target)
-                    {
-                        deepOne.moveType = Unit.MoveType.AQUAPHIBIOUS;
-                        deepOne.task = null;
-                        return;
-                    }
                 }
             }
         }
