@@ -59,7 +59,7 @@ namespace CommunityLib
                 return;
             }
 
-            Location[] pathTo = Pathfinding.getPathTo(unit.location, delegate_VALID_OCEAN, deepOne, null, false);
+            Location[] pathTo = Pathfinding.getPathTo(unit.location, delegate_VALID_OCEAN, deepOne, false);
             if (pathTo == null || pathTo.Length < 2)
             {
                 deepOne.die(deepOne.map, "Unable to reach the ocean");
