@@ -154,6 +154,9 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bPrev), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bNext), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
 
+            // Repeat Completed Challenge tweaks
+            harmony.Patch(original: AccessTools.Method(typeof(PopupChallengeComplete), nameof(PopupChallengeComplete.populate), new Type[] { typeof(Unit), typeof(Challenge), typeof(int), typeof(string), typeof(string) }), transpiler: new HarmonyMethod(patchType, nameof(PopupChallengeComplete_populate_Transpiler)));
+
             // Trade Route Fixes
             harmony.Patch(original: AccessTools.Method(typeof(ManagerTrade), nameof(ManagerTrade.checkTradeNetwork), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(ManagerTrade_checkTradeNetwork_Transpiler)));
 
@@ -2823,6 +2826,78 @@ namespace CommunityLib
             }
 
             Console.WriteLine("CommunityLib: Completed PopupHolyOrder_bPrevNext_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        // Repeat Completed Challenge tweaks
+        private static IEnumerable<CodeInstruction> PopupChallengeComplete_populate_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_AllowMultiple = AccessTools.Method(typeof(Challenge), nameof(Challenge.allowMultipleUsers), new Type[0]);
+            MethodInfo MI_Contains = AccessTools.Method(typeof(List<Challenge>), nameof(List<Challenge>.Contains), new Type[] { typeof(Challenge) });
+
+            FieldInfo FI_rituals = AccessTools.Field(typeof(Unit), nameof(Unit.rituals));
+
+            Label falseLabel = ilg.DefineLabel();
+            Label allowMultiSkipLabel = ilg.DefineLabel();
+            Label challengeFoundSkipLabel = ilg.DefineLabel();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+
+                if (targetIndex == 1)
+                {
+                    if (i > 0 && instructionList[i].opcode == OpCodes.Ldarg_2 && instructionList[i+1].opcode == OpCodes.Ldfld)
+                    {
+                        falseLabel = (Label)instructionList[i-1].operand;
+
+                        yield return new CodeInstruction(OpCodes.Ldarg_2);
+                        yield return new CodeInstruction(OpCodes.Callvirt, MI_AllowMultiple);
+                        yield return new CodeInstruction(OpCodes.Brtrue_S, allowMultiSkipLabel);
+
+                        targetIndex++;
+                    }
+                }
+                else if (targetIndex == 2)
+                {
+                    if (instructionList[i].opcode == OpCodes.Ldarg_2)
+                    {
+                        instructionList[i].labels.Add(allowMultiSkipLabel);
+
+                        targetIndex++;
+                    }
+                }
+                else if (targetIndex == 3)
+                {
+                    if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i-1].opcode == OpCodes.Ldloc_0)
+                    {
+                        yield return new CodeInstruction(OpCodes.Brtrue_S, challengeFoundSkipLabel);
+
+                        yield return new CodeInstruction(OpCodes.Ldarg_1);
+                        yield return new CodeInstruction(OpCodes.Ldnull);
+                        yield return new CodeInstruction(OpCodes.Cgt_Un);
+                        yield return new CodeInstruction(OpCodes.Brfalse_S, falseLabel);
+
+                        yield return new CodeInstruction(OpCodes.Ldarg_2);
+                        yield return new CodeInstruction(OpCodes.Ldarg_1);
+                        yield return new CodeInstruction(OpCodes.Ldfld, FI_rituals);
+                        yield return new CodeInstruction(OpCodes.Callvirt, MI_Contains);
+
+                        instructionList[i + 1].labels.Add(challengeFoundSkipLabel);
+
+                        targetIndex = 0;
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed PopupChallengeComplete_populate_Transpiler");
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
