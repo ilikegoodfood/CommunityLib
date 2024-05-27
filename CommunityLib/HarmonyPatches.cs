@@ -2838,9 +2838,6 @@ namespace CommunityLib
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
             MethodInfo MI_AllowMultiple = AccessTools.Method(typeof(Challenge), nameof(Challenge.allowMultipleUsers), new Type[0]);
-            MethodInfo MI_Contains = AccessTools.Method(typeof(List<Challenge>), nameof(List<Challenge>.Contains), new Type[] { typeof(Challenge) });
-
-            FieldInfo FI_rituals = AccessTools.Field(typeof(Unit), nameof(Unit.rituals));
 
             Label falseLabel = ilg.DefineLabel();
             Label allowMultiSkipLabel = ilg.DefineLabel();
@@ -2868,27 +2865,6 @@ namespace CommunityLib
                     if (instructionList[i].opcode == OpCodes.Ldarg_2)
                     {
                         instructionList[i].labels.Add(allowMultiSkipLabel);
-
-                        targetIndex++;
-                    }
-                }
-                else if (targetIndex == 3)
-                {
-                    if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i-1].opcode == OpCodes.Ldloc_0)
-                    {
-                        yield return new CodeInstruction(OpCodes.Brtrue_S, challengeFoundSkipLabel);
-
-                        yield return new CodeInstruction(OpCodes.Ldarg_1);
-                        yield return new CodeInstruction(OpCodes.Ldnull);
-                        yield return new CodeInstruction(OpCodes.Cgt_Un);
-                        yield return new CodeInstruction(OpCodes.Brfalse_S, falseLabel);
-
-                        yield return new CodeInstruction(OpCodes.Ldarg_2);
-                        yield return new CodeInstruction(OpCodes.Ldarg_1);
-                        yield return new CodeInstruction(OpCodes.Ldfld, FI_rituals);
-                        yield return new CodeInstruction(OpCodes.Callvirt, MI_Contains);
-
-                        instructionList[i + 1].labels.Add(challengeFoundSkipLabel);
 
                         targetIndex = 0;
                     }
