@@ -3251,12 +3251,17 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_TranspilerBody_Society = AccessTools.Method(patchType, nameof(Society_populateActions_TranspilerBody_Society), new Type[] { typeof(Society), typeof(SocialGroup) });
-            MethodInfo MI_TranspilerBody_Subsettlement = AccessTools.Method(patchType, nameof(Society_populateActions_TranspilerBody_Subsettlement), new Type[] { typeof(Society), typeof(Subsettlement) });
+            MethodInfo MI_GetSGLayers = AccessTools.Method(patchType, nameof(GetSocialGroupLayers), new Type[] { typeof(Map) });
+            MethodInfo MI_TranspilerBody_Society = AccessTools.Method(patchType, nameof(Society_populateActions_TranspilerBody_Society), new Type[] { typeof(Society), typeof(SocialGroup), typeof(Dictionary <SocialGroup, HashSet<int>>) });
+            MethodInfo MI_TranspilerBody_Subsettlement = AccessTools.Method(patchType, nameof(Society_populateActions_TranspilerBody_Subsettlement), new Type[] { typeof(Society), typeof(Subsettlement), typeof(Dictionary<SocialGroup, HashSet<int>>) });
             MethodInfo MI_DipRelOther = AccessTools.Method(typeof(DipRel), nameof(DipRel.other), new Type[] { typeof(SocialGroup) });
+
+            FieldInfo FI_Map = AccessTools.Field(typeof(SocialGroup), nameof(SocialGroup.map));
 
             Label incrementLabelA = ilg.DefineLabel();
             Label incrementLabelB = ilg.DefineLabel();
+
+            int dictIndex = ilg.DeclareLocal(typeof(Dictionary<SocialGroup, HashSet<int>>)).LocalIndex;
 
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
@@ -3265,6 +3270,22 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
+                        if (i > 0 && instructionList[i].opcode == OpCodes.Nop && instructionList[i-1].opcode == OpCodes.Nop && instructionList[i-2].opcode == OpCodes.Nop)
+                        {
+                            CodeInstruction code = new CodeInstruction(OpCodes.Nop);
+                            code.labels.AddRange(instructionList[i].labels);
+                            instructionList[i].labels.Clear();
+                            yield return code;
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Map);
+                            yield return new CodeInstruction(OpCodes.Call, MI_GetSGLayers);
+                            yield return new CodeInstruction(OpCodes.Stloc_S, dictIndex);
+
+                            targetIndex++;
+                        }
+                    }
+                    if (targetIndex == 2)
+                    {
                         if (instructionList[i].opcode == OpCodes.Br_S && instructionList[i+1].opcode == OpCodes.Ldarg_0 && instructionList[i-1].opcode == OpCodes.Nop)
                         {
                             targetIndex++;
@@ -3272,13 +3293,14 @@ namespace CommunityLib
                             incrementLabelA = (Label)instructionList[i].operand;
                         }
                     }
-                    else if (targetIndex == 2)
+                    else if (targetIndex == 3)
                     {
                         if (instructionList[i].opcode == OpCodes.Ldfld)
                         {
                             yield return new CodeInstruction(OpCodes.Ldloc_S, 5); // Current Enumeration dipRel
                             yield return new CodeInstruction(OpCodes.Ldarg_0); // this
                             yield return new CodeInstruction(OpCodes.Callvirt, MI_DipRelOther); //DipRel.other(this)
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, dictIndex);
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Society);
                             yield return new CodeInstruction(OpCodes.Brfalse_S, incrementLabelA);
 
@@ -3287,18 +3309,22 @@ namespace CommunityLib
                             targetIndex++;
                         }
                     }
-                    else if (instructionList[i].opcode == OpCodes.Endfinally)
-                    {
-                        targetIndex++;
-                    }
                     else if (targetIndex == 4)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i+1].opcode == OpCodes.Ldfld && instructionList[i+2].opcode == OpCodes.Ldloc_S)
+                        if (instructionList[i].opcode == OpCodes.Endfinally)
                         {
-                            incrementLabelB = (Label)instructionList[i-2].operand;
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 5)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i + 1].opcode == OpCodes.Ldfld && instructionList[i + 2].opcode == OpCodes.Ldloc_S)
+                        {
+                            incrementLabelB = (Label)instructionList[i - 2].operand;
 
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Ldloc_S, 13);
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, dictIndex);
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Subsettlement);
                             yield return new CodeInstruction(OpCodes.Brfalse_S, incrementLabelB);
 
@@ -3319,7 +3345,31 @@ namespace CommunityLib
             }
         }
 
-        private static bool Society_populateActions_TranspilerBody_Society(Society soc, SocialGroup other)
+        private static Dictionary<SocialGroup, HashSet<int>> GetSocialGroupLayers(Map map)
+        {
+            Dictionary<SocialGroup, HashSet<int>> result = new Dictionary<SocialGroup, HashSet<int>>();
+
+            foreach(Location loc in map.locations)
+            {
+                if (loc.soc == null)
+                {
+                    continue;
+                }
+
+                if (result.TryGetValue(loc.soc, out HashSet<int> layers))
+                {
+                    layers.Add(loc.hex.z);
+                }
+                else
+                {
+                    result.Add(loc.soc, new HashSet<int> { loc.hex.z });
+                }
+            }
+
+            return result;
+        }
+
+        private static bool Society_populateActions_TranspilerBody_Society(Society soc, SocialGroup other, Dictionary<SocialGroup, HashSet<int>> sgLayers)
         {
             Map map = soc.map;
 
@@ -3347,34 +3397,9 @@ namespace CommunityLib
 
             if ((capitol.z == 0 && otherCapitol.z == 1) || (capitol.z == 1 && otherCapitol.z == 0))
             {
-                // Less throough checks for good societies.
-                if (other is Society otherSoc && !otherSoc.isDarkEmpire && !otherSoc.isOphanimControlled)
+                if (sgLayers.TryGetValue(soc, out HashSet<int> layers) && sgLayers.TryGetValue(other, out HashSet<int> otherLayers) && layers.Intersect(otherLayers).Any())
                 {
-                    return false;
-                }
-
-                HashSet<int> layers = new HashSet<int>();
-                HashSet<int> otherLayers = new HashSet<int>();
-                foreach (Location loc in map.locations)
-                {
-                    if (loc.soc == null)
-                    {
-                        continue;
-                    }
-
-                    if (loc.soc == soc)
-                    {
-                        layers.Add(loc.hex.z);
-                    }
-                    else if (loc.soc == other)
-                    {
-                        otherLayers.Add(loc.hex.z);
-                    }
-
-                    if (layers.Intersect(otherLayers).Any())
-                    {
-                        return true;
-                    }
+                    return true;
                 }
 
                 return false;
@@ -3383,7 +3408,7 @@ namespace CommunityLib
             return true;
         }
 
-        private static bool Society_populateActions_TranspilerBody_Subsettlement(Society soc, Subsettlement sub)
+        private static bool Society_populateActions_TranspilerBody_Subsettlement(Society soc, Subsettlement sub, Dictionary<SocialGroup, HashSet<int>> sgLayers)
         {
             Map map = soc.map;
 
@@ -3406,12 +3431,9 @@ namespace CommunityLib
 
             if ((capitol.z == 0 && targetHex.z == 1) || (capitol.z == 1 && targetHex.z == 0))
             {
-                foreach (Location loc in map.locations)
+                if (sgLayers.TryGetValue(soc, out HashSet<int> layers) && layers.Contains(sub.settlement.location.hex.z))
                 {
-                    if (loc.hex.z == targetHex.z && loc.soc == soc)
-                    {
-                        return true;
-                    }
+                    return true;
                 }
 
                 return false;
@@ -3424,11 +3446,15 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(SG_Orc_getActions_TranspilerBody), new Type[] { typeof(SG_Orc), typeof(SocialGroup) });
+            MethodInfo MI_GetSGLayers = AccessTools.Method(patchType, nameof(GetSocialGroupLayers), new Type[] { typeof(Map) });
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(SG_Orc_getActions_TranspilerBody), new Type[] { typeof(SG_Orc), typeof(SocialGroup), typeof(Dictionary<SocialGroup, HashSet<int>>) });
             MethodInfo MI_getNeighbours = AccessTools.Method(typeof(SocialGroup), nameof(SocialGroup.getNeighbours), new Type[0]);
             MethodInfo MI_getItem = AccessTools.PropertyGetter(typeof(List<MA_Orc_Attack>), "Item");
 
+            FieldInfo FI_Map = AccessTools.Field(typeof(SocialGroup), nameof(SocialGroup.map));
+
             int neighboursIndex = ilg.DeclareLocal(typeof(List<SocialGroup>)).LocalIndex;
+            int dictIndex = ilg.DeclareLocal(typeof(Dictionary<SocialGroup, HashSet<int>>)).LocalIndex;
 
             Label removeLabel = ilg.DefineLabel();
 
@@ -3438,6 +3464,22 @@ namespace CommunityLib
                 if (targetIndex > 0)
                 {
                     if (targetIndex == 1)
+                    {
+                        if (i > 0 && instructionList[i].opcode == OpCodes.Nop && instructionList[i-1].opcode == OpCodes.Br)
+                        {
+                            CodeInstruction code = new CodeInstruction(OpCodes.Nop);
+                            code.labels.AddRange(instructionList[i].labels);
+                            instructionList[i].labels.Clear();
+                            yield return code;
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Map);
+                            yield return new CodeInstruction(OpCodes.Call, MI_GetSGLayers);
+                            yield return new CodeInstruction(OpCodes.Stloc_S, dictIndex);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
                     {
                         if (instructionList[i].opcode == OpCodes.Ldc_I4_0 && instructionList[i + 1].opcode == OpCodes.Stloc_S && instructionList[i + 2].opcode == OpCodes.Br_S)
                         {
@@ -3449,7 +3491,7 @@ namespace CommunityLib
                             targetIndex++;
                         }
                     }
-                    else if (targetIndex == 2)
+                    else if (targetIndex == 3)
                     {
                         if (instructionList[i].opcode == OpCodes.Ldarg_0)
                         {
@@ -3459,7 +3501,7 @@ namespace CommunityLib
                             targetIndex++;
                         }
                     }
-                    else if (targetIndex == 3)
+                    else if (targetIndex == 4)
                     {
                         if (instructionList[i].opcode == OpCodes.Brfalse_S)
                         {
@@ -3468,7 +3510,7 @@ namespace CommunityLib
                             targetIndex++;
                         }
                     }
-                    else if (targetIndex == 4)
+                    else if (targetIndex == 5)
                     {
                         if (instructionList[i].opcode == OpCodes.Nop)
                         {
@@ -3477,13 +3519,14 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Ldloc_S, neighboursIndex);
                             yield return new CodeInstruction(OpCodes.Ldloc_S, 5);
                             yield return new CodeInstruction(OpCodes.Callvirt, MI_getItem);
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, dictIndex);
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
                             yield return new CodeInstruction(OpCodes.Brfalse_S, removeLabel);
 
                             targetIndex++;
                         }
                     }
-                    else if (targetIndex == 5)
+                    else if (targetIndex == 6)
                     {
                         if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i + 1].opcode == OpCodes.Call && instructionList[i + 2].opcode == OpCodes.Callvirt)
                         {
@@ -3494,20 +3537,21 @@ namespace CommunityLib
                             targetIndex++;
                         }
                     }
-                    else if (targetIndex == 6)
+                    else if (targetIndex == 7)
                     {
                         if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i - 1].opcode == OpCodes.Ldloc_S && instructionList[i - 2].opcode == OpCodes.Stloc_S && instructionList[i - 3].opcode == OpCodes.Ldloc_S)
                         {
                             targetIndex++;
                         }
                     }
-                    else if (targetIndex == 7)
+                    else if (targetIndex == 8)
                     {
                         if (instructionList[i].opcode == OpCodes.Ldfld)
                         {
                             Label incrementLabel = (Label)instructionList[i - 2].operand;
 
                             yield return new CodeInstruction(OpCodes.Ldloc_S, 9);
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, dictIndex);
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
                             yield return new CodeInstruction(OpCodes.Brfalse_S, incrementLabel);
 
@@ -3528,7 +3572,7 @@ namespace CommunityLib
             }
         }
 
-        private static bool SG_Orc_getActions_TranspilerBody(SG_Orc orcs, SocialGroup other)
+        private static bool SG_Orc_getActions_TranspilerBody(SG_Orc orcs, SocialGroup other, Dictionary<SocialGroup, HashSet<int>> sgLayers)
         {
             Map map = orcs.map;
 
@@ -3546,28 +3590,9 @@ namespace CommunityLib
 
             if ((capitol.z == 0 && otherCapitol.z == 1) || (capitol.z == 1 && otherCapitol.z == 0))
             {
-                HashSet<int> layers = new HashSet<int>();
-                HashSet<int> otherLayers = new HashSet<int>();
-                foreach (Location loc in map.locations)
+                if (sgLayers.TryGetValue(orcs, out HashSet<int> layers) && sgLayers.TryGetValue(other, out HashSet<int> otherLayers) && layers.Intersect(otherLayers).Any())
                 {
-                    if (loc.soc == null)
-                    {
-                        continue;
-                    }
-
-                    if (loc.soc == orcs)
-                    {
-                        layers.Add(loc.hex.z);
-                    }
-                    else if (loc.soc == other)
-                    {
-                        otherLayers.Add(loc.hex.z);
-                    }
-
-                    if (layers.Intersect(otherLayers).Any())
-                    {
-                        return true;
-                    }
+                    return true;
                 }
 
                 return false;
