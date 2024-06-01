@@ -133,7 +133,7 @@ namespace CommunityLib
             // Auto Relaunch
             harmony.Patch(original: AccessTools.Method(typeof(PopupModConfig), nameof(PopupModConfig.dismiss), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(PopupModConfig_dismiss_transpiler)));
 
-            // AGent Fixes
+            // Agent Fixes
             harmony.Patch(original: AccessTools.Method(typeof(UAE_Abstraction), nameof(UAE_Abstraction.validTarget), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(UAE_Abstraction_validTarget_transpiler)));
 
             // AgentBattle Fixes
@@ -1063,18 +1063,42 @@ namespace CommunityLib
         // Local Action Fixes
         private static void Act_FundOutpost_valid_Postfix(Act_FundOutpost __instance, ref bool __result, Person ruler, SettlementHuman settlementHuman)
         {
-            if (__result && __instance.map.awarenessOfUnderground < 1.0f)
+            if (__result && __instance.map.awarenessOfUnderground < 1d)
             {
                 int targetZ = __instance.outpost.location.hex.z;
                 int sourceZ = -1;
+                SocialGroup sg = null;
 
-                if (ruler.rulerOf != -1)
+                if (settlementHuman != null)
                 {
-                    sourceZ = ruler.map.locations[ruler.rulerOf].hex.z;
+                    sourceZ = settlementHuman.location.hex.z;
+                    sg = settlementHuman.location.soc;
+                }
+
+                if (sg != null && sg == sg.map.soc_dark)
+                {
+                    return;
+                }
+
+                if (sg is Society soc && (soc.isDarkEmpire || soc.isOphanimControlled))
+                {
+                    return;
                 }
 
                 if ((targetZ == 0 && sourceZ == 1) || (targetZ == 1 && sourceZ == 0))
                 {
+                    if (sg != null)
+                    {
+                        foreach (Location neighbour in __instance.outpost.location.getNeighbours())
+                        {
+                            if (neighbour.hex.z == targetZ && neighbour.soc == sg)
+                            {
+                                __result = true;
+                                return;
+                            }
+                        }
+                    }
+
                     __result = false;
                 }
             }
