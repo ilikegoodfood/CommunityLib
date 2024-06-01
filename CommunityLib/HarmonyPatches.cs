@@ -3251,10 +3251,13 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Society_populateActions_TranspilerBody), new Type[] { typeof(Society), typeof(SocialGroup) });
+            MethodInfo MI_TranspilerBody_Society = AccessTools.Method(patchType, nameof(Society_populateActions_TranspilerBody_Society), new Type[] { typeof(Society), typeof(SocialGroup) });
+            MethodInfo MI_TranspilerBody_Subsettlement = AccessTools.Method(patchType, nameof(Society_populateActions_TranspilerBody_Subsettlement), new Type[] { typeof(Society), typeof(Subsettlement) });
             MethodInfo MI_DipRelOther = AccessTools.Method(typeof(DipRel), nameof(DipRel.other), new Type[] { typeof(SocialGroup) });
 
-            Label incrementLabel = ilg.DefineLabel();
+            Label incrementLabelA = ilg.DefineLabel();
+            Label incrementLabelB = ilg.DefineLabel();
+
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
             {
@@ -3266,7 +3269,7 @@ namespace CommunityLib
                         {
                             targetIndex++;
 
-                            incrementLabel = (Label)instructionList[i].operand;
+                            incrementLabelA = (Label)instructionList[i].operand;
                         }
                     }
                     else if (targetIndex == 2)
@@ -3276,10 +3279,30 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Ldloc_S, 5); // Current Enumeration dipRel
                             yield return new CodeInstruction(OpCodes.Ldarg_0); // this
                             yield return new CodeInstruction(OpCodes.Callvirt, MI_DipRelOther); //DipRel.other(this)
-                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
-                            yield return new CodeInstruction(OpCodes.Brfalse_S, incrementLabel);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Society);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, incrementLabelA);
 
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (instructionList[i].opcode == OpCodes.Endfinally)
+                    {
+                        targetIndex++;
+                    }
+                    else if (targetIndex == 4)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i+1].opcode == OpCodes.Ldfld && instructionList[i+2].opcode == OpCodes.Ldloc_S)
+                        {
+                            incrementLabelB = (Label)instructionList[i-2].operand;
+
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 13);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Subsettlement);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, incrementLabelB);
+
+                            yield return new CodeInstruction(OpCodes.Nop);
 
                             targetIndex = 0;
                         }
@@ -3296,16 +3319,16 @@ namespace CommunityLib
             }
         }
 
-        private static bool Society_populateActions_TranspilerBody(Society sg, SocialGroup other)
+        private static bool Society_populateActions_TranspilerBody_Society(Society soc, SocialGroup other)
         {
-            Map map = sg.map;
+            Map map = soc.map;
 
-            if (sg.map == null || sg.map.awarenessOfUnderground >= 1d)
+            if (soc.map == null || soc.map.awarenessOfUnderground >= 1d)
             {
                 return true;
             }
 
-            if (sg.isDarkEmpire || sg.isOphanimControlled)
+            if (soc.isDarkEmpire || soc.isOphanimControlled)
             {
                 return true;
             }
@@ -3315,7 +3338,7 @@ namespace CommunityLib
                 return true;
             }
 
-            Hex capitol = sg.getCapitalHex();
+            Hex capitol = soc.getCapitalHex();
             Hex otherCapitol = other.getCapitalHex();
             if (capitol == null || otherCapitol == null)
             {
@@ -3339,7 +3362,7 @@ namespace CommunityLib
                         continue;
                     }
 
-                    if (loc.soc == sg)
+                    if (loc.soc == soc)
                     {
                         layers.Add(loc.hex.z);
                     }
@@ -3360,42 +3383,54 @@ namespace CommunityLib
             return true;
         }
 
-        private static bool Society_populateActions_TranspilerBody_DarkSocieties(SocialGroup sg, SocialGroup other)
+        private static bool Society_populateActions_TranspilerBody_Subsettlement(Society soc, Subsettlement sub)
         {
-            Society society = sg as Society;
+            Map map = soc.map;
 
-            if (society != null)
+            if (soc.map == null || soc.map.awarenessOfUnderground >= 1d)
             {
-                if (society.isDarkEmpire || society.isOphanimControlled)
-                {
-                    return true;
-                }
+                return true;
             }
 
-            return false;
+            if (soc.isDarkEmpire || soc.isOphanimControlled)
+            {
+                return true;
+            }
+
+            Hex capitol = soc.getCapitalHex();
+            Hex targetHex = sub.settlement.location.hex;
+            if (capitol == null || targetHex == null)
+            {
+                return true;
+            }
+
+            if ((capitol.z == 0 && targetHex.z == 1) || (capitol.z == 1 && targetHex.z == 0))
+            {
+                foreach (Location loc in map.locations)
+                {
+                    if (loc.hex.z == targetHex.z && loc.soc == soc)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            return true;
         }
 
         private static IEnumerable<CodeInstruction> SG_Orc_getActions_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_getCapitalHex = AccessTools.Method(typeof(SocialGroup), nameof(SocialGroup.getCapitalHex), new Type[0]);
-            MethodInfo MI_canGoUnderground = AccessTools.Method(typeof(SG_Orc), nameof(SG_Orc.canGoUnderground), new Type[0]);
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(SG_Orc_getActions_TranspilerBody), new Type[] { typeof(SG_Orc), typeof(SocialGroup) });
+            MethodInfo MI_getNeighbours = AccessTools.Method(typeof(SocialGroup), nameof(SocialGroup.getNeighbours), new Type[0]);
             MethodInfo MI_getItem = AccessTools.PropertyGetter(typeof(List<MA_Orc_Attack>), "Item");
 
-            FieldInfo FI_z = AccessTools.Field(typeof(Hex), nameof(Hex.z));
-            FieldInfo FI_attackActions = AccessTools.Field(typeof(SG_Orc), nameof(SG_Orc.attackActions));
-            FieldInfo FI_AttackTarget = AccessTools.Field(typeof(MA_Orc_Attack), nameof(MA_Orc_Attack.target));
+            int neighboursIndex = ilg.DeclareLocal(typeof(List<SocialGroup>)).LocalIndex;
 
             Label removeLabel = ilg.DefineLabel();
-            Label checkOtherA = ilg.DefineLabel();
-            Label checkAwarenessA = ilg.DefineLabel();
-            Label incrementLabel = ilg.DefineLabel();
-
-            Label skipLabel = ilg.DefineLabel();
-            Label checkOtherB = ilg.DefineLabel();
-            Label checkAwarenessB = ilg.DefineLabel();
-            Label startLabel = ilg.DefineLabel();
 
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
@@ -3404,169 +3439,79 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Callvirt && instructionList[i+3].opcode == OpCodes.Brfalse_S)
+                        if (instructionList[i].opcode == OpCodes.Ldc_I4_0 && instructionList[i + 1].opcode == OpCodes.Stloc_S && instructionList[i + 2].opcode == OpCodes.Br_S)
                         {
-                            removeLabel = (Label)instructionList[i + 3].operand;
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Call, MI_getNeighbours);
+                            yield return new CodeInstruction(OpCodes.Stloc_S, neighboursIndex);
+                            yield return new CodeInstruction(OpCodes.Nop);
 
                             targetIndex++;
                         }
                     }
                     else if (targetIndex == 2)
                     {
-                        if (instructionList[i].opcode == OpCodes.Nop)
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0)
                         {
-                            // If capital hex is null, skip removal
-                            yield return new CodeInstruction(OpCodes.Ldarg_0);
-                            yield return new CodeInstruction(OpCodes.Callvirt, MI_getCapitalHex); // this.getCapitalHex
-                            yield return new CodeInstruction(OpCodes.Ldnull);
-                            yield return new CodeInstruction(OpCodes.Cgt_Un); // != null
-                            yield return new CodeInstruction(OpCodes.Brfalse_S, incrementLabel); // if null, get relation actions
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, neighboursIndex);
 
-                            // If target capital hex is null, skip removal
-                            yield return new CodeInstruction(OpCodes.Ldarg_0);
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_attackActions); // this.attackActions
-                            yield return new CodeInstruction(OpCodes.Ldloc_S, 5); // Index i
-                            yield return new CodeInstruction(OpCodes.Callvirt, MI_getItem); // this.attackactions[i]
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_AttackTarget); // this.attackActions[i].target
-                            yield return new CodeInstruction(OpCodes.Callvirt, MI_getCapitalHex); // this.attackActions[i].target.getCapitalHex()
-                            yield return new CodeInstruction(OpCodes.Ldnull);
-                            yield return new CodeInstruction(OpCodes.Cgt_Un);
-                            yield return new CodeInstruction(OpCodes.Brfalse_S, incrementLabel); // if null, skip removal
-
-                            // if capitol hex is 0, check if other capitol hex is 1
-                            yield return new CodeInstruction(OpCodes.Ldarg_0);
-                            yield return new CodeInstruction(OpCodes.Callvirt, MI_getCapitalHex); // this.getCapitalHex()
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_z); // this.getCapitalHex().z
-                            yield return new CodeInstruction(OpCodes.Ldc_I4_0);
-                            yield return new CodeInstruction(OpCodes.Ceq); // == 0
-                            yield return new CodeInstruction(OpCodes.Brtrue_S, checkOtherA); // if true, check this.attackActions[i].target.getCapitalHex().z == 1, else check if this.getCapitalHex().z == 1
-
-                            // if capitol hex is 1, check if other capitol hex is 0
-                            yield return new CodeInstruction(OpCodes.Ldarg_0);
-                            yield return new CodeInstruction(OpCodes.Callvirt, MI_getCapitalHex); // this.getCapitalHex()
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_z); // this.getCapitalHex.z
-                            yield return new CodeInstruction(OpCodes.Ldc_I4_1);
-                            yield return new CodeInstruction(OpCodes.Ceq); // == 1
-                            yield return new CodeInstruction(OpCodes.Brfalse_S, incrementLabel); // if false, increment i, else check this.attackActions[i].target.getCapitalHex().z == 0
-
-                            // check if other capitol hex is 0
-                            yield return new CodeInstruction(OpCodes.Ldarg_0);
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_attackActions); // this.attackActions
-                            yield return new CodeInstruction(OpCodes.Ldloc_S, 5); // Index i
-                            yield return new CodeInstruction(OpCodes.Callvirt, MI_getItem); // this.attackactions[i]
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_AttackTarget); // this.attackActions[i].target
-                            yield return new CodeInstruction(OpCodes.Callvirt, MI_getCapitalHex); // this.attackActions[i].target.getCapitalHex()
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_z); // this.attackActions[i].target.getCapitalHex().z
-                            yield return new CodeInstruction(OpCodes.Ldc_I4_0);
-                            yield return new CodeInstruction(OpCodes.Ceq); // == 0
-                            yield return new CodeInstruction(OpCodes.Brfalse_S, incrementLabel); // if false, get relation actions
-                            yield return new CodeInstruction(OpCodes.Br_S, checkAwarenessA); // if true, check underground awareness
-
-                            // check if other capitol hex is 1
-                            CodeInstruction code = new CodeInstruction(OpCodes.Nop);
-                            code.labels.Add(checkOtherA);
-                            yield return code;
-                            yield return new CodeInstruction(OpCodes.Ldarg_0);
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_attackActions); // this.attackActions
-                            yield return new CodeInstruction(OpCodes.Ldloc_S, 5); // Index i
-                            yield return new CodeInstruction(OpCodes.Callvirt, MI_getItem); // this.attackactions[i]
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_AttackTarget); // this.attackActions[i].target
-                            yield return new CodeInstruction(OpCodes.Callvirt, MI_getCapitalHex); // this.attackActions[i].target.getCapitalHex()
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_z); // this.attackActions[i].target.getCapitalHex.z
-                            yield return new CodeInstruction(OpCodes.Ldc_I4_1);
-                            yield return new CodeInstruction(OpCodes.Ceq); // == 1
-                            yield return new CodeInstruction(OpCodes.Brfalse_S, incrementLabel); // if false, increment i, else, check underground awareness
-
-                            // if capitol hexes are on surface and underground, check awareness
-                            code = new CodeInstruction(OpCodes.Nop);
-                            code.labels.Add(checkAwarenessA);
-                            yield return code;
-                            yield return new CodeInstruction(OpCodes.Ldarg_0); // this
-                            yield return new CodeInstruction(OpCodes.Callvirt, MI_canGoUnderground); // this.canGoUnderground()
-                            yield return new CodeInstruction(OpCodes.Brfalse_S, removeLabel); // if true, do not get relation actions
-
-                            code = new CodeInstruction(OpCodes.Nop);
-                            code.labels.Add(incrementLabel);
-                            yield return code;
-
+                            i += 2;
                             targetIndex++;
-                            i++;
                         }
                     }
                     else if (targetIndex == 3)
                     {
-                        if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i-1].opcode == OpCodes.Ldloc_S && instructionList[i-2].opcode == OpCodes.Stloc_S && instructionList[i-3].opcode == OpCodes.Ldloc_S)
+                        if (instructionList[i].opcode == OpCodes.Brfalse_S)
                         {
+                            removeLabel = (Label)instructionList[i].operand;
+
                             targetIndex++;
                         }
                     }
                     else if (targetIndex == 4)
                     {
+                        if (instructionList[i].opcode == OpCodes.Nop)
+                        {
+                            yield return new CodeInstruction(OpCodes.Nop);
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, neighboursIndex);
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 5);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_getItem);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, removeLabel);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 5)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i + 1].opcode == OpCodes.Call && instructionList[i + 2].opcode == OpCodes.Callvirt)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, neighboursIndex);
+
+                            i += 2;
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 6)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i - 1].opcode == OpCodes.Ldloc_S && instructionList[i - 2].opcode == OpCodes.Stloc_S && instructionList[i - 3].opcode == OpCodes.Ldloc_S)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 7)
+                    {
                         if (instructionList[i].opcode == OpCodes.Ldfld)
                         {
-                            skipLabel = (Label)instructionList[i-2].operand;
+                            Label incrementLabel = (Label)instructionList[i - 2].operand;
 
-                            // If capital hex is null, skip
-                            yield return new CodeInstruction(OpCodes.Callvirt, MI_getCapitalHex); // this.getCapitalHex
-                            yield return new CodeInstruction(OpCodes.Ldnull);
-                            yield return new CodeInstruction(OpCodes.Cgt_Un); // != null
-                            yield return new CodeInstruction(OpCodes.Brfalse_S, startLabel); // if null, get relation actions
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 9);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, incrementLabel);
 
-                            // If other capital hex is null, skip
-                            yield return new CodeInstruction(OpCodes.Ldloc_S, 9); // Current Enumeration socialGrop
-                            yield return new CodeInstruction(OpCodes.Callvirt, MI_getCapitalHex); // socialGroup.getCapitalHex()
-                            yield return new CodeInstruction(OpCodes.Ldnull);
-                            yield return new CodeInstruction(OpCodes.Cgt_Un); // != null
-                            yield return new CodeInstruction(OpCodes.Brfalse_S, startLabel); // If null, get raltion actions
-
-                            // if capitol hex is 0, check if other capitol hex is 1
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
-                            yield return new CodeInstruction(OpCodes.Callvirt, MI_getCapitalHex); // this.getCapitalHex()
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_z); // this.getCapitalHex().z
-                            yield return new CodeInstruction(OpCodes.Ldc_I4_0);
-                            yield return new CodeInstruction(OpCodes.Ceq); // == 0
-                            yield return new CodeInstruction(OpCodes.Brtrue_S, checkOtherB); // if true, check socialGroup.getCapitalHex().z == 1, else check if this.getCapitalHex().z == 1
-
-                            // if capitol hex is 1, check if other capitol hex is 0
-                            yield return new CodeInstruction(OpCodes.Ldarg_0);
-                            yield return new CodeInstruction(OpCodes.Callvirt, MI_getCapitalHex); // this.getCapitalHex()
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_z); // this.getCapitalHex.z
-                            yield return new CodeInstruction(OpCodes.Ldc_I4_1);
-                            yield return new CodeInstruction(OpCodes.Ceq); // == 1
-                            yield return new CodeInstruction(OpCodes.Brfalse_S, startLabel); // if false, get relation actions, else check dipRel.other.getCapitalHex().z == 0
-
-                            // check if other capitol hex is 0
-                            yield return new CodeInstruction(OpCodes.Ldloc_S, 9); // current enumeration socialGroup
-                            yield return new CodeInstruction(OpCodes.Callvirt, MI_getCapitalHex); // socialGroup.getCapitalHex()
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_z); // socialGroup.getCapitalHex().z
-                            yield return new CodeInstruction(OpCodes.Ldc_I4_0);
-                            yield return new CodeInstruction(OpCodes.Ceq); // == 0
-                            yield return new CodeInstruction(OpCodes.Brfalse_S, startLabel); // if false, get relation actions
-                            yield return new CodeInstruction(OpCodes.Br_S, checkAwarenessB); // if true, check this.map.awarenessOfUnderground
-
-                            // check if other capitol hex is 1
-                            CodeInstruction code = new CodeInstruction(OpCodes.Nop);
-                            code.labels.Add(checkOtherB);
-                            yield return code;
-                            yield return new CodeInstruction(OpCodes.Ldloc_S, 9); // socialGroup
-                            yield return new CodeInstruction(OpCodes.Callvirt, MI_getCapitalHex); // socialGroup.getCapitalHex()
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_z); // socialGroup.getCapitalHex.z
-                            yield return new CodeInstruction(OpCodes.Ldc_I4_1);
-                            yield return new CodeInstruction(OpCodes.Ceq); // == 1
-                            yield return new CodeInstruction(OpCodes.Brfalse_S, startLabel); // if false, get relation actions, else, check underground awareness
-
-                            // if capitol hexes are on surface and underground, check awareness
-                            code = new CodeInstruction(OpCodes.Nop);
-                            code.labels.Add(checkAwarenessB);
-                            yield return code;
-                            yield return new CodeInstruction(OpCodes.Ldarg_0); // this
-                            yield return new CodeInstruction(OpCodes.Callvirt, MI_canGoUnderground); // this.canGoUnderground()
-                            yield return new CodeInstruction(OpCodes.Brfalse_S, skipLabel); // if true, do not get relation actions
-
-                            yield return new CodeInstruction(OpCodes.Nop);
-                            code = new CodeInstruction(OpCodes.Ldarg_0);
-                            code.labels.Add(startLabel);
-                            yield return code; // start process of get relation actions
 
                             targetIndex = 0;
                         }
@@ -3583,6 +3528,53 @@ namespace CommunityLib
             }
         }
 
+        private static bool SG_Orc_getActions_TranspilerBody(SG_Orc orcs, SocialGroup other)
+        {
+            Map map = orcs.map;
+
+            if (orcs.canGoUnderground())
+            {
+                return true;
+            }
+
+            Hex capitol = orcs.getCapitalHex();
+            Hex otherCapitol = other.getCapitalHex();
+            if (capitol == null || otherCapitol == null)
+            {
+                return true;
+            }
+
+            if ((capitol.z == 0 && otherCapitol.z == 1) || (capitol.z == 1 && otherCapitol.z == 0))
+            {
+                HashSet<int> layers = new HashSet<int>();
+                HashSet<int> otherLayers = new HashSet<int>();
+                foreach (Location loc in map.locations)
+                {
+                    if (loc.soc == null)
+                    {
+                        continue;
+                    }
+
+                    if (loc.soc == orcs)
+                    {
+                        layers.Add(loc.hex.z);
+                    }
+                    else if (loc.soc == other)
+                    {
+                        otherLayers.Add(loc.hex.z);
+                    }
+
+                    if (layers.Intersect(otherLayers).Any())
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            return true;
+        }
 
         // Religion UI Screen modification
         private static IEnumerable<CodeInstruction> PopupHolyOrder_bPrevNext_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
