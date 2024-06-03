@@ -289,6 +289,18 @@ namespace CommunityLib
                                 Console.WriteLine("CommunityLib: Failed to get Feeding pheromone property Type (ShadowsInsectGod.Code.Pr_Pheromone_Feeding)");
                             }
 
+                            Type spawnDroneFromHumanType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.P_SpawnDroneFromHuman", false);
+
+                            if (spawnDroneFromHumanType != null)
+                            {
+                                intDataCord.typeDict.Add("SpawnDroneFromHuman", spawnDroneFromHumanType);
+                                intDataCord.methodInfoDict.Add("SpawnDroneFromHuman.cast", AccessTools.Method(spawnDroneFromHumanType, "cast", new Type[] { typeof(Unit) }));
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Spawn drown from human power Type (ShadowsInsectGod.Code.P_SpawnDroneFromHuman)");
+                            }
+
                             Type seekType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.Task_SeekPrey", false);
                             if (seekType != null)
                             {

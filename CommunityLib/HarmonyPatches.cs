@@ -1798,7 +1798,8 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Task_RazeLocation_turnTick_TranspilerBody), new Type[] { typeof(Unit) });
+            MethodInfo MI_TranspilerBody_Hook = AccessTools.Method(patchType, nameof(Task_RazeLocation_turnTick_TranspilerBody_Hook), new Type[] { typeof(Unit) });
+            MethodInfo MI_TranspilerBody_Kill = AccessTools.Method(patchType, nameof(Task_RazeLocation_turnTick_TranspilerBody_Kill), new Type[] { typeof(UM) });
 
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
@@ -1807,13 +1808,23 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i + 1].opcode == OpCodes.Ldarg_1 && instructionList[i + 2].opcode == OpCodes.Ldfld)
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i+1].opcode == OpCodes.Ldarg_1 && instructionList[i+2].opcode == OpCodes.Ldfld)
                         {
-                            targetIndex = 0;
-
                             yield return new CodeInstruction(OpCodes.Nop);
                             yield return new CodeInstruction(OpCodes.Ldarg_1);
-                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Hook);
+
+                            targetIndex++;
+                        }
+                    }
+                    if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_0 && instructionList[i+1].opcode == OpCodes.Callvirt && instructionList[i-1].opcode == OpCodes.Stfld && instructionList[i-2].opcode == OpCodes.Ldnull)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldloc_0);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Kill);
+
+                            targetIndex = 0;
                         }
                     }
                 }
@@ -1828,7 +1839,7 @@ namespace CommunityLib
             }
         }
 
-        private static void Task_RazeLocation_turnTick_TranspilerBody(Unit u)
+        private static void Task_RazeLocation_turnTick_TranspilerBody_Hook(Unit u)
         {
             razeIsValid = true;
 
@@ -1839,6 +1850,14 @@ namespace CommunityLib
                 {
                     hook?.onRazeLocation_StartOfProcess(um);
                 }
+            }
+        }
+
+        private static void Task_RazeLocation_turnTick_TranspilerBody_Kill(UM um)
+        {
+            if (um.person != null && um.location.settlement is SettlementHuman settlementHuman && settlementHuman.ruler != null)
+            {
+                um.person.statistic_kills++;
             }
         }
 
