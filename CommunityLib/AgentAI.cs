@@ -250,6 +250,76 @@ namespace CommunityLib
             public List<Func<ChallengeData, bool>> universalDelegates_Valid = new List<Func<ChallengeData, bool>>();
             public List<Func<ChallengeData, UA, bool>> universalDelegates_ValidFor = new List<Func<ChallengeData, UA, bool>>();
             public List<Func<ChallengeData, UA, double, List<ReasonMsg>, double>> universalDelegates_Utility = new List<Func<ChallengeData, UA, double, List<ReasonMsg>, double>>();
+
+            public override bool Equals(object obj)
+            {
+                return Equals(obj as ChallengeData);
+            }
+
+            public bool Equals(ChallengeData other)
+            {
+                if (other == null)
+                    return false;
+
+                // Check equality for simple types and lists separately
+                return EqualityComparer<AIChallenge>.Default.Equals(aiChallenge, other.aiChallenge) &&
+                       EqualityComparer<Challenge>.Default.Equals(challenge, other.challenge) &&
+                       EqualityComparer<Location>.Default.Equals(location, other.location) &&
+                       ListsEqual(universalDelegates_Profile, other.universalDelegates_Profile) &&
+                       ListsEqual(universalDelegates_Valid, other.universalDelegates_Valid) &&
+                       ListsEqual(universalDelegates_ValidFor, other.universalDelegates_ValidFor) &&
+                       ListsEqual(universalDelegates_Utility, other.universalDelegates_Utility);
+            }
+
+            private bool ListsEqual<T>(List<T> list1, List<T> list2)
+            {
+                if (list1 == null && list2 == null)
+                {
+                    return true;
+                }
+
+                if (list1 == null || list2 == null || list1.Count != list2.Count)
+                    {
+                    return false;
+                }
+
+                for (int i = 0; i < list1.Count; i++)
+                {
+                    if (!EqualityComparer<T>.Default.Equals(list1[i], list2[i]))
+                        return false;
+                }
+
+                return true;
+            }
+
+            public override int GetHashCode()
+            {
+                int hashCode = -1692118631;
+                hashCode = hashCode * -1521134295 + EqualityComparer<AIChallenge>.Default.GetHashCode(aiChallenge);
+                hashCode = hashCode * -1521134295 + EqualityComparer<Challenge>.Default.GetHashCode(challenge);
+                hashCode = hashCode * -1521134295 + EqualityComparer<Location>.Default.GetHashCode(location);
+                hashCode = hashCode * -1521134295 + GetListHashCode(universalDelegates_Profile);
+                hashCode = hashCode * -1521134295 + GetListHashCode(universalDelegates_Valid);
+                hashCode = hashCode * -1521134295 + GetListHashCode(universalDelegates_ValidFor);
+                hashCode = hashCode * -1521134295 + GetListHashCode(universalDelegates_Utility);
+                return hashCode;
+            }
+
+            private int GetListHashCode<T>(List<T> list)
+            {
+                if (list == null)
+                {
+                    return 0;
+                }
+
+                int hash = 17;
+                foreach (var item in list)
+                {
+                    hash = hash * 31 + (item != null ? item.GetHashCode() : 0);
+                }
+
+                return hash;
+            }
         }
 
         public class TaskData
@@ -259,6 +329,36 @@ namespace CommunityLib
             public Location targetLocation;
             public SocialGroup targetSocialGroup;
             public Unit targetUnit;
+
+            public override bool Equals(object obj)
+            {
+                return Equals(obj as TaskData);
+            }
+
+            public bool Equals(TaskData other)
+            {
+                if (other == null)
+                {
+                    return false;
+                }
+
+                return EqualityComparer<AITask>.Default.Equals(aiTask, other.aiTask) &&
+                       EqualityComparer<AITask.TargetCategory>.Default.Equals(targetCategory, other.targetCategory) &&
+                       EqualityComparer<Location>.Default.Equals(targetLocation, other.targetLocation) &&
+                       EqualityComparer<SocialGroup>.Default.Equals(targetSocialGroup, other.targetSocialGroup) &&
+                       EqualityComparer<Unit>.Default.Equals(targetUnit, other.targetUnit);
+            }
+
+            public override int GetHashCode()
+            {
+                int hashCode = 1002019024;
+                hashCode = hashCode * -1521134295 + EqualityComparer<AITask>.Default.GetHashCode(aiTask);
+                hashCode = hashCode * -1521134295 + targetCategory.GetHashCode();
+                hashCode = hashCode * -1521134295 + EqualityComparer<Location>.Default.GetHashCode(targetLocation);
+                hashCode = hashCode * -1521134295 + EqualityComparer<SocialGroup>.Default.GetHashCode(targetSocialGroup);
+                hashCode = hashCode * -1521134295 + EqualityComparer<Unit>.Default.GetHashCode(targetUnit);
+                return hashCode;
+            }
         }
 
         public AgentAI(Map map)
