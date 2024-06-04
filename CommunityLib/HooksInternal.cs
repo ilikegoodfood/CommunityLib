@@ -125,29 +125,12 @@ namespace CommunityLib
                             }
                             else if (selectedRoute.raidingCooldown > 0)
                             {
-                                alpha *= 0.8f;
-
-                                if (graphicalLink.link.map.masker.mask == MapMaskManager.maskType.TRADE_ROUTE)
-                                {
-                                    graphicalLink.lineRenderer.startColor = Color.red;
-                                    graphicalLink.lineRenderer.endColor = Color.red;
-                                }
+                                alpha *= 0.6f;
                             }
                         }
                         else if (routes.All(tr => tr.raidingCooldown > 0))
                         {
-                            alpha *= 0.8f;
-
-                            if (graphicalLink.link.map.masker.mask == MapMaskManager.maskType.TRADE_ROUTE)
-                            {
-                                graphicalLink.lineRenderer.startColor = Color.red;
-                                graphicalLink.lineRenderer.endColor = Color.red;
-                            }
-                            else
-                            {
-                                graphicalLink.lineRenderer.startColor = Color.grey;
-                                graphicalLink.lineRenderer.endColor = Color.grey;
-                            }
+                            alpha *= 0.6f;
                         }
                     }
 
