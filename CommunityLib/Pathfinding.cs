@@ -104,6 +104,11 @@ namespace CommunityLib
 
         public static Location[] getPathTo(Location locA, Location locB, Unit u = null, bool safeMove = false)
         {
+            return getPathTo(locA, locB, null, u, safeMove);
+        }
+
+        public static Location[] getPathTo(Location locA, Location locB, List<Func<Location[], Location, Unit, double>> pathfindingDelegates, Unit u = null, bool safeMove = false)
+        {
             if (locA == null || locB == null)
             {
                 return null;
@@ -114,34 +119,46 @@ namespace CommunityLib
                 return new Location[0];
             }
 
-            List<Func<Location[], Location, Unit, double>>  pathfindingDelegates = new List<Func<Location[], Location, Unit, double>>();
+            pathfindingDelegates = new List<Func<Location[], Location, Unit, double>>();
 
             if (u != null)
             {
                 if (u is UA && u.isCommandable())
                 {
-                    pathfindingDelegates.Add(delegate_FAVOURABLE_WIND);
+                    if (!pathfindingDelegates.Contains(delegate_FAVOURABLE_WIND))
+                    {
+                        pathfindingDelegates.Add(delegate_FAVOURABLE_WIND);
+                    }
                 }
 
                 if (u.moveType == Unit.MoveType.AQUAPHIBIOUS)
                 {
-                    //Console.WriteLine("CommunityLib: Added Aquaphibious delegate");
-                    pathfindingDelegates.Add(delegate_AQUAPHIBIOUS);
+                    if (!pathfindingDelegates.Contains(delegate_AQUAPHIBIOUS))
+                    {
+                        pathfindingDelegates.Add(delegate_AQUAPHIBIOUS);
+                    }
                 }
                 else if (u.moveType == Unit.MoveType.DESERT_ONLY)
                 {
-                    //Console.WriteLine("CommunityLib: Added Desert only delegate");
-                    pathfindingDelegates.Add(delegate_DESERT_ONLY);
+                    if (!pathfindingDelegates.Contains(delegate_DESERT_ONLY))
+                    {
+                        pathfindingDelegates.Add(delegate_DESERT_ONLY);
+                    }
                 }
 
                 if (safeMove)
                 {
-                    //Console.WriteLine("CommunityLib: Added safe move delegate");
-                    pathfindingDelegates.Add(delegate_SAFE_MOVE);
+                    if (!pathfindingDelegates.Contains(delegate_SAFE_MOVE))
+                    {
+                        pathfindingDelegates.Add(delegate_SAFE_MOVE);
+                    }
                 }
                 else if (u is UM)
                 {
-                    pathfindingDelegates.Add(delegate_AVOID_TRESSPASS);
+                    if (!pathfindingDelegates.Contains(delegate_AVOID_TRESSPASS))
+                    {
+                        pathfindingDelegates.Add(delegate_AVOID_TRESSPASS);
+                    }
                 }
             }
 
@@ -220,6 +237,11 @@ namespace CommunityLib
 
         public static Location[] getPathTo(Location loc, SocialGroup sg, Unit u, bool safeMove = false)
         {
+            return getPathTo(loc, sg, u, null, safeMove);
+        }
+
+        public static Location[] getPathTo(Location loc, SocialGroup sg, Unit u, List<Func<Location[], Location, Unit, double>> pathfindingDelegates, bool safeMove = false)
+        {
             if (loc == null)
             {
                 return null;
@@ -230,31 +252,49 @@ namespace CommunityLib
                 return new Location[0];
             }
 
-            List<Func<Location[], Location, Unit, double>> pathfindingDelegates = new List<Func<Location[], Location, Unit, double>>();
+            if (pathfindingDelegates == null)
+            {
+                pathfindingDelegates = new List<Func<Location[], Location, Unit, double>>();
+            }
 
             if (u != null)
             {
                 if (u is UA && u.isCommandable())
                 {
-                    pathfindingDelegates.Add(delegate_FAVOURABLE_WIND);
+                    if (!pathfindingDelegates.Contains(delegate_FAVOURABLE_WIND))
+                    {
+                        pathfindingDelegates.Add(delegate_FAVOURABLE_WIND);
+                    }
                 }
 
                 if (u.moveType == Unit.MoveType.AQUAPHIBIOUS)
                 {
-                    pathfindingDelegates.Add(delegate_AQUAPHIBIOUS);
+                    if (!pathfindingDelegates.Contains(delegate_AQUAPHIBIOUS))
+                    {
+                        pathfindingDelegates.Add(delegate_AQUAPHIBIOUS);
+                    }
                 }
                 else if (u.moveType == Unit.MoveType.DESERT_ONLY)
                 {
-                    pathfindingDelegates.Add(delegate_DESERT_ONLY);
+                    if (!pathfindingDelegates.Contains(delegate_DESERT_ONLY))
+                    {
+                        pathfindingDelegates.Add(delegate_DESERT_ONLY);
+                    }
                 }
 
                 if (safeMove)
                 {
-                    pathfindingDelegates.Add(delegate_SAFE_MOVE);
+                    if (!pathfindingDelegates.Contains(delegate_SAFE_MOVE))
+                    {
+                        pathfindingDelegates.Add(delegate_SAFE_MOVE);
+                    }
                 }
                 else if (u is UM)
                 {
-                    pathfindingDelegates.Add(delegate_AVOID_TRESSPASS);
+                    if (!pathfindingDelegates.Contains(delegate_AVOID_TRESSPASS))
+                    {
+                        pathfindingDelegates.Add(delegate_AVOID_TRESSPASS);
+                    }
                 }
             }
 
@@ -360,37 +400,57 @@ namespace CommunityLib
 
         public static Location[] getPathTo(Location loc, Func<Location[], Location, Unit, bool> destinationValidityDelegate, Unit u, bool safeMove)
         {
-            if (destinationValidityDelegate(new Location[0], loc, u))
+            return getPathTo(loc, destinationValidityDelegate, null, u, safeMove);
+        }
+
+        public static Location[] getPathTo(Location loc, Func<Location[], Location, Unit, bool> destinationValidityDelegate, List<Func<Location[], Location, Unit, double>> pathfindingDelegates, Unit u, bool safeMove)
+        {
+
+            if (pathfindingDelegates == null)
             {
-                return new Location[0];
+                pathfindingDelegates = new List<Func<Location[], Location, Unit, double>> ();
             }
 
-            List<Func<Location[], Location, Unit, double>> pathfindingDelegates = new List<Func<Location[], Location, Unit, double>>();
             List<Func<Location[], Location, Unit, bool>> destinationValidityDelegates = new List<Func<Location[], Location, Unit, bool>> { destinationValidityDelegate };
 
             if (u != null)
             {
                 if (u is UA && u.isCommandable())
                 {
-                    pathfindingDelegates.Add(delegate_FAVOURABLE_WIND);
+                    if (!pathfindingDelegates.Contains(delegate_FAVOURABLE_WIND))
+                    {
+                        pathfindingDelegates.Add(delegate_FAVOURABLE_WIND);
+                    }
                 }
 
                 if (u.moveType == Unit.MoveType.AQUAPHIBIOUS)
                 {
-                    pathfindingDelegates.Add(delegate_AQUAPHIBIOUS);
+                    if (!pathfindingDelegates.Contains(delegate_AQUAPHIBIOUS))
+                    {
+                        pathfindingDelegates.Add(delegate_AQUAPHIBIOUS);
+                    }
                 }
                 else if (u.moveType == Unit.MoveType.DESERT_ONLY)
                 {
-                    pathfindingDelegates.Add(delegate_DESERT_ONLY);
+                    if (!pathfindingDelegates.Contains(delegate_DESERT_ONLY))
+                    {
+                        pathfindingDelegates.Add(delegate_DESERT_ONLY);
+                    }
                 }
 
                 if (safeMove)
                 {
-                    pathfindingDelegates.Add(delegate_SAFE_MOVE);
+                    if (!pathfindingDelegates.Contains(delegate_SAFE_MOVE))
+                    {
+                        pathfindingDelegates.Add(delegate_SAFE_MOVE);
+                    }
                 }
                 else if (u is UM)
                 {
-                    pathfindingDelegates.Add(delegate_AVOID_TRESSPASS);
+                    if (!pathfindingDelegates.Contains(delegate_AVOID_TRESSPASS))
+                    {
+                        pathfindingDelegates.Add(delegate_AVOID_TRESSPASS);
+                    }
                 }
             }
 
@@ -642,6 +702,11 @@ namespace CommunityLib
 
         public static Location[] getTradeRouteTo(Location start, Location end)
         {
+            return getTradeRouteTo(start, end, null);
+        }
+
+        public static Location[] getTradeRouteTo(Location start, Location end, List<Func<Location[], Location, double>> pathfindingDelegates)
+        {
             if (start == null || end == null)
             {
                 return null;
@@ -652,16 +717,36 @@ namespace CommunityLib
                 return new Location[0];
             }
 
-            // Location[] currentPath, Location location, int[] endPointMapLayers, Location Start, return double stepCost
-            List<Func<Location[], Location, double>> pathfindingDelegates = new List<Func<Location[], Location, double>>();
-            if (ModCore.opt_realisticTradeRoutes)
+            if (pathfindingDelegates == null)
             {
-                pathfindingDelegates.Add(delegate_TRADE_REALISTIC);
+                if (ModCore.opt_realisticTradeRoutes)
+                {
+                    pathfindingDelegates = new List<Func<Location[], Location, double>> { delegate_TRADE_REALISTIC };
+                }
+                else
+                {
+                    pathfindingDelegates = new List<Func<Location[], Location, double>> { delegate_TRADE_VANILLA };
+                }
             }
             else
             {
-                pathfindingDelegates.Add(delegate_TRADE_VANILLA);
+
+                if (ModCore.opt_realisticTradeRoutes)
+                {
+                    if (!pathfindingDelegates.Contains(delegate_TRADE_REALISTIC))
+                    {
+                        pathfindingDelegates.Add(delegate_TRADE_REALISTIC);
+                    }
+                }
+                else
+                {
+                    if (!pathfindingDelegates.Contains(delegate_TRADE_VANILLA))
+                    {
+                        pathfindingDelegates.Add(delegate_TRADE_VANILLA);
+                    }
+                }
             }
+            
             // Location[] currentPath, Location location, int[] endPointMapLayers,, Location Start, return bool destinationValid
             List<Func<Location[], Location, bool>> destinationValidityDelegates = new List<Func<Location[], Location, bool>> { delegate_TRADEVALID_NODUPLICATES };
 
@@ -755,6 +840,11 @@ namespace CommunityLib
 
         public static Location[] getTradeRouteFrom(Location start, List<Location> endpointsAll = null)
         {
+            return getTradeRouteFrom(start, null, null, endpointsAll);
+        }
+
+        public static Location[] getTradeRouteFrom(Location start, List<Func<Location[], Location, double>> pathfindingDelegates, List<Func<Location[], Location, bool>> destinationValidityDelegates, List<Location> endpointsAll = null)
+        {
             if (start == null)
             {
                 return null;
@@ -770,18 +860,47 @@ namespace CommunityLib
                 return null;
             }
 
-            // Location[] currentPath, Location location, int[] endPointMapLayers, Location Start, return double stepCost
-            List<Func<Location[], Location, double>> pathfindingDelegates = new List<Func<Location[], Location, double>>();
-            if (ModCore.opt_realisticTradeRoutes)
+            if (pathfindingDelegates == null)
             {
-                pathfindingDelegates.Add(delegate_TRADE_REALISTIC);
+                if (ModCore.opt_realisticTradeRoutes)
+                {
+                    pathfindingDelegates = new List<Func<Location[], Location, double>> { delegate_TRADE_REALISTIC };
+                }
+                else
+                {
+                    pathfindingDelegates = new List<Func<Location[], Location, double>> { delegate_TRADE_VANILLA };
+                }
             }
             else
             {
-                pathfindingDelegates.Add(delegate_TRADE_VANILLA);
+                if (ModCore.opt_realisticTradeRoutes)
+                {
+                    if (!pathfindingDelegates.Contains(delegate_TRADE_REALISTIC))
+                    {
+                        pathfindingDelegates.Add(delegate_TRADE_REALISTIC);
+                    }
+                }
+                else
+                {
+                    if (!pathfindingDelegates.Contains(delegate_TRADE_VANILLA))
+                    {
+                        pathfindingDelegates.Add(delegate_TRADE_VANILLA);
+                    }
+                }
             }
+
             // Location[] currentPath, Location location, int[] endPointMapLayers,, Location Start, return bool destinationValid
-            List<Func<Location[], Location, bool>> destinationValidityDelegates = new List<Func<Location[], Location, bool>> { delegate_TRADEVALID_NODUPLICATES };
+            if (destinationValidityDelegates == null)
+            {
+                destinationValidityDelegates = new List<Func<Location[], Location, bool>> { delegate_TRADEVALID_NODUPLICATES };
+            }
+            else
+            {
+                if (!destinationValidityDelegates.Contains(delegate_TRADEVALID_NODUPLICATES))
+                {
+                    destinationValidityDelegates.Add(delegate_TRADEVALID_NODUPLICATES);
+                }
+            }
 
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
