@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Reflection;
 using System.Linq;
+using static SortedDictionaryProvider;
 
 namespace CommunityLib
 {
@@ -92,6 +93,8 @@ namespace CommunityLib
                     }
                 }
 
+
+                bool linkCrossesLayer = graphicalLink.link.a.hex.z != graphicalLink.link.b.hex.z;
                 if (routes.Count > 0)
                 {
                     float width = 0.04f;
@@ -129,8 +132,22 @@ namespace CommunityLib
 
                                 if (graphicalLink.link.map.masker.mask == MapMaskManager.maskType.TRADE_ROUTE)
                                 {
-                                    graphicalLink.lineRenderer.startColor = Color.red;
-                                    graphicalLink.lineRenderer.endColor = Color.red;
+                                    if (linkCrossesLayer)
+                                    {
+                                        if (graphicalLink.link.a.hex.z != GraphicalMap.z)
+                                        {
+                                            graphicalLink.lineRenderer.startColor = new Color(1f, 0.1f, 0.1f, alpha);
+                                        }
+                                        else if (graphicalLink.link.b.hex.z != GraphicalMap.z)
+                                        {
+                                            graphicalLink.lineRenderer.endColor = new Color(1f, 0.1f, 0.1f, alpha);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        graphicalLink.lineRenderer.startColor = new Color(1f, 0.1f, 0.1f, alpha);
+                                        graphicalLink.lineRenderer.endColor = new Color(1f, 0.1f, 0.1f, alpha);
+                                    }
                                 }
                             }
                         }
@@ -140,13 +157,24 @@ namespace CommunityLib
 
                             if (graphicalLink.link.map.masker.mask == MapMaskManager.maskType.TRADE_ROUTE)
                             {
-                                graphicalLink.lineRenderer.startColor = Color.red;
-                                graphicalLink.lineRenderer.endColor = Color.red;
+                                graphicalLink.lineRenderer.startColor = new Color(1f, 0.1f, 0.1f, alpha);
+                                graphicalLink.lineRenderer.endColor = new Color(1f, 0.1f, 0.1f, alpha);
                             }
-                            else
+                            else if (!linkCrossesLayer)
                             {
                                 graphicalLink.lineRenderer.startColor = Color.grey;
                                 graphicalLink.lineRenderer.endColor = Color.grey;
+                            }
+                            else
+                            {
+                                if (graphicalLink.link.a.hex.z != GraphicalMap.z)
+                                {
+                                    graphicalLink.lineRenderer.endColor = new Color(0.5f, 0.5f, 1f, alpha);
+                                }
+                                else if (graphicalLink.link.b.hex.z != GraphicalMap.z)
+                                {
+                                    graphicalLink.lineRenderer.startColor = new Color(0.5f, 0.5f, 1f, alpha);
+                                }
                             }
                         }
                     }
@@ -154,7 +182,7 @@ namespace CommunityLib
                     float alphaA = alpha;
                     float alphaB = alpha;
 
-                    if (graphicalLink.link.a.hex.z != graphicalLink.link.b.hex.z)
+                    if (linkCrossesLayer)
                     {
                         if (graphicalLink.link.a.hex.z != GraphicalMap.z)
                         {
