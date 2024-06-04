@@ -93,8 +93,6 @@ namespace CommunityLib
                     }
                 }
 
-
-                bool linkCrossesLayer = graphicalLink.link.a.hex.z != graphicalLink.link.b.hex.z;
                 if (routes.Count > 0)
                 {
                     float width = 0.04f;
@@ -128,61 +126,19 @@ namespace CommunityLib
                             }
                             else if (selectedRoute.raidingCooldown > 0)
                             {
-                                alpha *= 0.8f;
-
-                                if (graphicalLink.link.map.masker.mask == MapMaskManager.maskType.TRADE_ROUTE)
-                                {
-                                    if (linkCrossesLayer)
-                                    {
-                                        if (graphicalLink.link.a.hex.z != GraphicalMap.z)
-                                        {
-                                            graphicalLink.lineRenderer.startColor = new Color(1f, 0.1f, 0.1f, alpha);
-                                        }
-                                        else if (graphicalLink.link.b.hex.z != GraphicalMap.z)
-                                        {
-                                            graphicalLink.lineRenderer.endColor = new Color(1f, 0.1f, 0.1f, alpha);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        graphicalLink.lineRenderer.startColor = new Color(1f, 0.1f, 0.1f, alpha);
-                                        graphicalLink.lineRenderer.endColor = new Color(1f, 0.1f, 0.1f, alpha);
-                                    }
-                                }
+                                alpha *= 0.6f;
                             }
                         }
                         else if (routes.All(tr => tr.raidingCooldown > 0))
                         {
-                            alpha *= 0.8f;
-
-                            if (graphicalLink.link.map.masker.mask == MapMaskManager.maskType.TRADE_ROUTE)
-                            {
-                                graphicalLink.lineRenderer.startColor = new Color(1f, 0.1f, 0.1f, alpha);
-                                graphicalLink.lineRenderer.endColor = new Color(1f, 0.1f, 0.1f, alpha);
-                            }
-                            else if (!linkCrossesLayer)
-                            {
-                                graphicalLink.lineRenderer.startColor = Color.grey;
-                                graphicalLink.lineRenderer.endColor = Color.grey;
-                            }
-                            else
-                            {
-                                if (graphicalLink.link.a.hex.z != GraphicalMap.z)
-                                {
-                                    graphicalLink.lineRenderer.endColor = new Color(0.5f, 0.5f, 1f, alpha);
-                                }
-                                else if (graphicalLink.link.b.hex.z != GraphicalMap.z)
-                                {
-                                    graphicalLink.lineRenderer.startColor = new Color(0.5f, 0.5f, 1f, alpha);
-                                }
-                            }
+                            alpha *= 0.6f;
                         }
                     }
 
                     float alphaA = alpha;
                     float alphaB = alpha;
 
-                    if (linkCrossesLayer)
+                    if (graphicalLink.link.a.hex.z != graphicalLink.link.b.hex.z)
                     {
                         if (graphicalLink.link.a.hex.z != GraphicalMap.z)
                         {
