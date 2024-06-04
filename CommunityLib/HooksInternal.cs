@@ -81,12 +81,14 @@ namespace CommunityLib
                     int indexA = route.path.IndexOf(graphicalLink.link.a);
                     int indexB = route.path.IndexOf(graphicalLink.link.b);
 
-                    if (indexA != -1 && indexB != -1)
+                    if (indexA == -1 || indexB == -1)
                     {
-                        if (indexB >= indexA - 1 && indexB <= indexA + 1)
-                        {
-                            routes.Add(route);
-                        }
+                        continue;
+                    }
+
+                    if (indexB == indexA - 1 || indexB == indexA + 1)
+                    {
+                        routes.Add(route);
                     }
                 }
 
@@ -95,40 +97,57 @@ namespace CommunityLib
                     float width = 0.04f;
                     float alpha = 1f;
 
-                    bool raidDim = false;
                     if (graphicalLink.link.disabled)
                     {
                         alpha = 0.2f;
                     }
-                    else if (routes.All(tr => tr.raidingCooldown > 0))
+                    else
                     {
-                        alpha *= 0.8f;
-                        raidDim = true;
-                    }
+                        if (graphicalLink.link.map.masker.mask > 0)
+                        {
+                            if (graphicalLink.link.map.masker.mask == MapMaskManager.maskType.TRADE_ROUTE)
+                            {
+                                width = 0.03f;
+                            }
+                            else
+                            {
+                                alpha *= 0.15f;
+                            }
+                        }
 
-                    if (graphicalLink.link.map.masker.mask > MapMaskManager.maskType.NONE)
-                    {
-                        if (graphicalLink.link.map.masker.mask == MapMaskManager.maskType.TRADE_ROUTE)
+                        TradeRoute selectedRoute = graphicalLink.link.map.world.ui.uiScrollables.scrollable_threats.targetRoute;
+                        if (selectedRoute != null)
                         {
-                            width = 0.03f;
-                        }
-                        else
-                        {
-                            alpha *= 0.15f;
-                        }
-                    }
+                            if (!routes.Contains(selectedRoute))
+                            {
+                                width = 0.04f;
+                                alpha *= 0.15f;
+                            }
+                            else if (selectedRoute.raidingCooldown > 0)
+                            {
+                                alpha *= 0.8f;
 
-                    TradeRoute selectedRoute = graphicalLink.link.map.world.ui.uiScrollables.scrollable_threats.targetRoute;
-                    if (selectedRoute != null)
-                    {
-                        if (!routes.Contains(selectedRoute))
-                        {
-                            width = 0.04f;
-                            alpha *= 0.15f;
+                                if (graphicalLink.link.map.masker.mask == MapMaskManager.maskType.TRADE_ROUTE)
+                                {
+                                    graphicalLink.lineRenderer.startColor = Color.red;
+                                    graphicalLink.lineRenderer.endColor = Color.red;
+                                }
+                            }
                         }
-                        else if (!raidDim && selectedRoute.raidingCooldown > 0)
+                        else if (routes.All(tr => tr.raidingCooldown > 0))
                         {
                             alpha *= 0.8f;
+
+                            if (graphicalLink.link.map.masker.mask == MapMaskManager.maskType.TRADE_ROUTE)
+                            {
+                                graphicalLink.lineRenderer.startColor = Color.red;
+                                graphicalLink.lineRenderer.endColor = Color.red;
+                            }
+                            else
+                            {
+                                graphicalLink.lineRenderer.startColor = Color.grey;
+                                graphicalLink.lineRenderer.endColor = Color.grey;
+                            }
                         }
                     }
 
