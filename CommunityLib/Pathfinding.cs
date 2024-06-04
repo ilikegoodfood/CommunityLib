@@ -118,6 +118,11 @@ namespace CommunityLib
 
         public static Location[] getPathTo(Location locA, Location locB, Unit u = null, bool safeMove = false)
         {
+            return getPathTo(locA, locB, null, u, safeMove);
+        }
+
+        public static Location[] getPathTo(Location locA, Location locB, List<Func<Location[], Location, Unit, List<int>, double>> pathfindingDelegates, Unit u = null, bool safeMove = false)
+        {
             if (locA == null || locB == null)
             {
                 return null;
@@ -135,34 +140,53 @@ namespace CommunityLib
                 expectedMapLayers.Add(locB.hex.z);
             }
 
-            List<Func<Location[], Location, Unit, List<int>, double>>  pathfindingDelegates = new List<Func<Location[], Location, Unit, List<int>, double>> { delegate_LAYERBOUND };
+            if (pathfindingDelegates == null)
+            {
+                pathfindingDelegates = new List<Func<Location[], Location, Unit, List<int>, double>> { delegate_LAYERBOUND };
+            }
+            else if (!pathfindingDelegates.Contains(delegate_LAYERBOUND))
+            {
+                pathfindingDelegates.Add(delegate_LAYERBOUND);
+            }
 
             if (u != null)
             {
                 if (u is UA && u.isCommandable())
                 {
-                    pathfindingDelegates.Add(delegate_FAVOURABLE_WIND);
+                    if (!pathfindingDelegates.Contains(delegate_FAVOURABLE_WIND))
+                    {
+                        pathfindingDelegates.Add(delegate_FAVOURABLE_WIND);
+                    }
                 }
 
                 if (u.moveType == Unit.MoveType.AQUAPHIBIOUS)
                 {
-                    //Console.WriteLine("CommunityLib: Added Aquaphibious delegate");
-                    pathfindingDelegates.Add(delegate_AQUAPHIBIOUS);
+                    if (!pathfindingDelegates.Contains(delegate_AQUAPHIBIOUS))
+                    {
+                        pathfindingDelegates.Add(delegate_AQUAPHIBIOUS);
+                    }
                 }
                 else if (u.moveType == Unit.MoveType.DESERT_ONLY)
                 {
-                    //Console.WriteLine("CommunityLib: Added Desert only delegate");
-                    pathfindingDelegates.Add(delegate_DESERT_ONLY);
+                    if (!pathfindingDelegates.Contains(delegate_DESERT_ONLY))
+                    {
+                        pathfindingDelegates.Add(delegate_DESERT_ONLY);
+                    }
                 }
 
                 if (safeMove)
                 {
-                    //Console.WriteLine("CommunityLib: Added safe move delegate");
-                    pathfindingDelegates.Add(delegate_SAFE_MOVE);
+                    if (!pathfindingDelegates.Contains(delegate_SAFE_MOVE))
+                    {
+                        pathfindingDelegates.Add(delegate_SAFE_MOVE);
+                    }
                 }
                 else if (u is UM)
                 {
-                    pathfindingDelegates.Add(delegate_AVOID_TRESSPASS);
+                    if (!pathfindingDelegates.Contains(delegate_AVOID_TRESSPASS))
+                    {
+                        pathfindingDelegates.Add(delegate_AVOID_TRESSPASS);
+                    }
                 }
             }
 
@@ -258,6 +282,11 @@ namespace CommunityLib
 
         public static Location[] getPathTo(Location loc, SocialGroup sg, Unit u, List<int> targetMapLayers, bool safeMove = false)
         {
+            return getPathTo(loc, sg, u, null, targetMapLayers, safeMove);
+        }
+
+        public static Location[] getPathTo(Location loc, SocialGroup sg, Unit u, List<Func<Location[], Location, Unit, List<int>, double>> pathfindingDelegates, List<int> targetMapLayers, bool safeMove = false)
+        {
             if (loc == null)
             {
                 return null;
@@ -268,31 +297,53 @@ namespace CommunityLib
                 return new Location[0];
             }
 
-            List<Func<Location[], Location, Unit, List<int>, double>> pathfindingDelegates = new List<Func<Location[], Location, Unit, List<int>, double>> { delegate_LAYERBOUND };
+            if (pathfindingDelegates == null)
+            {
+                pathfindingDelegates = new List<Func<Location[], Location, Unit, List<int>, double>> { delegate_LAYERBOUND };
+            }
+            else if (!pathfindingDelegates.Contains(delegate_LAYERBOUND))
+            {
+                pathfindingDelegates.Add(delegate_LAYERBOUND);
+            }
 
             if (u != null)
             {
                 if (u is UA && u.isCommandable())
                 {
-                    pathfindingDelegates.Add(delegate_FAVOURABLE_WIND);
+                    if (!pathfindingDelegates.Contains(delegate_FAVOURABLE_WIND))
+                    {
+                        pathfindingDelegates.Add(delegate_FAVOURABLE_WIND);
+                    }
                 }
 
                 if (u.moveType == Unit.MoveType.AQUAPHIBIOUS)
                 {
-                    pathfindingDelegates.Add(delegate_AQUAPHIBIOUS);
+                    if (!pathfindingDelegates.Contains(delegate_AQUAPHIBIOUS))
+                    {
+                        pathfindingDelegates.Add(delegate_AQUAPHIBIOUS);
+                    }
                 }
                 else if (u.moveType == Unit.MoveType.DESERT_ONLY)
                 {
-                    pathfindingDelegates.Add(delegate_DESERT_ONLY);
+                    if (!pathfindingDelegates.Contains(delegate_DESERT_ONLY))
+                    {
+                        pathfindingDelegates.Add(delegate_DESERT_ONLY);
+                    }
                 }
 
                 if (safeMove)
                 {
-                    pathfindingDelegates.Add(delegate_SAFE_MOVE);
+                    if (!pathfindingDelegates.Contains(delegate_SAFE_MOVE))
+                    {
+                        pathfindingDelegates.Add(delegate_SAFE_MOVE);
+                    }
                 }
                 else if (u is UM)
                 {
-                    pathfindingDelegates.Add(delegate_AVOID_TRESSPASS);
+                    if (!pathfindingDelegates.Contains(delegate_AVOID_TRESSPASS))
+                    {
+                        pathfindingDelegates.Add(delegate_AVOID_TRESSPASS);
+                    }
                 }
             }
 
@@ -410,6 +461,11 @@ namespace CommunityLib
 
         public static Location[] getPathTo(Location loc, Func<Location[], Location, Unit, List<int>, bool> destinationValidityDelegate, Unit u, List<int> targetMapLayers, bool safeMove)
         {
+            return getPathTo(loc, destinationValidityDelegate, null, u, targetMapLayers, safeMove);
+        }
+
+        public static Location[] getPathTo(Location loc, Func<Location[], Location, Unit, List<int>, bool> destinationValidityDelegate, List<Func<Location[], Location, Unit, List<int>, double>> pathfindingDelegates, Unit u, List<int> targetMapLayers, bool safeMove)
+        {
             if (targetMapLayers == null)
             {
                 targetMapLayers = new List<int>();
@@ -419,8 +475,15 @@ namespace CommunityLib
             {
                 return new Location[0];
             }
+            if (pathfindingDelegates == null)
+            {
+                pathfindingDelegates = new List<Func<Location[], Location, Unit, List<int>, double>> { delegate_LAYERBOUND };
+            }
+            else if (!pathfindingDelegates.Contains(delegate_LAYERBOUND))
+            {
+                pathfindingDelegates.Add(delegate_LAYERBOUND);
+            }
 
-            List<Func<Location[], Location, Unit, List<int>, double>> pathfindingDelegates = new List<Func<Location[], Location, Unit, List<int>, double>> { delegate_LAYERBOUND };
             List<Func<Location[], Location, Unit, List<int>, bool>> destinationValidityDelegates = new List<Func<Location[], Location, Unit, List<int>, bool>> { destinationValidityDelegate };
 
             if (targetMapLayers != null && targetMapLayers.Count > 0)
@@ -432,25 +495,40 @@ namespace CommunityLib
             {
                 if (u is UA && u.isCommandable())
                 {
-                    pathfindingDelegates.Add(delegate_FAVOURABLE_WIND);
+                    if (!pathfindingDelegates.Contains(delegate_FAVOURABLE_WIND))
+                    {
+                        pathfindingDelegates.Add(delegate_FAVOURABLE_WIND);
+                    }
                 }
 
                 if (u.moveType == Unit.MoveType.AQUAPHIBIOUS)
                 {
-                    pathfindingDelegates.Add(delegate_AQUAPHIBIOUS);
+                    if (!pathfindingDelegates.Contains(delegate_AQUAPHIBIOUS))
+                    {
+                        pathfindingDelegates.Add(delegate_AQUAPHIBIOUS);
+                    }
                 }
                 else if (u.moveType == Unit.MoveType.DESERT_ONLY)
                 {
-                    pathfindingDelegates.Add(delegate_DESERT_ONLY);
+                    if (!pathfindingDelegates.Contains(delegate_DESERT_ONLY))
+                    {
+                        pathfindingDelegates.Add(delegate_DESERT_ONLY);
+                    }
                 }
 
                 if (safeMove)
                 {
-                    pathfindingDelegates.Add(delegate_SAFE_MOVE);
+                    if (!pathfindingDelegates.Contains(delegate_SAFE_MOVE))
+                    {
+                        pathfindingDelegates.Add(delegate_SAFE_MOVE);
+                    }
                 }
                 else if (u is UM)
                 {
-                    pathfindingDelegates.Add(delegate_AVOID_TRESSPASS);
+                    if (!pathfindingDelegates.Contains(delegate_AVOID_TRESSPASS))
+                    {
+                        pathfindingDelegates.Add(delegate_AVOID_TRESSPASS);
+                    }
                 }
             }
 
@@ -743,6 +821,11 @@ namespace CommunityLib
 
         public static Location[] getTradeRouteTo(Location start, Location end)
         {
+            return getTradeRouteTo(start, end, null);
+        }
+
+        public static Location[] getTradeRouteTo(Location start, Location end, List<Func<Location[], Location, List<int>, double>> pathfindingDelegates)
+        {
             if (start == null || end == null)
             {
                 return null;
@@ -760,16 +843,45 @@ namespace CommunityLib
                 expectedMapLayers.Add(end.hex.z);
             }
 
-            // Location[] currentPath, Location location, int[] endPointMapLayers, Location Start, return double stepCost
-            List<Func<Location[], Location, List<int>, double>> pathfindingDelegates;
-            if (ModCore.opt_realisticTradeRoutes)
+            if (pathfindingDelegates == null)
             {
-                pathfindingDelegates = new List<Func<Location[], Location, List<int>, double>> { delegate_TRADE_REALISTIC, delegate_TRADE_LAYERBOUND, delegate_TRADE_UNDERGROUNDAWARENESS };
+                if (ModCore.opt_realisticTradeRoutes)
+                {
+                    pathfindingDelegates = new List<Func<Location[], Location, List<int>, double>> { delegate_TRADE_REALISTIC, delegate_TRADE_LAYERBOUND, delegate_TRADE_UNDERGROUNDAWARENESS };
+                }
+                else
+                {
+                    pathfindingDelegates = new List<Func<Location[], Location, List<int>, double>> { delegate_TRADE_VANILLA, delegate_TRADE_LAYERBOUND, delegate_TRADE_UNDERGROUNDAWARENESS };
+                }
             }
             else
             {
-                pathfindingDelegates = new List<Func<Location[], Location, List<int>, double>> { delegate_TRADE_VANILLA, delegate_TRADE_LAYERBOUND, delegate_TRADE_UNDERGROUNDAWARENESS };
+                if (!pathfindingDelegates.Contains(delegate_TRADE_LAYERBOUND))
+                {
+                    pathfindingDelegates.Add(delegate_TRADE_LAYERBOUND);
+                }
+
+                if (!pathfindingDelegates.Contains(delegate_TRADE_UNDERGROUNDAWARENESS))
+                {
+                    pathfindingDelegates.Add(delegate_TRADE_UNDERGROUNDAWARENESS);
+                }
+
+                if (ModCore.opt_realisticTradeRoutes)
+                {
+                    if (!pathfindingDelegates.Contains(delegate_TRADE_REALISTIC))
+                    {
+                        pathfindingDelegates.Add(delegate_TRADE_REALISTIC);
+                    }
+                }
+                else
+                {
+                    if (!pathfindingDelegates.Contains(delegate_TRADE_VANILLA))
+                    {
+                        pathfindingDelegates.Add(delegate_TRADE_VANILLA);
+                    }
+                }
             }
+            
             // Location[] currentPath, Location location, int[] endPointMapLayers,, Location Start, return bool destinationValid
             List<Func<Location[], Location, List<int>, bool>> destinationValidityDelegates = new List<Func<Location[], Location, List<int>, bool>> { delegate_TRADEVALID_LAYERBOUND, delegate_TRADEVALID_NODUPLICATES };
 
@@ -881,6 +993,11 @@ namespace CommunityLib
 
         public static Location[] getTradeRouteFrom(Location start, List<int> endPointMapLayers, List<Location> endpointsAll = null)
         {
+            return getTradeRouteFrom(start, null, null, endPointMapLayers, endpointsAll);
+        }
+
+        public static Location[] getTradeRouteFrom(Location start, List<Func<Location[], Location, List<int>, double>> pathfindingDelegates, List<Func<Location[], Location, List<int>, bool>> destinationValidityDelegates, List<int> endPointMapLayers, List<Location> endpointsAll = null)
+        {
             if (start == null)
             {
                 return null;
@@ -909,18 +1026,62 @@ namespace CommunityLib
                 }
             }
 
-            // Location[] currentPath, Location location, int[] endPointMapLayers, Location Start, return double stepCost
-            List<Func<Location[], Location, List<int>, double>> pathfindingDelegates;
-            if (ModCore.opt_realisticTradeRoutes)
+            if (pathfindingDelegates == null)
             {
-                pathfindingDelegates = new List<Func<Location[], Location, List<int>, double>> { delegate_TRADE_REALISTIC, delegate_TRADE_LAYERBOUND, delegate_TRADE_UNDERGROUNDAWARENESS };
+                if (ModCore.opt_realisticTradeRoutes)
+                {
+                    pathfindingDelegates = new List<Func<Location[], Location, List<int>, double>> { delegate_TRADE_REALISTIC, delegate_TRADE_LAYERBOUND, delegate_TRADE_UNDERGROUNDAWARENESS };
+                }
+                else
+                {
+                    pathfindingDelegates = new List<Func<Location[], Location, List<int>, double>> { delegate_TRADE_VANILLA, delegate_TRADE_LAYERBOUND, delegate_TRADE_UNDERGROUNDAWARENESS };
+                }
             }
             else
             {
-                pathfindingDelegates = new List<Func<Location[], Location, List<int>, double>> { delegate_TRADE_VANILLA, delegate_TRADE_LAYERBOUND, delegate_TRADE_UNDERGROUNDAWARENESS };
+                if (!pathfindingDelegates.Contains(delegate_TRADE_LAYERBOUND))
+                {
+                    pathfindingDelegates.Add(delegate_TRADE_LAYERBOUND);
+                }
+
+                if (!pathfindingDelegates.Contains(delegate_TRADE_UNDERGROUNDAWARENESS))
+                {
+                    pathfindingDelegates.Add(delegate_TRADE_UNDERGROUNDAWARENESS);
+                }
+
+                if (ModCore.opt_realisticTradeRoutes)
+                {
+                    if (!pathfindingDelegates.Contains(delegate_TRADE_REALISTIC))
+                    {
+                        pathfindingDelegates.Add(delegate_TRADE_REALISTIC);
+                    }
+                }
+                else
+                {
+                    if (!pathfindingDelegates.Contains(delegate_TRADE_VANILLA))
+                    {
+                        pathfindingDelegates.Add(delegate_TRADE_VANILLA);
+                    }
+                }
             }
+
             // Location[] currentPath, Location location, int[] endPointMapLayers,, Location Start, return bool destinationValid
-            List<Func<Location[], Location, List<int>, bool>> destinationValidityDelegates = new List<Func<Location[], Location, List<int>, bool>> { delegate_TRADEVALID_LAYERBOUND, delegate_TRADEVALID_NODUPLICATES };
+            if (destinationValidityDelegates == null)
+            {
+                destinationValidityDelegates = new List<Func<Location[], Location, List<int>, bool>> { delegate_TRADEVALID_LAYERBOUND, delegate_TRADEVALID_NODUPLICATES };
+            }
+            else
+            {
+                if (!destinationValidityDelegates.Contains(delegate_TRADEVALID_LAYERBOUND))
+                {
+                    destinationValidityDelegates.Add(delegate_TRADEVALID_LAYERBOUND);
+                }
+
+                if (!destinationValidityDelegates.Contains(delegate_TRADEVALID_NODUPLICATES))
+                {
+                    destinationValidityDelegates.Add(delegate_TRADEVALID_NODUPLICATES);
+                }
+            }
 
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
