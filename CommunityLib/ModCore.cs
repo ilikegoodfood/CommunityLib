@@ -1339,6 +1339,11 @@ namespace CommunityLib
 
         public bool checkIsUnitSubsumed(Unit u)
         {
+            if (u.map == null || (u.locIndex < 0 && u.locIndex >= u.map.locations.Count))
+            {
+                return false;
+            }
+
             if (u.isDead && u.person != null && !u.person.isDead && u.person.unit != null && u.person.unit != u && !u.person.unit.isDead)
             {
                 foreach (Hooks hook in Get().GetRegisteredHooks())
