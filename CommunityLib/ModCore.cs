@@ -1339,7 +1339,7 @@ namespace CommunityLib
 
         public bool checkIsUnitSubsumed(Unit u)
         {
-            if (u.map == null || (u.locIndex < 0 && u.locIndex >= u.map.locations.Count))
+            if (u == null || u.map == null || u.map.locations == null || u.locIndex < 0 || u.locIndex >= u.map.locations.Count)
             {
                 return false;
             }
