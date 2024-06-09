@@ -161,7 +161,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_BuildMenagerie), nameof(Ch_Orcs_BuildMenagerie.getRestriction), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Ch_Orcs_BuildMenagerie_getRestriction_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_BuildMenagerie), nameof(Ch_Orcs_BuildMenagerie.validFor), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Ch_Orcs_BuildMenagerie_validFor_Postfix)));
             // Orcs Build Shipyard
-            harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_BuildShipyard), nameof(Ch_Orcs_BuildShipyard.valid), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Ch_Orcs_BuildShipyard_valid_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_BuildShipyard), nameof(Ch_Orcs_BuildShipyard.valid), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Ch_Orcs_BuildShipyard_valid_Transpiler)));
             // Orcs Build Mine
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_BuildMines), nameof(Ch_Orcs_BuildMines.getRestriction), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Ch_Orcs_BuildMines_getRestriction_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_BuildMines), nameof(Ch_Orcs_BuildMines.validFor), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Ch_Orcs_BuildMines_validFor_Postfix)));
@@ -1051,20 +1051,29 @@ namespace CommunityLib
                     {
                         if (instructionList[i].opcode == OpCodes.Brfalse_S)
                         {
-                            returnCode = false;
-
-                            yield return new CodeInstruction(OpCodes.Brfalse_S, returnLabel);
+                            instructionList[i].operand = returnLabel;
 
                             targetIndex++;
                         }
                     }
                     else if (targetIndex == 5)
                     {
-                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i+1].opcode == OpCodes.Ldc_I4_1)
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0)
+                        {
+                            returnCode = false;
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 6)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldc_I4_1)
                         {
                             returnCode = true;
 
                             instructionList[i].labels.Add(returnLabel);
+
+                            targetIndex = 0;
                         }
                     }
                 }
