@@ -166,12 +166,13 @@ namespace CommunityLib
         public override void beforeMapGen(Map map)
         {
             opt_forceShipwrecks = false;
+            core = this;
             this.map = map;
-            data.map = map;
-            data.isClean = false;
+            Get().data.map = map;
+            Get().data.isClean = false;
 
-            data.getSaveData().lastPlayedGod = map.overmind.god.getName();
-            data.saveUserData();
+            Get().data.getSaveData().lastPlayedGod = map.overmind.god.getName();
+            Get().data.saveUserData();
 
             // Set local variables;
             randStore = new Dictionary<Unit, Dictionary<object, Dictionary<string, double>>>();
@@ -1339,22 +1340,45 @@ namespace CommunityLib
 
         public bool checkIsUnitSubsumed(Unit u)
         {
-            if (u == null || u.map == null || u.map.locations == null || u.locIndex < 0 || u.locIndex >= u.map.locations.Count)
+            //Console.WriteLine($"CommunityLib: Check Is Unit Subsumed for {u.getName()}");
+            if (u == null)
             {
+                //Console.WriteLine($"CommunityLib: Unit is null.");
+                return false;
+            }
+
+            if (u.map == null)
+            {
+                //Console.WriteLine($"CommunityLib: Map is null.");
+                return false;
+            }
+
+            if (u.map.locations == null)
+            {
+                //Console.WriteLine($"CommunityLib: Map.locations is null.");
+                return false;
+            }
+
+            if (u.locIndex < 0 || u.locIndex >= u.map.locations.Count)
+            {
+                //Console.WriteLine($"CommunityLib: Unit location index ({u.locIndex}) is invalid.");
                 return false;
             }
 
             if (u.isDead && u.person != null && !u.person.isDead && u.person.unit != null && u.person.unit != u && !u.person.unit.isDead)
             {
+                //Console.WriteLine($"CommunityLib: Unit may be subsumed.");
                 foreach (Hooks hook in Get().GetRegisteredHooks())
                 {
                     if (hook.isUnitSubsumed(u, u.person.unit))
                     {
+                        //Console.WriteLine($"CommunityLib: Unit is subsumed");
                         return true;
                     }
                 }
             }
 
+            //Console.WriteLine($"CommunityLib: Unit is not subsumed");
             return false;
         }
 
