@@ -168,6 +168,10 @@ namespace CommunityLib
             // Orcs Raiding Party
             harmony.Patch(original: AccessTools.Method(typeof(Rt_Orcs_RaidingParty), nameof(Rt_Orcs_RaidingParty.complete), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Rt_Orcs_RaidingParty_complete_Transpiler)));
 
+            // Item Fixes //
+            // I_DarkStone
+            harmony.Patch(original: AccessTools.Method(typeof(I_DarkStone), nameof(I_DarkStone.getShortDesc), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(I_DarkStone_getShortDesc_Postfix)));
+
             // Local Action Fixes
             harmony.Patch(original: AccessTools.Method(typeof(Act_FundOutpost), nameof(Act_FundOutpost.valid), new Type[] { typeof(Person), typeof(SettlementHuman) }), postfix: new HarmonyMethod(patchType, nameof(Act_FundOutpost_valid_Postfix)));
 
@@ -1155,6 +1159,12 @@ namespace CommunityLib
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
+        }
+
+        // Item Fixes
+        private static void I_DarkStone_getShortDesc_Postfix(ref string __result)
+        {
+            __result = "The sun shines less brightly on whoever carries this stone. Increases the shadow in any human, dwarven or elven settlement this person is in by 1% every turn (works on heroes, rulers and agents)";
         }
 
         // Local Action Fixes
