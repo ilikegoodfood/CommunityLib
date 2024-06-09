@@ -562,6 +562,53 @@ namespace CommunityLib
                 fields.Add("god_is_evilbeneath", new EventRuntime.TypedField<bool>((EventContext c) => false));
             }
 
+            if (!fields.ContainsKey("other_stat_might"))
+            {
+                fields.Add("other_stat_might", new EventRuntime.TypedField<int>((EventContext c) => c._person2?.stat_might ?? 0));
+            }
+
+            if (!fields.ContainsKey("other_stat_intrigue"))
+            {
+                fields.Add("other_stat_intrigue", new EventRuntime.TypedField<int>((EventContext c) => c._person2?.stat_intrigue ?? 0));
+            }
+
+            if (!fields.ContainsKey("other_stat_lore"))
+            {
+                fields.Add("other_stat_loree", new EventRuntime.TypedField<int>((EventContext c) => c._person2?.stat_lore ?? 0));
+            }
+
+            if (!fields.ContainsKey("other_stat_command"))
+            {
+                fields.Add("other_stat_command", new EventRuntime.TypedField<int>((EventContext c) => c._person2?.stat_command ?? 0));
+            }
+
+            if (!fields.ContainsKey("other_command_limit"))
+            {
+                fields.Add("other_command_limit", new EventRuntime.TypedField<int>((EventContext c) => {
+                    if (c._person2 != null && c._person2.unit is UA ua)
+                    {
+                        return ua.getStatCommandLimit();
+                    }
+                    return 0;
+                }));
+            }
+
+            if (!fields.ContainsKey("other_command_limit_currently_used"))
+            {
+                fields.Add("other_command_limit_currently_used", new EventRuntime.TypedField<int>((EventContext c) => {
+                    if (c._person2 != null && c._person2.unit is UA ua)
+                    {
+                        return ua.getCurrentlyUsedCommand();
+                    }
+                    return 0;
+                }));
+            }
+
+            if (!fields.ContainsKey("other_kills"))
+            {
+                fields.Add("other_kills", new EventRuntime.TypedField<int>((EventContext c) => c._person2?.statistic_kills ?? 0));
+            }
+
             if (properties.ContainsKey("TELEPORT_TO_ELDER_TOMB"))
             {
                 properties["TELEPORT_TO_ELDER_TOMB"] = new EventRuntime.TypedProperty<string>(delegate (EventContext c, string v)
