@@ -111,6 +111,16 @@ namespace CommunityLib
             return 0.0;
         }
 
+        public static double delegate_TRAIT_WITHTHEWIND(Location[] currentPath, Location location, Unit u, List<int> targetMapLayers)
+        {
+            Location currentLoc = currentPath[currentPath.Length - 1];
+            if (location.isOcean && (location.hex.x - currentLoc.hex.x) + (location.hex.y - currentLoc.hex.y) > 0)
+            {
+                return -5.0;
+            }
+            return 0.0;
+        }
+
         public static bool delegate_VALID_LAYERBOUND(Location[] currentPath, Location location, Unit u, List<int> targetMapLayers)
         {
             return targetMapLayers == null || targetMapLayers.Count == 0 || targetMapLayers.Contains(location.hex.z);
@@ -186,6 +196,14 @@ namespace CommunityLib
                     if (!pathfindingDelegates.Contains(delegate_AVOID_TRESSPASS))
                     {
                         pathfindingDelegates.Add(delegate_AVOID_TRESSPASS);
+                    }
+                }
+
+                if (u.person != null && u.person.traits.Any(t => t is T_WithTheWind))
+                {
+                    if (!pathfindingDelegates.Contains(delegate_TRAIT_WITHTHEWIND))
+                    {
+                        pathfindingDelegates.Add(delegate_TRAIT_WITHTHEWIND);
                     }
                 }
             }
@@ -343,6 +361,14 @@ namespace CommunityLib
                     if (!pathfindingDelegates.Contains(delegate_AVOID_TRESSPASS))
                     {
                         pathfindingDelegates.Add(delegate_AVOID_TRESSPASS);
+                    }
+                }
+
+                if (u.person != null && u.person.traits.Any(t => t is T_WithTheWind))
+                {
+                    if (!pathfindingDelegates.Contains(delegate_TRAIT_WITHTHEWIND))
+                    {
+                        pathfindingDelegates.Add(delegate_TRAIT_WITHTHEWIND);
                     }
                 }
             }
@@ -528,6 +554,14 @@ namespace CommunityLib
                     if (!pathfindingDelegates.Contains(delegate_AVOID_TRESSPASS))
                     {
                         pathfindingDelegates.Add(delegate_AVOID_TRESSPASS);
+                    }
+                }
+
+                if (u.person != null && u.person.traits.Any(t => t is T_WithTheWind))
+                {
+                    if (!pathfindingDelegates.Contains(delegate_TRAIT_WITHTHEWIND))
+                    {
+                        pathfindingDelegates.Add(delegate_TRAIT_WITHTHEWIND);
                     }
                 }
             }
