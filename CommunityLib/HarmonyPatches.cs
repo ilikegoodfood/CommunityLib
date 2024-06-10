@@ -145,6 +145,8 @@ namespace CommunityLib
             // Challenge fixes //
             // Infiltrate
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Infiltrate), nameof (Ch_Infiltrate.getComplexity), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Ch_Infiltrate_getComplexity_Transpiler)));
+            // Buy Item
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_BuyItem), nameof(Ch_BuyItem.complete)), prefix: new HarmonyMethod(patchType, nameof(Ch_BuyItem_complete_Prefix)), postfix: new HarmonyMethod(patchType, nameof(Ch_BuyItem_complete_Postfix)));
             // Death of The Dun
             harmony.Patch(original: AccessTools.Method(typeof(Mg_DeathOfTheSun), nameof(Mg_DeathOfTheSun.turnTick), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Mg_DeathOfTheSun_turnTick_Transpiler)));
 
@@ -663,6 +665,24 @@ namespace CommunityLib
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static void Ch_BuyItem_complete_Prefix(Ch_BuyItem __instance, out string __state)
+        {
+            __state = __instance.onSale.getName();
+        }
+
+        private static void Ch_BuyItem_complete_Postfix(Ch_BuyItem __instance, string __state)
+        {
+            __instance.msgString = "As soon as the " + __state + " had been sold, the merchants begin offering ";
+            if ("aeiouAEIOU".IndexOf(__instance.onSale.getName().First()) >= 0)
+            {
+                __instance.msgString += "an " + __instance.onSale.getName();
+            }
+            else
+            {
+                __instance.msgString += "a " + __instance.onSale.getName();
             }
         }
 
