@@ -675,14 +675,14 @@ namespace CommunityLib
 
         private static void Ch_BuyItem_complete_Postfix(Ch_BuyItem __instance, string __state)
         {
-            __instance.msgString = "As soon as the " + __state + " had been sold, the merchants begin offering ";
+            __instance.msgString = "As soon as the " + __state + " had been sold, the merchants began offering a";
             if ("aeiouAEIOU".IndexOf(__instance.onSale.getName().First()) >= 0)
             {
-                __instance.msgString += "an " + __instance.onSale.getName();
+                __instance.msgString += "n " + __instance.onSale.getName();
             }
             else
             {
-                __instance.msgString += "a " + __instance.onSale.getName();
+                __instance.msgString += " " + __instance.onSale.getName();
             }
         }
 
