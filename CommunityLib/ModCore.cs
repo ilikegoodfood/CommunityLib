@@ -1,10 +1,10 @@
-﻿using System;
+﻿using Assets.Code;
+using Assets.Code.Modding;
+using HarmonyLib;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Assets.Code;
-using Assets.Code.Modding;
-using HarmonyLib;
 using UnityEngine;
 
 namespace CommunityLib
@@ -230,6 +230,62 @@ namespace CommunityLib
             {
                 switch (kernel.GetType().Namespace)
                 {
+                    case "FacelessMemory":
+                        Console.WriteLine("CommunityLib: Adolia is Enabled");
+                        ModIntegrationData intDataAdolia = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        Get().data.addModIntegrationData("Adolia", intDataAdolia);
+
+                        if (Get().data.tryGetModIntegrationData("Adolia", out intDataAdolia))
+                        {
+                            Type godType = intDataAdolia.assembly.GetType("FacelessMemory.God_FacelessMemory", false);
+                            if (godType != null)
+                            {
+                                intDataAdolia.typeDict.Add("FacelessMemory", godType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Faceless memory god Type (FacelessMemory.God_FacelessMemory)");
+                            }
+
+                            Type adoliaType = intDataAdolia.assembly.GetType("FacelessMemory.UA_Memory_Adolia", false);
+                            if (adoliaType != null)
+                            {
+                                intDataAdolia.typeDict.Add("Adolia", adoliaType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Adiolia agent Type (FacelessMemory.UA_Memory_Adolia)");
+                            }
+
+                            Type adoliaAgentType = intDataAdolia.assembly.GetType("FacelessMemory.UA_Memory_AdoliaAgent", false);
+                            if (adoliaAgentType != null)
+                            {
+                                intDataAdolia.typeDict.Add("AdoliaAgent", adoliaAgentType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Adolia Agent agent Type (FacelessMemory.UA_Memory_AdoliaAgent)");
+                            }
+                        }
+                        break;
+                    case "God_Love":
+                        Console.WriteLine("CommunityLib: Chandalor is Enabled");
+                        ModIntegrationData intDataChand = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        Get().data.addModIntegrationData("Chandalor", intDataChand);
+
+                        if (Get().data.tryGetModIntegrationData("Chandalor", out intDataChand))
+                        {
+                            Type godType = intDataChand.assembly.GetType("God_Love.God_Curse", false);
+                            if (godType != null)
+                            {
+                                intDataChand.typeDict.Add("Chandalor", godType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Chandalor god Type (God_Love.God_Curse)");
+                            }
+                        }
+                        break;
                     case "ShadowsInsectGod.Code":
                         Console.WriteLine("CommunityLib: Cordyceps is Enabled");
                         data.addModIntegrationData("Cordyceps", new ModIntegrationData(kernel.GetType().Assembly, kernel));
@@ -355,6 +411,25 @@ namespace CommunityLib
                             }
                         }
                         break;
+                    case "CourtesanAgent":
+                        Console.WriteLine("CommunityLib: The Courtesan is Enabled");
+                        ModIntegrationData intDataCourtesan = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        Get().data.addModIntegrationData("Courtesan", intDataCourtesan);
+
+                        if (Get().data.tryGetModIntegrationData("Courtesan", out intDataCourtesan))
+                        {
+                            Type courtesanType = intDataCourtesan.assembly.GetType("CourtesanAgent.UAE_Courtesan", false);
+                            if (courtesanType != null)
+                            {
+                                intDataCourtesan.typeDict.Add("Courtesan", courtesanType);
+                                Get().registerVampireType(courtesanType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Courtesan agent Type (CourtesanAgent.UAE_Courtesan)");
+                            }
+                        }
+                        break;
                     case "CovenExpansion":
                         Console.WriteLine("CommunityLib: Covens, Curses, and Curios is Enabled");
                         ModIntegrationData intDataCCC = new ModIntegrationData(kernel.GetType().Assembly, kernel);
@@ -422,6 +497,45 @@ namespace CommunityLib
                             {
                                 Console.WriteLine("CommunityLib: Failed to get Abyssal locus property Type (Wonderblunder_DeepOnes.Pr_AbyssalLocus)");
                             }
+
+                            Type fishermanType = intDataDOPlus.assembly.GetType("Wonderblunder_DeepOnes.UAE_Wonderblunder_Fisherman");
+                            if (fishermanType != null)
+                            {
+                                intDataDOPlus.typeDict.Add("Fisherman", fishermanType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Fisherman agent Type (Wonderblunder_DeepOnes.UAE_Wonderblunder_Fisherman)");
+                            }
+
+                            Type drownedProphetType = intDataDOPlus.assembly.GetType("Wonderblunder_DeepOnes.UAEN_DrownedProphet");
+                            if (drownedProphetType != null)
+                            {
+                                intDataDOPlus.typeDict.Add("DrownedProphet", drownedProphetType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Drowned Prophet agent Type (Wonderblunder_DeepOnes.UAEN_DrownedProphet)");
+                            }
+                        }
+                        break;
+                    case "Duelist":
+                        Console.WriteLine("CommunityLib: The Duelist is Enabled");
+                        ModIntegrationData intDataDuelist = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        Get().data.addModIntegrationData("Duelist", intDataDuelist);
+
+                        if (Get().data.tryGetModIntegrationData("Duelist", out intDataDuelist))
+                        {
+                            Type duelistType = intDataDuelist.assembly.GetType("Duelist.UAE_Duelist", false);
+                            if (duelistType != null)
+                            {
+                                intDataDuelist.typeDict.Add("Duelist", duelistType);
+                                Get().registerVampireType(duelistType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Duelist agent Type (Duelist.UAE_Duelist)");
+                            }
                         }
                         break;
                     case "God_Flesh":
@@ -431,6 +545,16 @@ namespace CommunityLib
 
                         if (Get().data.tryGetModIntegrationData("Escamrak", out intDataEscam))
                         {
+                            Type godType = intDataEscam.assembly.GetType("God_Flesh.God_Flesh", false);
+                            if (godType != null)
+                            {
+                                intDataEscam.typeDict.Add("Escamrak", godType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Escamrak god Type (God_Flesh.God_Flesh)");
+                            }
+
                             Type corruptedLocusType = intDataEscam.assembly.GetType("God_Flesh.Pr_CorruptedLocus", false);
                             if (corruptedLocusType != null)
                             {
@@ -454,6 +578,81 @@ namespace CommunityLib
                             }
                         }
                         break;
+                    case "ShadowsLib":
+                        Console.WriteLine("CommunityLib: Ixthus is Enabled");
+                        ModIntegrationData intDataIxthus = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        Get().data.addModIntegrationData("Ixthus", intDataIxthus);
+
+                        if (Get().data.tryGetModIntegrationData("Ixthus", out intDataIxthus))
+                        {
+                            Type ixthusType = intDataIxthus.assembly.GetType("ShadowsLib.God_KingofCups", false);
+                            if (ixthusType != null)
+                            {
+                                intDataIxthus.typeDict.Add("Ixthus", ixthusType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Ixthus god Type (ShadowsLib.God_KingofCups)");
+                            }
+
+                            Type settlementCryptType = intDataIxthus.assembly.GetType("ShadowsLib.Set_Crypt", false);
+                            if (settlementCryptType != null)
+                            {
+                                intDataIxthus.typeDict.Add("Crypt", settlementCryptType);
+                                intDataIxthus.methodInfoDict.Add("Set_Crypt.turnTick", AccessTools.Method(settlementCryptType, "turnTick", new Type[0]));
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Settement crypt settlement Type (ShadowsLib.Set_Crypt)");
+                            }
+
+                            Type gawainType = intDataIxthus.assembly.GetType("ShadowsLib.UAE_Gawain", false);
+                            if (gawainType != null)
+                            {
+                                intDataIxthus.typeDict.Add("Gawain", gawainType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Gawain agent Type (ShadowsLib.UAE_Gawain)");
+                            }
+                        }
+                        break;
+                    case "God_Mirror":
+                        Console.WriteLine("CommunityLib: Kalastrophe is Enabled");
+                        ModIntegrationData intDataKala = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        Get().data.addModIntegrationData("Kalastrophe", intDataKala);
+
+                        if (Get().data.tryGetModIntegrationData("Kalastrophe", out intDataKala))
+                        {
+                            Type godType = intDataKala.assembly.GetType("God_Mirror.God_Mirror", false);
+                            if (godType != null)
+                            {
+                                intDataKala.typeDict.Add("Kalastrophe", godType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Kalastrophe god Type (God_Mirror.God_Mirror)");
+                            }
+                        }
+                        break;
+                    case "ShadowsBloodshedGod":
+                        Console.WriteLine("CommunityLib: Kishi is Enabled");
+                        ModIntegrationData intDataKishi = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        Get().data.addModIntegrationData("Kishi", intDataKishi);
+
+                        if (Get().data.tryGetModIntegrationData("Kishi", out intDataKishi))
+                        {
+                            Type godType = intDataKishi.assembly.GetType("ShadowsBloodshedGod.God_Bloodshed", false);
+                            if (godType != null)
+                            {
+                                intDataKishi.typeDict.Add("Kishi", godType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Kishi god Type (ShadowsBloodshedGod.God_Bloodshed)");
+                            }
+                        }
+                        break;
                     case "LivingCharacter":
                         Console.WriteLine("CommunityLib: Living Characters is Enabled");
                         ModIntegrationData intDataLC = new ModIntegrationData(kernel.GetType().Assembly, kernel);
@@ -473,22 +672,214 @@ namespace CommunityLib
                             }
                         }
                         break;
-                    case "ShadowsLib":
-                        Console.WriteLine("CommunityLib: Ixthus is Enabled");
-                        ModIntegrationData intDataIxthus = new ModIntegrationData(kernel.GetType().Assembly, kernel);
-                        Get().data.addModIntegrationData("Ixthus", intDataIxthus);
+                    case "MEKHANE":
+                        Console.WriteLine("CommunityLib: Mekhane is Enabled");
+                        ModIntegrationData intDataMekh = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        Get().data.addModIntegrationData("Mehkane", intDataMekh);
 
-                        if (Get().data.tryGetModIntegrationData("ixthus", out intDataLC))
+                        if (Get().data.tryGetModIntegrationData("Mekhane", out intDataMekh))
                         {
-                            Type settlementCryptType = intDataIxthus.assembly.GetType("ShadowsLib.Set_Crypt", false);
-                            if (settlementCryptType != null)
+                            Type godType = intDataMekh.assembly.GetType("MEKHANE.God_MEKHANE", false);
+                            if (godType != null)
                             {
-                                intDataIxthus.typeDict.Add("Crypt", settlementCryptType);
-                                intDataIxthus.methodInfoDict.Add("Set_Crypt.turnTick", AccessTools.Method(settlementCryptType, "turnTick", new Type[0]));
+                                intDataMekh.typeDict.Add("Mekhane", godType);
                             }
                             else
                             {
-                                Console.WriteLine("CommunityLib: Failed to get Settement crypt settlement Type (ShadowsLib.Set_Crypt)");
+                                Console.WriteLine("CommunityLib: Failed to get Chandalor god Type (MEKHANE.God_MEKHANE)");
+                            }
+
+                            Type maxwellistType = intDataMekh.assembly.GetType("MEKHANE.UAE_Mek_Maxwellist", false);
+                            if (maxwellistType != null)
+                            {
+                                intDataMekh.typeDict.Add("Maxwellist", maxwellistType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Maxwellist agent Type (MEKHANE.UAE_Mek_Maxwellist)");
+                            }
+
+                            Type choirType = intDataMekh.assembly.GetType("MEKHANE.UAE_Mek_MechanicalChoir", false);
+                            if (choirType != null)
+                            {
+                                intDataMekh.typeDict.Add("MechanicalChoir", choirType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Mechanical choir agent Type (MEKHANE.UAE_Mek_MechanicalChoir)");
+                            }
+
+                            Type patriarchType = intDataMekh.assembly.GetType("MEKHANE.UAE_Mek_Patriarch", false);
+                            if (patriarchType != null)
+                            {
+                                intDataMekh.typeDict.Add("Patriarch", patriarchType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Patriarch agent Type (MEKHANE.UAE_Mek_Patriarch)");
+                            }
+                        }
+                        break;
+                    case "ShadowsOutsiderGod":
+                        Console.WriteLine("CommunityLib: Out of Gods is Enabled");
+                        ModIntegrationData intDataOoGs = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        Get().data.addModIntegrationData("OutOfGods", intDataOoGs);
+
+                        if (Get().data.tryGetModIntegrationData("OutOfGods", out intDataOoGs))
+                        {
+                            Type godAType = intDataOoGs.assembly.GetType("ShadowsOutsiderGod.God_Lotus", false);
+                            if (godAType != null)
+                            {
+                                intDataOoGs.typeDict.Add("Lotus", godAType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Lotus god Type (ShadowsOutsiderGod.God_Lotus)");
+                            }
+
+                            Type godBType = intDataOoGs.assembly.GetType("ShadowsOutsiderGod.God_Muse", false);
+                            if (godBType != null)
+                            {
+                                intDataOoGs.typeDict.Add("Muse", godBType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Muse god Type (ShadowsOutsiderGod.God_Muse)");
+                            }
+
+                            Type godCType = intDataOoGs.assembly.GetType("ShadowsOutsiderGod.God_Museconventional", false);
+                            if (godCType != null)
+                            {
+                                intDataOoGs.typeDict.Add("MuseConventional", godCType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Muse conventional god Type (ShadowsOutsiderGod.God_Museconventional)");
+                            }
+
+                            Type godDType = intDataOoGs.assembly.GetType("ShadowsOutsiderGod.God_Outsider", false);
+                            if (godDType != null)
+                            {
+                                intDataOoGs.typeDict.Add("Outsider", godDType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Outsider god Type (ShadowsOutsiderGod.God_Outsider)");
+                            }
+
+                            Type godEType = intDataOoGs.assembly.GetType("ShadowsOutsiderGod.God_Paradoxis", false);
+                            if (godEType != null)
+                            {
+                                intDataOoGs.typeDict.Add("Paradoxis", godEType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Paradoxis god Type (ShadowsOutsiderGod.God_Paradoxis)");
+                            }
+
+                            Type addictType = intDataOoGs.assembly.GetType("ShadowsOutsiderGod.UAE_Addict", false);
+                            if (addictType != null)
+                            {
+                                intDataOoGs.typeDict.Add("Addict", addictType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Addict agent Type (ShadowsOutsiderGod.UAE_Addict)");
+                            }
+
+                            Type fakeUpstartType = intDataOoGs.assembly.GetType("ShadowsOutsiderGod.UAE_FakeUpstart", false);
+                            if (fakeUpstartType != null)
+                            {
+                                intDataOoGs.typeDict.Add("FakeUpstart", fakeUpstartType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Fake upstart agent Type (ShadowsOutsiderGod.UAE_FakeUpstart)");
+                            }
+
+                            Type representativeType = intDataOoGs.assembly.GetType("ShadowsOutsiderGod.UAE_Representative", false);
+                            if (representativeType != null)
+                            {
+                                intDataOoGs.typeDict.Add("Representative", representativeType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Representative agent Type (ShadowsOutsiderGod.UAE_Representative)");
+                            }
+                        }
+                        break;
+                    case "CustomVoidGod":
+                        Console.WriteLine("CommunityLib: The Living Void is Enabled");
+                        ModIntegrationData intDataVoid = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        Get().data.addModIntegrationData("LivingVoid", intDataVoid);
+
+                        if (Get().data.tryGetModIntegrationData("LivingVoid", out intDataVoid))
+                        {
+                            Type godType = intDataVoid.assembly.GetType("CustomVoidGod.God_Vacuum", false);
+                            if (godType != null)
+                            {
+                                intDataVoid.typeDict.Add("LivingVoid", godType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get The living void god Type (CustomVoidGod.God_Vacuum)");
+                            }
+                        }
+                        break;
+                    case "TheOtherworlder":
+                        Console.WriteLine("CommunityLib: The Otherworlder is Enabled");
+                        ModIntegrationData intDataOtherworld = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        Get().data.addModIntegrationData("Otherworlder", intDataOtherworld);
+
+                        if (Get().data.tryGetModIntegrationData("Otherworlder", out intDataOtherworld))
+                        {
+                            Type otherworlderType = intDataOtherworld.assembly.GetType("TheOtherworlder.UAE_TheOtherworlder", false);
+                            if (otherworlderType != null)
+                            {
+                                intDataOtherworld.typeDict.Add("Otherworlder", otherworlderType);
+                                Get().registerVampireType(otherworlderType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Otherworlder agent Type (TheOtherworlder.UAE_TheOtherworlder)");
+                            }
+                        }
+                        break;
+                    case "Modjam_Ratking":
+                        Console.WriteLine("CommunityLib: The Rat King is Enabled");
+                        ModIntegrationData intDataRatKing = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        Get().data.addModIntegrationData("RatKing", intDataRatKing);
+
+                        if (Get().data.tryGetModIntegrationData("RatKing", out intDataRatKing))
+                        {
+                            Type ratKingType = intDataRatKing.assembly.GetType("Modjam_Ratking.UAE_Wonderblunder_RatKing", false);
+                            if (ratKingType != null)
+                            {
+                                intDataRatKing.typeDict.Add("RatKing", ratKingType);
+                                Get().registerVampireType(ratKingType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Rat king agent Type (Modjam_Ratking.UAE_Wonderblunder_RatKing)");
+                            }
+                        }
+                        break;
+                    case "ModJam_Redeemer":
+                        Console.WriteLine("CommunityLib: The Redeemer is Enabled");
+                        ModIntegrationData intDataRedeemer = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        Get().data.addModIntegrationData("Redeemer", intDataRedeemer);
+
+                        if (Get().data.tryGetModIntegrationData("Redeemer", out intDataRedeemer))
+                        {
+                            Type redeemerType = intDataRedeemer.assembly.GetType("ModJam_Redeemer.UAE_Redeemer", false);
+                            if (redeemerType != null)
+                            {
+                                intDataRedeemer.typeDict.Add("Redeemer", redeemerType);
+                                Get().registerVampireType(redeemerType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Redeemer agent Type (ModJam_Redeemer.UAE_Redeemer)");
                             }
                         }
                         break;
@@ -504,6 +895,10 @@ namespace CommunityLib
                             {
                                 intDataWhisperer.typeDict.Add("Whisperer", whispererType);
                                 Get().registerVampireType(whispererType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Whisperer agent Type (Whisperer.UAE_Whisperer)");
                             }
                         }
                         break;
@@ -542,6 +937,7 @@ namespace CommunityLib
                 fields["is_city_ruins"] = new EventRuntime.TypedField<bool>((EventContext c) => c.location != null && c.location.settlement != null && c.location.settlement is Set_CityRuins && !(c.location.settlement is Set_Shipwreck));
             }
 
+            // Misising God Fields
             if (!fields.ContainsKey("god_is_deathgame"))
             {
                 fields.Add("god_is_deathgame", new EventRuntime.TypedField<bool>((EventContext c) => c.map.overmind.god is God_Cards));
@@ -562,6 +958,199 @@ namespace CommunityLib
                 fields.Add("god_is_evilbeneath", new EventRuntime.TypedField<bool>((EventContext c) => c.map.overmind.god is God_Underground));
             }
 
+            // Missing Agent Fields
+            if (!fields.ContainsKey("is_agent_aristocrat"))
+            {
+                fields.Add("is_agent_aristocrat", new EventRuntime.TypedField<bool>((EventContext c) => c.unit is UAE_Aristocrat));
+            }
+
+            if (!fields.ContainsKey("is_agent_banditking"))
+            {
+                fields.Add("is_agent_banditking", new EventRuntime.TypedField<bool>((EventContext c) => c.unit is UAE_BanditKing));
+            }
+
+            if (!fields.ContainsKey("is_agent_buccaneer"))
+            {
+                fields.Add("is_agent_buccaneer", new EventRuntime.TypedField<bool>((EventContext c) => c.unit is UAE_Buccaneer));
+            }
+
+            if (!fields.ContainsKey("is_agent_exile"))
+            {
+                fields.Add("is_agent_exile", new EventRuntime.TypedField<bool>((EventContext c) => c.unit is UAE_Exile));
+            }
+
+            if (!fields.ContainsKey("is_agent_seeker"))
+            {
+                fields.Add("is_agent_seeker", new EventRuntime.TypedField<bool>((EventContext c) => c.unit is UAE_Seeker));
+            }
+
+            if (!fields.ContainsKey("is_agent_spellbinder"))
+            {
+                fields.Add("is_agent_spellbinder", new EventRuntime.TypedField<bool>((EventContext c) => c.unit is UAE_Spellbinder));
+            }
+
+            // Adolia
+            if (!fields.ContainsKey("is_agent_adolia"))
+            {
+                fields.Add("is_agent_adolia", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Adolia", out ModIntegrationData intDataAdolia) && intDataAdolia.typeDict.TryGetValue("Adolia", out Type adoliaType) && intDataAdolia.typeDict.TryGetValue("AdoliaAgent", out Type adoliaAgentType) && (c.unit.GetType() == adoliaType || c.unit.GetType().IsSubclassOf(adoliaType) || c.unit.GetType() == adoliaAgentType || c.unit.GetType().IsSubclassOf(adoliaAgentType))));
+            }
+
+            if (!fields.ContainsKey("god_is_adolia"))
+            {
+                fields.Add("god_is_adolia", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Adolia", out ModIntegrationData intDataAdolia) && intDataAdolia.typeDict.TryGetValue("FacelessMemory", out Type godType) && (c.map.overmind.god.GetType() == godType || c.map.overmind.god.GetType().IsSubclassOf(godType))));
+            }
+
+            // Chandalor
+            if (!fields.ContainsKey("god_is_chandalor"))
+            {
+                fields.Add("god_is_chandalor", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Chandalor", out ModIntegrationData intDataChand) && intDataChand.typeDict.TryGetValue("Chandalor", out Type godType) && (c.map.overmind.god.GetType() == godType || c.map.overmind.god.GetType().IsSubclassOf(godType))));
+            }
+
+            // Courtesan
+            if (!fields.ContainsKey("is_agent_courtesan"))
+            {
+                fields.Add("is_agent_courtesan", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Courtesan", out ModIntegrationData intDataCourtesan) && intDataCourtesan.typeDict.TryGetValue("Courtesan", out Type courtesanType) && (c.unit.GetType() == courtesanType || c.unit.GetType().IsSubclassOf(courtesanType))));
+            }
+
+            // Deep Ones Plus
+            if (!fields.ContainsKey("is_agent_fisherman"))
+            {
+                fields.Add("is_agent_fisherman", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("DeepOnesPlus", out ModIntegrationData intDataDOPlus) && intDataDOPlus.typeDict.TryGetValue("Fisherman", out Type fishermanType) && (c.unit.GetType() == fishermanType || c.unit.GetType().IsSubclassOf(fishermanType))));
+            }
+
+            if (!fields.ContainsKey("is_agent_drownedprophet"))
+            {
+                fields.Add("is_agent_drownedprophet", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("DeepOnesPlus", out ModIntegrationData intDataDOPlus) && intDataDOPlus.typeDict.TryGetValue("DrownedProphet", out Type drownedProphetType) && (c.unit.GetType() == drownedProphetType || c.unit.GetType().IsSubclassOf(drownedProphetType))));
+            }
+
+            // The Duelist
+            if (!fields.ContainsKey("is_agent_duelist"))
+            {
+                fields.Add("is_agent_duelist", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Duelist", out ModIntegrationData intDataDuelist) && intDataDuelist.typeDict.TryGetValue("Duelist", out Type duelistType) && (c.unit.GetType() == duelistType || c.unit.GetType().IsSubclassOf(duelistType))));
+            }
+
+            // Escamrak
+            if (!fields.ContainsKey("god_is_escamrak"))
+            {
+                fields.Add("god_is_escamrak", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Escamrak", out ModIntegrationData intDataEscam) && intDataEscam.typeDict.TryGetValue("Escamrak", out Type godType) && (c.map.overmind.god.GetType() == godType || c.map.overmind.god.GetType().IsSubclassOf(godType))));
+            }
+
+            // Ixthus
+            if (!fields.ContainsKey("is_agent_gawain"))
+            {
+                fields.Add("is_agent_gawain", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Ixthus", out ModIntegrationData intDataIxthus) && intDataIxthus.typeDict.TryGetValue("Gawain", out Type gawainType) && (c.unit.GetType() == gawainType || c.unit.GetType().IsSubclassOf(gawainType))));
+            }
+
+            if (!fields.ContainsKey("god_is_ixthus"))
+            {
+                fields.Add("god_is_ixthus", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Ixthus", out ModIntegrationData intDataIxthus) && intDataIxthus.typeDict.TryGetValue("Ixthus", out Type godType) && (c.map.overmind.god.GetType() == godType || c.map.overmind.god.GetType().IsSubclassOf(godType))));
+            }
+
+            // Kalastrophe
+            if (!fields.ContainsKey("god_is_kalastrophe"))
+            {
+                fields.Add("god_is_kalastrophe", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Kalastrophe", out ModIntegrationData intDataKala) && intDataKala.typeDict.TryGetValue("Kalastrophe", out Type godType) && (c.map.overmind.god.GetType() == godType || c.map.overmind.god.GetType().IsSubclassOf(godType))));
+            }
+
+            // Kishi
+            if (!fields.ContainsKey("god_is_kishi"))
+            {
+                fields.Add("god_is_kishi", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Kishi", out ModIntegrationData intDataKishi) && intDataKishi.typeDict.TryGetValue("Kishi", out Type godType) && (c.map.overmind.god.GetType() == godType || c.map.overmind.god.GetType().IsSubclassOf(godType))));
+            }
+
+            // MEKHANE
+            if (!fields.ContainsKey("is_agent_maxwellist"))
+            {
+                fields.Add("is_agent_maxwellist", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Mekhane", out ModIntegrationData intDataMekh) && intDataMekh.typeDict.TryGetValue("Maxwellist", out Type maxwellistType) && (c.unit.GetType() == maxwellistType || c.unit.GetType().IsSubclassOf(maxwellistType))));
+            }
+
+            if (!fields.ContainsKey("is_agent_mechanicalchoir"))
+            {
+                fields.Add("is_agent_mechanicalchoir", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Mekhane", out ModIntegrationData intDataMekh) && intDataMekh.typeDict.TryGetValue("MechanicalChoir", out Type mechanicalChoirType) && (c.unit.GetType() == mechanicalChoirType || c.unit.GetType().IsSubclassOf(mechanicalChoirType))));
+            }
+
+            if (!fields.ContainsKey("is_agent_patriarch"))
+            {
+                fields.Add("is_agent_patriarch", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Mekhane", out ModIntegrationData intDataMekh) && intDataMekh.typeDict.TryGetValue("Patriarch", out Type patriarchType) && (c.unit.GetType() == patriarchType || c.unit.GetType().IsSubclassOf(patriarchType))));
+            }
+
+            if (!fields.ContainsKey("god_is_mekhane"))
+            {
+                fields.Add("god_is_mekhane", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Mekhane", out ModIntegrationData intDataMekh) && intDataMekh.typeDict.TryGetValue("Mekhane", out Type godType) && (c.map.overmind.god.GetType() == godType || c.map.overmind.god.GetType().IsSubclassOf(godType))));
+            }
+
+            // Out Of Gods
+            if (!fields.ContainsKey("is_agent_addict"))
+            {
+                fields.Add("is_agent_addict", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("OutOfGods", out ModIntegrationData intDataOoGs) && intDataOoGs.typeDict.TryGetValue("Addict", out Type addictType) && (c.unit.GetType() == addictType || c.unit.GetType().IsSubclassOf(addictType))));
+            }
+
+            if (!fields.ContainsKey("is_agent_fakeupstart"))
+            {
+                fields.Add("is_agent_fakeupstart", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("OutOfGods", out ModIntegrationData intDataOoGs) && intDataOoGs.typeDict.TryGetValue("FakeUpstart", out Type fakeUpstartType) && (c.unit.GetType() == fakeUpstartType || c.unit.GetType().IsSubclassOf(fakeUpstartType))));
+            }
+
+            if (!fields.ContainsKey("is_agent_representative"))
+            {
+                fields.Add("is_agent_representative", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("OutOfGods", out ModIntegrationData intDataOoGs) && intDataOoGs.typeDict.TryGetValue("Representative", out Type representativeType) && (c.unit.GetType() == representativeType || c.unit.GetType().IsSubclassOf(representativeType))));
+            }
+
+            if (!fields.ContainsKey("god_is_lotus"))
+            {
+                fields.Add("god_is_lotus", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("OutOfGods", out ModIntegrationData intDataOoGs) && intDataOoGs.typeDict.TryGetValue("Lotus", out Type lotusGodType) && (c.map.overmind.god.GetType() == lotusGodType || c.map.overmind.god.GetType().IsSubclassOf(lotusGodType))));
+            }
+
+            if (!fields.ContainsKey("god_is_muse"))
+            {
+                fields.Add("god_is_muse", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("OutOfGods", out ModIntegrationData intDataOoGs) && intDataOoGs.typeDict.TryGetValue("Muse", out Type museGodType) && (c.map.overmind.god.GetType() == museGodType || c.map.overmind.god.GetType().IsSubclassOf(museGodType))));
+            }
+
+            if (!fields.ContainsKey("god_is_museconventional"))
+            {
+                fields.Add("god_is_museconventional", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("OutOfGods", out ModIntegrationData intDataOoGs) && intDataOoGs.typeDict.TryGetValue("MuseConventional", out Type museConventionalGodType) && (c.map.overmind.god.GetType() == museConventionalGodType || c.map.overmind.god.GetType().IsSubclassOf(museConventionalGodType))));
+            }
+
+            if (!fields.ContainsKey("god_is_outsider"))
+            {
+                fields.Add("god_is_outsider", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("OutOfGods", out ModIntegrationData intDataOoGs) && intDataOoGs.typeDict.TryGetValue("Outsider", out Type outsiderGodType) && (c.map.overmind.god.GetType() == outsiderGodType || c.map.overmind.god.GetType().IsSubclassOf(outsiderGodType))));
+            }
+
+            if (!fields.ContainsKey("god_is_paradoxis"))
+            {
+                fields.Add("god_is_paradoxis", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("OutOfGods", out ModIntegrationData intDataOoGs) && intDataOoGs.typeDict.TryGetValue("Paradoxis", out Type paradoxisGodType) && (c.map.overmind.god.GetType() == paradoxisGodType || c.map.overmind.god.GetType().IsSubclassOf(paradoxisGodType))));
+            }
+
+            // The Living Void
+            if (!fields.ContainsKey("god_is_livingvoid"))
+            {
+                fields.Add("god_is_livingvoid", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("LivingVoid", out ModIntegrationData intDataVoid) && intDataVoid.typeDict.TryGetValue("LivingVoid", out Type godType) && (c.map.overmind.god.GetType() == godType || c.map.overmind.god.GetType().IsSubclassOf(godType))));
+            }
+
+            // The Otherworlder
+            if (!fields.ContainsKey("is_agent_otherworlder"))
+            {
+                fields.Add("is_agent_otherworlder", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Otherworlder", out ModIntegrationData intDataOtherworlder) && intDataOtherworlder.typeDict.TryGetValue("Otherworlder", out Type otherworlderType) && (c.unit.GetType() == otherworlderType || c.unit.GetType().IsSubclassOf(otherworlderType))));
+            }
+
+            // The Rat King
+            if (!fields.ContainsKey("is_agent_ratking"))
+            {
+                fields.Add("is_agent_ratking", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("RatKing", out ModIntegrationData intDataRatKing) && intDataRatKing.typeDict.TryGetValue("RatKing", out Type ratKingType) && (c.unit.GetType() == ratKingType || c.unit.GetType().IsSubclassOf(ratKingType))));
+            }
+
+            // The Redeemer
+            if (!fields.ContainsKey("is_agent_redeemer"))
+            {
+                fields.Add("is_agent_redeemer", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Redeemer", out ModIntegrationData intDataRedeemer) && intDataRedeemer.typeDict.TryGetValue("Redeemer", out Type redeemerType) && (c.unit.GetType() == redeemerType || c.unit.GetType().IsSubclassOf(redeemerType))));
+            }
+
+            // The Whisperer
+            if (!fields.ContainsKey("is_agent_whisperer"))
+            {
+                fields.Add("is_agent_whisperer", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Whisperer", out ModIntegrationData intDataWhisperer) && intDataWhisperer.typeDict.TryGetValue("Whisperer", out Type whispererType) && (c.unit.GetType() == whispererType || c.unit.GetType().IsSubclassOf(whispererType))));
+            }
+
+            // Other stat fields
             if (!fields.ContainsKey("other_stat_might"))
             {
                 fields.Add("other_stat_might", new EventRuntime.TypedField<int>((EventContext c) => c._person2?.stat_might ?? 0));
@@ -574,7 +1163,7 @@ namespace CommunityLib
 
             if (!fields.ContainsKey("other_stat_lore"))
             {
-                fields.Add("other_stat_loree", new EventRuntime.TypedField<int>((EventContext c) => c._person2?.stat_lore ?? 0));
+                fields.Add("other_stat_lore", new EventRuntime.TypedField<int>((EventContext c) => c._person2?.stat_lore ?? 0));
             }
 
             if (!fields.ContainsKey("other_stat_command"))
