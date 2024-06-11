@@ -976,17 +976,17 @@ namespace CommunityLib
 
             if (!fields.ContainsKey("is_agent_exile"))
             {
-                fields.Add("is_agent_exile", new EventRuntime.TypedField<bool>((EventContext c) => c.unit is UAE_Exile));
+                fields.Add("is_agent_exile", new EventRuntime.TypedField<bool>((EventContext c) => false));
             }
 
             if (!fields.ContainsKey("is_agent_seeker"))
             {
-                fields.Add("is_agent_seeker", new EventRuntime.TypedField<bool>((EventContext c) => c.unit is UAE_Seeker));
+                fields.Add("is_agent_seeker", new EventRuntime.TypedField<bool>((EventContext c) => false));
             }
 
             if (!fields.ContainsKey("is_agent_spellbinder"))
             {
-                fields.Add("is_agent_spellbinder", new EventRuntime.TypedField<bool>((EventContext c) => c.unit is UAE_Spellbinder));
+                fields.Add("is_agent_spellbinder", new EventRuntime.TypedField<bool>((EventContext c) => false));
             }
 
             // Adolia
