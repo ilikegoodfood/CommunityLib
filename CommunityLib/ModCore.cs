@@ -422,7 +422,6 @@ namespace CommunityLib
                             if (courtesanType != null)
                             {
                                 intDataCourtesan.typeDict.Add("Courtesan", courtesanType);
-                                Get().registerVampireType(courtesanType);
                             }
                             else
                             {
@@ -530,7 +529,6 @@ namespace CommunityLib
                             if (duelistType != null)
                             {
                                 intDataDuelist.typeDict.Add("Duelist", duelistType);
-                                Get().registerVampireType(duelistType);
                             }
                             else
                             {
@@ -660,11 +658,11 @@ namespace CommunityLib
 
                         if (Get().data.tryGetModIntegrationData("LivingCharacters", out intDataLC))
                         {
-                            Type vampireNobeType = intDataLC.assembly.GetType("LivingCharacters.UAEN_Chars_VampireNoble", false);
-                            if (vampireNobeType != null)
+                            Type vampireNobleType = intDataLC.assembly.GetType("LivingCharacters.UAEN_Chars_VampireNoble", false);
+                            if (vampireNobleType != null)
                             {
-                                intDataLC.typeDict.Add("Vampire", vampireNobeType);
-                                Get().registerVampireType(vampireNobeType);
+                                intDataLC.typeDict.Add("Vampire", vampireNobleType);
+                                Get().registerVampireType(vampireNobleType);
                             }
                             else
                             {
@@ -837,7 +835,6 @@ namespace CommunityLib
                             if (otherworlderType != null)
                             {
                                 intDataOtherworld.typeDict.Add("Otherworlder", otherworlderType);
-                                Get().registerVampireType(otherworlderType);
                             }
                             else
                             {
@@ -856,7 +853,6 @@ namespace CommunityLib
                             if (ratKingType != null)
                             {
                                 intDataRatKing.typeDict.Add("RatKing", ratKingType);
-                                Get().registerVampireType(ratKingType);
                             }
                             else
                             {
@@ -875,7 +871,6 @@ namespace CommunityLib
                             if (redeemerType != null)
                             {
                                 intDataRedeemer.typeDict.Add("Redeemer", redeemerType);
-                                Get().registerVampireType(redeemerType);
                             }
                             else
                             {
