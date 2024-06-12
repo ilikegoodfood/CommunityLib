@@ -286,7 +286,8 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_ToList = AccessTools.Method(typeof(List<Subsettlement>), "ToList", new Type[0]);
+            MethodInfo MI_ToList = AccessTools.Method(typeof(Enumerable), nameof(Enumerable.ToList));
+            MI_ToList = MI_ToList.MakeGenericMethod(typeof(Subsettlement));
 
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
@@ -297,7 +298,7 @@ namespace CommunityLib
                     {
                         if (instructionList[i].opcode == OpCodes.Callvirt && instructionList[i+1].opcode == OpCodes.Stloc_S)
                         {
-                            yield return new CodeInstruction(OpCodes.Call, MI_ToList);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_ToList);
 
                             targetIndex = 0;
                         }
