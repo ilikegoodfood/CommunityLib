@@ -268,6 +268,34 @@ namespace CommunityLib
                             }
                         }
                         break;
+                    case "Bandits_and_Crime":
+                        Console.WriteLine("CommunityLib: Bandits and Crime is Enabled");
+                        ModIntegrationData intDataBandit = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        Get().data.addModIntegrationData("BanditsAndCrime", intDataBandit);
+
+                        if (Get().data.tryGetModIntegrationData("BanditsAndCrime", out intDataBandit))
+                        {
+                            Type brigandType = intDataBandit.assembly.GetType("Bandits_and_Crime.UAE_Brigand", false);
+                            if (brigandType != null)
+                            {
+                                intDataBandit.typeDict.Add("Brigand", brigandType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Brigand agent Type (Bandits_and_Crime.UAE_Brigand)");
+                            }
+
+                            Type lawbreakerType = intDataBandit.assembly.GetType("Bandits_and_Crime.UAE_Lawbreaker", false);
+                            if (brigandType != null)
+                            {
+                                intDataBandit.typeDict.Add("Lawbreaker", lawbreakerType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Lawbreaker agent Type (Bandits_and_Crime.UAE_Lawbreaker)");
+                            }
+                        }
+                        break;
                     case "God_Love":
                         Console.WriteLine("CommunityLib: Chandalor is Enabled");
                         ModIntegrationData intDataChand = new ModIntegrationData(kernel.GetType().Assembly, kernel);
@@ -993,6 +1021,17 @@ namespace CommunityLib
             if (!fields.ContainsKey("god_is_adolia"))
             {
                 fields.Add("god_is_adolia", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Adolia", out ModIntegrationData intDataAdolia) && intDataAdolia.typeDict.TryGetValue("FacelessMemory", out Type godType) && (c.map.overmind.god.GetType() == godType || c.map.overmind.god.GetType().IsSubclassOf(godType))));
+            }
+
+            // Banits and Crime
+            if (!fields.ContainsKey("is_agent_brigand"))
+            {
+                fields.Add("is_agent_brigand", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("BanditsAndCrime", out ModIntegrationData intDataBandit) && intDataBandit.typeDict.TryGetValue("Bandit", out Type banditType) && (c.unit.GetType() == banditType || c.unit.GetType().IsSubclassOf(banditType))));
+            }
+
+            if (!fields.ContainsKey("is_agent_lawbreaker"))
+            {
+                fields.Add("is_agent_lawbreaker", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("BanditsAndCrime", out ModIntegrationData intDataBandit) && intDataBandit.typeDict.TryGetValue("Lawbreaker", out Type lawbreakerType) && (c.unit.GetType() == lawbreakerType || c.unit.GetType().IsSubclassOf(lawbreakerType))));
             }
 
             // Chandalor
