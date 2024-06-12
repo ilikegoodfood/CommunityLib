@@ -286,7 +286,7 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_ToList = AccessTools.Method(typeof(Enumerable), nameof(Enumerable.ToList), new Type[0]);
+            MethodInfo MI_ToList = AccessTools.Method(typeof(List<Subsettlement>), "ToList", new Type[0]);
 
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
