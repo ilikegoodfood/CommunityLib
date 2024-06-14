@@ -973,7 +973,7 @@ namespace CommunityLib
 
             if (!fields.ContainsKey("god_is_cordyceps"))
             {
-                fields.Add("god_is_cordyceps", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null && intDataCord.typeDict.TryGetValue("God", out Type godType) && (c.map.overmind.god.GetType() == godType || c.map.overmind.god.GetType().IsSubclassOf(godType))));
+                fields.Add("god_is_cordyceps", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.typeDict.TryGetValue("God", out Type godType) && (c.map.overmind.god.GetType() == godType || c.map.overmind.god.GetType().IsSubclassOf(godType))));
             }
 
             if (!fields.ContainsKey("god_is_evilbeneath"))
@@ -1015,7 +1015,7 @@ namespace CommunityLib
             // Adolia
             if (!fields.ContainsKey("is_agent_adolia"))
             {
-                fields.Add("is_agent_adolia", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Adolia", out ModIntegrationData intDataAdolia) && intDataAdolia.typeDict.TryGetValue("Adolia", out Type adoliaType) && intDataAdolia.typeDict.TryGetValue("AdoliaAgent", out Type adoliaAgentType) && (c.unit.GetType() == adoliaType || c.unit.GetType().IsSubclassOf(adoliaType) || c.unit.GetType() == adoliaAgentType || c.unit.GetType().IsSubclassOf(adoliaAgentType))));
+                fields.Add("is_agent_adolia", new EventRuntime.TypedField<bool>((EventContext c) => c.unit != null && Get().data.tryGetModIntegrationData("Adolia", out ModIntegrationData intDataAdolia) && intDataAdolia.typeDict.TryGetValue("Adolia", out Type adoliaType) && intDataAdolia.typeDict.TryGetValue("AdoliaAgent", out Type adoliaAgentType) && (c.unit.GetType() == adoliaType || c.unit.GetType().IsSubclassOf(adoliaType) || c.unit.GetType() == adoliaAgentType || c.unit.GetType().IsSubclassOf(adoliaAgentType))));
             }
 
             if (!fields.ContainsKey("god_is_adolia"))
@@ -1026,12 +1026,12 @@ namespace CommunityLib
             // Banits and Crime
             if (!fields.ContainsKey("is_agent_brigand"))
             {
-                fields.Add("is_agent_brigand", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("BanditsAndCrime", out ModIntegrationData intDataBandit) && intDataBandit.typeDict.TryGetValue("Bandit", out Type banditType) && (c.unit.GetType() == banditType || c.unit.GetType().IsSubclassOf(banditType))));
+                fields.Add("is_agent_brigand", new EventRuntime.TypedField<bool>((EventContext c) => c.unit != null && Get().data.tryGetModIntegrationData("BanditsAndCrime", out ModIntegrationData intDataBandit) && intDataBandit.typeDict.TryGetValue("Bandit", out Type banditType) && (c.unit.GetType() == banditType || c.unit.GetType().IsSubclassOf(banditType))));
             }
 
             if (!fields.ContainsKey("is_agent_lawbreaker"))
             {
-                fields.Add("is_agent_lawbreaker", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("BanditsAndCrime", out ModIntegrationData intDataBandit) && intDataBandit.typeDict.TryGetValue("Lawbreaker", out Type lawbreakerType) && (c.unit.GetType() == lawbreakerType || c.unit.GetType().IsSubclassOf(lawbreakerType))));
+                fields.Add("is_agent_lawbreaker", new EventRuntime.TypedField<bool>((EventContext c) => c.unit != null && Get().data.tryGetModIntegrationData("BanditsAndCrime", out ModIntegrationData intDataBandit) && intDataBandit.typeDict.TryGetValue("Lawbreaker", out Type lawbreakerType) && (c.unit.GetType() == lawbreakerType || c.unit.GetType().IsSubclassOf(lawbreakerType))));
             }
 
             // Chandalor
@@ -1043,24 +1043,24 @@ namespace CommunityLib
             // Courtesan
             if (!fields.ContainsKey("is_agent_courtesan"))
             {
-                fields.Add("is_agent_courtesan", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Courtesan", out ModIntegrationData intDataCourtesan) && intDataCourtesan.typeDict.TryGetValue("Courtesan", out Type courtesanType) && (c.unit.GetType() == courtesanType || c.unit.GetType().IsSubclassOf(courtesanType))));
+                fields.Add("is_agent_courtesan", new EventRuntime.TypedField<bool>((EventContext c) => c.unit != null && Get().data.tryGetModIntegrationData("Courtesan", out ModIntegrationData intDataCourtesan) && intDataCourtesan.typeDict.TryGetValue("Courtesan", out Type courtesanType) && (c.unit.GetType() == courtesanType || c.unit.GetType().IsSubclassOf(courtesanType))));
             }
 
             // Deep Ones Plus
             if (!fields.ContainsKey("is_agent_fisherman"))
             {
-                fields.Add("is_agent_fisherman", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("DeepOnesPlus", out ModIntegrationData intDataDOPlus) && intDataDOPlus.typeDict.TryGetValue("Fisherman", out Type fishermanType) && (c.unit.GetType() == fishermanType || c.unit.GetType().IsSubclassOf(fishermanType))));
+                fields.Add("is_agent_fisherman", new EventRuntime.TypedField<bool>((EventContext c) => c.unit != null && Get().data.tryGetModIntegrationData("DeepOnesPlus", out ModIntegrationData intDataDOPlus) && intDataDOPlus.typeDict.TryGetValue("Fisherman", out Type fishermanType) && (c.unit.GetType() == fishermanType || c.unit.GetType().IsSubclassOf(fishermanType))));
             }
 
             if (!fields.ContainsKey("is_agent_drownedprophet"))
             {
-                fields.Add("is_agent_drownedprophet", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("DeepOnesPlus", out ModIntegrationData intDataDOPlus) && intDataDOPlus.typeDict.TryGetValue("DrownedProphet", out Type drownedProphetType) && (c.unit.GetType() == drownedProphetType || c.unit.GetType().IsSubclassOf(drownedProphetType))));
+                fields.Add("is_agent_drownedprophet", new EventRuntime.TypedField<bool>((EventContext c) => c.unit != null && Get().data.tryGetModIntegrationData("DeepOnesPlus", out ModIntegrationData intDataDOPlus) && intDataDOPlus.typeDict.TryGetValue("DrownedProphet", out Type drownedProphetType) && (c.unit.GetType() == drownedProphetType || c.unit.GetType().IsSubclassOf(drownedProphetType))));
             }
 
             // The Duelist
             if (!fields.ContainsKey("is_agent_duelist"))
             {
-                fields.Add("is_agent_duelist", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Duelist", out ModIntegrationData intDataDuelist) && intDataDuelist.typeDict.TryGetValue("Duelist", out Type duelistType) && (c.unit.GetType() == duelistType || c.unit.GetType().IsSubclassOf(duelistType))));
+                fields.Add("is_agent_duelist", new EventRuntime.TypedField<bool>((EventContext c) => c.unit != null && Get().data.tryGetModIntegrationData("Duelist", out ModIntegrationData intDataDuelist) && intDataDuelist.typeDict.TryGetValue("Duelist", out Type duelistType) && (c.unit.GetType() == duelistType || c.unit.GetType().IsSubclassOf(duelistType))));
             }
 
             // Escamrak
@@ -1072,7 +1072,7 @@ namespace CommunityLib
             // Ixthus
             if (!fields.ContainsKey("is_agent_gawain"))
             {
-                fields.Add("is_agent_gawain", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Ixthus", out ModIntegrationData intDataIxthus) && intDataIxthus.typeDict.TryGetValue("Gawain", out Type gawainType) && (c.unit.GetType() == gawainType || c.unit.GetType().IsSubclassOf(gawainType))));
+                fields.Add("is_agent_gawain", new EventRuntime.TypedField<bool>((EventContext c) => c.unit != null && Get().data.tryGetModIntegrationData("Ixthus", out ModIntegrationData intDataIxthus) && intDataIxthus.typeDict.TryGetValue("Gawain", out Type gawainType) && (c.unit.GetType() == gawainType || c.unit.GetType().IsSubclassOf(gawainType))));
             }
 
             if (!fields.ContainsKey("god_is_ixthus"))
@@ -1095,17 +1095,17 @@ namespace CommunityLib
             // MEKHANE
             if (!fields.ContainsKey("is_agent_maxwellist"))
             {
-                fields.Add("is_agent_maxwellist", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Mekhane", out ModIntegrationData intDataMekh) && intDataMekh.typeDict.TryGetValue("Maxwellist", out Type maxwellistType) && (c.unit.GetType() == maxwellistType || c.unit.GetType().IsSubclassOf(maxwellistType))));
+                fields.Add("is_agent_maxwellist", new EventRuntime.TypedField<bool>((EventContext c) => c.unit != null && Get().data.tryGetModIntegrationData("Mekhane", out ModIntegrationData intDataMekh) && intDataMekh.typeDict.TryGetValue("Maxwellist", out Type maxwellistType) && (c.unit.GetType() == maxwellistType || c.unit.GetType().IsSubclassOf(maxwellistType))));
             }
 
             if (!fields.ContainsKey("is_agent_mechanicalchoir"))
             {
-                fields.Add("is_agent_mechanicalchoir", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Mekhane", out ModIntegrationData intDataMekh) && intDataMekh.typeDict.TryGetValue("MechanicalChoir", out Type mechanicalChoirType) && (c.unit.GetType() == mechanicalChoirType || c.unit.GetType().IsSubclassOf(mechanicalChoirType))));
+                fields.Add("is_agent_mechanicalchoir", new EventRuntime.TypedField<bool>((EventContext c) => c.unit != null && Get().data.tryGetModIntegrationData("Mekhane", out ModIntegrationData intDataMekh) && intDataMekh.typeDict.TryGetValue("MechanicalChoir", out Type mechanicalChoirType) && (c.unit.GetType() == mechanicalChoirType || c.unit.GetType().IsSubclassOf(mechanicalChoirType))));
             }
 
             if (!fields.ContainsKey("is_agent_patriarch"))
             {
-                fields.Add("is_agent_patriarch", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Mekhane", out ModIntegrationData intDataMekh) && intDataMekh.typeDict.TryGetValue("Patriarch", out Type patriarchType) && (c.unit.GetType() == patriarchType || c.unit.GetType().IsSubclassOf(patriarchType))));
+                fields.Add("is_agent_patriarch", new EventRuntime.TypedField<bool>((EventContext c) => c.unit != null && Get().data.tryGetModIntegrationData("Mekhane", out ModIntegrationData intDataMekh) && intDataMekh.typeDict.TryGetValue("Patriarch", out Type patriarchType) && (c.unit.GetType() == patriarchType || c.unit.GetType().IsSubclassOf(patriarchType))));
             }
 
             if (!fields.ContainsKey("god_is_mekhane"))
@@ -1116,17 +1116,17 @@ namespace CommunityLib
             // Out Of Gods
             if (!fields.ContainsKey("is_agent_addict"))
             {
-                fields.Add("is_agent_addict", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("OutOfGods", out ModIntegrationData intDataOoGs) && intDataOoGs.typeDict.TryGetValue("Addict", out Type addictType) && (c.unit.GetType() == addictType || c.unit.GetType().IsSubclassOf(addictType))));
+                fields.Add("is_agent_addict", new EventRuntime.TypedField<bool>((EventContext c) => c.unit != null && Get().data.tryGetModIntegrationData("OutOfGods", out ModIntegrationData intDataOoGs) && intDataOoGs.typeDict.TryGetValue("Addict", out Type addictType) && (c.unit.GetType() == addictType || c.unit.GetType().IsSubclassOf(addictType))));
             }
 
             if (!fields.ContainsKey("is_agent_fakeupstart"))
             {
-                fields.Add("is_agent_fakeupstart", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("OutOfGods", out ModIntegrationData intDataOoGs) && intDataOoGs.typeDict.TryGetValue("FakeUpstart", out Type fakeUpstartType) && (c.unit.GetType() == fakeUpstartType || c.unit.GetType().IsSubclassOf(fakeUpstartType))));
+                fields.Add("is_agent_fakeupstart", new EventRuntime.TypedField<bool>((EventContext c) => c.unit != null && Get().data.tryGetModIntegrationData("OutOfGods", out ModIntegrationData intDataOoGs) && intDataOoGs.typeDict.TryGetValue("FakeUpstart", out Type fakeUpstartType) && (c.unit.GetType() == fakeUpstartType || c.unit.GetType().IsSubclassOf(fakeUpstartType))));
             }
 
             if (!fields.ContainsKey("is_agent_representative"))
             {
-                fields.Add("is_agent_representative", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("OutOfGods", out ModIntegrationData intDataOoGs) && intDataOoGs.typeDict.TryGetValue("Representative", out Type representativeType) && (c.unit.GetType() == representativeType || c.unit.GetType().IsSubclassOf(representativeType))));
+                fields.Add("is_agent_representative", new EventRuntime.TypedField<bool>((EventContext c) => c.unit != null && Get().data.tryGetModIntegrationData("OutOfGods", out ModIntegrationData intDataOoGs) && intDataOoGs.typeDict.TryGetValue("Representative", out Type representativeType) && (c.unit.GetType() == representativeType || c.unit.GetType().IsSubclassOf(representativeType))));
             }
 
             if (!fields.ContainsKey("god_is_lotus"))
@@ -1163,46 +1163,46 @@ namespace CommunityLib
             // The Otherworlder
             if (!fields.ContainsKey("is_agent_otherworlder"))
             {
-                fields.Add("is_agent_otherworlder", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Otherworlder", out ModIntegrationData intDataOtherworlder) && intDataOtherworlder.typeDict.TryGetValue("Otherworlder", out Type otherworlderType) && (c.unit.GetType() == otherworlderType || c.unit.GetType().IsSubclassOf(otherworlderType))));
+                fields.Add("is_agent_otherworlder", new EventRuntime.TypedField<bool>((EventContext c) => c.unit != null && Get().data.tryGetModIntegrationData("Otherworlder", out ModIntegrationData intDataOtherworlder) && intDataOtherworlder.typeDict.TryGetValue("Otherworlder", out Type otherworlderType) && (c.unit.GetType() == otherworlderType || c.unit.GetType().IsSubclassOf(otherworlderType))));
             }
 
             // The Rat King
             if (!fields.ContainsKey("is_agent_ratking"))
             {
-                fields.Add("is_agent_ratking", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("RatKing", out ModIntegrationData intDataRatKing) && intDataRatKing.typeDict.TryGetValue("RatKing", out Type ratKingType) && (c.unit.GetType() == ratKingType || c.unit.GetType().IsSubclassOf(ratKingType))));
+                fields.Add("is_agent_ratking", new EventRuntime.TypedField<bool>((EventContext c) => c.unit != null && Get().data.tryGetModIntegrationData("RatKing", out ModIntegrationData intDataRatKing) && intDataRatKing.typeDict.TryGetValue("RatKing", out Type ratKingType) && (c.unit.GetType() == ratKingType || c.unit.GetType().IsSubclassOf(ratKingType))));
             }
 
             // The Redeemer
             if (!fields.ContainsKey("is_agent_redeemer"))
             {
-                fields.Add("is_agent_redeemer", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Redeemer", out ModIntegrationData intDataRedeemer) && intDataRedeemer.typeDict.TryGetValue("Redeemer", out Type redeemerType) && (c.unit.GetType() == redeemerType || c.unit.GetType().IsSubclassOf(redeemerType))));
+                fields.Add("is_agent_redeemer", new EventRuntime.TypedField<bool>((EventContext c) => c.unit != null && Get().data.tryGetModIntegrationData("Redeemer", out ModIntegrationData intDataRedeemer) && intDataRedeemer.typeDict.TryGetValue("Redeemer", out Type redeemerType) && (c.unit.GetType() == redeemerType || c.unit.GetType().IsSubclassOf(redeemerType))));
             }
 
             // The Whisperer
             if (!fields.ContainsKey("is_agent_whisperer"))
             {
-                fields.Add("is_agent_whisperer", new EventRuntime.TypedField<bool>((EventContext c) => Get().data.tryGetModIntegrationData("Whisperer", out ModIntegrationData intDataWhisperer) && intDataWhisperer.typeDict.TryGetValue("Whisperer", out Type whispererType) && (c.unit.GetType() == whispererType || c.unit.GetType().IsSubclassOf(whispererType))));
+                fields.Add("is_agent_whisperer", new EventRuntime.TypedField<bool>((EventContext c) => c.unit != null && Get().data.tryGetModIntegrationData("Whisperer", out ModIntegrationData intDataWhisperer) && intDataWhisperer.typeDict.TryGetValue("Whisperer", out Type whispererType) && (c.unit.GetType() == whispererType || c.unit.GetType().IsSubclassOf(whispererType))));
             }
 
             // Other stat fields
             if (!fields.ContainsKey("other_stat_might"))
             {
-                fields.Add("other_stat_might", new EventRuntime.TypedField<int>((EventContext c) => c._person2?.stat_might ?? 0));
+                fields.Add("other_stat_might", new EventRuntime.TypedField<int>((EventContext c) => c._person2 != null? c._person2.stat_might : 0));
             }
 
             if (!fields.ContainsKey("other_stat_intrigue"))
             {
-                fields.Add("other_stat_intrigue", new EventRuntime.TypedField<int>((EventContext c) => c._person2?.stat_intrigue ?? 0));
+                fields.Add("other_stat_intrigue", new EventRuntime.TypedField<int>((EventContext c) => c._person2 != null ? c._person2.stat_intrigue : 0));
             }
 
             if (!fields.ContainsKey("other_stat_lore"))
             {
-                fields.Add("other_stat_lore", new EventRuntime.TypedField<int>((EventContext c) => c._person2?.stat_lore ?? 0));
+                fields.Add("other_stat_lore", new EventRuntime.TypedField<int>((EventContext c) => c._person2 != null ? c._person2.stat_lore : 0));
             }
 
             if (!fields.ContainsKey("other_stat_command"))
             {
-                fields.Add("other_stat_command", new EventRuntime.TypedField<int>((EventContext c) => c._person2?.stat_command ?? 0));
+                fields.Add("other_stat_command", new EventRuntime.TypedField<int>((EventContext c) => c._person2 != null ? c._person2.stat_command : 0));
             }
 
             if (!fields.ContainsKey("other_command_limit"))
@@ -1229,7 +1229,7 @@ namespace CommunityLib
 
             if (!fields.ContainsKey("other_kills"))
             {
-                fields.Add("other_kills", new EventRuntime.TypedField<int>((EventContext c) => c._person2?.statistic_kills ?? 0));
+                fields.Add("other_kills", new EventRuntime.TypedField<int>((EventContext c) => c._person2 != null ? c._person2.statistic_kills : 0));
             }
 
             if (properties.ContainsKey("TELEPORT_TO_ELDER_TOMB"))
