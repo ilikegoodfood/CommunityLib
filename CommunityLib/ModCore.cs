@@ -316,9 +316,9 @@ namespace CommunityLib
                         break;
                     case "ShadowsInsectGod.Code":
                         Console.WriteLine("CommunityLib: Cordyceps is Enabled");
-                        data.addModIntegrationData("Cordyceps", new ModIntegrationData(kernel.GetType().Assembly, kernel));
+                        Get().data.addModIntegrationData("Cordyceps", new ModIntegrationData(kernel.GetType().Assembly, kernel));
 
-                        if (data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
+                        if (Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
                         {
                             Type godType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.God_Insect", false);
                             if (godType != null)
@@ -490,9 +490,9 @@ namespace CommunityLib
                     case "Wonderblunder_DeepOnes":
                         Console.WriteLine("CommunityLib: DeepOnesPlus is Enabled");
                         ModIntegrationData intDataDOPlus = new ModIntegrationData(kernel.GetType().Assembly, kernel);
-                        data.addModIntegrationData("DeepOnesPlus", intDataDOPlus);
+                        Get().data.addModIntegrationData("DeepOnesPlus", intDataDOPlus);
 
-                        if (data.tryGetModIntegrationData("DeepOnesPlus", out intDataDOPlus))
+                        if (Get().data.tryGetModIntegrationData("DeepOnesPlus", out intDataDOPlus))
                         {
                             Type kernelType = intDataDOPlus.assembly.GetType("Wonderblunder_DeepOnes.Modcore", false);
                             if (kernelType != null)

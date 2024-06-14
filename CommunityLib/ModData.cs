@@ -2,8 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
-using System.Threading.Tasks;
+using System.Linq;
 using UnityEngine;
 
 namespace CommunityLib
@@ -219,6 +218,7 @@ namespace CommunityLib
 
         public void onLoad(Map map)
         {
+            isClean = false;
             this.map = map;
             isPlayerTurn = true;
 
@@ -266,9 +266,14 @@ namespace CommunityLib
 
             initialiseModIntegrationData();
 
-            if (modIntegrationData.TryGetValue(key, out ModIntegrationData intData2) && intData2.assembly == null)
+            if (modIntegrationData.TryGetValue(key, out ModIntegrationData intData2))
             {
-                modIntegrationData[key] = intData;
+                if (intData2.assembly == null)
+                {
+                    modIntegrationData[key] = intData;
+                }
+
+                Console.WriteLine($"CommunityLib: ERROR: Key {key} is already registered.");
             }
             else
             {
@@ -460,6 +465,11 @@ namespace CommunityLib
                 {
                     return true;
                 }
+            }
+
+            if (u.person != null && u.person.species == u.map.species_undead && u.person.traits.Any(t => t is T_VampiricCurse || t is T_TheHunger))
+            {
+                return true;
             }
 
             return false;
