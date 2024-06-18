@@ -136,6 +136,9 @@ namespace CommunityLib
             // Agent Fixes
             harmony.Patch(original: AccessTools.Method(typeof(UAE_Abstraction), nameof(UAE_Abstraction.validTarget), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(UAE_Abstraction_validTarget_transpiler)));
 
+            // AI Fixes
+            harmony.Patch(original: AccessTools.Method(typeof(UM_Refugees), nameof(UM_Refugees.turnTickAI), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(UM_Refugees_turnTickAI_Transpiler)));
+
             // AgentBattle Fixes
             harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), "retreatOrFlee", new Type[] { typeof(UA), typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_retreatOrFlee_Transpiler)));
 
@@ -177,7 +180,7 @@ namespace CommunityLib
             // Local Action Fixes
             harmony.Patch(original: AccessTools.Method(typeof(Act_FundOutpost), nameof(Act_FundOutpost.valid), new Type[] { typeof(Person), typeof(SettlementHuman) }), postfix: new HarmonyMethod(patchType, nameof(Act_FundOutpost_valid_Postfix)));
 
-            // Realtionship Interaction Fixes
+            // Relationship Interaction Fixes
             harmony.Patch(original: AccessTools.Method(typeof(Society), nameof(Society.populateActions), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Society_populateActions_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(SG_Orc), nameof(SG_Orc.getActions), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(SG_Orc_getActions_Transpiler)));
 
@@ -527,6 +530,74 @@ namespace CommunityLib
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
+        }
+
+        // AI Fixes
+        // Refugess
+        private static IEnumerable<CodeInstruction> UM_Refugees_turnTickAI_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(UM_Refugees_turnTickAI_TranspilerBody), new Type[] { typeof(UM_Refugees), typeof(Location) });
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloca_S && instructionList[i+1].opcode == OpCodes.Call && instructionList[i+2].opcode == OpCodes.Stloc_S)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S)
+                        {
+                            Label falseLabel = ilg.DefineLabel();
+
+                            for (int j = i; j < instructionList.Count; j++)
+                            {
+                                if (instructionList[j].opcode == OpCodes.Brfalse_S)
+                                {
+                                    falseLabel = (Label)instructionList[j].operand;
+                                    break;
+                                }
+                            }
+
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 14);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, falseLabel);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed UM_Refugees_turnTickAI_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static bool UM_Refugees_turnTickAI_TranspilerBody(UM_Refugees refugees, Location loc)
+        {
+            if (loc.map.awarenessOfUnderground < 1.0)
+            {
+                if ((refugees.location.hex.z == 0 && loc.hex.z == 1) || (refugees.location.hex.z == 1 && loc.hex.z == 0))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         // Assign Killer to Miscellaneous causes of death
