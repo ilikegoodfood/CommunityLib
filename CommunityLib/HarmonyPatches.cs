@@ -3262,10 +3262,7 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_ModCoreGet = AccessTools.Method(typeof(ModCore), nameof(ModCore.Get), new Type[0]);
-            MethodInfo MI_IsSubsumed = AccessTools.Method(typeof(ModCore), nameof(ModCore.checkIsUnitSubsumed), new Type[] { typeof(Unit) });
-
-            FieldInfo FI_Prophet = AccessTools.Field(typeof(HolyOrder), nameof(HolyOrder.prophet));
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(HolyOrder_turnTick_TranspilerBody));
 
             Label label = ilg.DefineLabel();
 
@@ -3284,11 +3281,7 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Brfalse_S, label);
                             yield return new CodeInstruction(OpCodes.Pop);
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Prophet);
-                            yield return new CodeInstruction(OpCodes.Call, MI_ModCoreGet);
-                            yield return new CodeInstruction(OpCodes.Callvirt, MI_IsSubsumed);
-                            yield return new CodeInstruction(OpCodes.Ldc_I4_0);
-                            yield return new CodeInstruction(OpCodes.Ceq);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
 
                             targetIndex = 0;
                         }
@@ -3303,6 +3296,11 @@ namespace CommunityLib
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
+        }
+
+        private static bool HolyOrder_turnTick_TranspilerBody(HolyOrder order)
+        {
+            return !ModCore.Get().checkIsUnitSubsumed(order.prophet);
         }
 
         // Fallen Human rename
