@@ -2023,116 +2023,52 @@ namespace CommunityLib
 
         public bool checkIsUnitSubsumed(Unit u)
         {
-            /*Console.WriteLine($"CommunityLib: Check Is Unit Subsumed");
+            //Console.WriteLine($"CommunityLib: Check Is Unit Subsumed");
 
             if (u == null)
             {
-                Console.WriteLine($"CommunityLib: Unit is null.");
+                //Console.WriteLine($"CommunityLib: Unit is null.");
                 return false;
             }
-            Console.WriteLine($"CommunityLib: Unit is not null");
+            //Console.WriteLine($"CommunityLib: Unit is not null");
 
             if (u.map == null)
             {
-                Console.WriteLine($"CommunityLib: Map is null.");
+                //Console.WriteLine($"CommunityLib: Map is null.");
                 return false;
             }
-            Console.WriteLine($"CommunityLib: Map is not null");
+            //Console.WriteLine($"CommunityLib: Map is not null");
 
             if (u.map.locations == null)
             {
-                Console.WriteLine($"CommunityLib: Map.locations is null.");
+                //Console.WriteLine($"CommunityLib: Map.locations is null.");
                 return false;
             }
-            Console.WriteLine($"CommunityLib: Map.locations is not null");
+            //Console.WriteLine($"CommunityLib: Map.locations is not null");
 
             if (u.locIndex < 0 || u.locIndex >= u.map.locations.Count)
             {
-                Console.WriteLine($"CommunityLib: Unit location index ({u.locIndex}) is invalid.");
+                //Console.WriteLine($"CommunityLib: Unit location index ({u.locIndex}) is invalid.");
                 return false;
             }
-            Console.WriteLine($"CommunityLib: Unit locIndex is in range");
+            //Console.WriteLine($"CommunityLib: Unit locIndex is in range");
 
-            if (u.isDead)
+            if (u.isDead && u.person != null && !u.person.isDead && u.person.unit != null && u.person.unit != u && !u.person.unit.isDead)
             {
-                Console.WriteLine($"CommunityLib: Unit is dead.");
-
-                if (u.person != null)
+                foreach (Hooks hook in GetRegisteredHooks())
                 {
-                    Console.WriteLine($"CommunityLib: Unit has a person.");
-
-                    if (!u.person.isDead)
+                    if (hook.isUnitSubsumed(u, u.person.unit))
                     {
-                        Console.WriteLine($"CommunityLib: Person is not dead.");
-
-                        if (u.person.unit != null)
-                        {
-                            Console.WriteLine($"CommunityLib: Person has a unit.");
-
-                            if (u.person.unit != u)
-                            {
-                                Console.WriteLine($"CommunityLib: Person's unit is not the same as the unit.");
-
-                                if (!u.person.unit.isDead)
-                                {
-                                    Console.WriteLine($"CommunityLib: Person's unit is not dead.");
-                                    Console.WriteLine($"CommunityLib: Unit may be subsumed.");
-
-                                    List<Hooks> hooks = GetRegisteredHooks();
-                                    if (hooks == null)
-                                    {
-                                        Console.WriteLine($"CommunityLib: Hooks is null");
-                                        return false;
-                                    }
-
-                                    foreach (Hooks hook in hooks)
-                                    {
-                                        if (hook == null)
-                                        {
-                                            Console.WriteLine($"CommunityLib: Hook is null");
-                                            continue;
-                                        }
-
-                                        if (hook.isUnitSubsumed(u, u.person.unit))
-                                        {
-                                            Console.WriteLine($"CommunityLib: Unit is subsumed");
-                                            return true;
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    Console.WriteLine($"CommunityLib: Person's unit is dead.");
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine($"CommunityLib: Person's unit is the same as the unit.");
-                            }
-                        }
-                        else
-                        {
-                            Console.WriteLine($"CommunityLib: Person's unit is null.");
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine($"CommunityLib: Person is dead.");
+                        //Console.WriteLine($"CommunityLib: Unit is subsumed");
+                        return true;
                     }
                 }
-                else
-                {
-                    Console.WriteLine($"CommunityLib: Unit's person is null.");
-                }
-            }
-            else
-            {
-                Console.WriteLine($"CommunityLib: Unit is not dead.");
             }
 
-            Console.WriteLine($"CommunityLib: Unit is not subsumed");*/
+            //Console.WriteLine($"CommunityLib: Unit is not subsumed");
             return false;
         }
+
 
         public void registerLocusType(Type type) => data.addLocusType(type);
 
