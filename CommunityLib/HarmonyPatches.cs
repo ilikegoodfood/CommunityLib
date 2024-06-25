@@ -3951,6 +3951,19 @@ namespace CommunityLib
                 {
                     hook.onBuildTradeNetwork_EndOfProcess(tradeManager.map, tradeManager, endpoints);
                 }
+
+                tradeManager.tradeDensity = new List<TradeRoute>[tradeManager.map.locations.Count];
+                foreach (TradeRoute tradeRoute in tradeManager.routes)
+                {
+                    foreach (Location location in tradeRoute.path)
+                    {
+                        if (tradeManager.tradeDensity[location.index] == null)
+                        {
+                            tradeManager.tradeDensity[location.index] = new List<TradeRoute>();
+                        }
+                        tradeManager.tradeDensity[location.index].Add(tradeRoute);
+                    }
+                }
             }
 
             foreach (TradeRoute route in tradeManager.routes)
