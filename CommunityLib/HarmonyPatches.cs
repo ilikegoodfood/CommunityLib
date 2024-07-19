@@ -273,6 +273,10 @@ namespace CommunityLib
             // Ch_Rest_InOrcCamp
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Rest_InOrcCamp), nameof(Ch_Rest_InOrcCamp.complete), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Ch_Rest_InOrcCamp_complete_Postfix)));
 
+            // Other Tweaks //
+            // Cthonian AI
+            harmony.Patch(original: AccessTools.Method(typeof(UM_Cthonians), nameof(UM_Cthonians.turnTickAI)), transpiler: new HarmonyMethod(patchType, nameof(UM_Cthonians_turnTickAI_Transpiler)));
+
             // UIE_AgentRoster
             harmony.Patch(original: AccessTools.Method(typeof(UIE_AgentRoster), nameof(UIE_AgentRoster.setTo), new Type[] { typeof(World), typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(UIE_AgentRoster_setToUA_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(UIE_AgentRoster), nameof(UIE_AgentRoster.setTo), new Type[] { typeof(World), typeof(UM) }), transpiler: new HarmonyMethod(patchType, nameof(UIE_AgentRoster_setToUM_Transpiler)));
@@ -6411,6 +6415,53 @@ namespace CommunityLib
         private static void Ch_Rest_InOrcCamp_complete_Postfix(UA u)
         {
             u.challengesSinceRest = 0;
+        }
+
+        // Cthonians AI
+        private static IEnumerable<CodeInstruction> UM_Cthonians_turnTickAI_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(UM_Cthonians_turnTickAI_TranspilerBody));
+
+            yield return new CodeInstruction(OpCodes.Nop);
+            yield return new CodeInstruction(OpCodes.Ldarg_0);
+            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+            yield return new CodeInstruction(OpCodes.Ret);
+
+            Console.WriteLine("CommunityLib: Completed complete function replacement transpiler UM_Cthonians_turnTickAI_Transpiler");
+        }
+
+        private static void UM_Cthonians_turnTickAI_TranspilerBody(UM_Cthonians um)
+        {
+            if (um.location.settlement is SettlementHuman settlementHuman)
+            {
+                if (settlementHuman.shadow < 0.75 && (!(um.location.soc is Society society) || !society.isDark() && !society.isOphanimControlled && !society.isDarkEmpire))
+                {
+                    um.task = new Task_RazeLocation { ignorePeace = true };
+                    return;
+                }
+            }
+
+            Location[] pathToNearest = Pathfinding.getPathTo(um.location, destinationValidityDelegate_Cthonians, um, um.map.overmind.cthoniansRiseUp ? new List<int> { 0, 1 } : new List<int> { 1 }, false);
+
+            if (pathToNearest != null)
+            {
+                um.task = new Task_GoToLocation(pathToNearest[pathToNearest.Length - 1]);
+            }
+        }
+
+        private static bool destinationValidityDelegate_Cthonians(Location[] path, Location locA, Unit u, List<int> targetLayers)
+        {
+            if (locA.settlement is SettlementHuman settlementHuman)
+            {
+                if (settlementHuman.shadow < 0.75 && (!(locA.soc is Society society) || !society.isOphanimControlled && !society.isDarkEmpire))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         // UIE_AgentRoster
