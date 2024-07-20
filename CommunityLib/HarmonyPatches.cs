@@ -2832,7 +2832,6 @@ namespace CommunityLib
                 }
             }
 
-            UIUtils.LogTree(__instance.pages[page].transform, false, true, false, true, true);
             string[] names = new string[]
             {
                 "Info: Tenets",
