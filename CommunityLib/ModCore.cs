@@ -1019,6 +1019,12 @@ namespace CommunityLib
                 fields.Add("is_agent_spellbinder", new EventRuntime.TypedField<bool>((EventContext c) => false));
             }
 
+            // Missing Map Fields
+            if (!fields.ContainsKey("awareness_of_underground"))
+            {
+                fields.Add("awareness_of_underground", new EventRuntime.TypedField<double>((EventContext c) => 0.0));
+            }
+
             // Adolia
             if (!fields.ContainsKey("is_agent_adolia"))
             {
