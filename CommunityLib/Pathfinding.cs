@@ -37,7 +37,7 @@ namespace CommunityLib
 
         public static double delegate_DESERT_ONLY(Location[] currentPath, Location location, Unit u, List<int> targetMapLayers)
         {
-            if (location.hex.terrain == Hex.terrainType.ARID || location.hex.terrain == Hex.terrainType.DESERT || location.hex.terrain == Hex.terrainType.DRY)
+            if (location.hex.terrain == Hex.terrainType.ARID || location.hex.terrain == Hex.terrainType.DESERT || location.hex.terrain == Hex.terrainType.DRY || location.hex.terrain == Hex.terrainType.VOLCANO)
             {
                 return 0.0;
             }

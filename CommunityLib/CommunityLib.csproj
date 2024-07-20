@@ -84,6 +84,7 @@
     <Compile Include="Task_AttackUnitWithCustomEscort.cs" />
     <Compile Include="Task_ReturnToTheDeep.cs" />
     <Compile Include="UIE_ChallengeTask.cs" />
+    <Compile Include="UIUtils.cs" />
     <None Include="packages.config" />
     <None Include="Storage %28NotCompiled%29.cs" />
     <Compile Include="HarmonyPatches.cs" />
