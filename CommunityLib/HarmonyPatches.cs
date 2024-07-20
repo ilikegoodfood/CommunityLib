@@ -137,6 +137,9 @@ namespace CommunityLib
             // Auto Relaunch
             harmony.Patch(original: AccessTools.Method(typeof(PopupModConfig), nameof(PopupModConfig.dismiss), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(PopupModConfig_dismiss_transpiler)));
 
+            // Map Fixes
+            harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.placeTomb), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Map_placeTomb_transpiler)));
+
             // Assign Killer to Miscellaneous causes of death
             harmony.Patch(original: AccessTools.Method(typeof(UM_HumanArmy), nameof(UM_HumanArmy.turnTickInner)), transpiler: new HarmonyMethod(patchType, nameof(UM_HumanArmy_turnTickInner_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Ch_SkirmishAttacking), nameof(Ch_SkirmishAttacking.skirmishDanger), new Type[] { typeof(UA), typeof(int) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_SkirmishAttacking_skirmishDanger_Transpiler)));
@@ -395,6 +398,145 @@ namespace CommunityLib
             Application.Quit();
 
             return true;
+        }
+
+        // Map Fixes
+        private static IEnumerable<CodeInstruction> Map_placeTomb_transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Map_placeTomb_transpilerBody), new Type[] { typeof(Map) });
+
+            bool returnCode = false;
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (i == 0)
+                        {
+                            yield return new CodeInstruction(OpCodes.Nop);
+                            yield return new CodeInstruction(OpCodes.Ldnull);
+                            yield return new CodeInstruction(OpCodes.Stloc_1);
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                            yield return new CodeInstruction(OpCodes.Stloc_1);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex < 5)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_1 && instructionList[i+1].opcode == OpCodes.Ldnull)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 5)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_1 && instructionList[i + 1].opcode == OpCodes.Ldnull)
+                        {
+                            yield return new CodeInstruction(OpCodes.Nop);
+
+                            returnCode = true;
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
+                
+            }
+
+            Console.WriteLine("CommunityLib: Completed Map_placeTomb_transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static Location Map_placeTomb_transpilerBody(Map map)
+        {
+            Location targetLocation = null;
+            List<Location> locationsA = new List<Location>();
+            List<Location> locationsB = new List<Location>();
+            List<Location> locationsC = new List<Location>();
+            List<Location> locationsD = new List<Location>();
+            List<Location> locationsE = new List<Location>();
+
+            bool livingWildsEnabled = false;
+            Type wildernessSettlementType = null;
+            if (ModCore.Get().data.tryGetModIntegrationData("LivingWilds", out ModIntegrationData intDataLW) && intDataLW.assembly != null)
+            {
+                livingWildsEnabled = true;
+                intDataLW.typeDict.TryGetValue("WildSettlement", out wildernessSettlementType);
+            }
+
+            foreach (Location location in map.locations)
+            {
+                if (!location.isOcean && location.soc == null && (location.settlement == null || (livingWildsEnabled && location.settlement.GetType() == wildernessSettlementType)) && location.getNeighbours().Any(n => n.settlement is SettlementHuman && n.soc is Society))
+                {
+                    locationsA.Add(location);
+                }
+                else if (!location.isOcean && location.soc == null && !location.isForSocieties && (location.settlement == null || (livingWildsEnabled && location.settlement.GetType() == wildernessSettlementType)))
+                {
+                    locationsC.Add(location);
+                }
+                else if (!location.isOcean && location.soc == null && (location.settlement == null || (livingWildsEnabled && location.settlement.GetType() == wildernessSettlementType)))
+                {
+                    locationsD.Add(location);
+                }
+                else if (!location.isOcean)
+                {
+                    locationsE.Add(location);
+                }
+            }
+
+            List<Location> targetLocations = new List<Location>();
+            if (locationsA.Count > 0)
+            {
+                //Console.WriteLine($"CommunityLib: Placing Tomb in Location from SetA ({locationsA.Count} locations)");
+                targetLocations = locationsA;
+            }
+            else if (locationsB.Count > 0)
+            {
+                //Console.WriteLine($"CommunityLib: Placing Tomb in Location from SetB ({locationsB.Count} locations)");
+                targetLocations = locationsB;
+            }
+            else if (locationsC.Count > 0)
+            {
+                //Console.WriteLine($"CommunityLib: Placing Tomb in Location from SetC ({locationsC.Count} locations)");
+                targetLocations = locationsC;
+            }
+            else if (locationsD.Count > 0)
+            {
+                //Console.WriteLine($"CommunityLib: Placing Tomb in Location from SetD ({locationsD.Count} locations)");
+                targetLocations = locationsD;
+            }
+            else if (locationsE.Count > 0)
+            {
+                //Console.WriteLine($"CommunityLib: Placing Tomb in Location from SetE ({locationsE.Count} locations)");
+                targetLocations = locationsE;
+            }
+
+            if (targetLocations.Count > 0)
+            {
+                if (targetLocations.Count > 1)
+                {
+                    targetLocation = targetLocations[Eleven.random.Next(targetLocations.Count)];
+                }
+                else
+                {
+                    targetLocation = targetLocations[0];
+                }
+            }
+
+            return targetLocation;
         }
 
         // Assign Killer to Miscellaneous causes of death
