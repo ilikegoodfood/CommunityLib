@@ -296,21 +296,27 @@ namespace CommunityLib
         // Mod Config button update
         private static void PopupModConfig_update_postfix(PopupModConfig __instance)
         {
-            if (__instance.dirty)
+            Transform textTransform = UIUtils.GetChildStrict(__instance.bDismiss.transform, "Text");
+
+            if (textTransform != null)
             {
-                if (ModCore.opt_autoRelaunch)
+                Text text = textTransform.gameObject.GetComponentInChildren<Text>(true);
+
+                if (text != null && __instance.dirty)
                 {
-                    __instance.bDismiss.GetComponentInChildren<Text>().text = "Accept (Restart)";
+                    if (ModCore.opt_autoRelaunch)
+                    {
+                        text.text = "Accept (Restart)";
+                    }
+                    else
+                    {
+                        text.text = "Accept";
+                    }
                 }
                 else
                 {
-                    __instance.bDismiss.GetComponentInChildren<Text>().text = "Accept";
+                    text.text = "Back";
                 }
-
-            }
-            else
-            {
-                __instance.bDismiss.GetComponentInChildren<Text>().text = "Back";
             }
         }
 
@@ -2036,20 +2042,69 @@ namespace CommunityLib
         {
             if (__instance.stat_faith.text == "")
             {
-                HolyOrder order = null;
+                __instance.stat_faith.text = "No Faith";
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
-                    order = hook?.onLocationViewFaithButton_GetHolyOrder(loc);
-
+                    HolyOrder order = hook?.onLocationViewFaithButton_GetHolyOrder(loc);
                     if (order != null)
                     {
+                        __instance.stat_faith.text = order.getName();
                         break;
                     }
                 }
+            }
 
-                if (order != null)
+            Text buttonTextComponent = null;
+            Button[] buttonComponents = __instance.GetComponentsInChildren<Button>(true);
+            Transform buttonTransform = UIUtils.GetChildStrict(__instance, "bHeroesHere");
+            if (buttonTransform != null)
+            {
+                Button bHeroesHere = buttonTransform.GetComponentInChildren<Button>();
+                if (bHeroesHere != null)
                 {
-                    __instance.stat_faith.text = order.getName();
+                    UM army = null;
+                    UA agent = null;
+                    foreach (Unit u in loc.map.units)
+                    {
+                        if (u.homeLocation != loc.index)
+                        {
+                            continue;
+                        }
+
+                        if (u is UM um)
+                        {
+                            army = um;
+                        }
+                        else if (u is UA ua)
+                        {
+                            agent = ua;
+                        }
+
+                        if (army != null && agent != null)
+                        {
+                            break;
+                        }
+                    }
+
+                    bHeroesHere.gameObject.SetActive(army != null || agent != null);
+
+                    buttonTextComponent = bHeroesHere.GetComponentInChildren<Text>(true);
+
+                    if (buttonTextComponent != null)
+                    {
+                        if (army != null && agent != null)
+                        {
+                            buttonTextComponent.text = "See Units";
+                        }
+                        else if (army != null && agent == null)
+                        {
+                            buttonTextComponent.text = "See Armies";
+                        }
+                        else
+                        {
+                            buttonTextComponent.text = "See Agents";
+                        }
+                    }
                 }
             }
         }
@@ -2148,29 +2203,38 @@ namespace CommunityLib
                 }
             }
 
-            Text text = (Text)__instance.pages[page].gameObject.GetComponentsInChildren(typeof(Text), false).FirstOrDefault(tC => tC is Text t &&
-                    (
-                        t.text.StartsWith("Holy Orders' behaviours are determined by the") ||
-                        t.text.StartsWith("These are the moral tenets of this Holy Order.") ||
-                        t.text.StartsWith("Holy Orders gain gold from their agents,") ||
-                        t.text.StartsWith("Holy Orders can have prophecies about")
-                    )
-                );
-
-            if (text != null)
+            UIUtils.LogTree(__instance.pages[page].transform, false, true, false, true, true);
+            string[] names = new string[]
             {
-                popupHolyOrder_PageText = text;
+                "Info: Tenets",
+                "Info: Moral Tenets",
+                "Info: Budget",
+                "Info: Prophecy"
+            };
 
-                if (popupHolyOrder_DefaultPageText[page] == null)
+            if (page < names.Length)
+            {
+                Transform infoTextTransform = UIUtils.GetChildStrict(__instance.pages[page].transform, names[page]);
+                if (infoTextTransform != null)
                 {
-                    //Console.WriteLine("CommunityLib: Storing default page text for page " + page);
-                    popupHolyOrder_DefaultPageText[page] = string.Copy(text.text);
-                }
+                    Text text = infoTextTransform.GetComponentInChildren<Text>();
+                    if (text != null)
+                    {
+                        Console.WriteLine($"CommunityLib: Found {names[page]} Text game object.");
+                        popupHolyOrder_PageText = text;
 
-                //Console.WriteLine("CommunityLib: Running hooks for page " + page);
-                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
-                {
-                    text.text = hook.onPopupHolyOrder_DisplayPageText(soc, text.text, page);
+                        if (popupHolyOrder_DefaultPageText[page] == null)
+                        {
+                            //Console.WriteLine("CommunityLib: Storing default page text for page " + page);
+                            popupHolyOrder_DefaultPageText[page] = string.Copy(text.text);
+                        }
+
+                        //Console.WriteLine("CommunityLib: Running hooks for page " + page);
+                        foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                        {
+                            text.text = hook.onPopupHolyOrder_DisplayPageText(soc, text.text, page);
+                        }
+                    }
                 }
             }
         }
@@ -2387,58 +2451,64 @@ namespace CommunityLib
         private static string PopupHolyOrder_setTo_TranspilerBody_DisplayBudget(int income, PopupHolyOrder popupOrder, HolyOrder order)
         {
             string result = "";
-
-            List<ReasonMsg> msgs = new List<ReasonMsg>() {
-                new ReasonMsg("Income", income),
-                new ReasonMsgMax("Gold for Acolytes", order.cashForAcolytes, order.costAcolyte),
-                new ReasonMsgMax("Gold for Conversion", order.cashForPreaching, order.costPreach),
-                new ReasonMsgMax("Gold for Temples", order.cashForTemples, order.costTemple)
-            };
-
-            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            if (popupOrder.currentPage == 2)
             {
-                hook?.onPopupHolyOrder_DisplayBudget(order, msgs);
-            }
+                List<ReasonMsg> msgs = new List<ReasonMsg>() {
+                    new ReasonMsg("Income", income),
+                    new ReasonMsgMax("Gold for Acolytes", order.cashForAcolytes, order.costAcolyte),
+                    new ReasonMsgMax("Gold for Conversion", order.cashForPreaching, order.costPreach),
+                    new ReasonMsgMax("Gold for Temples", order.cashForTemples, order.costTemple)
+                };
 
-            Text text = (Text)popupOrder.pages[popupOrder.currentPage].gameObject.GetComponentsInChildren(typeof(Text), false).FirstOrDefault(tC => tC is Text t && t.text.StartsWith("Income:"));
-
-            if (text != null)
-            {
-                text.text = "";
-            }
-
-            foreach (ReasonMsg msg in msgs)
-            {
-                ReasonMsgMax msgMax = msg as ReasonMsgMax;
-                if (msgMax != null)
+                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
-                    result = string.Concat(new string[]
-                    {
-                        result,
-                        msgMax.value.ToString(),
-                        "/",
-                        msgMax.max.ToString(),
-                        "\n"
-                    });
-                }
-                else
-                {
-                    result = string.Concat(new string[]
-                    {
-                        result,
-                        msg.value.ToString(),
-                        "\n"
-                    });
+                    hook?.onPopupHolyOrder_DisplayBudget(order, msgs);
                 }
 
-                if (text != null)
+                Transform textTransform = UIUtils.GetChildStrict(popupOrder.pages[2].transform, "BudgetFixed");
+                if (textTransform != null)
                 {
-                    text.text = string.Concat(new string[] {
-                        text.text,
-                        msg.msg,
-                        ":",
-                        "\n"
-                    });
+                    Text text = textTransform.GetComponentsInChildren<Text>().FirstOrDefault(t => t.name == "BudgetFixed");
+
+                    if (text != null)
+                    {
+                        text.text = "";
+                    }
+
+                    foreach (ReasonMsg msg in msgs)
+                    {
+                        ReasonMsgMax msgMax = msg as ReasonMsgMax;
+                        if (msgMax != null)
+                        {
+                            result = string.Concat(new string[]
+                                {
+                                result,
+                                msgMax.value.ToString(),
+                                "/",
+                                msgMax.max.ToString(),
+                                "\n"
+                                    });
+                                }
+                                else
+                                {
+                                    result = string.Concat(new string[]
+                                    {
+                                result,
+                                msg.value.ToString(),
+                                "\n"
+                                    });
+                                }
+
+                                if (text != null)
+                                {
+                                    text.text = string.Concat(new string[] {
+                                text.text,
+                                msg.msg,
+                                ":",
+                                "\n"
+                            });
+                        }
+                    }
                 }
             }
 
