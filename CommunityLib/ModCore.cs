@@ -41,6 +41,8 @@ namespace CommunityLib
 
         public static bool opt_panToHolyOrderScreen = true;
 
+        public static bool opt_noFaithButtonText = true;
+
         public static bool opt_ophanimFaithTomb = true;
 
         public static bool opt_allowCulturalMinorSettelementGraphics = true;
@@ -104,6 +106,9 @@ namespace CommunityLib
                     break;
                 case "Pan To Holy Order Screen":
                     opt_panToHolyOrderScreen = value;
+                    break;
+                case "Display 'No Faith' on Faith Button":
+                    opt_noFaithButtonText = value;
                     break;
                 case "Show Ophanim's Faith at Elder Tomb":
                     opt_ophanimFaithTomb = value;

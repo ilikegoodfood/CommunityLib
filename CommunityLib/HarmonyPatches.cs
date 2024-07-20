@@ -2045,7 +2045,11 @@ namespace CommunityLib
         {
             if (__instance.stat_faith.text == "")
             {
-                __instance.stat_faith.text = "No Faith";
+                if (ModCore.opt_noFaithButtonText)
+                {
+                    __instance.stat_faith.text = "No Faith";
+                }
+
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
                     HolyOrder order = hook?.onLocationViewFaithButton_GetHolyOrder(loc);
@@ -2057,12 +2061,10 @@ namespace CommunityLib
                 }
             }
 
-            Text buttonTextComponent = null;
-            Button[] buttonComponents = __instance.GetComponentsInChildren<Button>(true);
             Transform buttonTransform = UIUtils.GetChildStrict(__instance, "bHeroesHere");
             if (buttonTransform != null)
             {
-                Button bHeroesHere = buttonTransform.GetComponentInChildren<Button>();
+                Button bHeroesHere = buttonTransform.GetComponentInChildren<Button>(true);
                 if (bHeroesHere != null)
                 {
                     UM army = null;
@@ -2091,21 +2093,21 @@ namespace CommunityLib
 
                     bHeroesHere.gameObject.SetActive(army != null || agent != null);
 
-                    buttonTextComponent = bHeroesHere.GetComponentInChildren<Text>(true);
+                    Text text = bHeroesHere.GetComponentInChildren<Text>(true);
 
-                    if (buttonTextComponent != null)
+                    if (text != null)
                     {
                         if (army != null && agent != null)
                         {
-                            buttonTextComponent.text = "See Units";
+                            text.text = "See Units";
                         }
                         else if (army != null && agent == null)
                         {
-                            buttonTextComponent.text = "See Armies";
+                            text.text = "See Armies";
                         }
                         else
                         {
-                            buttonTextComponent.text = "See Agents";
+                            text.text = "See Agents";
                         }
                     }
                 }
