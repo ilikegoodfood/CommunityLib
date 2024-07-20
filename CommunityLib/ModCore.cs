@@ -710,6 +710,24 @@ namespace CommunityLib
                             }
                         }
                         break;
+                    case "LivingWilds":
+                        Console.WriteLine("CommunityLib: Living Wilds is Enabled");
+                        ModIntegrationData intDataLW = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        data.addModIntegrationData("LivingWilds", intDataLW);
+
+                        if (data.tryGetModIntegrationData("LivingWilds", out intDataLW))
+                        {
+                            Type wildSettlementType = intDataLW.assembly.GetType("LivingWilds.Set_Nature_UnoccupiedWilderness", false);
+                            if (wildSettlementType != null)
+                            {
+                                intDataLW.typeDict.Add("WildSettlement", wildSettlementType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Unoccupied Wildernes settlement Type (LivingWilds.Set_Nature_UnoccupiedWilderness)");
+                            }
+                        }
+                        break;
                     case "MEKHANE":
                         Console.WriteLine("CommunityLib: Mekhane is Enabled");
                         ModIntegrationData intDataMekh = new ModIntegrationData(kernel.GetType().Assembly, kernel);
