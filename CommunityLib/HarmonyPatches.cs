@@ -106,6 +106,9 @@ namespace CommunityLib
             // Sovereign Hooks
             harmony.Patch(original: AccessTools.Method(typeof(Society), nameof(Society.processActions), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Society_processActions_Transpiler)));
 
+            // Challenge Hooks
+            harmony.Patch(original: AccessTools.Method(typeof(Challenge), nameof(Challenge.getProgressPerTurn), new Type[] { typeof(UA), typeof(List<ReasonMsg>) }), postfix: new HarmonyMethod(patchType, nameof(Challenge_getProgressPerTurn_Postfix)));
+
             // onIsElderTomb Hooks
             harmony.Patch(original: AccessTools.Method(typeof(Overmind_Automatic), nameof(Overmind_Automatic.ai_testDark), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Overmind_Automatic_ai_testDark_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Overmind_Automatic), nameof(Overmind_Automatic.ai_testMagic), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Overmind_Automatic_ai_testMagic_Transpiler)));
@@ -4258,6 +4261,15 @@ namespace CommunityLib
                 return cultureData.defaultMinorSettlementIcon;
             }
             return set.map.world.textureStore.loc_minor_farm;
+        }
+
+        // Challenge Hooks
+        private static void Challenge_getProgressPerTurn_Postfix(Challenge __instance, UA unit, List<ReasonMsg> msgs, ref double __result)
+        {
+            foreach(Hooks hook in ModCore.Get().GetRegisteredHooks())
+            {
+                __result = hook?.onGetChallengeProgressPerTurn(__instance, unit, msgs, __result) ?? __result;
+            }
         }
 
         // Overmind_Automatic onIsElderTomb hooks
