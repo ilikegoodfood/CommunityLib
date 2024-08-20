@@ -365,6 +365,11 @@ namespace CommunityLib
 
         private bool universalDelegate_ValidFor_Underground(AgentAI.ChallengeData challengeData, UA ua)
         {
+            if (challengeData.challenge.canBeSeenAcrossZLevels())
+            {
+                return true;
+            }
+
             if (challengeData.location.hex.z == 1 && ua.society is SG_Orc orcs && !orcs.canGoUnderground())
             {
                 return false;
