@@ -54,9 +54,13 @@ namespace CommunityLib
 
             foreach (Type t in asm.GetTypes())
             {
-                if (t.IsSubclassOf(typeof(UA)) && AccessTools.DeclaredMethod(t, "getChallengeUtility", new Type[] { typeof(Challenge), typeof(List<ReasonMsg>) }) != null)
+                if (t.IsSubclassOf(typeof(UA)))
                 {
-                    targetMethods.Add(AccessTools.Method(t, "getChallengeUtility", new Type[] { typeof(Challenge), typeof(List<ReasonMsg>) }));
+                    MethodInfo targetMethod = AccessTools.DeclaredMethod(t, "getChallengeUtility", new Type[] { typeof(Challenge), typeof(List<ReasonMsg>) });
+                    if (targetMethod != null)
+                    {
+                        targetMethods.Add(targetMethod);
+                    }
                 }
             }
 
@@ -66,9 +70,10 @@ namespace CommunityLib
 
                 foreach (Type t in asm.GetTypes())
                 {
-                    if (t.IsSubclassOf(typeof(UA)) && AccessTools.DeclaredMethod(t, "getChallengeUtility", new Type[] { typeof(Challenge), typeof(List<ReasonMsg>) }) != null)
+                    MethodInfo targetMethod = AccessTools.DeclaredMethod(t, "getChallengeUtility", new Type[] { typeof(Challenge), typeof(List<ReasonMsg>) });
+                    if (targetMethod != null)
                     {
-                        targetMethods.Add(AccessTools.Method(t, "getChallengeUtility", new Type[] { typeof(Challenge), typeof(List<ReasonMsg>) }));
+                        targetMethods.Add(targetMethod);
                     }
                 }
             }
@@ -82,14 +87,21 @@ namespace CommunityLib
 
         private static bool UA_getChallengeUtility_BulkPrefix(UA __instance, Challenge c, List<ReasonMsg> reasons, ref double __result)
         {
-            if (ModCore.Get().GetAgentAI().isAICheckingUtility())
+            AgentAI agentAI = ModCore.Get().GetAgentAI();
+
+            if (agentAI == null)
             {
                 return true;
             }
 
-            if (ModCore.Get().GetAgentAI().TryGetAgentType(__instance.GetType(), out AgentAI.AIData aiData) && aiData != null)
+            if (agentAI.isAICheckingUtility())
             {
-                AIChallenge aiChallenge = ModCore.Get().GetAgentAI().GetAIChallengeFromAgentType(__instance.GetType(), c.GetType());
+                return true;
+            }
+
+            if (agentAI.TryGetAgentType(__instance.GetType(), out AgentAI.AIData aiData) && aiData != null)
+            {
+                AIChallenge aiChallenge = agentAI.GetAIChallengeFromAgentType(__instance.GetType(), c.GetType());
 
                 if (aiChallenge == null)
                 {
@@ -128,7 +140,7 @@ namespace CommunityLib
                     cData.location = __instance.location;
                 }
 
-                __result = ModCore.Get().GetAgentAI().getChallengeUtility(cData, __instance, aiData, aiData.controlParameters, reasons);
+                __result = agentAI.getChallengeUtility(cData, __instance, aiData, aiData.controlParameters, reasons);
                 return false;
             }
 
