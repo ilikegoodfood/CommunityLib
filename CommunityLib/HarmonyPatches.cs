@@ -143,6 +143,9 @@ namespace CommunityLib
             // Map Fixes
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.placeTomb), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Map_placeTomb_transpiler)));
 
+            // Army Battle Fixes
+            harmony.Patch(original: AccessTools.Method(typeof(Task_AttackArmy), nameof(Task_AttackArmy.turnTick), new Type[] { typeof(Unit) }), transpiler: new HarmonyMethod(patchType, nameof(Task_AttackArmy_turnTick_Transpiler)));
+
             // Assign Killer to Miscellaneous causes of death
             harmony.Patch(original: AccessTools.Method(typeof(UM_HumanArmy), nameof(UM_HumanArmy.turnTickInner)), transpiler: new HarmonyMethod(patchType, nameof(UM_HumanArmy_turnTickInner_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Ch_SkirmishAttacking), nameof(Ch_SkirmishAttacking.skirmishDanger), new Type[] { typeof(UA), typeof(int) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_SkirmishAttacking_skirmishDanger_Transpiler)));
@@ -1957,6 +1960,49 @@ namespace CommunityLib
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onPopupBattleAgent_Populate(__instance, __instance.battle);
+            }
+        }
+
+        // Army Battle Fixes:
+        private static IEnumerable<CodeInstruction> Task_AttackArmy_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            FieldInfo FI_Attackers = AccessTools.Field(typeof(BattleArmy), nameof(BattleArmy.attackers));
+            FieldInfo FI_Defenders = AccessTools.Field(typeof(BattleArmy), nameof(BattleArmy.defenders));
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldfld && instructionList[i-1].opcode == OpCodes.Ldfld && instructionList[i+1].opcode == OpCodes.Callvirt)
+                        {
+                            instructionList[i].operand = FI_Defenders;
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldfld && instructionList[i - 1].opcode == OpCodes.Ldfld && instructionList[i + 1].opcode == OpCodes.Callvirt)
+                        {
+                            instructionList[i].operand = FI_Attackers;
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Task_AttackArmy_turnTick_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
