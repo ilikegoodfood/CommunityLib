@@ -162,7 +162,7 @@ namespace CommunityLib
             // Death of The Dun
             harmony.Patch(original: AccessTools.Method(typeof(Mg_DeathOfTheSun), nameof(Mg_DeathOfTheSun.turnTick), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Mg_DeathOfTheSun_turnTick_Transpiler)));
             // Opportunistict Encroachment
-            harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_OpportunisticEncroachment), nameof(Ch_Orcs_OpportunisticEncroachment.getDesc)), postfix: new HarmonyMethod(patchType, nameof(Ch_Orcs_OpportunisticEncroachment_getDesc_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_OpportunisticEncroachment), nameof(Ch_Orcs_OpportunisticEncroachment.getDesc), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Ch_Orcs_OpportunisticEncroachment_getDesc_Postfix)));
             // Orcs Attack Here
             harmony.Patch(original: AccessTools.Method(typeof(Rti_Orc_AttackHere), nameof(Rti_Orc_AttackHere.valid), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Rti_Orc_AttackHere_Postfix)));
             // Orcs Build Menagerie
@@ -893,7 +893,7 @@ namespace CommunityLib
             }
         }
 
-        private static void Ch_Orcs_OpportunisticEncroachment_getDesc_Postfix(Ch_Orcs_OpportunisticEncroachment __istance, ref string __result)
+        private static void Ch_Orcs_OpportunisticEncroachment_getDesc_Postfix(ref string __result)
         {
             __result = "Adds <b>Orcish Encroachment</b> to a neighbouring human non-city location. If the human nation goes to war and those locations have either <b>Devastation</b> above 20% or 0 <b>Defence</b>, orcs will take the location and build a camp. Causes major international relationship hit (30%) potentially leading to eventual war.";
         }
