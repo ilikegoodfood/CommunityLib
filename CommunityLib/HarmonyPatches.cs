@@ -161,7 +161,8 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Ch_BuyItem), nameof(Ch_BuyItem.complete), new Type[] { typeof(UA) }), prefix: new HarmonyMethod(patchType, nameof(Ch_BuyItem_complete_Prefix)), postfix: new HarmonyMethod(patchType, nameof(Ch_BuyItem_complete_Postfix)));
             // Death of The Dun
             harmony.Patch(original: AccessTools.Method(typeof(Mg_DeathOfTheSun), nameof(Mg_DeathOfTheSun.turnTick), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Mg_DeathOfTheSun_turnTick_Transpiler)));
-
+            // Opportunistict Encroachment
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_OpportunisticEncroachment), nameof(Ch_Orcs_OpportunisticEncroachment.getDesc)), postfix: new HarmonyMethod(patchType, nameof(Ch_Orcs_OpportunisticEncroachment_getDesc_Postfix)));
             // Orcs Attack Here
             harmony.Patch(original: AccessTools.Method(typeof(Rti_Orc_AttackHere), nameof(Rti_Orc_AttackHere.valid), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Rti_Orc_AttackHere_Postfix)));
             // Orcs Build Menagerie
@@ -212,9 +213,22 @@ namespace CommunityLib
             // Victory Point Fixes
             harmony.Patch(original: AccessTools.Method(typeof(Overmind), nameof(Overmind.computeVictoryProgress), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Overming_computeVictoryProgress_Transpiler)));
 
+            // Victory Message Fixes
+            //harmony.Patch(original: AccessTools.Method(typeof(God_Cards), nameof(God_Cards.getVictoryMessage)), postfix: new HarmonyMethod(patchType, nameof(God_Cards_getVictoryMessage_Postfix)));
+            //harmony.Patch(original: AccessTools.Method(typeof(God_Eternity), nameof(God_Eternity.getVictoryMessage)), postfix: new HarmonyMethod(patchType, nameof(God_Eternity_getVictoryMessage_Postfix)));
+            //harmony.Patch(original: AccessTools.Method(typeof(God_LaughingKing), nameof(God_LaughingKing.getVictoryMessage)), postfix: new HarmonyMethod(patchType, nameof(God_LaughingKing_getVictoryMessage_Postfix)));
+            //harmony.Patch(original: AccessTools.Method(typeof(God_Mammon), nameof(God_Mammon.getVictoryMessage)), postfix: new HarmonyMethod(patchType, nameof(God_Mammon_getVictoryMessage_Postfix)));
+            //harmony.Patch(original: AccessTools.Method(typeof(God_Ophanim), nameof(God_Ophanim.getVictoryMessage)), postfix: new HarmonyMethod(patchType, nameof(God_Ophanim_getVictoryMessage_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(God_Snake), nameof(God_Snake.getVictoryMessage)), postfix: new HarmonyMethod(patchType, nameof(God_Snake_getVictoryMessage_Postfix)));
+            //harmony.Patch(original: AccessTools.Method(typeof(God_Underground), nameof(God_Underground.getVictoryMessage)), postfix: new HarmonyMethod(patchType, nameof(God_Underground_getVictoryMessage_Postfix)));
+            //harmony.Patch(original: AccessTools.Method(typeof(God_Vinerva), nameof(God_Vinerva.getVictoryMessage)), postfix: new HarmonyMethod(patchType, nameof(God_Vinerva_getVictoryMessage_Postfix)));
+
             // Orc Expansion modifications
             harmony.Patch(original: AccessTools.Method(typeof(SG_Orc), nameof(SG_Orc.canSettle), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(SG_Orc_canSettle_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Rt_Orcs_ClaimTerritory), nameof(Rt_Orcs_ClaimTerritory.validFor), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Rt_Orcs_ClaimTerritory_validFor_Transpiler)));
+
+            // Orc Raiders MaxHP fix
+            harmony.Patch(original: AccessTools.Method(typeof(UM_OrcRaiders), nameof(UM_OrcRaiders.assignMaxHP)), postfix: new HarmonyMethod(patchType, nameof(UM_OrcRaiders_assignMaxHP_Postfix)));
 
             // Culture modifications
             harmony.Patch(original: AccessTools.Method(typeof(Set_MinorHuman), nameof(Set_MinorHuman.getSprite), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Set_MinorHuman_getSprite_Transpiler)));
@@ -878,6 +892,12 @@ namespace CommunityLib
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
+
+        private static void Ch_Orcs_OpportunisticEncroachment_getDesc_Postfix(Ch_Orcs_OpportunisticEncroachment __istance, ref string __result)
+        {
+            __result = "Adds <b>Orcish Encroachment</b> to a neighbouring human non-city location. If the human nation goes to war and those locations have either <b>Devastation</b> above 20% or 0 <b>Defence</b>, orcs will take the location and build a camp. Causes major international relationship hit (30%) potentially leading to eventual war.";
+        }
+
         private static void Rti_Orc_AttackHere_Postfix(Rti_Orc_AttackHere __instance, ref bool __result)
         {
             if (__instance.caster == null || __instance.caster.orcs == null || __instance.caster.orcs.isGone())
@@ -4115,6 +4135,15 @@ namespace CommunityLib
             }
         }
 
+        // Victory Message Fixes
+        private static void God_Snake_getVictoryMessage_Postfix(int victoryMode, ref string __result)
+        {
+            if (victoryMode == 2)
+            {
+                __result = "In the darkness, the god's organised servants have prevailed. Their fight against the light, against humanity's last defenders, has concluded. Enraptured by their dark duty towards their god, they eagerly await the moment their world is destroyed. Whether the snake god herself is even consciously aware of them is uncertain. Her vast intellect is so superior to that of mortals, and her new body size so beyond them, they might fall beneath her consideration.";
+            }
+        }
+
         // Orc Expansion modifications
         private static IEnumerable<CodeInstruction> SG_Orc_canSettle_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
@@ -4246,6 +4275,15 @@ namespace CommunityLib
 
             //Console.WriteLine("CommunityLib: Location not claimable");
             return false;
+        }
+
+        // Orc REaiders Max HP fix
+        private static void UM_OrcRaiders_assignMaxHP_Postfix(UM_OrcRaiders __instance)
+        {
+            if (__instance.person != null)
+            {
+                __instance.maxHp = 5 + __instance.person.getStatCommand() * __instance.map.param.um_orcRaidersHPPerCommandStat;
+            }
         }
 
         // Culture modifications patches.

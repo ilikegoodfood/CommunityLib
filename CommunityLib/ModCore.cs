@@ -558,6 +558,25 @@ namespace CommunityLib
                             }
                         }
                         break;
+                    case "Delver":
+                        Console.WriteLine("CommunityLib: The Delver is Enabled");
+                        ModIntegrationData intDataDelv = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        data.addModIntegrationData("Delver", intDataDelv);
+
+                        if (data.tryGetModIntegrationData("DeepOnesPlus", out intDataDelv))
+                        {
+                            Type delverAgentType = intDataDelv.assembly.GetType("UAE_Delver", false);
+                            if (delverAgentType != null)
+                            {
+                                intDataDelv.typeDict.Add("Delver", delverAgentType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Delver agent Type (Delver.UAE_Delver)");
+                            }
+                        }
+
+                        break;
                     case "Duelist":
                         Console.WriteLine("CommunityLib: The Duelist is Enabled");
                         ModIntegrationData intDataDuelist = new ModIntegrationData(kernel.GetType().Assembly, kernel);
@@ -1091,6 +1110,12 @@ namespace CommunityLib
             if (!fields.ContainsKey("is_agent_drownedprophet"))
             {
                 fields.Add("is_agent_drownedprophet", new EventRuntime.TypedField<bool>((EventContext c) => c.unit != null && data.tryGetModIntegrationData("DeepOnesPlus", out ModIntegrationData intDataDOPlus) && intDataDOPlus.typeDict.TryGetValue("DrownedProphet", out Type drownedProphetType) && (c.unit.GetType() == drownedProphetType || c.unit.GetType().IsSubclassOf(drownedProphetType))));
+            }
+
+            // The Delver
+            if (!fields.ContainsKey("is_agent_delver"))
+            {
+                fields.Add("is_agent_delver", new EventRuntime.TypedField<bool>((EventContext c) => c.unit != null && data.tryGetModIntegrationData("Delver", out ModIntegrationData intDataDelv) && intDataDelv.typeDict.TryGetValue("Delver", out Type delverType) && (c.unit.GetType() == delverType || c.unit.GetType().IsSubclassOf(delverType))));
             }
 
             // The Duelist
