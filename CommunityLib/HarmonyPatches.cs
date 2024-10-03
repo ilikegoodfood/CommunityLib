@@ -203,6 +203,9 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bPrev), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bNext), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
 
+            // Religion Tenet Fixes
+            harmony.Patch(original: AccessTools.Method(typeof(H_AwarenessOfElderPowers), nameof(H_AwarenessOfElderPowers.getDesc)), postfix: new HarmonyMethod(patchType, nameof(H_AwarenessOfElderPowers_getDesc_Postfix)));
+
             // Repeat Completed Challenge tweaks
             harmony.Patch(original: AccessTools.Method(typeof(PopupChallengeComplete), nameof(PopupChallengeComplete.populate), new Type[] { typeof(Unit), typeof(Challenge), typeof(int), typeof(string), typeof(string) }), transpiler: new HarmonyMethod(patchType, nameof(PopupChallengeComplete_populate_Transpiler)));
 
@@ -4203,6 +4206,12 @@ namespace CommunityLib
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
+        }
+
+        // Relgion Tenet Fixes
+        public static void H_AwarenessOfElderPowers_getDesc_Postfix(ref string __result)
+        {
+            __result = "Acolytes of this faith will either spread <b>Awareness</b>, or remove it if under Elder Influence";
         }
 
         // Repeat Completed Challenge tweaks
