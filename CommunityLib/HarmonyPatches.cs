@@ -186,8 +186,10 @@ namespace CommunityLib
             // Orcs Raiding Party
             harmony.Patch(original: AccessTools.Method(typeof(Rt_Orcs_RaidingParty), nameof(Rt_Orcs_RaidingParty.complete), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Rt_Orcs_RaidingParty_complete_Transpiler)));
 
-            // Item Fixes //
-            // I_DarkStone
+            // Dwarven Changes //
+            harmony.Patch(original: AccessTools.Constructor(typeof(Set_DwarvenCity), new Type[] { typeof(Location) }), postfix: new HarmonyMethod(patchType, nameof(Set_DwarvenCity_ctor_Postfix)));
+
+            // Item Fixes
             harmony.Patch(original: AccessTools.Method(typeof(I_DarkStone), nameof(I_DarkStone.getShortDesc), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(I_DarkStone_getShortDesc_Postfix)));
 
             // Local Action Fixes
@@ -1442,6 +1444,20 @@ namespace CommunityLib
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        // Dwarven Changes
+        private static void Set_DwarvenCity_ctor_Postfix(Set_DwarvenCity __instance)
+        {
+            if (ModCore.opt_dwarven_enshadow)
+            {
+                __instance.customChallenges.Add(new Ch_Enshadow(__instance.location));
+            }
+
+            if (ModCore.opt_dwarven_layLow)
+            {
+                __instance.customChallenges.Add(new Ch_LayLow(__instance.location));
             }
         }
 

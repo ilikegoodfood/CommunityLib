@@ -75,6 +75,14 @@ namespace CommunityLib
 
         public static bool opt_realisticTradeRoutes = false;
 
+        public static bool opt_dwarven_layLow = false;
+
+        public static bool opt_dwarven_enshadow = false;
+
+        public static bool opt_dwarven_expansion = false;
+
+        public static bool opt_dwarven_fortresses = false;
+
         public override void onModsInitiallyLoaded()
         {
             core = this;
@@ -94,6 +102,18 @@ namespace CommunityLib
             {
                 case "Auto-Relaunch on Mod List Change":
                     opt_autoRelaunch = value;
+                    break;
+                case "Enshadow in Dwarven Cities":
+                    opt_dwarven_enshadow = value;
+                    break;
+                case "Lay Low in Dwarven Cities":
+                    opt_dwarven_layLow = value;
+                    break;
+                case "Dwarven Expansion Mechanics":
+                    opt_dwarven_expansion = value;
+                    break;
+                case "Dwarven Fortresses":
+                    opt_dwarven_fortresses = value;
                     break;
                 case "Dynamic Orc Horde Count":
                     opt_DynamicOrcCount = value;
@@ -1730,7 +1750,7 @@ namespace CommunityLib
             {
                 if (map.awarenessOfUnderground > 0.0)
                 {
-                    Console.WriteLine($"CommunityLib: Awareness of Underground was greater than 0 ({map.awarenessOfUnderground})");
+                    Console.WriteLine($"CommunityLib: Awareness of Underground was greater than 0 ({map.awarenessOfUnderground}). Resetting.");
                     map.awarenessOfUnderground = 0.0;
                 }
             }
