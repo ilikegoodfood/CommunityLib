@@ -121,6 +121,21 @@ namespace CommunityLib
             return 0.0;
         }
 
+        public static double delegate_DWARVEN_EXPANSION(Location[] currentPath, Location location, Unit u, List<int> targetMapLayers)
+        {
+            if (location.hex.z != 1)
+            {
+                return 10000.0;
+            }
+
+            if (!location.isOcean && !(location.soc is Soc_Dwarves) && !(location.settlement is Set_DwarvenCity) && !(location.settlement is Set_DwarvenOutpost))
+            {
+                return 10000.0;
+            }
+
+            return 0.0;
+        }
+
         public static bool delegate_VALID_LAYERBOUND(Location[] currentPath, Location location, Unit u, List<int> targetMapLayers)
         {
             return targetMapLayers == null || targetMapLayers.Count == 0 || targetMapLayers.Contains(location.hex.z);

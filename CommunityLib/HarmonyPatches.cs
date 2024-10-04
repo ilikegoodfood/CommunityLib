@@ -188,6 +188,8 @@ namespace CommunityLib
 
             // Dwarven Changes //
             harmony.Patch(original: AccessTools.Constructor(typeof(Set_DwarvenCity), new Type[] { typeof(Location) }), postfix: new HarmonyMethod(patchType, nameof(Set_DwarvenCity_ctor_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(Set_DwarvenCity), nameof(Set_DwarvenCity.turnTick), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Set_DwarvenSettlement_turnTick_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(Set_DwarvenOutpost), nameof(Set_DwarvenOutpost.turnTick), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Set_DwarvenSettlement_turnTick_Postfix)));
 
             // Item Fixes
             harmony.Patch(original: AccessTools.Method(typeof(I_DarkStone), nameof(I_DarkStone.getShortDesc), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(I_DarkStone_getShortDesc_Postfix)));
@@ -1443,10 +1445,10 @@ namespace CommunityLib
                 yield return instructionList[i];
             }
 
-            Console.WriteLine("CommunityLib: Completed Rt_Orcs_RaidingParty_complete_Transpiler");
+            //Console.WriteLine("CommunityLib: Completed Rt_Orcs_RaidingParty_complete_Transpiler");
             if (targetIndex != 0)
             {
-                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+                //Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
@@ -1462,6 +1464,177 @@ namespace CommunityLib
             {
                 __instance.customChallenges.Add(new Ch_LayLow(__instance.location));
             }
+        }
+
+        private static void Set_DwarvenSettlement_turnTick_Postfix(SettlementHuman __instance)
+        {
+            //Console.WriteLine($"CommunityLib: Procesing turnTick for '{__instance.getName()}'.");
+
+            if (!ModCore.opt_dwarven_expansion && !ModCore.opt_dwarven_fortresses)
+            {
+                return;
+            }
+
+            if (!(__instance.location.soc is Soc_Dwarves dwarves))
+            {
+                return;
+            }
+            //Console.WriteLine($"CommunityLib: '{__instance.getName()}' is Dwarven settlement of '{dwarves.getName()}'.");
+
+            int pop = __instance.population;
+
+            if ((pop < __instance.getMaxPopulation() * 0.7 && pop < __instance.foodLastTurn) || pop <= 20)
+            {
+                //Console.WriteLine($"CommunityLib: Population is insufficient for epansion.");
+                return;
+            }
+
+            bool isFortress = false;
+            int highestScore = -1;
+            List<Location> locations = new List<Location>();
+            Location targetLocation = null;
+
+            if (ModCore.opt_dwarven_fortresses && __instance.map.awarenessOfUnderground >= 1.0 && __instance.location.hex.z == 1)
+            {
+                //Console.WriteLine($"CommunityLib: Surface Fortresses are enabled and awareness of the underground is at 100%.");
+                foreach (Location neighbour in __instance.location.getNeighbours())
+                {
+                    if (neighbour.hex.z == 0 && !neighbour.isOcean && neighbour.soc == null && (neighbour.settlement == null || neighbour.settlement is Set_CityRuins) && (double)neighbour.hex.getHabilitability() >= 0.1)
+                    {
+                        bool alreadyUnderway = false;
+                        foreach(Unit unit in __instance.map.units)
+                        {
+                            if (unit is UM um && um.task is Task_BuildSettlement buildTask && buildTask.target == neighbour)
+                            {
+                                alreadyUnderway = true;
+                                break;
+                            }
+                        }
+
+                        if (alreadyUnderway)
+                        {
+                            continue;
+                        }
+
+                        //Console.WriteLine($"CommunityLib: Got valid surface fortress location '{neighbour.getName()}'");
+                        locations.Add(neighbour);
+                    }
+                }
+
+                if (locations.Count > 0)
+                {
+                    isFortress = true;
+                    if (locations.Count > 1)
+                    {
+                        targetLocation = locations[Eleven.random.Next(locations.Count)];
+                    }
+                    else
+                    {
+                        targetLocation = locations[0];
+                    }
+                }
+            }
+
+            if (targetLocation == null && ModCore.opt_dwarven_expansion && (!ModCore.Get().data.tryGetDwarvenExpansionCooldown(dwarves, out int cooldown) || cooldown <= 0))
+            {
+                //Console.WriteLine($"CommunityLib: Dwarven Expansion is enabled.");
+                foreach (Location neighbour in __instance.location.getNeighbours())
+                {
+                    if (neighbour.hex.z == 1 && !neighbour.isOcean && neighbour.soc == null && (neighbour.settlement == null || neighbour.settlement is Set_CityRuins) && (double)neighbour.hex.getHabilitability() >= 0.1)
+                    {
+                        bool alreadyUnderway = false;
+                        foreach (Unit unit in __instance.map.units)
+                        {
+                            if (unit is UM um && um.task is Task_BuildSettlement buildTask && buildTask.target == neighbour)
+                            {
+                                alreadyUnderway = true;
+                                break;
+                            }
+                        }
+
+                        if (alreadyUnderway)
+                        {
+                            continue;
+                        }
+
+                        //Console.WriteLine($"CommunityLib: Got valid expansion location '{neighbour.getName()}'");
+                        int score = 40;
+                        Location[] path = Pathfinding.getPathTo(neighbour, dwarves.getCapital(), new List<Func<Location[], Location, Unit, List<int>, double>> { Pathfinding.delegate_DWARVEN_EXPANSION });
+
+                        if (path == null || path.Length < 2)
+                        {
+                            //Console.WriteLine($"CommunityLib: Could not get path to dwarven capitol.");
+                            continue;
+                        }
+
+                        score -= 10 * path.Length;
+
+                        if (neighbour.settlement is Set_CityRuins ruins)
+                        {
+                            score += 20;
+
+                            if (ModCore.Get().data.tryGetModIntegrationData("LivingWilds", out ModIntegrationData intDataLW) && intDataLW.assembly != null)
+                            {
+                                if (intDataLW.typeDict.TryGetValue("WildSettlement", out Type wildSettlementType))
+                                {
+                                    if (ruins.GetType() == wildSettlementType || ruins.GetType().IsSubclassOf(wildSettlementType))
+                                    {
+                                        score -= 20;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (__instance.map.tradeManager.getTradeWeight(neighbour) > 0)
+                        {
+                            score += 10;
+                        }
+
+                        //Console.WriteLine($"CommunityLib: Score for '{neighbour.getName()}' is {score}.");
+
+                        if (score >= highestScore)
+                        {
+                            if (score > highestScore)
+                            {
+                                highestScore = score;
+                                locations.Clear();
+                            }
+
+                            locations.Add(neighbour);
+                        }
+                    }
+                }
+
+                if (locations.Count > 0)
+                {
+                    if (locations.Count > 1)
+                    {
+                        targetLocation = locations[Eleven.random.Next(locations.Count)];
+                    }
+                    else
+                    {
+                        targetLocation = locations[0];
+                    }
+                }
+            }
+
+            if (targetLocation == null)
+            {
+                //Console.WriteLine($"CommunityLib: No target location selected.");
+                return;
+            }
+
+            ModCore.Get().data.setDwarvenExpandCooldown(dwarves);
+
+            int deltaPop = Math.Max(10, (int)Math.Round(pop * 0.25));
+            UM_DwarvenSettlers settlers = new UM_DwarvenSettlers(__instance.location, dwarves, deltaPop, __instance);
+            __instance.population -= deltaPop;
+
+            __instance.map.units.Add(settlers);
+            __instance.location.units.Add(settlers);
+
+            Task_BuildSettlement task = new Task_BuildSettlement(targetLocation, isFortress);
+            settlers.task = task;
         }
 
         // Item Fixes

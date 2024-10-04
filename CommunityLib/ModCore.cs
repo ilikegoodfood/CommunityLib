@@ -112,7 +112,7 @@ namespace CommunityLib
                 case "Dwarven Expansion Mechanics":
                     opt_dwarven_expansion = value;
                     break;
-                case "Dwarven Fortresses":
+                case "Dwarven Surface Fortresses":
                     opt_dwarven_fortresses = value;
                     break;
                 case "Dynamic Orc Horde Count":
@@ -746,6 +746,24 @@ namespace CommunityLib
                             else
                             {
                                 Console.WriteLine("CommunityLib: Failed to get Vampire noble agent Type (LivingCharacters.UAEN_Chars_VampireNoble)");
+                            }
+                        }
+                        break;
+                    case "LivingSocieties":
+                        Console.WriteLine("CommunityLib: Living Socities is Enabled");
+                        ModIntegrationData intDataLS = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        data.addModIntegrationData("LivingSocieties", intDataLS);
+
+                        if (data.tryGetModIntegrationData("LivingSocieties", out intDataLS))
+                        {
+                            MethodInfo MI_updateSettlementExternal = intDataLS.kernel.GetType().GetMethod("updateSettlementExternal", new Type[] { typeof(Society), typeof(SettlementHuman) });
+                            if (MI_updateSettlementExternal != null)
+                            {
+                                intDataLS.methodInfoDict.Add("UpdateSettlement", MI_updateSettlementExternal);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get updateSettlementExternal function (LivingSocieties.Kernel_Socs.updateSettlementExternal)");
                             }
                         }
                         break;

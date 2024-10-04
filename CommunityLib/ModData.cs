@@ -25,6 +25,8 @@ namespace CommunityLib
 
         private List<Func<Person, Location, UA>> reviveAgentCreationFunctons;
 
+        private Dictionary<Soc_Dwarves, int> dwarfExpansionCooldowns;
+
         // Collections
         private HashSet<Type> locusTypes;
 
@@ -48,6 +50,7 @@ namespace CommunityLib
             initialiseModIntegrationData();
             initialiseModCultureData();
             initialiseReviveAgentCreationFunctions();
+            initialiseDwarfExpansionCooldowns();
 
             // Colections
             initialiseLocusTypes();
@@ -80,6 +83,14 @@ namespace CommunityLib
             if (reviveAgentCreationFunctons == null)
             {
                 reviveAgentCreationFunctons = new List<Func<Person, Location, UA>>();
+            }
+        }
+
+        private void initialiseDwarfExpansionCooldowns()
+        {
+            if (dwarfExpansionCooldowns == null)
+            {
+                dwarfExpansionCooldowns = new Dictionary<Soc_Dwarves, int>();
             }
         }
 
@@ -147,6 +158,7 @@ namespace CommunityLib
             modIntegrationData.Clear();
             modCultureData.Clear();
             reviveAgentCreationFunctons.Clear();
+            dwarfExpansionCooldowns.Clear();
 
             // COllections
             locusTypes.Clear();
@@ -232,6 +244,7 @@ namespace CommunityLib
             initialiseModIntegrationData();
             initialiseModCultureData();
             initialiseReviveAgentCreationFunctions();
+            initialiseDwarfExpansionCooldowns();
 
             // Collections
             initialiseLocusTypes();
@@ -255,6 +268,22 @@ namespace CommunityLib
 
             influenceGainElder.Clear();
             influenceGainHuman.Clear();
+
+            if (dwarfExpansionCooldowns.Count > 0)
+            {
+                Dictionary<Soc_Dwarves, int> mutableDict = new Dictionary<Soc_Dwarves, int>(dwarfExpansionCooldowns);
+                foreach (KeyValuePair<Soc_Dwarves, int> kvp in mutableDict)
+                {
+                    if (kvp.Value - 1 <= 0)
+                    {
+                        dwarfExpansionCooldowns.Remove(kvp.Key);
+                    }
+                    else
+                    {
+                        dwarfExpansionCooldowns[kvp.Key] = kvp.Value - 1;
+                    }
+                }
+            }
         }
 
         internal void addModIntegrationData(string key, ModIntegrationData intData)
@@ -322,6 +351,26 @@ namespace CommunityLib
             {
                 yield return func;
             }
+        }
+
+        internal void setDwarvenExpandCooldown(Soc_Dwarves soc)
+        {
+            if (dwarfExpansionCooldowns.TryGetValue(soc, out int cooldown))
+            {
+                if (cooldown < 10)
+                {
+                    dwarfExpansionCooldowns[soc] = 10;
+                }
+            }
+            else
+            {
+                dwarfExpansionCooldowns.Add(soc, 10);
+            }
+        }
+
+        internal bool tryGetDwarvenExpansionCooldown(Soc_Dwarves soc, out int cooldown)
+        {
+            return dwarfExpansionCooldowns.TryGetValue(soc, out cooldown);
         }
 
         internal void addLocusType(Type t)

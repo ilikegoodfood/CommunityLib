@@ -80,11 +80,14 @@
     <Compile Include="Set_Shipwreck.cs" />
     <Compile Include="ShuffleExtensions.cs" />
     <Compile Include="SortableTaskBlock_Advanced.cs" />
+    <Compile Include="Sub_DwarfFortress.cs" />
     <Compile Include="Sub_Shipwreck.cs" />
     <Compile Include="Task_AttackUnitWithCustomEscort.cs" />
+    <Compile Include="Task_BuildSettlement.cs" />
     <Compile Include="Task_ReturnToTheDeep.cs" />
     <Compile Include="UIE_ChallengeTask.cs" />
     <Compile Include="UIUtils.cs" />
+    <Compile Include="UM_DwarvenSettlers.cs" />
     <None Include="packages.config" />
     <None Include="Storage %28NotCompiled%29.cs" />
     <Compile Include="HarmonyPatches.cs" />
