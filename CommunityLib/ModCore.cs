@@ -729,6 +729,24 @@ namespace CommunityLib
                             }
                         }
                         break;
+                    case "LivingSocieties":
+                        Console.WriteLine("CommunityLib: Living Socities is Enabled");
+                        ModIntegrationData intDataLS = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        data.addModIntegrationData("LivingSocieties", intDataLS);
+
+                        if (data.tryGetModIntegrationData("LivingSocieties", out intDataLS))
+                        {
+                            MethodInfo MI_updateSettlementExternal = intDataLS.kernel.GetType().GetMethod("updateSettlementExternal", new Type[] { typeof(Society), typeof(SettlementHuman) });
+                            if (MI_updateSettlementExternal != null)
+                            {
+                                intDataLS.methodInfoDict.Add("UpdateSettlement", MI_updateSettlementExternal);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get updateSettlementExternal function (LivingSocieties.Kernel_Socs.updateSettlementExternal)");
+                            }
+                        }
+                        break;
                     case "LivingWilds":
                         Console.WriteLine("CommunityLib: Living Wilds is Enabled");
                         ModIntegrationData intDataLW = new ModIntegrationData(kernel.GetType().Assembly, kernel);
