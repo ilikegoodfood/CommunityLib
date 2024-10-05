@@ -117,11 +117,6 @@ namespace CommunityLib
                         {
                             setHuman = new Set_DwarvenCity(target);
                             setHuman.subs.Add(new Sub_DwarfFortress(setHuman));
-
-                            /*foreach (Subsettlement sub in setHuman.subs)
-                            {
-                                Console.WriteLine($"CommunityLib: Subsettlement '{sub.getName()}' found in Surface Fortress.");
-                            }*/
                         }
                         else if (target.isMajor)
                         {
@@ -131,6 +126,8 @@ namespace CommunityLib
                         {
                             setHuman = new Set_DwarvenOutpost(target);
                         }
+
+                        target.properties.Add(new Pr_GrowingEconomy(target, 0.5, 0.25));
                     }
                     else if (soc is Soc_Elven)
                     {
