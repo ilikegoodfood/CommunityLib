@@ -86,7 +86,7 @@ namespace CommunityLib
             growPop(settlementHuman, growthRate);
             foreach (Location neighbour in location.getNeighbours())
             {
-                if (neighbour.soc == location.soc && location.settlement is SettlementHuman settlementHuman2)
+                if (neighbour.soc == location.soc && neighbour.settlement is SettlementHuman settlementHuman2)
                 {
                     growPop(settlementHuman2, neighbouringGrowthRate);
                 }
