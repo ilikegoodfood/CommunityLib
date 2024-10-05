@@ -82,5 +82,10 @@ namespace CommunityLib
                 }
             }
         }
+
+        public override Location getLocation()
+        {
+            return target;
+        }
     }
 }

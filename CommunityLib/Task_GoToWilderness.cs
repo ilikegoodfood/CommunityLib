@@ -72,5 +72,10 @@ namespace CommunityLib
         {
             return false;
         }
+
+        public override Location getLocation()
+        {
+            return target;
+        }
     }
 }
