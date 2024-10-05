@@ -1633,7 +1633,7 @@ namespace CommunityLib
             __instance.map.units.Add(settlers);
             __instance.location.units.Add(settlers);
 
-            Task_BuildSettlement task = new Task_BuildSettlement(targetLocation, isFortress);
+            Task_BuildSettlement task = new Task_BuildSettlement(targetLocation, isFortress, 1);
             settlers.task = task;
         }
 

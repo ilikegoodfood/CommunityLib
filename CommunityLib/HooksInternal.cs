@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Reflection;
 using System.Linq;
-using static SortedDictionaryProvider;
 
 namespace CommunityLib
 {
@@ -260,6 +259,23 @@ namespace CommunityLib
             if (start.settlement is Set_TombOfGods && start.map.overmind.god is God_Mammon)
             {
                 pathfindingDelegates.Remove(Pathfinding.delegate_TRADE_UNDERGROUNDAWARENESS);
+            }
+        }
+
+        public override void onGetTradeRouteEndpoints(Map map, List<Location> endpoints)
+        {
+            if (ModCore.opt_dwarven_fortresses)
+            {
+                foreach (Location location in map.locations)
+                {
+                    if (location.hex.z == 0 && location.settlement is Set_DwarvenCity dwarvenCity && dwarvenCity.subs.Any(sub => sub is Sub_DwarfFortress) && location.getNeighbours().Any(n => n.hex.z == 1))
+                    {
+                        if (!endpoints.Contains(location))
+                        {
+                            endpoints.Add(location);
+                        }
+                    }
+                }
             }
         }
 

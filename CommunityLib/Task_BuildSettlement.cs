@@ -20,19 +20,19 @@ namespace CommunityLib
 
         public bool arrived;
 
-        public Task_BuildSettlement(Location targetLoc, int constructionTime = 10)
+        public Task_BuildSettlement(Location targetLoc, int delay = 0, int constructionTime = 10)
         {
             target = targetLoc;
-            delay = 1;
+            this.delay = delay;
             timeRemaining = constructionTime;
             isFortress = false;
             arrived = false;
         }
 
-        public Task_BuildSettlement(Location targetLoc, bool isFortress, int constructionTime = 10)
+        public Task_BuildSettlement(Location targetLoc, bool isFortress, int delay = 0, int constructionTime = 10)
         {
             target = targetLoc;
-            delay = 1;
+            this.delay = delay;
             timeRemaining = constructionTime;
             this.isFortress = isFortress;
             arrived  = false;
