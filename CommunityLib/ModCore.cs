@@ -69,6 +69,8 @@ namespace CommunityLib
 
         public static bool opt_godSort_ignorePrefixes = true;
 
+        public static bool opt_godSort_ignoreThe = false;
+
         public static bool opt_godSort_lastPlayedFirst = false;
 
         public static bool opt_usePreciseDistanceDivisor = true;
@@ -162,6 +164,9 @@ namespace CommunityLib
                     break;
                 case "God Sort: Ignore God-Name Prefixes":
                     opt_godSort_ignorePrefixes = value;
+                    break;
+                case "God Sort: Ignore \"The\" at Start of God Names":
+                    opt_godSort_ignoreThe = value;
                     break;
                 case "God Sort: Last Played First":
                     opt_godSort_lastPlayedFirst = value;
