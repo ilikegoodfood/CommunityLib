@@ -169,6 +169,8 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Ch_BuyItem), nameof(Ch_BuyItem.complete), new Type[] { typeof(UA) }), prefix: new HarmonyMethod(patchType, nameof(Ch_BuyItem_complete_Prefix)), postfix: new HarmonyMethod(patchType, nameof(Ch_BuyItem_complete_Postfix)));
             // Death of The Dun
             harmony.Patch(original: AccessTools.Method(typeof(Mg_DeathOfTheSun), nameof(Mg_DeathOfTheSun.turnTick), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Mg_DeathOfTheSun_turnTick_Transpiler)));
+            // Disrupt Conclave
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_DisruptConclave), nameof(Ch_DisruptConclave.getProgressPerTurnInner), new Type[] { typeof(UA), typeof(List<ReasonMsg>) }), postfix: new HarmonyMethod(patchType, nameof(Ch_DisruptConclave_getProgressPerTurnInner_Postfix)));
             // Opportunistict Encroachment
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_OpportunisticEncroachment), nameof(Ch_Orcs_OpportunisticEncroachment.getDesc), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Ch_Orcs_OpportunisticEncroachment_getDesc_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_OpportunisticEncroachment), nameof(Ch_Orcs_OpportunisticEncroachment.valid), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Ch_Orcs_OpportunisticEncroachment_valid_Transpiler)));
@@ -1118,6 +1120,51 @@ namespace CommunityLib
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
+        }
+
+        private static void Ch_DisruptConclave_getProgressPerTurnInner_Postfix(UA unit, List<ReasonMsg> msgs, ref double __result)
+        {
+            int intrigue = unit.getStatIntrigue();
+            int command = unit.getStatCommand();
+            int might = unit.getStatMight();
+            int total = intrigue + command + might;
+
+            if (msgs != null)
+            {
+                if (intrigue == 0)
+                {
+                    ReasonMsg msg = msgs.FirstOrDefault(m => m.msg == "Stat: Intrigue");
+                    if (msg != null)
+                    {
+                        msg.value = 0;
+                    }
+                }
+
+                if (command == 0)
+                {
+                    ReasonMsg msg = msgs.FirstOrDefault(m => m.msg == "Stat: Command");
+                    if (msg != null)
+                    {
+                        msg.value = 0;
+                    }
+                }
+
+                if (might == 0)
+                {
+                    ReasonMsg msg = msgs.FirstOrDefault(m => m.msg == "Stat: Might");
+                    if (msg != null)
+                    {
+                        msg.value = 0;
+                    }
+                }
+
+                if (total == 0)
+                {
+                    msgs.Add(new ReasonMsg("Base", 1));
+                }
+            }
+
+            __result = Math.Max(1, total);
         }
 
         private static void Ch_Orcs_OpportunisticEncroachment_getDesc_Postfix(ref string __result)
