@@ -251,6 +251,7 @@ namespace CommunityLib
 
             // Victory Point Fixes
             harmony.Patch(original: AccessTools.Method(typeof(Overmind), nameof(Overmind.computeVictoryProgress), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Overming_computeVictoryProgress_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Overmind), nameof(Overmind.victory), new Type[] { typeof(string), typeof(int) }), transpiler: new HarmonyMethod(patchType, nameof(Overming_victory_Transpiler)));
 
             // Victory Message Fixes
             //harmony.Patch(original: AccessTools.Method(typeof(God_Cards), nameof(God_Cards.getVictoryMessage)), postfix: new HarmonyMethod(patchType, nameof(God_Cards_getVictoryMessage_Postfix)));
@@ -5541,6 +5542,92 @@ namespace CommunityLib
             }
 
             Console.WriteLine("CommunityLib: Completed Overming_computeVictoryProgress_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> Overming_victory_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            FieldInfo FI_Hex = AccessTools.Field(typeof(Location), nameof(Location.hex));
+            FieldInfo FI_Z = AccessTools.Field(typeof(Hex), nameof(Hex.z));
+
+            Label skipLabel = ilg.DefineLabel();
+
+            int surfaceLocationCountIndex = ilg.DeclareLocal(typeof(int)).LocalIndex;
+
+            bool returnCode = true;
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldc_R8 && (double)instructionList[i].operand == 0.0)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i+1].opcode == OpCodes.Ldfld)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 24);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Hex);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Z);
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_0);
+                            yield return new CodeInstruction(OpCodes.Ceq);
+                            // Skip all temperature calculations for hexes where Z != 0.
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, skipLabel); // Continue;
+
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, surfaceLocationCountIndex);
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_1);
+                            yield return new CodeInstruction(OpCodes.Add);
+                            yield return new CodeInstruction(OpCodes.Stloc_S, surfaceLocationCountIndex);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloca_S)
+                        {
+                            instructionList[i].labels.Add(skipLabel);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 4)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, surfaceLocationCountIndex);
+
+                            returnCode = false;
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 5)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Conv_R8)
+                        {
+                            returnCode = true;
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
+            }
+
+            Console.WriteLine("CommunityLib: Completed Overming_victory_Transpiler");
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
