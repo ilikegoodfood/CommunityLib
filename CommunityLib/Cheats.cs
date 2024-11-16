@@ -110,6 +110,58 @@ namespace CommunityLib
                         }
                     }
                 }
+                else if (commandComps[0] == "blazingSun")
+                {
+                    foreach(Hex[][] array in map.grid)
+                    {
+                        foreach(Hex[] array2 in array)
+                        {
+                            foreach(Hex hex in array2)
+                            {
+                                if (hex.territoryOf != -1 && hex.territoryOf < map.locations.Count)
+                                {
+                                    Location owner = map.locations[hex.territoryOf];
+
+                                    if (owner == null || owner.settlement == null)
+                                    {
+                                        if (hex.location == null || hex.location.settlement == null)
+                                        {
+                                            hex.purity = 1.0f;
+                                        }
+                                        else
+                                        {
+                                            hex.location.settlement.shadow = 0.0f;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (owner.settlement is Set_DeepOneAbyssalCity || owner.settlement is Set_DeepOneSanctum || owner.settlement is Set_TombOfGods || (owner.soc != null && owner.soc.isDark() || (owner.soc is Society society && (society.isDarkEmpire || society.isOphanimControlled))))
+                                        {
+                                            continue;
+                                        }
+
+                                        if (hex.location == null || hex.location.settlement == null)
+                                        {
+                                            hex.purity = 1.0f;
+                                        }
+                                        else
+                                        {
+                                            hex.location.settlement.shadow = 0.0f;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    foreach (Person person in map.persons)
+                    {
+                        if (!person.isDead && person.society is Society society && !society.isDark() && !society.isDarkEmpire && !society.isOphanimControlled)
+                        {
+                            person.shadow = 0.0f;
+                        }
+                    }
+                }
             }
         }
 
