@@ -48,6 +48,11 @@ namespace CommunityLib
             return "Wreck of " + settlement.location.shortName;
         }
 
+        public override string getInvariantName()
+        {
+            return "Shipwreck";
+        }
+
         public override List<Challenge> getChallenges()
         {
             return challenges;
