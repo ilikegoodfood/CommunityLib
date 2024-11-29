@@ -87,8 +87,18 @@ namespace CommunityLib
                     return false;
                 }
 
-                Pr_DeepOneCult cult = challengeData.location.properties.OfType<Pr_DeepOneCult>().FirstOrDefault();
-                if (cult == null)
+                if (ModCore.Get().data.tryGetModIntegrationData("AberrantMetal", out ModIntegrationData intDataMetal))
+                {
+                    if (intDataMetal.typeDict.TryGetValue("Factory", out Type factoryType))
+                    {
+                        if (settlementHuman.GetType() == factoryType || settlementHuman.GetType().IsSubclassOf(factoryType))
+                        {
+                            return false;
+                        }
+                    }
+                }
+
+                if (!challengeData.location.properties.Any(pr => pr is Pr_DeepOneCult))
                 {
                     return true;
                 }

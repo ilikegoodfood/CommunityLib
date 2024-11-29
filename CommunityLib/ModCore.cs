@@ -247,6 +247,34 @@ namespace CommunityLib
             {
                 switch (kernel.GetType().Namespace)
                 {
+                    case "ProductionGod":
+                        Console.WriteLine("CommunityLib: Aberrant Metal is Enabled");
+                        ModIntegrationData intDataMetal = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        data.addModIntegrationData("AberrantMetal", intDataMetal);
+
+                        if (data.tryGetModIntegrationData("Adolia", out intDataMetal))
+                        {
+                            Type godType = intDataMetal.assembly.GetType("ProductionGod.God_FactoryGod", false);
+                            if (godType != null)
+                            {
+                                intDataMetal.typeDict.Add("FacelessMemory", godType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Abberant Metal god Type (ProductionGod.God_FactoryGod)");
+                            }
+
+                            Type factoryType = intDataMetal.assembly.GetType("ProductionGod.Settlement_Factory", false);
+                            if (factoryType != null)
+                            {
+                                intDataMetal.typeDict.Add("Factory", factoryType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Adiolia agent Type (ProductionGod.Settlement_Factory)");
+                            }
+                        }
+                        break;
                     case "FacelessMemory":
                         Console.WriteLine("CommunityLib: Adolia is Enabled");
                         ModIntegrationData intDataAdolia = new ModIntegrationData(kernel.GetType().Assembly, kernel);
