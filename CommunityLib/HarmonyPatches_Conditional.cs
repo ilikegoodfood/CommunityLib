@@ -240,6 +240,11 @@ namespace CommunityLib
             {
                 harmony.Patch(original: MI_BootsTurnTick, transpiler: new HarmonyMethod(patchType, nameof(I_heroicBoots_turnTick_Transpiler)));
             }
+
+            if (intData.methodInfoDict.TryGetValue("Kernel.afterMapGenAfterHistorical", out MethodInfo MI_afterMapGenAfterHistorical))
+            {
+                harmony.Patch(original: MI_afterMapGenAfterHistorical, transpiler: new HarmonyMethod(patchType, nameof(CCCKernel_afterMapGenAFterHistorical_Transpiler)));
+            }
         }
 
         private static IEnumerable<CodeInstruction> I_heroicBoots_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
@@ -276,6 +281,50 @@ namespace CommunityLib
                 }
 
                 yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed I_heroicBoots_turnTick_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> CCCKernel_afterMapGenAFterHistorical_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            bool returnCode = true;
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode != OpCodes.Nop)
+                        {
+                            returnCode = false;
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i+1].opcode == OpCodes.Ldarg_1 && instructionList[i+2].opcode == OpCodes.Call)
+                        {
+                            returnCode = true;
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
+                
             }
 
             Console.WriteLine("CommunityLib: Completed I_heroicBoots_turnTick_Transpiler");
