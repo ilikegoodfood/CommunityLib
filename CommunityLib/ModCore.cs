@@ -33,6 +33,8 @@ namespace CommunityLib
 
         private UAENOverrideAI overrideAI;
 
+        private ConditionalUAENOverrideAI conditionalOverrideAI;
+
         public static bool opt_autoRelaunch = false;
 
         public static bool opt_spawnShipwrecks = false;
@@ -220,12 +222,18 @@ namespace CommunityLib
             agentAI = new AgentAI(map);
 
             overrideAI = new UAENOverrideAI(map);
+            conditionalOverrideAI = new ConditionalUAENOverrideAI(map);
 
             hooks = new HooksInternal(map);
             RegisterHooks(hooks);
 
             orcExpansionDefaults();
             eventModifications();
+        }
+
+        public override void afterMapGenBeforeHistorical(Map map)
+        {
+            data.initialiseHideenThoughts();
         }
 
         public override void afterLoading(Map map)
@@ -569,6 +577,53 @@ namespace CommunityLib
                             else
                             {
                                 Console.WriteLine("CommunityLib: Failed to get Heroic boots item Type (CovenExpansion.I_heroicBoot)");
+                            }
+
+                            Type toadType = intDataCCC.assembly.GetType("CovenExpansion.UAEN_Toad", false);
+                            if (toadType != null)
+                            {
+                                intDataCCC.typeDict.Add("UAEN_Toad", toadType);
+                                intDataCCC.methodInfoDict.Add("UAEN_Toad.addChallenges", toadType.GetMethod("addChallenges", new Type[] { typeof(Location), typeof(List<Challenge>) }));
+                                intDataCCC.fieldInfoDict.Add("UAEN_Toad.Squash", toadType.GetField("ch_squash"));
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Toad UAEN Type (CovenExpansion.UAEN_Toad)");
+                            }
+
+                            Type ribbitType = intDataCCC.assembly.GetType("CovenExpansion.Rt_Ribbit", false);
+                            if (ribbitType != null)
+                            {
+                                intDataCCC.typeDict.Add("Rt_Ribbit", ribbitType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Ribbit ritual Type (CovenExpansion.Rt_Ribbit)");
+                            }
+
+                            Type pigeonType = intDataCCC.assembly.GetType("CovenExpansion.UAEN_Pigeon", false);
+                            if (pigeonType != null)
+                            {
+                                intDataCCC.typeDict.Add("UAEN_Pigeon", pigeonType);
+                                intDataCCC.methodInfoDict.Add("UAEN_Pigeon.turnTick", pigeonType.GetMethod("turnTick", new Type[] { typeof(Map) }));
+                                intDataCCC.methodInfoDict.Add("UAEN_Pigeon.gainPigeon", pigeonType.GetMethod("gainPigeon", new Type[] { typeof(UA) }));
+                                intDataCCC.fieldInfoDict.Add("UAEN_Pigeon.target", pigeonType.GetField("target"));
+                                intDataCCC.fieldInfoDict.Add("Uaen_Pigeon.owner", pigeonType.GetField("owner"));
+                                intDataCCC.fieldInfoDict.Add("UAEN_Pigeon.returning", pigeonType.GetField("returning"));
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Pigeon UAEN Type (CovenExpansion.UAEN_Pigeon)");
+                            }
+
+                            Type flyingPigeonType = intDataCCC.assembly.GetType("CovenExpansion.Rt_flyingPigeon", false);
+                            if (flyingPigeonType != null)
+                            {
+                                intDataCCC.typeDict.Add("Rt_flyingPigeon", flyingPigeonType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get flying pigeon ritual Type (CovenExpansion.Rt_flyingPigeon)");
                             }
                         }
                         break;

@@ -73,10 +73,12 @@
     <Compile Include="I_Test_DeathSave.cs" />
     <Compile Include="ModCultureData.cs" />
     <Compile Include="ModIntegrationData.cs" />
+    <Compile Include="ConditionalUAENOverrideAI.cs" />
     <Compile Include="OnChallengeComplete.cs" />
     <Compile Include="PriorityQueue.cs" />
     <Compile Include="Pr_GrowingEconomy.cs" />
     <Compile Include="Rt_DeepOnes_TravelBeneath.cs" />
+    <Compile Include="Rt_HiddenThoughts.cs" />
     <Compile Include="SaveData.cs" />
     <Compile Include="Rt_SlowHealing.cs" />
     <Compile Include="Set_Shipwreck.cs" />
@@ -86,6 +88,7 @@
     <Compile Include="Sub_Shipwreck.cs" />
     <Compile Include="Task_AttackUnitWithCustomEscort.cs" />
     <Compile Include="Task_BuildSettlement.cs" />
+    <Compile Include="Task_GoToUnit.cs" />
     <Compile Include="Task_ReturnToTheDeep.cs" />
     <Compile Include="UIE_ChallengeTask.cs" />
     <Compile Include="UIUtils.cs" />

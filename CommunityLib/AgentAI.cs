@@ -1407,12 +1407,12 @@ namespace CommunityLib
 
                 foreach (Challenge ritual in uaRituals)
                 {
-                    if (aiRituals.ContainsKey(ritual.GetType()))
+                    if (aiRituals.TryGetValue(ritual.GetType(), out AIChallenge aiChallenge))
                     {
                         //Console.WriteLine("CommunityLib: Found ritual " + ritual.getName());
                         ChallengeData d = new ChallengeData
                         {
-                            aiChallenge = aiRituals[ritual.GetType()],
+                            aiChallenge = aiChallenge,
                             challenge = ritual,
                             universalDelegates_Profile = aiData.aiChallenges_UniversalDelegates_Profile,
                             universalDelegates_Valid = aiData.aiChallenges_UniversalDelegates_Valid,
@@ -1451,11 +1451,16 @@ namespace CommunityLib
                     {
                         if (!(challenge is Ritual))
                         {
-                            if (aiChallenges.ContainsKey(challenge.GetType()))
+                            if (aiChallenges.TryGetValue(challenge.GetType(), out AIChallenge aiChallenge))
                             {
+                                if (aiChallenge.tags.Contains(AIChallenge.ChallengeTags.RequireLocal) && location != ua.location)
+                                {
+                                    continue;
+                                }
+
                                 ChallengeData d = new ChallengeData
                                 {
-                                    aiChallenge = aiChallenges[challenge.GetType()],
+                                    aiChallenge = aiChallenge,
                                     challenge = challenge,
                                     location = location,
                                     universalDelegates_Profile = aiData.aiChallenges_UniversalDelegates_Profile,
@@ -1463,6 +1468,7 @@ namespace CommunityLib
                                     universalDelegates_ValidFor = aiData.aiChallenges_UniversalDelegates_ValidFor,
                                     universalDelegates_Utility = aiData.aiChallenges_UniversalDelegates_Utility
                                 };
+
                                 if (getChallengeIsValid(ua, d, aiData.controlParameters))
                                 {
                                     result.Add(d);
@@ -1490,6 +1496,11 @@ namespace CommunityLib
 
                     foreach (ChallengeData rData in ritualData)
                     {
+                        if (rData.aiChallenge != null && rData.aiChallenge.tags.Contains(AIChallenge.ChallengeTags.RequireLocal) && location != ua.location)
+                        {
+                            continue;
+                        }
+
                         ChallengeData d = new ChallengeData
                         {
                             aiChallenge = rData.aiChallenge,
