@@ -299,12 +299,8 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getVisibleUnits), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UA_getVisibleUnits_Prefix)), postfix: new HarmonyMethod(patchType, nameof(UA_getVisibleUnits_Postfix)));
 
             // Override AI
-            harmony.Patch(original: AccessTools.Method(typeof(UAEN_CaveSpider), nameof(UAEN_CaveSpider.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_CaveSpider_turnTickAI_Prefix)));
-            harmony.Patch(original: AccessTools.Method(typeof(UAEN_DeepOne), nameof(UAEN_DeepOne.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_DeepOne_turnTickAI_Prefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(Unit), nameof(Unit.turnTick), new Type[] { typeof(Map) }), transpiler: new HarmonyMethod(patchType, nameof(Unit_turnTick_Transpiler)));
             harmony.Patch(original: AccessTools.Constructor(typeof(UAEN_DeepOne), new Type[] { typeof(Location), typeof(Society), typeof(Person) }), postfix: new HarmonyMethod(patchType, nameof(UAEN_DeepOne_ctor_Postfix)));
-            harmony.Patch(original: AccessTools.Method(typeof(UAEN_Ghast), nameof(UAEN_Ghast.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_Ghast_turnTickAI_Prefix)));
-            harmony.Patch(original: AccessTools.Method(typeof(UAEN_OrcUpstart), nameof(UAEN_OrcUpstart.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_OrcUpstart_turnTickAI_Prefix)));
-            harmony.Patch(original: AccessTools.Method(typeof(UAEN_Vampire), nameof(UAEN_Vampire.turnTickAI), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UAEN_Vampire_turnTickAI_Prefix)));
 
             // Deep ones
             harmony.Patch(original: AccessTools.Method(typeof(Rt_DescendIntoTheSea), nameof(Rt_DescendIntoTheSea.validFor), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Rt_DescendIntoTheSea_validFor_Postfix)));
@@ -1512,6 +1508,8 @@ namespace CommunityLib
 
             MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Task_Follow_turnTick_TranspilerBody), new Type[] { typeof(Unit), typeof(Unit) });
 
+            FieldInfo FI_Target = AccessTools.Field(typeof(Task_Follow), nameof(Task_Follow.target));
+
             bool returnCode = true;
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
@@ -1520,13 +1518,14 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i+1].opcode == OpCodes.Ldarg_1 && instructionList[i].opcode == OpCodes.Ldfld)
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i+1].opcode == OpCodes.Ldarg_1 && instructionList[i+2].opcode == OpCodes.Ldfld)
                         {
                             returnCode = false;
 
                             yield return new CodeInstruction(OpCodes.Nop);
-                            yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Target);
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
 
                             targetIndex++;
@@ -1560,8 +1559,8 @@ namespace CommunityLib
         {
             while (self.movesTaken < self.getMaxMoves())
             {
-                bool moveSuccess = self.map.moveTowards(self, target.location);
-                if (!moveSuccess)
+                bool moved = self.map.moveTowards(self, target.location);
+                if (!moved)
                 {
                     return false;
                 }
@@ -6594,11 +6593,14 @@ namespace CommunityLib
                     perception.tUtility = null;
 
                     task.tLoc = perception.tLoc;
+                    task.tLoc.text = ua.location.getName();
                     perception.tLoc.transform.SetParent(task.transform);
                     perception.tLoc = null;
 
                     UnityEngine.Object.Destroy(perception);
-                    task.setTo(ui.master.world, new SortableTaskBlock_Advanced { challenge = ModCore.Get().data.hiddenThoughts }, ua);
+
+                    SortableTaskBlock_Advanced block = new SortableTaskBlock_Advanced { challenge = ModCore.Get().data.hiddenThoughts, location = ua.location };
+                    task.setTo(ui.master.world, block, ua);
 
                     return true;
                 }
@@ -7265,24 +7267,67 @@ namespace CommunityLib
             return visibleUnits;
         }
 
-        private static bool UAEN_CaveSpider_turnTickAI_Prefix(UAEN_CaveSpider __instance)
+        // Unit_turnTick_Transpiler
+        private static IEnumerable<CodeInstruction> Unit_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
         {
-            if (ModCore.Get().GetAgentAI().ContainsAgentType(typeof(UAEN_CaveSpider)))
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Unit_turnTick_TranspilerBody), new Type[] { typeof(Unit) });
+
+            Label skipLabel = ilg.DefineLabel();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
             {
-                ModCore.Get().GetAgentAI().turnTickAI(__instance);
-                return false;
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i + 1].opcode == OpCodes.Ldarg_0 && instructionList[i + 2].opcode == OpCodes.Callvirt)
+                        {
+                            CodeInstruction code = new CodeInstruction(OpCodes.Nop);
+                            code.labels.AddRange(instructionList[i].labels);
+                            instructionList[i].labels.Clear();
+                            yield return code;
+
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, skipLabel);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop)
+                        {
+                            instructionList[i].labels.Add(skipLabel);
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
             }
-            return true;
+
+            Console.WriteLine("CommunityLib: Completed Unit_turnTick_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
         }
 
-        private static bool UAEN_DeepOne_turnTickAI_Prefix(UAEN_DeepOne __instance)
+        private static bool Unit_turnTick_TranspilerBody(Unit u)
         {
-            if (ModCore.Get().GetAgentAI().ContainsAgentType(typeof(UAEN_DeepOne)))
+            if (u is UA ua)
             {
-                ModCore.Get().GetAgentAI().turnTickAI(__instance);
-                return false;
+                if (ModCore.Get().GetAgentAI().ContainsAgentType(ua.GetType()))
+                {
+                    ModCore.Get().GetAgentAI().turnTickAI(ua);
+                    return true;
+                }
             }
-            return true;
+            return false;
         }
 
         private static void UAEN_DeepOne_ctor_Postfix(UAEN_DeepOne __instance)
@@ -7299,36 +7344,6 @@ namespace CommunityLib
         private static bool UAEN_Ghast_turnTickAI_Prefix(UAEN_Ghast __instance)
         {
             if (ModCore.Get().GetAgentAI().ContainsAgentType(typeof(UAEN_Ghast)))
-            {
-                ModCore.Get().GetAgentAI().turnTickAI(__instance);
-                return false;
-            }
-            return true;
-        }
-
-        private static bool UAEN_OrcUpstart_turnTickAI_Prefix(UAEN_OrcUpstart __instance)
-        {
-            if (ModCore.Get().GetAgentAI().ContainsAgentType(typeof(UAEN_OrcUpstart)))
-            {
-                ModCore.Get().GetAgentAI().turnTickAI(__instance);
-                return false;
-            }
-            return true;
-        }
-
-        private static bool UAEN_Vampire_turnTickAI_Prefix(UAEN_Vampire __instance)
-        {
-            if (ModCore.Get().GetAgentAI().ContainsAgentType(typeof(UAEN_Vampire)))
-            {
-                ModCore.Get().GetAgentAI().turnTickAI(__instance);
-                return false;
-            }
-            return true;
-        }
-
-        private static bool UA_turnTickAI_Prefix(UA __instance)
-        {
-            if (__instance is UAA && ModCore.Get().GetAgentAI().ContainsAgentType(typeof(UAA)))
             {
                 ModCore.Get().GetAgentAI().turnTickAI(__instance);
                 return false;
