@@ -243,7 +243,17 @@ namespace CommunityLib
 
             if (intData.methodInfoDict.TryGetValue("Kernel.afterMapGenAfterHistorical", out MethodInfo MI_afterMapGenAfterHistorical))
             {
-                harmony.Patch(original: MI_afterMapGenAfterHistorical, transpiler: new HarmonyMethod(patchType, nameof(CCCKernel_afterMapGenAFterHistorical_Transpiler)));
+                harmony.Patch(original: MI_afterMapGenAfterHistorical, transpiler: new HarmonyMethod(patchType, nameof(CCCKernel_afterMapGenAfterHistorical_Transpiler)));
+            }
+
+            if (intData.methodInfoDict.TryGetValue("UAEN_Toad.addChallenges", out MethodInfo MI_ToadAddChallenges) && MI_ToadAddChallenges != null)
+            {
+                harmony.Patch(original: MI_ToadAddChallenges, prefix: new HarmonyMethod(patchType, nameof(CCCToad_AddChallenges_Prefix)));
+            }
+
+            if (intData.methodInfoDict.TryGetValue("UAEN_Pigeon.turnTick", out MethodInfo MI_PigeonTurnTick) && MI_PigeonTurnTick != null)
+            {
+                harmony.Patch(original: MI_PigeonTurnTick, transpiler: new HarmonyMethod(patchType, nameof(CCCPigeon_TurnTick_Transpiler)));
             }
         }
 
@@ -290,7 +300,7 @@ namespace CommunityLib
             }
         }
 
-        private static IEnumerable<CodeInstruction> CCCKernel_afterMapGenAFterHistorical_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        private static IEnumerable<CodeInstruction> CCCKernel_afterMapGenAfterHistorical_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
@@ -332,6 +342,39 @@ namespace CommunityLib
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
+        }
+
+        private bool CCCToad_AddChallenges_Prefix(UAEN __instance, Location location, List<Challenge> standardChallenges)
+        {
+            if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC) && intDataCCC.assembly != null && intDataCCC.fieldInfoDict.TryGetValue("UAEN_Toad.Squash", out FieldInfo FI_Squash) && FI_Squash != null)
+            {
+                Challenge squash = (Challenge)FI_Squash.GetValue(__instance);
+                squash.locationIndex = __instance.location.index;
+
+                if (!standardChallenges.Contains(squash))
+                {
+                    standardChallenges.Add(squash);
+                }
+                return false;
+            }
+
+            return true;
+        }
+
+        private static IEnumerable<CodeInstruction> CCCPigeon_TurnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_UAE_TurnTick = AccessTools.Method(typeof(UAE), nameof(UAE.turnTick), new Type[] { typeof(Map) });
+
+            yield return new CodeInstruction(OpCodes.Nop);
+            yield return new CodeInstruction(OpCodes.Ldarg_0);
+            yield return new CodeInstruction(OpCodes.Ldarg_1);
+            yield return new CodeInstruction(OpCodes.Callvirt, MI_UAE_TurnTick);
+            yield return new CodeInstruction(OpCodes.Nop);
+            yield return new CodeInstruction(OpCodes.Ret);
+
+            Console.WriteLine("CommunityLib: Completed complete function replacement transpiler CCCPigeon_TurnTick_Transpiler");
         }
 
         private static void Patching_Ixthus(ModIntegrationData intData)

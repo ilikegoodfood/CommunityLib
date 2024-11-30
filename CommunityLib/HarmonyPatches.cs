@@ -173,8 +173,11 @@ namespace CommunityLib
             // Orcs Raiding Party
             harmony.Patch(original: AccessTools.Method(typeof(Rt_Orcs_RaidingParty), nameof(Rt_Orcs_RaidingParty.complete), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Rt_Orcs_RaidingParty_complete_Transpiler)));
 
-            // Item Fixes //
-            // I_DarkStone
+            // Task Fixes //
+            // Follow
+            harmony.Patch(original: AccessTools.Method(typeof(Task_Follow), nameof(Task_Follow.turnTick), new Type[] { typeof(Unit) }), transpiler: new HarmonyMethod(patchType, nameof(Task_Follow_turnTick_Transpiler)));
+
+            // Item Fixes
             harmony.Patch(original: AccessTools.Method(typeof(I_DarkStone), nameof(I_DarkStone.getShortDesc), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(I_DarkStone_getShortDesc_Postfix)));
 
             // Religion UI Screen modification
@@ -1033,6 +1036,77 @@ namespace CommunityLib
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
+        }
+
+        // Task Fixes //
+        // Task_Follow
+        private static IEnumerable<CodeInstruction> Task_Follow_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Task_Follow_turnTick_TranspilerBody), new Type[] { typeof(Unit), typeof(Unit) });
+
+            bool returnCode = true;
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i+1].opcode == OpCodes.Ldarg_1 && instructionList[i].opcode == OpCodes.Ldfld)
+                        {
+                            returnCode = false;
+
+                            yield return new CodeInstruction(OpCodes.Nop);
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Stloc_3)
+                        {
+                            returnCode = true;
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
+                
+            }
+
+            Console.WriteLine("CommunityLib: Completed Task_Follow_turnTick_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static bool Task_Follow_turnTick_TranspilerBody(Unit self, Unit target)
+        {
+            while (self.movesTaken < self.getMaxMoves())
+            {
+                bool moveSuccess = self.map.moveTowards(self, target.location);
+                if (!moveSuccess)
+                {
+                    return false;
+                }
+
+                if (self.location == target.location)
+                {
+                    return true;
+                }
+            }
+
+            return true;
         }
 
         // Item Fixes
@@ -4000,11 +4074,16 @@ namespace CommunityLib
             {
                 if (targetIndex > 0)
                 {
-                    if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Ldnull)
+                    if (targetIndex == 1)
                     {
-                        targetIndex = 0;
-                        yield return new CodeInstruction(OpCodes.Ldarg_1);
-                        i++;
+                        if (instructionList[i].opcode == OpCodes.Ldnull)
+                        {
+                            targetIndex = 0;
+
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+
+                            i++;
+                        }
                     }
                 }
 
@@ -5023,6 +5102,49 @@ namespace CommunityLib
             {
                 if (aiData.controlParameters.hideThoughts)
                 {
+                    GameObject gO = UnityEngine.Object.Instantiate(ui.master.world.prefabStore.uieChallengePerceptionBox, ui.listContent);
+
+                    UIE_ChallengeTask task = gO.AddComponent<UIE_ChallengeTask>();
+                    UIE_ChallengePerception perception = gO.GetComponent<UIE_ChallengePerception>();
+
+                    task.transform.position = perception.transform.position;
+                    task.transform.localScale = perception.transform.localScale;
+
+                    task.title = perception.title;
+                    //Console.WriteLine("CommunityLib: " + perception.title.transform.parent.name);
+                    perception.title.transform.SetParent(task.transform);
+                    //Console.WriteLine("CommunityLib: " + perception.title.transform.parent.name);
+                    perception.title = null;
+
+                    task.backColour = perception.backColour;
+                    perception.backColour.transform.SetParent(task.transform);
+                    perception.backColour = null;
+
+                    task.iconBack = perception.iconBack;
+                    perception.iconBack.transform.SetParent(task.transform);
+                    perception.iconBack = null;
+
+                    task.icon = perception.icon;
+                    perception.icon.transform.SetParent(task.transform);
+                    perception.icon = null;
+
+                    task.button = perception.button;
+                    perception.button.transform.SetParent(task.transform);
+                    task.button.onClick.RemoveListener(perception.clickGOTO);
+                    task.button.onClick.AddListener(task.clickGOTO);
+                    perception.button = null;
+
+                    task.tUtility = perception.tUtility;
+                    perception.tUtility.transform.SetParent(task.transform);
+                    perception.tUtility = null;
+
+                    task.tLoc = perception.tLoc;
+                    perception.tLoc.transform.SetParent(task.transform);
+                    perception.tLoc = null;
+
+                    UnityEngine.Object.Destroy(perception);
+                    task.setTo(ui.master.world, new SortableTaskBlock_Advanced { challenge = ModCore.Get().data.hiddenThoughts }, ua);
+
                     return true;
                 }
 

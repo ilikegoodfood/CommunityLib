@@ -11,7 +11,7 @@ namespace CommunityLib
 {
     public class UIE_ChallengeTask : UIE_ChallengePerception
     {
-        public void setTo(World world, SortableTaskBlock_Advanced srt, UA ua)
+        public virtual void setTo(World world, SortableTaskBlock_Advanced srt, UA ua)
         {
             //Console.WriteLine("CommunityLib: Line 1");
             this.srt = srt;
@@ -42,7 +42,7 @@ namespace CommunityLib
 
             //Console.WriteLine("CommunityLib: Set defaults.");
 
-            if (!srt.taskData.Equals(default(AgentAI.TaskData)))
+            if (!srt.taskData.Equals(default))
             {
                 //Console.WriteLine("CommunityLib: Block is not default");
                 Assets.Code.Task task = srt.taskData.aiTask.instantiateTask(ua, srt.taskData.targetCategory, srt.taskData);

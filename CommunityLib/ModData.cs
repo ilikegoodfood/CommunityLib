@@ -11,6 +11,8 @@ namespace CommunityLib
     {
         public Map map;
 
+        public Rt_HiddenThoughts hiddenThoughts;
+
         private SaveData saveData = null;
 
         private string dataDirPath = "";
@@ -136,6 +138,14 @@ namespace CommunityLib
             }
         }
 
+        internal void initialiseHideenThoughts()
+        {
+            if (hiddenThoughts == null)
+            {
+                hiddenThoughts = new Rt_HiddenThoughts(map.locations[0]);
+            }
+        }
+
         public void clean()
         {
             if (isClean)
@@ -158,6 +168,8 @@ namespace CommunityLib
 
             influenceGainElder.Clear();
             influenceGainHuman.Clear();
+
+            hiddenThoughts = null;
 
             isPlayerTurn = false;
 
@@ -242,6 +254,7 @@ namespace CommunityLib
             initialiseWonderGenTypes();
 
             initialiseInfluenceGain();
+            initialiseHideenThoughts();
         }
 
         public void onTurnStart(Map map)
