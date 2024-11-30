@@ -248,7 +248,7 @@ namespace CommunityLib
 
             if (intData.methodInfoDict.TryGetValue("UAEN_Toad.addChallenges", out MethodInfo MI_ToadAddChallenges) && MI_ToadAddChallenges != null)
             {
-                harmony.Patch(original: MI_ToadAddChallenges, prefix: new HarmonyMethod(patchType, nameof(CCCToad_AddChallenges_Prefix)));
+                harmony.Patch(original: MI_ToadAddChallenges, transpiler: new HarmonyMethod(patchType, nameof(CCCToad_AddChallenges_Transpiler)));
             }
 
             if (intData.methodInfoDict.TryGetValue("UAEN_Pigeon.turnTick", out MethodInfo MI_PigeonTurnTick) && MI_PigeonTurnTick != null)
@@ -337,28 +337,45 @@ namespace CommunityLib
                 
             }
 
-            Console.WriteLine("CommunityLib: Completed I_heroicBoots_turnTick_Transpiler");
+            Console.WriteLine("CommunityLib: Completed CCCKernel_afterMapGenAfterHistorical_Transpiler");
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
-        private bool CCCToad_AddChallenges_Prefix(UAEN __instance, Location location, List<Challenge> standardChallenges)
+        private static IEnumerable<CodeInstruction> CCCToad_AddChallenges_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(CCCToad_AddChallenges_TranspilerBody));
+
+            yield return new CodeInstruction(OpCodes.Nop);
+            yield return new CodeInstruction(OpCodes.Ldarg_0);
+            yield return new CodeInstruction(OpCodes.Ldarg_1);
+            yield return new CodeInstruction(OpCodes.Ldarg_2);
+            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+            yield return new CodeInstruction(OpCodes.Nop);
+            yield return new CodeInstruction(OpCodes.Ret);
+
+            Console.WriteLine("CommunityLib: Completed complete function replacement transpiler CCCToad_AddChallenges_Transpiler");
+        }
+
+        private static void CCCToad_AddChallenges_TranspilerBody(UAEN uaen, Location location, List<Challenge> standardChallenges)
         {
             if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC) && intDataCCC.assembly != null && intDataCCC.fieldInfoDict.TryGetValue("UAEN_Toad.Squash", out FieldInfo FI_Squash) && FI_Squash != null)
             {
-                Challenge squash = (Challenge)FI_Squash.GetValue(__instance);
-                squash.locationIndex = __instance.location.index;
-
-                if (!standardChallenges.Contains(squash))
+                Challenge squash = (Challenge)FI_Squash.GetValue(uaen);
+                if (squash == null)
                 {
-                    standardChallenges.Add(squash);
-                }
-                return false;
-            }
+                    squash.locationIndex = uaen.location.index;
 
-            return true;
+                    if (!standardChallenges.Contains(squash))
+                    {
+                        standardChallenges.Add(squash);
+                    }
+                }
+            }
         }
 
         private static IEnumerable<CodeInstruction> CCCPigeon_TurnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions)

@@ -564,7 +564,7 @@ namespace CommunityLib
                             {
                                 intDataCCC.typeDict.Add("UAEN_Toad", toadType);
                                 intDataCCC.methodInfoDict.Add("UAEN_Toad.addChallenges", toadType.GetMethod("addChallenges", new Type[] { typeof(Location), typeof(List<Challenge>) }));
-                                intDataCCC.fieldInfoDict.Add("UAEN_Toad.Squash", toadType.GetField("ch_squash"));
+                                intDataCCC.fieldInfoDict.Add("UAEN_Toad.Squash", toadType.GetField("ch_Squash"));
                             }
                             else
                             {
