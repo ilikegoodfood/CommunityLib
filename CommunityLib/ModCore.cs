@@ -509,6 +509,26 @@ namespace CommunityLib
 
                         if (data.tryGetModIntegrationData("CovensCursesCurios", out intDataCCC))
                         {
+                            Type kernelType = intDataCCC.assembly.GetType("CovenExpansion.ModcoreCovenExpansion", false);
+                            if (kernelType != null)
+                            {
+                                intDataCCC.typeDict.Add("kernel", kernelType);
+
+                                MethodInfo MI_afterMapGenAfterHistorical = kernelType.GetMethod("afterMapGenAfterHistorical", new Type[] { typeof(Map) });
+                                if (MI_afterMapGenAfterHistorical != null)
+                                {
+                                    intDataCCC.methodInfoDict.Add("Kernel.afterMapGenAfterHistorical", MI_afterMapGenAfterHistorical);
+                                }
+                                else
+                                {
+                                    Console.WriteLine("CommunityLib: Failed to get afterMapGenAfterHistorical Method from kernel Type (CovenExpansion.ModcoreCovenExpansion.afterMapGenAfterHistorical)");
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get mod kernel Type (CovenExpansion.ModcoreCovenExpansion)");
+                            }
+
                             Type magicTraitType = intDataCCC.assembly.GetType("CovenExpansion.T_curseWeaving", false);
                             if (magicTraitType != null)
                             {

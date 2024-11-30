@@ -259,6 +259,21 @@ namespace CommunityLib
             return false;
         }
 
+        public override void onAgentLevelup_GetTraits(UA ua, List<Trait> availableTraits, bool startingTraits)
+        {
+            if (startingTraits && ua is UAE_Warlock)
+            {
+                if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC))
+                {
+                    if (intDataCCC.typeDict.TryGetValue("Curseweaving", out Type curseweavingType))
+                    {
+                        Trait curseweaving = (Trait)Activator.CreateInstance(curseweavingType);
+                        availableTraits.Add(curseweaving);
+                    }
+                }
+            }
+        }
+
         public override void onAgentAI_EndOfProcess(UA ua, AgentAI.AIData aiData, List<AgentAI.ChallengeData> validChallengeData, List<AgentAI.TaskData> validTaskData, List<Unit> visibleUnits)
         {
             if (ua is UAEN_DeepOne)
