@@ -3703,6 +3703,12 @@ namespace CommunityLib
             return connectedSets;
         }
 
+        // Trait Fixes
+        public static void T_NobleConnections_getDesc_Postfix(ref string __result)
+        {
+            __result = $"While in a human city, that location loses {World.staticMap.param.trait_nobleConnectionsSecDecrease.ToString()} <b>security</b>";
+        }
+
         // Pan To Holy Order
         private static void PopupMsgUnified_dismissAgentA_Postfix(PopupMsgUnified __instance)
         {

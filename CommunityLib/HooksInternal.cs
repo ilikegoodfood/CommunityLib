@@ -308,13 +308,6 @@ namespace CommunityLib
                     }
                 }
             }
-            else if (ua is UAEN_CaveSpider)
-            {
-                if (ua.task is Task_GoToLocation || ua.task is Task_AttackUnit)
-                {
-                    ua.task.turnTick(ua);
-                }
-            }
 
             if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC) && intDataCCC.assembly != null)
             {
@@ -351,22 +344,7 @@ namespace CommunityLib
                 }
             }
 
-            return false;
-        }
-
-        public override void onAgentAI_EndOfProcess(UA ua, AgentAI.AIData aiData, List<AgentAI.ChallengeData> validChallengeData, List<AgentAI.TaskData> validTaskData, List<Unit> visibleUnits)
-        {
-            if (ua is UAEN_DeepOne)
-            {
-                if ((ua.task == null || (ua.task is Task_GoToLocation tLocation && tLocation.target.index == ua.homeLocation)) && validChallengeData.FindAll(cd => !(cd.challenge is Rt_DeepOnes_TravelBeneath)).Count == 0 && validTaskData.Count == 0)
-                {
-                    Rt_DeepOnes_TravelBeneath travel = (Rt_DeepOnes_TravelBeneath)ua.rituals.FirstOrDefault(rt => rt is Rt_DeepOnes_TravelBeneath);
-                    if (travel != null)
-                    {
-                        ua.task = new Task_PerformChallenge(travel);
-                    }
-                }
-            }
+            return;
         }
 
         public override int onUnitAI_GetsDistanceToLocation(Unit u, Location target, Location[] pathTo, int travelTime)

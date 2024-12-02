@@ -78,6 +78,7 @@
     <Compile Include="PriorityQueue.cs" />
     <Compile Include="Rt_DeepOnes_TravelBeneath.cs" />
     <Compile Include="Rt_HiddenThoughts.cs" />
+    <Compile Include="Rt_SlowHealing.cs" />
     <Compile Include="SaveData.cs" />
     <Compile Include="Set_Shipwreck.cs" />
     <Compile Include="ShuffleExtensions.cs" />
