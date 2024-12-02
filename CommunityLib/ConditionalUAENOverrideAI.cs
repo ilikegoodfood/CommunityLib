@@ -224,7 +224,7 @@ namespace CommunityLib
 
                 List<AITask> tasks = new List<AITask> {
                     new AITask(typeof(Task_GoToUnit), "Deliver Item", map, delegate_Instantiate_DeliverItems, AITask.TargetCategory.Unit, null, new Color(0.5f, 0.5f, 0.5f, 1.0f)),
-                    new AITask(typeof(Task_GoToUnit), "Return Home", map, delegate_Instantiate_PigeonFlyHome, AITask.TargetCategory.Unit, null, new Color(0.5f, 0.5f, 0.5f, 1.0f))
+                    new AITask(typeof(Task_GoToUnit), "Fly Home", map, delegate_Instantiate_PigeonFlyHome, AITask.TargetCategory.Unit, null, new Color(0.5f, 0.5f, 0.5f, 1.0f))
                 };
 
                 tasks[0].delegates_Valid.Add(delegate_Validity_DeliverItems);
@@ -246,19 +246,16 @@ namespace CommunityLib
         {
             if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC) && intDataCCC.assembly != null)
             {
-                if (intDataCCC.typeDict.TryGetValue("UAEN_Pigeon", out Type pigeonType) && pigeonType != null && (ua.GetType() == pigeonType || ua.GetType().IsSubclassOf(pigeonType)))
+                if (intDataCCC.typeDict.TryGetValue("UAEN_Pigeon", out Type pigeonType) && pigeonType != null && ua.GetType() == pigeonType)
                 {
                     if (intDataCCC.fieldInfoDict.TryGetValue("UAEN_Pigeon.returning", out FieldInfo FI_Returning) && FI_Returning != null && !(bool)FI_Returning.GetValue(ua))
                     {
-                        if (intDataCCC.fieldInfoDict.TryGetValue("UAEN_Pigeon.target", out FieldInfo FI_Target) && FI_Target != null)
+                        UA target = taskData.targetUnit as UA;
+                        if (target != null && ((ModCore.Get().checkIsUnitSubsumed(target) && !target.person.unit.isDead) || !target.isDead))
                         {
-                            UA target = (UA)FI_Target.GetValue(ua);
-                            if (target != null && !target.isDead)
-                            {
-                                Task_GoToUnit follow = new Task_GoToUnit(ua, target, -1, 1);
-                                follow.reasonsMessages.Add(new ReasonMsg("Delivering Items", 100.0));
-                                return follow;
-                            }
+                            Task_GoToUnit follow = new Task_GoToUnit(ua, target.person.unit, -1, 1);
+                            follow.reasonsMessages.Add(new ReasonMsg("Delivering Items", 100.0));
+                            return follow;
                         }
                     }
                 }
@@ -320,19 +317,16 @@ namespace CommunityLib
         {
             if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC) && intDataCCC.assembly != null)
             {
-                if (intDataCCC.typeDict.TryGetValue("UAEN_Pigeon", out Type pigeonType) && pigeonType != null && (ua.GetType() == pigeonType || ua.GetType().IsSubclassOf(pigeonType)))
+                if (intDataCCC.typeDict.TryGetValue("UAEN_Pigeon", out Type pigeonType) && pigeonType != null && ua.GetType() == pigeonType)
                 {
-                    if (intDataCCC.fieldInfoDict.TryGetValue("UAEN_Pigeon.returning", out FieldInfo FI_Returning) && FI_Returning != null && !(bool)FI_Returning.GetValue(ua))
+                    if (intDataCCC.fieldInfoDict.TryGetValue("UAEN_Pigeon.returning", out FieldInfo FI_Returning) && FI_Returning != null && (bool)FI_Returning.GetValue(ua))
                     {
-                        if (intDataCCC.fieldInfoDict.TryGetValue("UAEN_Pigeon.owner", out FieldInfo FI_Owner) && FI_Owner != null)
+                        UA owner = taskData.targetUnit as UA;
+                        if (owner != null && ((ModCore.Get().checkIsUnitSubsumed(owner) && !owner.person.unit.isDead) || !owner.isDead))
                         {
-                            UA owner = (UA)FI_Owner.GetValue(ua);
-                            if (owner != null && !owner.isDead)
-                            {
-                                Task_GoToUnit follow = new Task_GoToUnit(ua, owner, -1, 1);
-                                follow.reasonsMessages.Add(new ReasonMsg("Returning Home", 100.0));
-                                return follow;
-                            }
+                            Task_GoToUnit follow = new Task_GoToUnit(ua, owner.person.unit, -1, 1);
+                            follow.reasonsMessages.Add(new ReasonMsg("Delivering Items", 100.0));
+                            return follow;
                         }
                     }
                 }
