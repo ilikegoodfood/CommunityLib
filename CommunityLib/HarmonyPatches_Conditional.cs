@@ -27,7 +27,10 @@ namespace CommunityLib
                 return;
             }
 
-            getChallengeUtility_BulkPatch(map);
+            // Control debugging for bulk patches seperately due to large output volue.
+            Harmony.DEBUG = false;
+            BulkPatches(map);
+            Harmony.DEBUG = false;
 
             //Console.WriteLine("CommunityLib: Initializing Conditional Patches");
             if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
@@ -46,20 +49,34 @@ namespace CommunityLib
             }
         }
 
-        private static void getChallengeUtility_BulkPatch(Map map)
+        private static void BulkPatches(Map map)
         {
             Assembly asm = typeof(Map).Assembly;
 
-            List<MethodInfo> targetMethods = new List<MethodInfo> { AccessTools.Method(typeof(UA), nameof(UA.getChallengeUtility), new Type[] { typeof(Challenge), typeof(List<ReasonMsg>) }) };
+            List<MethodInfo> targetMethods_getChallengeUtility = new List<MethodInfo> { AccessTools.Method(typeof(UA), nameof(UA.getChallengeUtility), new Type[] { typeof(Challenge), typeof(List<ReasonMsg>) }) };
+            List<MethodInfo> targetMethods_getStartingTraits = new List<MethodInfo> { AccessTools.Method(typeof(UA), nameof(UA.getStartingTraits), new Type[0]) };
+            List<MethodInfo> targetMethods_turnTickAI = new List<MethodInfo> { AccessTools.Method(typeof(UA), nameof(UA.turnTickAI), new Type[0]) };
 
             foreach (Type t in asm.GetTypes())
             {
                 if (t.IsSubclassOf(typeof(UA)))
                 {
-                    MethodInfo targetMethod = AccessTools.DeclaredMethod(t, "getChallengeUtility", new Type[] { typeof(Challenge), typeof(List<ReasonMsg>) });
-                    if (targetMethod != null)
+                    MethodInfo targetMethod_getChallengeUtility = AccessTools.DeclaredMethod(t, "getChallengeUtility", new Type[] { typeof(Challenge), typeof(List<ReasonMsg>) });
+                    if (targetMethod_getChallengeUtility != null)
                     {
-                        targetMethods.Add(targetMethod);
+                        targetMethods_getChallengeUtility.Add(targetMethod_getChallengeUtility);
+                    }
+
+                    MethodInfo targetMethod_getStartingTraits = AccessTools.DeclaredMethod(t, "getStartingTraits", new Type[0]);
+                    if (targetMethod_getStartingTraits != null)
+                    {
+                        targetMethods_getStartingTraits.Add(targetMethod_getStartingTraits);
+                    }
+
+                    MethodInfo targetMethod_turnTickAI = AccessTools.DeclaredMethod(t, "turnTickAI", new Type[0]);
+                    if (targetMethod_turnTickAI != null)
+                    {
+                        targetMethods_turnTickAI.Add(targetMethod_turnTickAI);
                     }
                 }
             }
@@ -70,18 +87,45 @@ namespace CommunityLib
 
                 foreach (Type t in asm.GetTypes())
                 {
-                    MethodInfo targetMethod = AccessTools.DeclaredMethod(t, "getChallengeUtility", new Type[] { typeof(Challenge), typeof(List<ReasonMsg>) });
-                    if (targetMethod != null)
+                    if (t.IsSubclassOf(typeof(UA)))
                     {
-                        targetMethods.Add(targetMethod);
+                        MethodInfo targetMethod_getChallengeUtility = AccessTools.DeclaredMethod(t, "getChallengeUtility", new Type[] { typeof(Challenge), typeof(List<ReasonMsg>) });
+                        if (targetMethod_getChallengeUtility != null)
+                        {
+                            targetMethods_getChallengeUtility.Add(targetMethod_getChallengeUtility);
+                        }
+
+                        MethodInfo targetMethod_getStartingTraits = AccessTools.DeclaredMethod(t, "getStartingTraits", new Type[0]);
+                        if (targetMethod_getStartingTraits != null)
+                        {
+                            targetMethods_getStartingTraits.Add(targetMethod_getStartingTraits);
+                        }
+
+                        MethodInfo targetMethod_turnTickAI = AccessTools.DeclaredMethod(t, "turnTickAI", new Type[0]);
+                        if (targetMethod_turnTickAI != null)
+                        {
+                            targetMethods_turnTickAI.Add(targetMethod_turnTickAI);
+                        }
                     }
                 }
             }
 
-            HarmonyMethod prefix = new HarmonyMethod(patchType, nameof(UA_getChallengeUtility_BulkPrefix));
-            foreach (MethodInfo mi in targetMethods)
+            HarmonyMethod prefix_getChallengeUtility = new HarmonyMethod(patchType, nameof(UA_getChallengeUtility_BulkPrefix));
+            foreach (MethodInfo mi in targetMethods_getChallengeUtility)
             {
-                harmony.Patch(original: mi, prefix: prefix);
+                harmony.Patch(original: mi, prefix: prefix_getChallengeUtility);
+            }
+
+            HarmonyMethod postfix_getStartingTraits = new HarmonyMethod(patchType, nameof(UA_getStartingTraits_BulkPostfix));
+            foreach (MethodInfo mi in targetMethods_getStartingTraits)
+            {
+                harmony.Patch(original: mi, postfix: postfix_getStartingTraits);
+            }
+
+            HarmonyMethod prefix_turnTickAI = new HarmonyMethod(patchType, nameof(UA_turnTickAI_BulkPrefix));
+            foreach (MethodInfo mi in targetMethods_turnTickAI)
+            {
+                harmony.Patch(original: mi, prefix: prefix_turnTickAI);
             }
         }
 
@@ -141,6 +185,35 @@ namespace CommunityLib
                 }
 
                 __result = agentAI.getChallengeUtility(cData, __instance, aiData, aiData.controlParameters, reasons);
+                return false;
+            }
+
+            return true;
+        }
+
+        private static void UA_getStartingTraits_BulkPostfix(UA __instance, ref List<Trait> __result)
+        {
+            if (HarmonyPatches.GettingAvailableTraits)
+            {
+                return;
+            }
+
+            if (__result == null)
+            {
+                __result = new List<Trait>();
+            }
+
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            {
+                hook?.onAgentLevelup_GetTraits(__instance, __result, true);
+            }
+        }
+
+        private static bool UA_turnTickAI_BulkPrefix(UA __instance)
+        {
+            if (!ModCore.Get().GetAgentAI().IsDuringIntercept && ModCore.Get().GetAgentAI().TryGetAgentType(__instance.GetType(), out AgentAI.AIData aiData) && aiData != null)
+            {
+                ModCore.Get().GetAgentAI().turnTickAI(__instance);
                 return false;
             }
 
@@ -382,16 +455,197 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_UAE_TurnTick = AccessTools.Method(typeof(UAE), nameof(UAE.turnTick), new Type[] { typeof(Map) });
+            List<CodeInstruction> returnInstructions = new List<CodeInstruction>();
 
-            yield return new CodeInstruction(OpCodes.Nop);
-            yield return new CodeInstruction(OpCodes.Ldarg_0);
-            yield return new CodeInstruction(OpCodes.Ldarg_1);
-            yield return new CodeInstruction(OpCodes.Callvirt, MI_UAE_TurnTick);
-            yield return new CodeInstruction(OpCodes.Nop);
-            yield return new CodeInstruction(OpCodes.Ret);
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(CCCPigeon_TurnTick_TranspilerBody), new Type[] { typeof(UA) });
+
+            int targetIndex = 1;
+            for (int i = instructionList.Count - 1; i >= 0; i--)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Call)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop)
+                        {
+                            targetIndex = 0;
+                            returnInstructions = instructionList.GetRange(i, instructionList.Count - i);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            targetIndex = 1;
+            for (int i = 0; i < returnInstructions.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ret)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                            yield return new CodeInstruction(OpCodes.Nop);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                returnInstructions[i].labels.Clear();
+                yield return returnInstructions[i];
+            }
 
             Console.WriteLine("CommunityLib: Completed complete function replacement transpiler CCCPigeon_TurnTick_Transpiler");
+        }
+
+        private static void CCCPigeon_TurnTick_TranspilerBody(UA ua)
+        {
+            if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC) && intDataCCC.assembly != null)
+            {
+                if (intDataCCC.typeDict.TryGetValue("UAEN_Pigeon", out Type pigeonType) && pigeonType != null)
+                {
+                    if (ua.GetType() == pigeonType)
+                    {
+                        if (intDataCCC.fieldInfoDict.TryGetValue("UAEN_Pigeon.returning", out FieldInfo FI_Returning) && FI_Returning != null)
+                        {
+                            bool returning = (bool)FI_Returning.GetValue(ua);
+
+                            if (intDataCCC.fieldInfoDict.TryGetValue("UAEN_Pigeon.target", out FieldInfo FI_Target) && FI_Target != null && intDataCCC.fieldInfoDict.TryGetValue("UAEN_Pigeon.owner", out FieldInfo FI_Owner) && FI_Owner != null)
+                            {
+                                UA target = (UA)FI_Target.GetValue(ua);
+                                UA owner = (UA)FI_Owner.GetValue(ua);
+
+                                if (!returning)
+                                {
+                                    if (target == null || (!ModCore.Get().checkIsUnitSubsumed(target) && target.isDead))
+                                    {
+                                        FI_Returning.SetValue(ua, true);
+                                        returning = true;
+
+                                        if (ua.task is Task_GoToUnit t_goTo && t_goTo.target == target)
+                                        {
+                                            ua.task = null;
+                                            return;
+                                        }
+                                    }
+                                }
+
+                                if (returning)
+                                {
+                                    if (ua.task is Task_GoToUnit t_goTo && t_goTo.target == owner)
+                                    {
+                                        if (owner == null || (!ModCore.Get().checkIsUnitSubsumed(owner) && owner.isDead))
+                                        {
+                                            if (ua.person.gold > 0 || ua.person.items.Any(i => i != null))
+                                            {
+                                                Pr_ItemCache pr_ItemCache = new Pr_ItemCache(ua.location);
+                                                foreach (Item item in ua.person.items)
+                                                {
+                                                    if (item == null)
+                                                    {
+                                                        continue;
+                                                    }
+
+                                                    pr_ItemCache.addItemToSet(item);
+                                                }
+                                                pr_ItemCache.gold = ua.person.gold;
+                                            }
+                                            ua.task = null;
+                                            ua.disband(ua.map, "Ownerless pigeon dissapeared into the wilds");
+                                            return;
+                                        }
+                                    
+                                        if (ua.location == owner.location)
+                                        {
+                                            if (ua.person.gold > 0 || ua.person.items.Any(i => i != null))
+                                            {
+                                                if (owner.isCommandable())
+                                                {
+                                                    ua.map.world.prefabStore.popItemTrade(ua.person, owner.person, "Swap Items", -1, -1);
+                                                }
+                                                else
+                                                {
+                                                    owner.person.gold += ua.person.gold;
+                                                    ua.person.gold = 0;
+
+                                                    for (int i = 0; i < ua.person.items.Length; i++)
+                                                    {
+                                                        if (ua.person.items[i] == null)
+                                                        {
+                                                            continue;
+                                                        }
+
+                                                        owner.person.gainItem(ua.person.items[i]);
+                                                        ua.person.items[i] = null;
+                                                    }
+                                                }
+                                            }
+
+                                            if (intDataCCC.methodInfoDict.TryGetValue("UAEN_Pigeon.gainPigeon", out MethodInfo MI_gainPigeon) && MI_gainPigeon != null)
+                                            {
+                                                MI_gainPigeon.Invoke(ua, new object[] { target });
+                                                ua.task = null;
+                                                ua.disband(ua.map, "Returned to owner.");
+                                                return;
+                                            }
+
+                                            World.Log($"CommunityLib: Failed to return Covens, Curses, and Curios UAEN_Pigeon to owner.");
+                                            ua.task = null;
+                                            ua.disband(ua.map, "Failed to return Covens, Curses, and Curios UAEN_Pigeon to owner.");
+                                            return;
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    if (ua.task is Task_GoToUnit t_goTo && t_goTo.target == target)
+                                    {
+                                        if (ua.location == target.location)
+                                        {
+                                            if (target.isCommandable())
+                                            {
+                                                ua.map.world.prefabStore.popItemTrade(ua.person, target.person, "Swap Items", -1, -1);
+                                            }
+                                            else
+                                            {
+                                                for (int i = 0; i < ua.person.items.Length; i++)
+                                                {
+                                                    target.person.gold += ua.person.gold;
+                                                    ua.person.gold = 0;
+
+                                                    if (ua.person.items[i] == null)
+                                                    {
+                                                        continue;
+                                                    }
+
+                                                    target.person.gainItem(ua.person.items[i]);
+                                                    ua.person.items[i] = null;
+                                                }
+                                            }
+
+                                            ua.task = null;
+                                            FI_Returning.SetValue(ua, true);
+                                            returning = true;
+                                            return;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
         }
 
         private static void Patching_Ixthus(ModIntegrationData intData)

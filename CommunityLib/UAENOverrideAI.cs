@@ -53,10 +53,10 @@ namespace CommunityLib
         {
             if (taskData.targetCategory == AITask.TargetCategory.None)
             {
-                return ua.location.getNeighbours().Any(n => n.hex.z == 1 && (n.units.Any(u => u is UA && !(u is UAEN_CaveSpider)) || !n.isOcean && n.settlement == null));
+                return ua.location.getNeighbours().Any(n => n.hex.z == 1 && (n.units.Any(u => u is UA && !(u is UAEN_CaveSpider)) || !n.isOcean && (n.settlement == null || n.settlement is Set_CityRuins || (n.settlement is Set_MinorOther && (n.settlement.subs.Any(sub => sub is Sub_AncientRuins) || n.settlement.subs.Any(sub => sub is Sub_Temple temple && temple.order is HolyOrder_Witches))) || ModCore.Get().checkIsNaturalWonder(n))));
             }
 
-            if (taskData.targetLocation.hex.z == 1 && taskData.targetLocation.getNeighbours().Contains(ua.location) && (taskData.targetLocation.units.Any(u => u is UA && !(u is UAEN_CaveSpider)) || (!taskData.targetLocation.isOcean && taskData.targetLocation.settlement == null)))
+            if (taskData.targetLocation.hex.z == 1 && taskData.targetLocation.getNeighbours().Contains(ua.location) && (taskData.targetLocation.units.Any(u => u is UA && !(u is UAEN_CaveSpider)) || (!taskData.targetLocation.isOcean && (taskData.targetLocation.settlement == null || taskData.targetLocation.settlement is Set_CityRuins || (taskData.targetLocation.settlement is Set_MinorOther && (taskData.targetLocation.settlement.subs.Any(sub => sub is Sub_AncientRuins) || taskData.targetLocation.settlement.subs.Any(sub => sub is Sub_Temple temple && temple.order is HolyOrder_Witches))) || ModCore.Get().checkIsNaturalWonder(taskData.targetLocation)))))
             {
                 return true;
             }

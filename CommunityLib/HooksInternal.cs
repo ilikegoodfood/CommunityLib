@@ -209,7 +209,27 @@ namespace CommunityLib
                         return true;
                     }
                 }
+            }
 
+            if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC) && intDataCCC.assembly != null)
+            {
+                if (intDataCCC.typeDict.TryGetValue("UAEN_Pigeon", out Type pigeonType) && pigeonType != null)
+                {
+                    if (ua.GetType() == pigeonType)
+                    {
+                        visibleUnits.Clear();
+                        return true;
+                    }
+                }
+
+                if (intDataCCC.typeDict.TryGetValue("UAEN_Toad", out Type toadType) && toadType != null)
+                {
+                    if (ua.GetType() == toadType)
+                    {
+                        visibleUnits.Clear();
+                        return true;
+                    }
+                }
             }
 
             return false;
@@ -236,6 +256,46 @@ namespace CommunityLib
                 else if (u.society is SG_Orc orcSociety && orcSociety.canGoUnderground())
                 {
                     result = true;
+                }
+
+                if (u.task != null)
+                {
+                    if (u.task is Task_AttackArmy t_AttackArmy)
+                    {
+                        if (t_AttackArmy.other != null && t_AttackArmy.other.location.hex.z != u.location.hex.z)
+                        {
+                            return true;
+                        }
+                    }
+                    else if (u.task is Task_AttackUnit t_AttackUnit)
+                    {
+                        if (t_AttackUnit.target != null && t_AttackUnit.target.location.hex.z != u.location.hex.z)
+                        {
+                            return true;
+                        }
+                    }
+                    else if (u.task is Task_Bodyguard t_Guard)
+                    {
+                        if (t_Guard.target != null && t_Guard.target.location.hex.z != u.location.hex.z)
+                        {
+                            return true;
+                        }
+                    }
+                    else if (u.task is Task_DisruptUA t_Disrupt)
+                    {
+                        if (t_Disrupt.other != null && t_Disrupt.other.location.hex.z != u.location.hex.z)
+                        {
+                            return true;
+                        }
+                    }
+                    else if (u.task is Task_Follow t_Follow)
+                    {
+                        if (t_Follow.target != null && t_Follow.target.location.hex.z != u.location.hex.z)
+                        {
+                            return true;
+                        }
+                    }
+                    
                 }
             }
 
@@ -370,17 +430,6 @@ namespace CommunityLib
                 }
             }
 
-            if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC) && intDataCCC.assembly != null)
-            {
-                if (intDataCCC.typeDict.TryGetValue("UAEN_Pigeon", out Type pigeonType) && pigeonType != null)
-                {
-                    if (ua.GetType() == pigeonType || ua.GetType().IsSubclassOf(pigeonType))
-                    {
-                        return interceptCCCPigeon(ua, intDataCCC);
-                    }
-                }
-            }
-
             return false;
         }
 
@@ -416,114 +465,6 @@ namespace CommunityLib
             return false;
         }
 
-        private bool interceptCCCPigeon(UA ua, ModIntegrationData intData)
-        {
-            if (intData.fieldInfoDict.TryGetValue("UAEN_Pigeon.returning", out FieldInfo FI_Returning) && FI_Returning != null)
-            {
-                bool returning = (bool)FI_Returning.GetValue(ua);
-
-                if (intData.fieldInfoDict.TryGetValue("UAEN_Pigeon.taget", out FieldInfo FI_Target) && FI_Target != null && intData.fieldInfoDict.TryGetValue("UAEN_Pigeon.owner", out FieldInfo FI_Owner) && FI_Owner != null)
-                {
-                    UA target = (UA)FI_Target.GetValue(ua);
-                    UA owner = (UA)FI_Owner.GetValue(ua);
-
-                    if (returning)
-                    {
-                        if (owner == null || owner.isDead)
-                        {
-                            Pr_ItemCache pr_ItemCache = new Pr_ItemCache(ua.location);
-                            foreach (Item item in ua.person.items)
-                            {
-                                pr_ItemCache.addItemToSet(item);
-                            }
-                            pr_ItemCache.gold = ua.person.gold;
-                            ua.disband(ua.map, "Ownerless pigeon dissapeared into the wilds");
-                            return true;
-                        }
-                    }
-                    else if (target == null || target.isDead)
-                    {
-                        if (owner == null || owner.isDead)
-                        {
-                            Pr_ItemCache pr_ItemCache = new Pr_ItemCache(ua.location);
-                            foreach (Item item in ua.person.items)
-                            {
-                                pr_ItemCache.addItemToSet(item);
-                            }
-                            pr_ItemCache.gold = ua.person.gold;
-                            ua.disband(ua.map, "Ownerless pigeon returned to the wilds");
-                            return true;
-                        }
-
-                        FI_Returning.SetValue(ua, true);
-                    }
-
-                    if (returning)
-                    {
-                        if (ua.location == owner.location)
-                        {
-                            if (owner.isCommandable())
-                            {
-                                map.world.prefabStore.popItemTrade(ua.person, owner.person, "Swap Items", -1, -1);
-                            }
-                            else
-                            {
-                                owner.person.gold = ua.person.gold;
-                                ua.person.gold = 0;
-
-                                for (int i = 0; i < ua.person.items.Length; i++)
-                                {
-                                    if (ua.person.items[i] == null)
-                                    {
-                                        continue;
-                                    }
-
-                                    owner.person.gainItem(ua.person.items[i]);
-                                    ua.person.items[i] = null;
-                                }
-                            }
-
-                            if (intData.methodInfoDict.TryGetValue("UAEN_Pigeon.gainPigeon", out MethodInfo MI_gainPigeon) && MI_gainPigeon != null)
-                            {
-                                MI_gainPigeon.Invoke(this, new object[] { target });
-                                return true;
-                            }
-
-                            World.Log($"CommunityLib: Failed to return Covens, Curses, and Curios UAEN_Pigeon to owner.");
-                            ua.disband(ua.map, "CommunityLib: Failed to return Covens, Curses, and Curios UAEN_Pigeon to owner.");
-                            return true;
-                        }
-                    }
-                    else
-                    {
-                        if (ua.location == target.location)
-                        {
-                            if (target.isCommandable())
-                            {
-                                map.world.prefabStore.popItemTrade(ua.person, target.person, "Swap Items", -1, -1);
-                            }
-
-                            for (int i = 0; i < ua.person.items.Length; i++)
-                            {
-                                if (ua.person.items[i] == null)
-                                {
-                                    continue;
-                                }
-
-                                target.person.gainItem(ua.person.items[i]);
-                                ua.person.items[i] = null;
-                            }
-
-                            FI_Returning.SetValue(ua, true);
-                            return false;
-                        }
-                    }
-                }
-            }
-
-            return false;
-        }
-
         public override void onAgentAI_EndOfProcess(UA ua, AgentAI.AIData aiData, List<AgentAI.ChallengeData> validChallengeData, List<AgentAI.TaskData> validTaskData, List<Unit> visibleUnits)
         {
             if (ua is UAEN_DeepOne)
@@ -542,6 +483,35 @@ namespace CommunityLib
                 if (ua.task is Task_GoToLocation || ua.task is Task_AttackUnit)
                 {
                     ua.task.turnTick(ua);
+                }
+            }
+
+            if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC) && intDataCCC.assembly != null)
+            {
+                if (intDataCCC.typeDict.TryGetValue("UAEN_Pigeon", out Type pigeonType) && pigeonType != null)
+                {
+                    if (ua.GetType() == pigeonType)
+                    {
+                        if (ua.task == null)
+                        {
+                            if (ua.person.gold > 0 || ua.person.items.Any(i => i != null))
+                            {
+                                Pr_ItemCache pr_ItemCache = new Pr_ItemCache(ua.location);
+                                foreach (Item item in ua.person.items)
+                                {
+                                    if (item == null)
+                                    {
+                                        continue;
+                                    }
+
+                                    pr_ItemCache.addItemToSet(item);
+                                }
+                                pr_ItemCache.gold = ua.person.gold;
+                            }
+                            ua.disband(ua.map, "Ownerless pigeon dissapeared into the wilds");
+                            return;
+                        }
+                    }
                 }
             }
         }

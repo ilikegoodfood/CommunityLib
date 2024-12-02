@@ -26,6 +26,10 @@ namespace CommunityLib
 
         private static bool razeIsValid;
 
+        private static bool gettingAvailableTraits;
+
+        public static bool GettingAvailableTraits => gettingAvailableTraits;
+
         private static Tuple<Unit, Location, int, Location[]> lastPath;
 
         /// <summary>
@@ -93,8 +97,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(UILeftLocation), nameof(UILeftLocation.bHeroesHome), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(UILeftLocation_bHeroesHome_Transpiler)));
 
             // LevelUp Traits Hook
-            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getStartingTraits), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(UA_getStartingTraits_Postfix)));
-            harmony.Patch(original: AccessTools.Method(typeof(Trait), nameof(Trait.getAvailableTraits), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Trait_getAvailableTraits_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(Trait), nameof(Trait.getAvailableTraits), new Type[] { typeof(UA) }), prefix: new HarmonyMethod(patchType, nameof(Trait_getAvailableTraits_Prefix)), postfix: new HarmonyMethod(patchType, nameof(Trait_getAvailableTraits_Postfix)));
 
             // Gain Item Hooks
             harmony.Patch(original: AccessTools.Method(typeof(Person), nameof(Person.gainItem), new Type[] { typeof(Item), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(Person_gainItem_Transpiler)));
@@ -220,6 +223,9 @@ namespace CommunityLib
             // Trade Route Fixes
             harmony.Patch(original: AccessTools.Method(typeof(ManagerTrade), nameof(ManagerTrade.checkTradeNetwork), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(ManagerTrade_checkTradeNetwork_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(PrefabStore), nameof(PrefabStore.popUnderground), new Type[] { typeof(bool), typeof(bool) }), postfix: new HarmonyMethod(patchType, nameof(PrefabStore_popUnderground_Postfix)));
+
+            // Trait Fixes
+            harmony.Patch(original: AccessTools.Method(typeof(T_NobleConnections), nameof(T_NobleConnections.getDesc)), postfix: new HarmonyMethod(patchType, nameof(T_NobleConnections_getDesc_Postfix)));
 
             // Pan to Holy Order Screen
             harmony.Patch(original: AccessTools.Method(typeof(PopupMsgUnified), nameof(PopupMsgUnified.dismissAgentA), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(PopupMsgUnified_dismissAgentA_Postfix)));
@@ -3782,31 +3788,25 @@ namespace CommunityLib
             return s;
         }
 
-        private static List<Trait> UA_getStartingTraits_Postfix(List<Trait> traits, UA __instance)
+        private static void Trait_getAvailableTraits_Prefix()
         {
-            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
-            {
-                hook?.onAgentLevelup_GetTraits(__instance, traits, true);
-            }
-
-            return traits;
+            gettingAvailableTraits = true;
         }
 
-        private static List<Trait> Trait_getAvailableTraits_Postfix(List<Trait> traits, UA ua)
+        private static void Trait_getAvailableTraits_Postfix(UA ua, ref List<Trait> __result)
         {
-            if (ua == null)
+            if (__result == null)
             {
-                return traits;
+                __result = new List<Trait>();
             }
 
-            if (!ua.hasStartingTraits() || ua.hasAssignedStartingTraits)
+            bool startingTraits = ua.hasStartingTraits() && !ua.hasAssignedStartingTraits;
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
-                {
-                    hook?.onAgentLevelup_GetTraits(ua, traits, false);
-                }
+                hook?.onAgentLevelup_GetTraits(ua, __result, startingTraits);
             }
-            return traits;
+
+            gettingAvailableTraits = false;
         }
 
         private static IEnumerable<CodeInstruction> Person_gainItem_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
@@ -4834,6 +4834,12 @@ namespace CommunityLib
         private static void PrefabStore_popUnderground_Postfix(PrefabStore __instance)
         {
             rebuildTradeRoutes(__instance.world.map.tradeManager, null);
+        }
+
+        // Trait Fixes
+        public static void T_NobleConnections_getDesc_Postfix(ref string __result)
+        {
+            __result = $"While in a human city, that location loses {World.staticMap.param.trait_nobleConnectionsSecDecrease.ToString()} <b>security</b>";
         }
 
         // Pan To Holy Order
@@ -7339,16 +7345,6 @@ namespace CommunityLib
             }
 
             __instance.rituals.Add(new Rt_DeepOnes_TravelBeneath(location));
-        }
-
-        private static bool UAEN_Ghast_turnTickAI_Prefix(UAEN_Ghast __instance)
-        {
-            if (ModCore.Get().GetAgentAI().ContainsAgentType(typeof(UAEN_Ghast)))
-            {
-                ModCore.Get().GetAgentAI().turnTickAI(__instance);
-                return false;
-            }
-            return true;
         }
 
         private static void Ch_Rest_InOrcCamp_complete_Postfix(UA u)
