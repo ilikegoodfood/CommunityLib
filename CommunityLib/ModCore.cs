@@ -238,6 +238,7 @@ namespace CommunityLib
             agentAI = new AgentAI(map);
 
             overrideAI = new UAENOverrideAI(map);
+            conditionalOverrideAI = new ConditionalUAENOverrideAI(map);
 
             hooks = new HooksInternal(map);
             RegisterHooks(hooks);
@@ -588,7 +589,7 @@ namespace CommunityLib
                                 intDataCCC.methodInfoDict.Add("UAEN_Pigeon.turnTick", pigeonType.GetMethod("turnTick", new Type[] { typeof(Map) }));
                                 intDataCCC.methodInfoDict.Add("UAEN_Pigeon.gainPigeon", pigeonType.GetMethod("gainPigeon", new Type[] { typeof(UA) }));
                                 intDataCCC.fieldInfoDict.Add("UAEN_Pigeon.target", pigeonType.GetField("target"));
-                                intDataCCC.fieldInfoDict.Add("Uaen_Pigeon.owner", pigeonType.GetField("owner"));
+                                intDataCCC.fieldInfoDict.Add("UAEN_Pigeon.owner", pigeonType.GetField("owner"));
                                 intDataCCC.fieldInfoDict.Add("UAEN_Pigeon.returning", pigeonType.GetField("returning"));
                             }
                             else
@@ -671,9 +672,9 @@ namespace CommunityLib
                         ModIntegrationData intDataDelv = new ModIntegrationData(kernel.GetType().Assembly, kernel);
                         data.addModIntegrationData("Delver", intDataDelv);
 
-                        if (data.tryGetModIntegrationData("DeepOnesPlus", out intDataDelv))
+                        if (data.tryGetModIntegrationData("Delver", out intDataDelv))
                         {
-                            Type delverAgentType = intDataDelv.assembly.GetType("UAE_Delver", false);
+                            Type delverAgentType = intDataDelv.assembly.GetType("Delver.UAE_Delver", false);
                             if (delverAgentType != null)
                             {
                                 intDataDelv.typeDict.Add("Delver", delverAgentType);
@@ -1135,6 +1136,46 @@ namespace CommunityLib
                 fields["is_city_ruins"] = new EventRuntime.TypedField<bool>((EventContext c) => c.location != null && c.location.settlement != null && c.location.settlement is Set_CityRuins && !(c.location.settlement is Set_Shipwreck));
             }
 
+            if (properties.ContainsKey("CANCEL_ALL_ATTACKS"))
+            {
+                properties["CANCEL_ALL_ATTACKS"] = new EventRuntime.TypedProperty<string>(delegate (EventContext c, string v)
+                {
+                    Unit unit = c.unit;
+                    foreach (Unit other in c.map.units)
+                    {
+                        if (other.task is Task_AttackUnit t_Attack && t_Attack.target == unit)
+                        {
+                            other.task = null;
+                            return;
+                        }
+
+                        if (other.task is Task_AttackUnitWithEscort t_AttackWithEscort && t_AttackWithEscort.target == unit)
+                        {
+                            other.task = null;
+                            return;
+                        }
+
+                        if (other.task is Task_DisruptUA t_Disrupt && t_Disrupt.other == unit)
+                        {
+                            other.task = null;
+                            return;
+                        }
+
+                        if (other.task is Task_Follow t_Follow && t_Follow.target == unit)
+                        {
+                            other.task = null;
+                            return;
+                        }
+
+                        if (other.task is Task_Bodyguard t_Guard && t_Guard.target == unit)
+                        {
+                            other.task = null;
+                            return;
+                        }
+                    }
+                });
+            }
+
             // Misising God Fields
             if (!fields.ContainsKey("god_is_deathgame"))
             {
@@ -1185,6 +1226,12 @@ namespace CommunityLib
             if (!fields.ContainsKey("is_agent_spellbinder"))
             {
                 fields.Add("is_agent_spellbinder", new EventRuntime.TypedField<bool>((EventContext c) => false));
+            }
+
+            // Missing Location Fields
+            if (!fields.ContainsKey("is_wonder"))
+            {
+                fields.Add("is_wonder", new EventRuntime.TypedField<bool>((EventContext c) => c.location != null && checkIsNaturalWonder(c.location)));
             }
 
             // Missing Map Fields

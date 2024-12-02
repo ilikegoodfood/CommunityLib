@@ -190,7 +190,27 @@ namespace CommunityLib
                         return true;
                     }
                 }
+            }
 
+            if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC) && intDataCCC.assembly != null)
+            {
+                if (intDataCCC.typeDict.TryGetValue("UAEN_Pigeon", out Type pigeonType) && pigeonType != null)
+                {
+                    if (ua.GetType() == pigeonType)
+                    {
+                        visibleUnits.Clear();
+                        return true;
+                    }
+                }
+
+                if (intDataCCC.typeDict.TryGetValue("UAEN_Toad", out Type toadType) && toadType != null)
+                {
+                    if (ua.GetType() == toadType)
+                    {
+                        visibleUnits.Clear();
+                        return true;
+                    }
+                }
             }
 
             return false;
@@ -240,17 +260,6 @@ namespace CommunityLib
                 }
             }
 
-            if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC) && intDataCCC.assembly != null)
-            {
-                if (intDataCCC.typeDict.TryGetValue("UAEN_Pigeon", out Type pigeonType) && pigeonType != null)
-                {
-                    if (ua.GetType() == pigeonType || ua.GetType().IsSubclassOf(pigeonType))
-                    {
-                        return interceptCCCPigeon(ua, intDataCCC);
-                    }
-                }
-            }
-
             return false;
         }
 
@@ -286,106 +295,51 @@ namespace CommunityLib
             return false;
         }
 
-        private bool interceptCCCPigeon(UA ua, ModIntegrationData intData)
+        public override void onAgentAI_EndOfProcess(UA ua, AgentAI.AIData aiData, List<AgentAI.ChallengeData> validChallengeData, List<AgentAI.TaskData> validTaskData, List<Unit> visibleUnits)
         {
-            if (intData.fieldInfoDict.TryGetValue("UAEN_Pigeon.returning", out FieldInfo FI_Returning) && FI_Returning != null)
+            if (ua is UAEN_DeepOne)
             {
-                bool returning = (bool)FI_Returning.GetValue(ua);
-
-                if (intData.fieldInfoDict.TryGetValue("UAEN_Pigeon.taget", out FieldInfo FI_Target) && FI_Target != null && intData.fieldInfoDict.TryGetValue("UAEN_Pigeon.owner", out FieldInfo FI_Owner) && FI_Owner != null)
+                if ((ua.task == null || (ua.task is Task_GoToLocation tLocation && tLocation.target.index == ua.homeLocation)) && validChallengeData.FindAll(cd => !(cd.challenge is Rt_DeepOnes_TravelBeneath)).Count == 0 && validTaskData.Count == 0)
                 {
-                    UA target = (UA)FI_Target.GetValue(ua);
-                    UA owner = (UA)FI_Owner.GetValue(ua);
-
-                    if (returning)
+                    Rt_DeepOnes_TravelBeneath travel = (Rt_DeepOnes_TravelBeneath)ua.rituals.FirstOrDefault(rt => rt is Rt_DeepOnes_TravelBeneath);
+                    if (travel != null)
                     {
-                        if (owner == null || owner.isDead)
-                        {
-                            Pr_ItemCache pr_ItemCache = new Pr_ItemCache(ua.location);
-                            foreach (Item item in ua.person.items)
-                            {
-                                pr_ItemCache.addItemToSet(item);
-                            }
-                            pr_ItemCache.gold = ua.person.gold;
-                            ua.disband(ua.map, "Ownerless pigeon dissapeared into the wilds");
-                            return true;
-                        }
+                        ua.task = new Task_PerformChallenge(travel);
                     }
-                    else if (target == null || target.isDead)
+                }
+            }
+            else if (ua is UAEN_CaveSpider)
+            {
+                if (ua.task is Task_GoToLocation || ua.task is Task_AttackUnit)
+                {
+                    ua.task.turnTick(ua);
+                }
+            }
+
+            if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC) && intDataCCC.assembly != null)
+            {
+                if (intDataCCC.typeDict.TryGetValue("UAEN_Pigeon", out Type pigeonType) && pigeonType != null)
+                {
+                    if (ua.GetType() == pigeonType)
                     {
-                        if (owner == null || owner.isDead)
+                        if (ua.task == null)
                         {
-                            Pr_ItemCache pr_ItemCache = new Pr_ItemCache(ua.location);
-                            foreach (Item item in ua.person.items)
+                            if (ua.person.gold > 0 || ua.person.items.Any(i => i != null))
                             {
-                                pr_ItemCache.addItemToSet(item);
-                            }
-                            pr_ItemCache.gold = ua.person.gold;
-                            ua.disband(ua.map, "Ownerless pigeon returned to the wilds");
-                            return true;
-                        }
-
-                        FI_Returning.SetValue(ua, true);
-                    }
-
-                    if (returning)
-                    {
-                        if (ua.location == owner.location)
-                        {
-                            if (owner.isCommandable())
-                            {
-                                map.world.prefabStore.popItemTrade(ua.person, owner.person, "Swap Items", -1, -1);
-                            }
-                            else
-                            {
-                                owner.person.gold = ua.person.gold;
-                                ua.person.gold = 0;
-
-                                for (int i = 0; i < ua.person.items.Length; i++)
+                                Pr_ItemCache pr_ItemCache = new Pr_ItemCache(ua.location);
+                                foreach (Item item in ua.person.items)
                                 {
-                                    if (ua.person.items[i] == null)
+                                    if (item == null)
                                     {
                                         continue;
                                     }
 
-                                    owner.person.gainItem(ua.person.items[i]);
-                                    ua.person.items[i] = null;
+                                    pr_ItemCache.addItemToSet(item);
                                 }
+                                pr_ItemCache.gold = ua.person.gold;
                             }
-
-                            if (intData.methodInfoDict.TryGetValue("UAEN_Pigeon.gainPigeon", out MethodInfo MI_gainPigeon) && MI_gainPigeon != null)
-                            {
-                                MI_gainPigeon.Invoke(this, new object[] { target });
-                                return true;
-                            }
-
-                            World.Log($"CommunityLib: Failed to return Covens, Curses, and Curios UAEN_Pigeon to owner.");
-                            ua.disband(ua.map, "CommunityLib: Failed to return Covens, Curses, and Curios UAEN_Pigeon to owner.");
-                            return true;
-                        }
-                    }
-                    else
-                    {
-                        if (ua.location == target.location)
-                        {
-                            if (target.isCommandable())
-                            {
-                                map.world.prefabStore.popItemTrade(ua.person, target.person, "Swap Items", -1, -1);
-                            }
-
-                            for (int i = 0; i < ua.person.items.Length; i++)
-                            {
-                                if (ua.person.items[i] == null)
-                                {
-                                    continue;
-                                }
-
-                                target.person.gainItem(ua.person.items[i]);
-                                ua.person.items[i] = null;
-                            }
-
-                            FI_Returning.SetValue(ua, true);
-                            return false;
+                            ua.disband(ua.map, "Ownerless pigeon dissapeared into the wilds");
+                            return;
                         }
                     }
                 }

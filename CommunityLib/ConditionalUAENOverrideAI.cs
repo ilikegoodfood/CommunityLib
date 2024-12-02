@@ -223,8 +223,8 @@ namespace CommunityLib
                 controlParams.includeDangerousFoe = false;
 
                 List<AITask> tasks = new List<AITask> {
-                    new AITask(typeof(Task_Follow), "Deliver Item", map, delegate_Instantiate_DeliverItems, AITask.TargetCategory.Unit, null, new Color(0.5f, 0.5f, 0.5f, 1.0f), map.world.iconStore.itemCache, map.world.iconStore.standardBack),
-                    new AITask(typeof(Task_Follow), "Return Home", map, delegate_Instantiate_PigeonFlyHome, AITask.TargetCategory.Unit, null, new Color(0.5f, 0.5f, 0.5f, 1.0f), map.world.iconStore.ophanimSwiftOfFoot, map.world.iconStore.standardBack)
+                    new AITask(typeof(Task_GoToUnit), "Deliver Item", map, delegate_Instantiate_DeliverItems, AITask.TargetCategory.Unit, null, new Color(0.5f, 0.5f, 0.5f, 1.0f)),
+                    new AITask(typeof(Task_GoToUnit), "Return Home", map, delegate_Instantiate_PigeonFlyHome, AITask.TargetCategory.Unit, null, new Color(0.5f, 0.5f, 0.5f, 1.0f))
                 };
 
                 tasks[0].delegates_Valid.Add(delegate_Validity_DeliverItems);
@@ -234,6 +234,11 @@ namespace CommunityLib
 
                 ModCore.Get().GetAgentAI().RegisterAgentType(pigeonType, controlParams);
                 ModCore.Get().GetAgentAI().AddTasksToAgentType(pigeonType, tasks);
+
+                if (intData.typeDict.TryGetValue("Rt_flyingPigeon", out Type debugType) && debugType != null)
+                {
+                    ModCore.Get().GetAgentAI().AddChallengeToAgentType(pigeonType, new AIChallenge(debugType, 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.Forbidden }));
+                }
             }
         }
 
@@ -250,7 +255,7 @@ namespace CommunityLib
                             UA target = (UA)FI_Target.GetValue(ua);
                             if (target != null && !target.isDead)
                             {
-                                Task_Follow follow = new Task_Follow(ua, target);
+                                Task_GoToUnit follow = new Task_GoToUnit(ua, target, -1, 1);
                                 follow.reasonsMessages.Add(new ReasonMsg("Delivering Items", 100.0));
                                 return follow;
                             }
@@ -268,7 +273,7 @@ namespace CommunityLib
             {
                 if (intDataCCC.typeDict.TryGetValue("UAEN_Pigeon", out Type pigeonType) && pigeonType != null)
                 {
-                    if (ua.GetType() == pigeonType || ua.GetType().IsSubclassOf(pigeonType))
+                    if (ua.GetType() == pigeonType)
                     {
                         if (intDataCCC.fieldInfoDict.TryGetValue("UAEN_Pigeon.returning", out FieldInfo FI_Returning) && FI_Returning != null)
                         {
@@ -278,7 +283,7 @@ namespace CommunityLib
                                 return false;
                             }
 
-                            if (intDataCCC.fieldInfoDict.TryGetValue("UAEN_Pigeon.target", out FieldInfo FI_Target) && FI_Target != null && intDataCCC.fieldInfoDict.TryGetValue("UAEN_Pigeon.owner", out FieldInfo FI_Owner) && FI_Owner != null)
+                            if (intDataCCC.fieldInfoDict.TryGetValue("UAEN_Pigeon.target", out FieldInfo FI_Target) && FI_Target != null)
                             {
                                 UA target = (UA)FI_Target.GetValue(ua);
 
@@ -288,11 +293,12 @@ namespace CommunityLib
                                     return false;
                                 }
 
-                                if (ua.person.gold <= 0 && ua.person.items.All(i => i == null))
+                                if (targetCategory == AITask.TargetCategory.Unit && taskData.targetUnit != target)
                                 {
-                                    FI_Returning.SetValue(ua, true);
                                     return false;
                                 }
+
+                                return true;
                             }
                         }
                     }
@@ -323,7 +329,7 @@ namespace CommunityLib
                             UA owner = (UA)FI_Owner.GetValue(ua);
                             if (owner != null && !owner.isDead)
                             {
-                                Task_Follow follow = new Task_Follow(ua, owner);
+                                Task_GoToUnit follow = new Task_GoToUnit(ua, owner, -1, 1);
                                 follow.reasonsMessages.Add(new ReasonMsg("Returning Home", 100.0));
                                 return follow;
                             }
@@ -341,7 +347,7 @@ namespace CommunityLib
             {
                 if (intDataCCC.typeDict.TryGetValue("UAEN_Pigeon", out Type pigeonType) && pigeonType != null)
                 {
-                    if (ua.GetType() == pigeonType || ua.GetType().IsSubclassOf(pigeonType))
+                    if (ua.GetType() == pigeonType)
                     {
                         if (intDataCCC.fieldInfoDict.TryGetValue("UAEN_Pigeon.returning", out FieldInfo FI_Returning) && FI_Returning != null)
                         {
@@ -359,6 +365,13 @@ namespace CommunityLib
                                 {
                                     return false;
                                 }
+
+                                if (targetCategory == AITask.TargetCategory.Unit && taskData.targetUnit != owner)
+                                {
+                                    return false;
+                                }
+
+                                return true;
                             }
                         }
                     }
