@@ -486,11 +486,14 @@ namespace CommunityLib
             targetIndex = 1;
             for (int i = 0; i < returnInstructions.Count; i++)
             {
+
+                returnInstructions[i].labels.Clear();
+
                 if (targetIndex > 0)
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ret)
+                        if (returnInstructions[i].opcode == OpCodes.Ret)
                         {
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
@@ -501,11 +504,14 @@ namespace CommunityLib
                     }
                 }
 
-                returnInstructions[i].labels.Clear();
                 yield return returnInstructions[i];
             }
 
-            Console.WriteLine("CommunityLib: Completed complete function replacement transpiler CCCPigeon_TurnTick_Transpiler");
+            Console.WriteLine("CommunityLib: Completed  CCCPigeon_TurnTick_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
         }
 
         private static void CCCPigeon_TurnTick_TranspilerBody(UA ua)
@@ -527,7 +533,7 @@ namespace CommunityLib
 
                                 if (!returning)
                                 {
-                                    if (target == null || (!ModCore.Get().checkIsUnitSubsumed(target) && target.isDead))
+                                    if (target == null || ((!ModCore.Get().checkIsUnitSubsumed(target) || target.person.unit.isDead) && target.isDead))
                                     {
                                         FI_Returning.SetValue(ua, true);
                                         returning = true;
@@ -544,7 +550,7 @@ namespace CommunityLib
                                 {
                                     if (ua.task is Task_GoToUnit t_goTo && t_goTo.target == owner)
                                     {
-                                        if (owner == null || (!ModCore.Get().checkIsUnitSubsumed(owner) && owner.isDead))
+                                        if (owner == null || ((!ModCore.Get().checkIsUnitSubsumed(owner) || owner.person.unit.isDead) && owner.isDead))
                                         {
                                             if (ua.person.gold > 0 || ua.person.items.Any(i => i != null))
                                             {
@@ -561,6 +567,11 @@ namespace CommunityLib
                                                 pr_ItemCache.gold = ua.person.gold;
                                             }
                                             ua.task = null;
+                                            ua.map.addUnifiedMessage(ua, ua.location, "Pigeon flew away", $"After loosing it's owner{(owner == null ? "" : ", " + owner.getName() + ",")} the pigeon has flown away, leaving any gold and items it was carrying behind.", "PigeonFlewAway");
+                                            if (GraphicalMap.selectedUnit == ua)
+                                            {
+                                                GraphicalMap.selectedUnit = null;
+                                            }
                                             ua.disband(ua.map, "Ownerless pigeon dissapeared into the wilds");
                                             return;
                                         }
@@ -593,14 +604,23 @@ namespace CommunityLib
 
                                             if (intDataCCC.methodInfoDict.TryGetValue("UAEN_Pigeon.gainPigeon", out MethodInfo MI_gainPigeon) && MI_gainPigeon != null)
                                             {
-                                                MI_gainPigeon.Invoke(ua, new object[] { target });
+                                                MI_gainPigeon.Invoke(ua, new object[] { owner });
+                                                ua.map.addUnifiedMessage(ua, owner, "Pigeon Returned", $"A pigeon has returned to {owner.getName()} after a long journey.", "Pigeon Returns");
                                                 ua.task = null;
+                                                if (GraphicalMap.selectedUnit == ua)
+                                                {
+                                                    GraphicalMap.selectedUnit = null;
+                                                }
                                                 ua.disband(ua.map, "Returned to owner.");
                                                 return;
                                             }
 
                                             World.Log($"CommunityLib: Failed to return Covens, Curses, and Curios UAEN_Pigeon to owner.");
                                             ua.task = null;
+                                            if (GraphicalMap.selectedUnit == ua)
+                                            {
+                                                GraphicalMap.selectedUnit = null;
+                                            }
                                             ua.disband(ua.map, "Failed to return Covens, Curses, and Curios UAEN_Pigeon to owner.");
                                             return;
                                         }
@@ -645,7 +665,6 @@ namespace CommunityLib
                     }
                 }
             }
-
         }
 
         private static void Patching_Ixthus(ModIntegrationData intData)

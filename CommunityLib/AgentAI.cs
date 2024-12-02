@@ -742,7 +742,7 @@ namespace CommunityLib
         {
             if (TryGetAgentType(tAgent, out AIData aiData) && aiData != null)
             {
-                if (!aiData.aiTasks.Any(aiT => aiT.taskType == aiTask.taskType))
+                if (!aiData.aiTasks.Any(aiT => aiT.taskType == aiTask.taskType && aiT.title == aiTask.title))
                 {
                     aiData.aiTasks.Add(aiTask);
                     return true;
@@ -766,7 +766,7 @@ namespace CommunityLib
             {
                 foreach (AITask aiTask in aiTasks)
                 {
-                    if (!aiData.aiTasks.Any(aiT => aiT.taskType == aiTask.taskType))
+                    if (!aiData.aiTasks.Any(aiT => aiT.taskType == aiTask.taskType && aiT.title == aiTask.title))
                     {
                         aiData.aiTasks.Add(aiTask);
                         result = true;
@@ -808,11 +808,11 @@ namespace CommunityLib
         /// <param name="tAgent"></param>
         /// <param name="tTask"></param>
         /// <returns></returns>
-        public AITask GetAITaskFromAgentType(Type tAgent, Type tTask)
+        public AITask GetAITaskFromAgentType(Type tAgent, Type tTask, string title)
         {
             if (TryGetAgentType(tAgent, out AIData aiData) && aiData != null)
             {
-                return aiData.aiTasks.FirstOrDefault(aiT => aiT.taskType == tTask);
+                return aiData.aiTasks.FirstOrDefault(aiT => aiT.taskType == tTask && aiT.title == title);
             }
 
             return null;
@@ -849,7 +849,7 @@ namespace CommunityLib
         /// <param name="tAgent"></param>
         /// <param name="tTask"></param>
         /// <returns></returns>
-        public bool RemoveTaskFromAgentType(Type tAgent, Type tTask)
+        public bool RemoveTaskFromAgentType(Type tAgent, Type tTask, string title)
         {
             if (tAgent == null || tTask == null || !tTask.IsSubclassOf(typeof(Assets.Code.Task)))
             {
@@ -858,7 +858,7 @@ namespace CommunityLib
 
             if (TryGetAgentType(tAgent, out AIData aiData) && aiData != null)
             {
-                AITask aiTask = aiData.aiTasks.FirstOrDefault(aiT => aiT.taskType == tTask);
+                AITask aiTask = aiData.aiTasks.FirstOrDefault(aiT => aiT.taskType == tTask && aiT.title == title);
                 if (aiTask != null)
                 {
                     return aiData.aiTasks.Remove(aiTask);

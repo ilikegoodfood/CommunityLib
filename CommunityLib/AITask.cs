@@ -172,7 +172,7 @@ namespace CommunityLib
             {
                 foreach (Func<UA, TargetCategory, AgentAI.TaskData, List<ReasonMsg>, double> delegate_Utility in delegates_Utility)
                 {
-                    utility = delegate_Utility(ua, taskData.targetCategory, taskData, reasonMsgs);
+                    utility += delegate_Utility(ua, taskData.targetCategory, taskData, reasonMsgs);
                 }
             }
 

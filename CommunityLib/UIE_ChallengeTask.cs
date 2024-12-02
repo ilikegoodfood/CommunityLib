@@ -42,7 +42,7 @@ namespace CommunityLib
 
             //Console.WriteLine("CommunityLib: Set defaults.");
 
-            if (!srt.taskData.Equals(default))
+            if (srt.taskData != null)
             {
                 //Console.WriteLine("CommunityLib: Block is not default");
                 Assets.Code.Task task = srt.taskData.aiTask.instantiateTask(ua, srt.taskData.targetCategory, srt.taskData);
