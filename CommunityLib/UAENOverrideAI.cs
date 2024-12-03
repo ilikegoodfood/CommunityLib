@@ -39,6 +39,7 @@ namespace CommunityLib
             controlParams.respectDanger = false;
             controlParams.respectArmyIntercept = false;
             controlParams.includeDangerousFoe = false;
+            controlParams.canAttack = true;
 
             ModCore.Get().GetAgentAI().RegisterAgentType(typeof(UAEN_CaveSpider), controlParams);
             ModCore.Get().GetAgentAI().AddTasksToAgentType(typeof(UAEN_CaveSpider), aiTasks_CaveSpider);

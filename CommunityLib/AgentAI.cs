@@ -154,6 +154,10 @@ namespace CommunityLib
             public bool includeDangerousFoe;
             public bool includeNotHolyTask;
 
+            public bool canAttack;
+            public bool canDisrupt;
+            public bool canGuard;
+
             public bool hideThoughts;
             public DebugProperties debugProperties;
 
@@ -161,50 +165,53 @@ namespace CommunityLib
             {
                 if (isDark)
                 {
-                    {
-                        considerAllChallenges = false;
-                        considerAllRituals = true;
-                        forceSafeMove = false;
+                    considerAllChallenges = false;
+                    considerAllRituals = true;
+                    forceSafeMove = false;
 
-                        respectChallengeVisibility = false;
-                        respectDanger = true;
-                        respectArmyIntercept = true;
-                        respectChallengeAlignment = false;
-                        respectTags = true;
-                        respectTenets = true;
-                        respectTraits = true;
-                        valueTimeCost = false;
+                    respectChallengeVisibility = false;
+                    respectDanger = true;
+                    respectArmyIntercept = true;
+                    respectChallengeAlignment = false;
+                    respectTags = true;
+                    respectTenets = true;
+                    respectTraits = true;
+                    valueTimeCost = false;
 
-                        includeDangerousFoe = true;
-                        includeNotHolyTask = false;
+                    includeDangerousFoe = true;
+                    includeNotHolyTask = false;
 
-                        hideThoughts = false;
-                        debugProperties = new DebugProperties(false);
-                    }
+                    canAttack = false;
+                    canDisrupt = false;
+                    canGuard = false;
+
+                    hideThoughts = false;
+                    debugProperties = new DebugProperties(false);
+                    return;
                 }
-                else
-                {
-                    {
-                        considerAllChallenges = true;
-                        considerAllRituals = true;
-                        forceSafeMove = false;
 
-                        respectChallengeVisibility = true;
-                        respectDanger = true;
-                        respectArmyIntercept = true;
-                        respectChallengeAlignment = true;
-                        respectTags = true;
-                        respectTenets = true;
-                        respectTraits = true;
-                        valueTimeCost = true;
+                considerAllChallenges = true;
+                considerAllRituals = true;
+                forceSafeMove = false;
 
-                        includeDangerousFoe = true;
-                        includeNotHolyTask = false;
+                respectChallengeVisibility = true;
+                respectDanger = true;
+                respectArmyIntercept = true;
+                respectChallengeAlignment = true;
+                respectTags = true;
+                respectTenets = true;
+                respectTraits = true;
+                valueTimeCost = true;
 
-                        hideThoughts = false;
-                        debugProperties = new DebugProperties(false);
-                    }
-                }
+                includeDangerousFoe = true;
+                includeNotHolyTask = false;
+
+                canAttack = true;
+                canDisrupt = true;
+                canGuard = true;
+
+                hideThoughts = false;
+                debugProperties = new DebugProperties(false);
             }
         }
 
@@ -1071,40 +1078,44 @@ namespace CommunityLib
                         }
 
                         List<ReasonMsg> reasonMsgs = null;
-                        if (!(agent.task is Task_InHiding))
+                        if (aiData.controlParameters.canAttack)
                         {
-                            if (debugInternal.debug && debugInternal.outputUtility_VisibleAgentsAttack)
+                            if (!(agent.task is Task_InHiding))
                             {
-                                reasonMsgs = new List<ReasonMsg>();
-                            }
-
-                            utility2 = ua.getAttackUtility(agent, reasonMsgs, aiData.controlParameters.includeDangerousFoe);
-
-                            if (debugInternal.debug && debugInternal.outputUtility_VisibleAgentsAttack && reasonMsgs != null)
-                            {
-                                Console.WriteLine("CommunityLib: Attack Utility");
-                                foreach (ReasonMsg reasonMsg in reasonMsgs)
+                                if (debugInternal.debug && debugInternal.outputUtility_VisibleAgentsAttack)
                                 {
-                                    Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
+                                    reasonMsgs = new List<ReasonMsg>();
                                 }
-                                Console.WriteLine("CommunityLib: Total: " + utility2);
-                            }
 
-                            if (utility2 >= utility)
-                            {
-                                targetChallenges.Clear();
-                                if (utility2 > utility)
+                                utility2 = ua.getAttackUtility(agent, reasonMsgs, aiData.controlParameters.includeDangerousFoe);
+
+                                if (debugInternal.debug && debugInternal.outputUtility_VisibleAgentsAttack && reasonMsgs != null)
                                 {
-                                    targetUnits.Clear();
+                                    Console.WriteLine("CommunityLib: Attack Utility");
+                                    foreach (ReasonMsg reasonMsg in reasonMsgs)
+                                    {
+                                        Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
+                                    }
+                                    Console.WriteLine("CommunityLib: Total: " + utility2);
                                 }
-                                targetUnits.Add(unit);
-                                utility = utility2;
+
+                                if (utility2 >= utility)
+                                {
+                                    targetChallenges.Clear();
+                                    if (utility2 > utility)
+                                    {
+                                        targetUnits.Clear();
+                                    }
+                                    targetUnits.Add(unit);
+                                    utility = utility2;
+                                }
                             }
                         }
 
-                        reasonMsgs = null;
-                        if (ua != map.awarenessManager.getChosenOne())
+                        if (aiData.controlParameters.canGuard && ua != map.awarenessManager.getChosenOne())
                         {
+                            reasonMsgs = null;
+
                             if (ua.society?.getRel(unit.society).state != DipRel.dipState.war)
                             {
                                 if (debugInternal.debug && debugInternal.outputUtility_VisibleAgentsBodyguard)
@@ -1140,40 +1151,43 @@ namespace CommunityLib
                             }
                         }
 
-                        reasonMsgs = null;
-                        Task_PerformChallenge task = unit.task as Task_PerformChallenge;
-                        if (!(task?.challenge.isChannelled() ?? true))
+                        if (aiData.controlParameters.canDisrupt)
                         {
-                            if (debugInternal.debug && debugInternal.outputUtility_VisibleAgentsDisrupt)
+                            reasonMsgs = null;
+                            Task_PerformChallenge task = unit.task as Task_PerformChallenge;
+                            if (!(task?.challenge.isChannelled() ?? true))
                             {
-                                reasonMsgs = new List<ReasonMsg>();
-                            }
-
-                            utility2 = ua.getDisruptUtility(unit, null);
-
-                            if (debugInternal.debug && debugInternal.outputUtility_VisibleAgentsDisrupt && reasonMsgs != null)
-                            {
-                                Console.WriteLine("CommunityLib: Disrupt Utility");
-                                foreach (ReasonMsg reasonMsg in reasonMsgs)
+                                if (debugInternal.debug && debugInternal.outputUtility_VisibleAgentsDisrupt)
                                 {
-                                    Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
-                                }
-                                Console.WriteLine("CommunityLib: Total: " + utility2);
-                            }
-
-                            if (utility2 >= utility)
-                            {
-                                targetChallenges.Clear();
-                                targetUnits.Clear();
-                                targetGuards.Clear();
-
-                                if (utility2 > utility)
-                                {
-                                    targetDisrupts.Clear();
+                                    reasonMsgs = new List<ReasonMsg>();
                                 }
 
-                                targetDisrupts.Add(agent);
-                                utility = utility2;
+                                utility2 = ua.getDisruptUtility(unit, null);
+
+                                if (debugInternal.debug && debugInternal.outputUtility_VisibleAgentsDisrupt && reasonMsgs != null)
+                                {
+                                    Console.WriteLine("CommunityLib: Disrupt Utility");
+                                    foreach (ReasonMsg reasonMsg in reasonMsgs)
+                                    {
+                                        Console.WriteLine("CommunityLib: " + reasonMsg.msg + ": " + reasonMsg.value);
+                                    }
+                                    Console.WriteLine("CommunityLib: Total: " + utility2);
+                                }
+
+                                if (utility2 >= utility)
+                                {
+                                    targetChallenges.Clear();
+                                    targetUnits.Clear();
+                                    targetGuards.Clear();
+
+                                    if (utility2 > utility)
+                                    {
+                                        targetDisrupts.Clear();
+                                    }
+
+                                    targetDisrupts.Add(agent);
+                                    utility = utility2;
+                                }
                             }
                         }
                     }

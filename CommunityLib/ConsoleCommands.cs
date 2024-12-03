@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace CommunityLib
 {
-    public class Cheats
+    public class ConsoleCommands
     {
-        public static void parseCheat(string command, Map map)
+        public static void parseCommand(string command, Map map)
         {
             string[] commandComps = command.Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries);
 
@@ -375,6 +375,13 @@ namespace CommunityLib
                 }
                 return;
             }
+        }
+
+        public bool parseVanillaCommand()
+        {
+
+
+            return true;
         }
     }
 }
