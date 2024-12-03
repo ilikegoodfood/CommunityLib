@@ -5749,7 +5749,13 @@ namespace CommunityLib
                 return false;
             }
 
-            if (location.hex.z == 1 && !orcs.canGoUnderground())
+            HashSet<int> mapLayers = new HashSet<int>();
+            foreach (Location loc in orcs.lastTurnLocs)
+            {
+                mapLayers.Add(loc.hex.z);
+            }
+
+            if (!mapLayers.Contains(location.hex.z) && !orcs.canGoUnderground())
             {
                 return false;
             }
