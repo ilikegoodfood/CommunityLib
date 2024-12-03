@@ -37,6 +37,14 @@ namespace CommunityLib
             }
         }
 
+        public override void onSettlementFallIntoRuin_EndOfProcess(Settlement set, string v, object killer = null)
+        {
+            if (set is Set_OrcCamp && set.location.settlement is Set_CityRuins ruins && ruins.subs.Count == 0)
+            {
+                set.location.settlement = null;
+            }
+        }
+
         public override void onSettlementFallIntoRuin_StartOfProcess(Settlement set, string v, object killer = null)
         {
             if (ModCore.opt_forceShipwrecks || ModCore.opt_spawnShipwrecks)

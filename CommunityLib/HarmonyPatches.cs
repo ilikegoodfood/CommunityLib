@@ -16,7 +16,7 @@ namespace CommunityLib
     {
         private static readonly Type patchType = typeof(HarmonyPatches);
 
-        public static ArmyBattleData armyBattleData_StartOfCycle;
+        private static ArmyBattleData armyBattleData_StartOfCycle;
 
         public static string[] popupHolyOrder_DefaultPageText = new string[6];
 
@@ -238,6 +238,7 @@ namespace CommunityLib
             //harmony.Patch(original: AccessTools.Method(typeof(God_Vinerva), nameof(God_Vinerva.getVictoryMessage)), postfix: new HarmonyMethod(patchType, nameof(God_Vinerva_getVictoryMessage_Postfix)));
 
             // Orc Expansion modifications
+            harmony.Patch(original: AccessTools.Method(typeof(SG_Orc), nameof(SG_Orc.turnTick), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(SG_Orc_turnTick_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(SG_Orc), nameof(SG_Orc.canSettle), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(SG_Orc_canSettle_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Rt_Orcs_ClaimTerritory), nameof(Rt_Orcs_ClaimTerritory.validFor), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Rt_Orcs_ClaimTerritory_validFor_Transpiler)));
 
@@ -4286,6 +4287,197 @@ namespace CommunityLib
         }
 
         // Orc Expansion modifications
+        private static IEnumerable<CodeInstruction> SG_Orc_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(SG_Orc_turnTickTranspiler_TranspilerBody), new Type[] { typeof(SG_Orc) });
+
+            int targetIndex = 1;
+
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldc_I4_0)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                            yield return new CodeInstruction(OpCodes.Nop);
+                            yield return new CodeInstruction(OpCodes.Ret);
+
+                            targetIndex = 0;
+                            break;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed SG_Orc_turnTick_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static void SG_Orc_turnTickTranspiler_TranspilerBody(SG_Orc orcs)
+        {
+            Map map = orcs.map;
+            List<Location> campLocations = new List<Location>();
+            List<Location> soceityLocations = new List<Location>();
+
+            List<Location> settleCandidates = new List<Location>();
+            HashSet<Location> settleCandidateHashSet = new HashSet<Location>();
+
+            orcs.totalIndustry = 0.0;
+
+            foreach (Location location in map.locations)
+            {
+                if (location.soc == orcs)
+                {
+                    soceityLocations.Add(location);
+
+                    if (location.settlement is Set_OrcCamp camp)
+                    {
+                        if (location.hex.getHabilitability() < map.param.orc_habRequirement * map.opt_orcHabMult)
+                        {
+                            camp.fallIntoRuin("Climate unable to support orc life", null);
+                        }
+                        else
+                        {
+                            campLocations.Add(location);
+                            Pr_OrcishIndustry industry = (Pr_OrcishIndustry)location.properties.FirstOrDefault(pr => pr is Pr_OrcishIndustry);
+                            if (industry != null)
+                            {
+                                orcs.totalIndustry += industry.charge;
+                            }
+                        }
+                    }
+
+                    foreach (Location neighbour in location.getNeighbours())
+                    {
+                        if (orcs.canSettle(neighbour))
+                        {
+                            if (neighbour.soc == null && neighbour.settlement is Set_MinorOther)
+                            {
+                                neighbour.soc = orcs;
+                                map.addMessage("Orcs expand into " + neighbour.getName(), 0.5, true, neighbour.hex);
+                            }
+                            else if (!settleCandidateHashSet.Contains(neighbour))
+                            {
+                                settleCandidateHashSet.Add(neighbour);
+                                settleCandidates.Add(neighbour);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (orcs.capital != -1 && (orcs.map.locations[orcs.capital].soc != orcs || orcs.map.locations[orcs.capital].settlement is Set_OrcCamp))
+            {
+                orcs.capital = -1;
+            }
+
+            if (orcs.capital == -1 && campLocations.Count > 0)
+            {
+                if (campLocations.Count > 1)
+                {
+                    orcs.capital = campLocations[Eleven.random.Next(campLocations.Count)].index;
+                }
+                else
+                {
+                    orcs.capital = campLocations[0].index;
+                }
+            }
+
+            if (orcs.capital != -1)
+            {
+                Set_OrcCamp capitalCamp = map.locations[orcs.capital].settlement as Set_OrcCamp;
+                if (capitalCamp != null && capitalCamp.specialism == 0)
+                {
+                    capitalCamp.specialism = 1;
+                }
+            }
+
+            if  (orcs.upstart != null && orcs.upstart.isDead)
+            {
+                orcs.upstart = null;
+            }
+
+            if (orcs.upstart == null)
+            {
+                List<UAEN_OrcUpstart> upstarts = new List<UAEN_OrcUpstart>();
+                foreach (Unit u in map.units)
+                {
+                    if (u is UAEN_OrcUpstart upstart && !upstart.isDead && upstart.society == orcs)
+                    {
+                        upstarts.Add(upstart);
+                    }
+                }
+
+                if (upstarts.Count > 0)
+                {
+                    if (upstarts.Count > 1)
+                    {
+                        orcs.upstart = upstarts[Eleven.random.Next(upstarts.Count)];
+                    }
+                    else
+                    {
+                        orcs.upstart = upstarts[0];
+                    }
+                }
+                else
+                {
+                    orcs.upstartAccumulation++;
+                    if (orcs.upstartAccumulation > map.param.socialGroup_orc_upstartPeriod)
+                    {
+                        orcs.upstartAccumulation = 0;
+                        orcs.placeUpstart(map.locations[orcs.capital]);
+                        map.addUnifiedMessage(orcs.upstart, null, "Orcish Upstart", $"An orc from {orcs.getName()} is making a name for himself, claiming to be the true rightful leader of the horde, and rallying orcish followers to his cause. Any agent who kills him can claim rightful dominion over the horde, by right of succession by conflict.\n\nWhile the orcs have this upstart leader, their suppression (if they have any) decays by {map.param.socialGroup_orc_suppressionDecayPerTurn.ToString()} per turn.", UnifiedMessage.messageType.ORCISH_UPSTART, false);
+                    }
+                }
+            }
+
+            if (orcs.upstart != null)
+            {
+                if (orcs.suppression > 0)
+                {
+                    orcs.suppression -= map.param.socialGroup_orc_suppressionDecayPerTurn;
+                    if (orcs.suppression < 0)
+                    {
+                        orcs.suppression = 0;
+                    }
+                }
+            }
+
+            if (map.turn % 10  == 0 || World.krorc)
+            {
+                if (orcs.expandTarget != -1 && !orcs.canSettle(map.locations[orcs.expandTarget]))
+                {
+                    orcs.expandTarget = -1;
+                }
+
+                if (orcs.expandTarget == -1)
+                {
+                    if (settleCandidates.Count > 0)
+                    {
+                        if (settleCandidates.Count > 1)
+                        {
+                            orcs.expandTarget = settleCandidates[Eleven.random.Next(settleCandidates.Count)].index;
+                        }
+                        else
+                        {
+                            orcs.expandTarget = settleCandidates[0].index;
+                        }
+                    }
+                }
+            }
+        }
+
         private static IEnumerable<CodeInstruction> SG_Orc_canSettle_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(SG_Orc_canSettle_TranspilerBody));
@@ -4403,7 +4595,6 @@ namespace CommunityLib
 
             if (ua.location.isCoastal)
             {
-                //Console.WriteLine("CommunityLib: Location is coastal");
                 foreach (Location location in ua.map.locations)
                 {
                     if (location.soc == orcSociety && location.settlement is Set_OrcCamp camp && camp.specialism == 5)
