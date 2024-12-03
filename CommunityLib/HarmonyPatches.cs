@@ -5750,9 +5750,12 @@ namespace CommunityLib
             }
 
             HashSet<int> mapLayers = new HashSet<int>();
-            foreach (Location loc in orcs.lastTurnLocs)
+            foreach (Location loc in orcs.map.locations)
             {
-                mapLayers.Add(loc.hex.z);
+                if (loc.soc == orcs)
+                {
+                    mapLayers.Add(loc.hex.z);
+                }
             }
 
             if (!mapLayers.Contains(location.hex.z) && !orcs.canGoUnderground())
@@ -5818,7 +5821,16 @@ namespace CommunityLib
                 return false;
             }
 
-            if (ua.location.hex.z == 1 && !orcSociety.canGoUnderground())
+            HashSet<int> mapLayers = new HashSet<int>();
+            foreach (Location location in ua.map.locations)
+            {
+                if (location.soc == orcSociety)
+                {
+                    mapLayers.Add(location.hex.z);
+                }
+            }
+
+            if (mapLayers.Count > 0 && !mapLayers.Contains(ua.location.hex.z) && !orcSociety.canGoUnderground())
             {
                 return false;
             }
