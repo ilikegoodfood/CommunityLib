@@ -5216,16 +5216,19 @@ namespace CommunityLib
                         //Console.WriteLine("CommunityLib: Iterating " + unit.getName());
                         if (unit is UA agent)
                         {
-                            //Console.WriteLine("CommunityLib: Unit is UA");
-                            UIScroll_Unit.SortableTaskBlock blockAttack = new UIScroll_Unit.SortableTaskBlock();
-                            blockAttack.unitToAttack = unit;
-                            blockAttack.utility = ua.getAttackUtility(unit, blockAttack.msgs, aiData.controlParameters.includeDangerousFoe);
-                            if (blockAttack.utility >= -1000)
+                            if (aiData.controlParameters.canAttack)
                             {
-                                blocks.Add(blockAttack);
+                                //Console.WriteLine("CommunityLib: Unit is UA");
+                                UIScroll_Unit.SortableTaskBlock blockAttack = new UIScroll_Unit.SortableTaskBlock();
+                                blockAttack.unitToAttack = unit;
+                                blockAttack.utility = ua.getAttackUtility(unit, blockAttack.msgs, aiData.controlParameters.includeDangerousFoe);
+                                if (blockAttack.utility >= -1000)
+                                {
+                                    blocks.Add(blockAttack);
+                                }
                             }
                             //Console.WriteLine("CommunityLib: Added attack " + unit.getName());
-                            if (ua != ua.map.awarenessManager.getChosenOne())
+                            if (aiData.controlParameters.canGuard && ua != ua.map.awarenessManager.getChosenOne())
                             {
                                 UIScroll_Unit.SortableTaskBlock blockGuard = new UIScroll_Unit.SortableTaskBlock();
                                 blockGuard.unitToGuard = unit;
@@ -5236,16 +5239,19 @@ namespace CommunityLib
                                 }
                                 //Console.WriteLine("CommunityLib: Added Guard" + unit.getName());
                             }
-                            if (agent.task is Task_PerformChallenge performChallenge && performChallenge.challenge.isChannelled())
+                            if (aiData.controlParameters.canDisrupt)
                             {
-                                UIScroll_Unit.SortableTaskBlock blockDisrupt = new UIScroll_Unit.SortableTaskBlock();
-                                blockDisrupt.unitToDisrupt = unit;
-                                blockDisrupt.utility = ua.getDisruptUtility(unit, blockDisrupt.msgs);
-                                if (blockDisrupt.utility >= -1000)
+                                if (agent.task is Task_PerformChallenge performChallenge && performChallenge.challenge.isChannelled())
                                 {
-                                    blocks.Add(blockDisrupt);
+                                    UIScroll_Unit.SortableTaskBlock blockDisrupt = new UIScroll_Unit.SortableTaskBlock();
+                                    blockDisrupt.unitToDisrupt = unit;
+                                    blockDisrupt.utility = ua.getDisruptUtility(unit, blockDisrupt.msgs);
+                                    if (blockDisrupt.utility >= -1000)
+                                    {
+                                        blocks.Add(blockDisrupt);
+                                    }
+                                    //Console.WriteLine("CommunityLib: Added Disrupt " + unit.getName());
                                 }
-                                //Console.WriteLine("CommunityLib: Added Disrupt " + unit.getName());
                             }
                         }
                     }

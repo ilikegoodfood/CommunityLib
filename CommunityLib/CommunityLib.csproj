@@ -64,7 +64,7 @@
     <Compile Include="AITask.cs" />
     <Compile Include="ArmyBattleData.cs" />
     <Compile Include="AgentAI.cs" />
-    <Compile Include="Cheats.cs" />
+    <Compile Include="ConsoleCommands.cs" />
     <Compile Include="Ch_DestroyShipwreck.cs" />
     <Compile Include="Ch_PlunderShipwreck.cs" />
     <Compile Include="Ch_RecoverShipwreck.cs" />

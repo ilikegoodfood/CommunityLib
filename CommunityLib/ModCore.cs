@@ -1909,7 +1909,7 @@ namespace CommunityLib
 
         public override void onCheatEntered(string command)
         {
-            Cheats.parseCheat(command, map);
+            ConsoleCommands.parseCommand(command, map);
         }
 
         public override int adjustHolyInfluenceDark(HolyOrder order, int inf, List<ReasonMsg> msgs)
