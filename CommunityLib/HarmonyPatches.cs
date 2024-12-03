@@ -4539,36 +4539,28 @@ namespace CommunityLib
 
         private static bool Rt_Orcs_ClaimTerritory_validFor_TranspilerBody(UA ua)
         {
-            //Console.WriteLine("CommunityLib: ClaimTerritory.validFor");
-
             SG_Orc orcSociety = ua.society as SG_Orc;
 
             if (orcSociety == null)
             {
-                //Console.WriteLine("CommunityLib: ua is not of orc society");
                 return false;
             }
 
             if (ua.location.isOcean || ua.location.hex.getHabilitability() < ua.location.map.opt_orcHabMult * ua.location.map.param.orc_habRequirement)
             {
-                //Console.WriteLine("CommunityLib: Location is uninhabitable");
                 return false;
             }
 
             if (ua.location.settlement != null)
             {
-                //Console.WriteLine("CommunityLib: Testing Claim Territory against Permitted Settlements");
                 if (ModCore.Get().getSettlementTypesForOrcExpanion().TryGetValue(ua.location.settlement.GetType(), out HashSet<Type> subsettlementBlacklist))
                 {
                     if (subsettlementBlacklist != null && subsettlementBlacklist.Count > 0)
                     {
-                        //Console.WriteLine("CommunityLib: Settlement of Type " + ua.location.settlement.GetType().Name + " may be expanded onto");
                         foreach (Subsettlement sub in ua.location.settlement.subs)
                         {
-                            //Console.WriteLine("CommunityLibrary: Testing subsettlement of Type " + sub.GetType().Name + " against blacklist.");
                             if (subsettlementBlacklist.Contains(sub.GetType()))
                             {
-                                //Console.WriteLine("CommunityLib: Blacklisted subsettlement found");
                                 return false;
                             }
                         }
@@ -4576,20 +4568,17 @@ namespace CommunityLib
                 }
                 else
                 {
-                    //Console.WriteLine("CommunityLib: Location does not have a Permitted Settlement");
                     return false;
                 }
             }
 
             if (orcSociety.lastTurnLocs.Count == 0)
             {
-                //Console.WriteLine("CommunityLib: Orcs have no locations");
                 return true;
             }
 
             if (ua.location.getNeighbours().Any(l => l.soc == orcSociety))
             {
-                //Console.WriteLine("CommunityLib: Location neighbours orc society");
                 return true;
             }
 
@@ -4599,13 +4588,11 @@ namespace CommunityLib
                 {
                     if (location.soc == orcSociety && location.settlement is Set_OrcCamp camp && camp.specialism == 5)
                     {
-                        //Console.WriteLine("CommunityLib: orc society has shipyard");
                         return true;
                     }
                 }
             }
 
-            //Console.WriteLine("CommunityLib: Location not claimable");
             return false;
         }
 
