@@ -4395,7 +4395,7 @@ namespace CommunityLib
                 return true;
             }
 
-            if (ua.location.getNeighbours().Any(l => l.soc == orcSociety && l.settlement is Set_OrcCamp))
+            if (ua.location.getNeighbours().Any(l => l.soc == orcSociety))
             {
                 //Console.WriteLine("CommunityLib: Location neighbours orc society");
                 return true;
