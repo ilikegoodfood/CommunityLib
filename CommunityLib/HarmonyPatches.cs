@@ -5866,6 +5866,17 @@ namespace CommunityLib
                                 settleCandidates.Add(neighbour);
                             }
                         }
+                        else if (ModCore.Get().checkIsNaturalWonder(neighbour) && neighbour.soc == null)
+                        {
+                            if (orcs.canGoUnderground() || (location.hex.z == 0 || location.hex.z == 1) && orcMapLayers.Item2.Contains(location.hex.z))
+                            {
+                                if (neighbour.hex.getHabilitability() >= map.param.orc_habRequirement * map.opt_orcHabMult)
+                                {
+                                    neighbour.soc = orcs;
+                                    map.addMessage("Orcs expand into " + neighbour.getName(), 0.5, true, neighbour.hex);
+                                }
+                            }
+                        }
                     }
                 }
             }
