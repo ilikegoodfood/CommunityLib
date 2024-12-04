@@ -4373,6 +4373,14 @@ namespace CommunityLib
                                 settleCandidates.Add(neighbour);
                             }
                         }
+                        else if (ModCore.Get().checkIsNaturalWonder(neighbour) && neighbour.soc == null)
+                        {
+                            if (neighbour.hex.getHabilitability() >= map.param.orc_habRequirement * map.opt_orcHabMult)
+                            {
+                                neighbour.soc = orcs;
+                                map.addMessage("Orcs expand into " + neighbour.getName(), 0.5, true, neighbour.hex);
+                            }
+                        }
                     }
                 }
             }
