@@ -5830,7 +5830,7 @@ namespace CommunityLib
                 }
             }
 
-            if (orcs.capital != -1 && (orcs.map.locations[orcs.capital].soc != orcs || orcs.map.locations[orcs.capital].settlement is Set_OrcCamp))
+            if (orcs.capital != -1 && (orcs.map.locations[orcs.capital].soc != orcs || !(orcs.map.locations[orcs.capital].settlement is Set_OrcCamp)))
             {
                 orcs.capital = -1;
             }
