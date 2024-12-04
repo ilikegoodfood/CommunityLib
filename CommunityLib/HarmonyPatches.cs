@@ -4373,21 +4373,19 @@ namespace CommunityLib
                                 settleCandidates.Add(neighbour);
                             }
                         }
-                        else if (ModCore.Get().checkIsNaturalWonder(neighbour) && neighbour.soc == null)
+                        else if (neighbour.soc == null)
                         {
-                            if (neighbour.hex.getHabilitability() >= map.param.orc_habRequirement * map.opt_orcHabMult)
+                            if (ModCore.Get().checkIsNaturalWonder(neighbour) || (neighbour.settlement is Set_MinorOther && neighbour.settlement.subs.Any(sub => sub is Sub_Temple temple && temple.order is HolyOrder_Witches)))
                             {
-                                neighbour.soc = orcs;
-                                map.addMessage("Orcs expand into " + neighbour.getName(), 0.5, true, neighbour.hex);
+                                if (neighbour.hex.getHabilitability() >= map.param.orc_habRequirement * map.opt_orcHabMult)
+                                {
+                                    neighbour.soc = orcs;
+                                    map.addMessage("Orcs expand into " + neighbour.getName(), 0.5, true, neighbour.hex);
+                                }
                             }
                         }
                     }
                 }
-            }
-
-            if (orcs.capital != -1 && (orcs.map.locations[orcs.capital].soc != orcs || orcs.map.locations[orcs.capital].settlement is Set_OrcCamp))
-            {
-                orcs.capital = -1;
             }
 
             if (orcs.capital == -1 && campLocations.Count > 0)
