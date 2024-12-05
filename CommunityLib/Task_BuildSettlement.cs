@@ -157,7 +157,7 @@ namespace CommunityLib
                     target.settlement = setHuman;
                     setHuman.population = um.hp;
 
-                    if (ModCore.Get().data.tryGetModIntegrationData("LivingSocieties", out ModIntegrationData intDataLS) && intDataLS.assembly != null)
+                    if (ModCore.Get().data.tryGetModIntegrationData("LivingSocieties", out ModIntegrationData intDataLS))
                     {
                         if (intDataLS.methodInfoDict.TryGetValue("UpdateSettlement", out MethodInfo MI_UpdateSettlement))
                         {

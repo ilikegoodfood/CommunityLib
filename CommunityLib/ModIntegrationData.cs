@@ -17,11 +17,12 @@ namespace CommunityLib
         public Dictionary<string, FieldInfo> fieldInfoDict;
         public Dictionary<string, ConstructorInfo> constructorInfoDict;
 
-        public ModIntegrationData(Assembly asm, ModKernel modKernel)
+        public ModIntegrationData(ModKernel modKernel)
         {
-            assembly = asm;
             kernel = modKernel;
-            typeDict = new Dictionary<string, Type>();
+            assembly = modKernel.GetType().Assembly;
+            
+            typeDict = new Dictionary<string, Type> { { "Kernel", kernel.GetType() } };
             methodInfoDict = new Dictionary<string, MethodInfo>();
             fieldInfoDict = new Dictionary<string, FieldInfo>();
             constructorInfoDict = new Dictionary<string, ConstructorInfo>();

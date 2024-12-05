@@ -278,7 +278,7 @@ namespace CommunityLib
                 {
                     case "ProductionGod":
                         Console.WriteLine("CommunityLib: Aberrant Metal is Enabled");
-                        ModIntegrationData intDataMetal = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        ModIntegrationData intDataMetal = new ModIntegrationData(kernel);
                         data.addModIntegrationData("AberrantMetal", intDataMetal);
 
                         if (data.tryGetModIntegrationData("Adolia", out intDataMetal))
@@ -306,7 +306,7 @@ namespace CommunityLib
                         break;
                     case "FacelessMemory":
                         Console.WriteLine("CommunityLib: Adolia is Enabled");
-                        ModIntegrationData intDataAdolia = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        ModIntegrationData intDataAdolia = new ModIntegrationData(kernel);
                         data.addModIntegrationData("Adolia", intDataAdolia);
 
                         if (data.tryGetModIntegrationData("Adolia", out intDataAdolia))
@@ -344,7 +344,7 @@ namespace CommunityLib
                         break;
                     case "Bandits_and_Crime":
                         Console.WriteLine("CommunityLib: Bandits and Crime is Enabled");
-                        ModIntegrationData intDataBandit = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        ModIntegrationData intDataBandit = new ModIntegrationData(kernel);
                         data.addModIntegrationData("BanditsAndCrime", intDataBandit);
 
                         if (data.tryGetModIntegrationData("BanditsAndCrime", out intDataBandit))
@@ -372,7 +372,7 @@ namespace CommunityLib
                         break;
                     case "God_Love":
                         Console.WriteLine("CommunityLib: Chandalor is Enabled");
-                        ModIntegrationData intDataChand = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        ModIntegrationData intDataChand = new ModIntegrationData(kernel);
                         data.addModIntegrationData("Chandalor", intDataChand);
 
                         if (data.tryGetModIntegrationData("Chandalor", out intDataChand))
@@ -390,9 +390,9 @@ namespace CommunityLib
                         break;
                     case "ShadowsInsectGod.Code":
                         Console.WriteLine("CommunityLib: Cordyceps is Enabled");
-                        data.addModIntegrationData("Cordyceps", new ModIntegrationData(kernel.GetType().Assembly, kernel));
+                        data.addModIntegrationData("Cordyceps", new ModIntegrationData(kernel));
 
-                        if (data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
+                        if (data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord))
                         {
                             Type godType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.God_Insect", false);
                             if (godType != null)
@@ -515,7 +515,7 @@ namespace CommunityLib
                         break;
                     case "CourtesanAgent":
                         Console.WriteLine("CommunityLib: The Courtesan is Enabled");
-                        ModIntegrationData intDataCourtesan = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        ModIntegrationData intDataCourtesan = new ModIntegrationData(kernel);
                         data.addModIntegrationData("Courtesan", intDataCourtesan);
 
                         if (data.tryGetModIntegrationData("Courtesan", out intDataCourtesan))
@@ -533,16 +533,13 @@ namespace CommunityLib
                         break;
                     case "CovenExpansion":
                         Console.WriteLine("CommunityLib: Covens, Curses, and Curios is Enabled");
-                        ModIntegrationData intDataCCC = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        ModIntegrationData intDataCCC = new ModIntegrationData(kernel);
                         data.addModIntegrationData("CovensCursesCurios", intDataCCC);
 
                         if (data.tryGetModIntegrationData("CovensCursesCurios", out intDataCCC))
                         {
-                            Type kernelType = intDataCCC.assembly.GetType("CovenExpansion.ModcoreCovenExpansion", false);
-                            if (kernelType != null)
+                            if (intDataCCC.typeDict.TryGetValue("Kernel", out Type kernelType))
                             {
-                                intDataCCC.typeDict.Add("kernel", kernelType);
-
                                 MethodInfo MI_afterMapGenAfterHistorical = kernelType.GetMethod("afterMapGenAfterHistorical", new Type[] { typeof(Map) });
                                 if (MI_afterMapGenAfterHistorical != null)
                                 {
@@ -630,16 +627,13 @@ namespace CommunityLib
                         break;
                     case "Wonderblunder_DeepOnes":
                         Console.WriteLine("CommunityLib: DeepOnesPlus is Enabled");
-                        ModIntegrationData intDataDOPlus = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        ModIntegrationData intDataDOPlus = new ModIntegrationData(kernel);
                         data.addModIntegrationData("DeepOnesPlus", intDataDOPlus);
 
                         if (data.tryGetModIntegrationData("DeepOnesPlus", out intDataDOPlus))
                         {
-                            Type kernelType = intDataDOPlus.assembly.GetType("Wonderblunder_DeepOnes.Modcore", false);
-                            if (kernelType != null)
+                            if (intDataDOPlus.typeDict.TryGetValue("Kernel", out Type kernelType))
                             {
-                                intDataDOPlus.typeDict.Add("Kernel", kernelType);
-
                                 MethodInfo getAbyssalItem = kernelType.GetMethod("getItemFromAbyssalPool", new Type[] { typeof(Map), typeof(UA) });
                                 if (getAbyssalItem != null)
                                 {
@@ -689,7 +683,7 @@ namespace CommunityLib
                         break;
                     case "Delver":
                         Console.WriteLine("CommunityLib: The Delver is Enabled");
-                        ModIntegrationData intDataDelv = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        ModIntegrationData intDataDelv = new ModIntegrationData(kernel);
                         data.addModIntegrationData("Delver", intDataDelv);
 
                         if (data.tryGetModIntegrationData("Delver", out intDataDelv))
@@ -708,7 +702,7 @@ namespace CommunityLib
                         break;
                     case "Duelist":
                         Console.WriteLine("CommunityLib: The Duelist is Enabled");
-                        ModIntegrationData intDataDuelist = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        ModIntegrationData intDataDuelist = new ModIntegrationData(kernel);
                         data.addModIntegrationData("Duelist", intDataDuelist);
 
                         if (data.tryGetModIntegrationData("Duelist", out intDataDuelist))
@@ -726,7 +720,7 @@ namespace CommunityLib
                         break;
                     case "God_Flesh":
                         Console.WriteLine("CommunityLib: Escamrak is Enabled");
-                        ModIntegrationData intDataEscam = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        ModIntegrationData intDataEscam = new ModIntegrationData(kernel);
                         data.addModIntegrationData("Escamrak", intDataEscam);
 
                         if (data.tryGetModIntegrationData("Escamrak", out intDataEscam))
@@ -766,7 +760,7 @@ namespace CommunityLib
                         break;
                     case "ShadowsLib":
                         Console.WriteLine("CommunityLib: Ixthus is Enabled");
-                        ModIntegrationData intDataIxthus = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        ModIntegrationData intDataIxthus = new ModIntegrationData(kernel);
                         data.addModIntegrationData("Ixthus", intDataIxthus);
 
                         if (data.tryGetModIntegrationData("Ixthus", out intDataIxthus))
@@ -805,7 +799,7 @@ namespace CommunityLib
                         break;
                     case "God_Mirror":
                         Console.WriteLine("CommunityLib: Kalastrophe is Enabled");
-                        ModIntegrationData intDataKala = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        ModIntegrationData intDataKala = new ModIntegrationData(kernel);
                         data.addModIntegrationData("Kalastrophe", intDataKala);
 
                         if (data.tryGetModIntegrationData("Kalastrophe", out intDataKala))
@@ -823,7 +817,7 @@ namespace CommunityLib
                         break;
                     case "ShadowsBloodshedGod":
                         Console.WriteLine("CommunityLib: Kishi is Enabled");
-                        ModIntegrationData intDataKishi = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        ModIntegrationData intDataKishi = new ModIntegrationData(kernel);
                         data.addModIntegrationData("Kishi", intDataKishi);
 
                         if (data.tryGetModIntegrationData("Kishi", out intDataKishi))
@@ -841,7 +835,7 @@ namespace CommunityLib
                         break;
                     case "LivingCharacter":
                         Console.WriteLine("CommunityLib: Living Characters is Enabled");
-                        ModIntegrationData intDataLC = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        ModIntegrationData intDataLC = new ModIntegrationData(kernel);
                         data.addModIntegrationData("LivingCharacters", intDataLC);
 
                         if (data.tryGetModIntegrationData("LivingCharacters", out intDataLC))
@@ -860,7 +854,7 @@ namespace CommunityLib
                         break;
                     case "LivingSocieties":
                         Console.WriteLine("CommunityLib: Living Socities is Enabled");
-                        ModIntegrationData intDataLS = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        ModIntegrationData intDataLS = new ModIntegrationData(kernel);
                         data.addModIntegrationData("LivingSocieties", intDataLS);
 
                         if (data.tryGetModIntegrationData("LivingSocieties", out intDataLS))
@@ -878,7 +872,7 @@ namespace CommunityLib
                         break;
                     case "LivingWilds":
                         Console.WriteLine("CommunityLib: Living Wilds is Enabled");
-                        ModIntegrationData intDataLW = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        ModIntegrationData intDataLW = new ModIntegrationData(kernel);
                         data.addModIntegrationData("LivingWilds", intDataLW);
 
                         if (data.tryGetModIntegrationData("LivingWilds", out intDataLW))
@@ -896,7 +890,7 @@ namespace CommunityLib
                         break;
                     case "MEKHANE":
                         Console.WriteLine("CommunityLib: Mekhane is Enabled");
-                        ModIntegrationData intDataMekh = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        ModIntegrationData intDataMekh = new ModIntegrationData(kernel);
                         data.addModIntegrationData("Mehkane", intDataMekh);
 
                         if (data.tryGetModIntegrationData("Mekhane", out intDataMekh))
@@ -944,7 +938,7 @@ namespace CommunityLib
                         break;
                     case "ShadowsOutsiderGod":
                         Console.WriteLine("CommunityLib: Out of Gods is Enabled");
-                        ModIntegrationData intDataOoGs = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        ModIntegrationData intDataOoGs = new ModIntegrationData(kernel);
                         data.addModIntegrationData("OutOfGods", intDataOoGs);
 
                         if (data.tryGetModIntegrationData("OutOfGods", out intDataOoGs))
@@ -1032,7 +1026,7 @@ namespace CommunityLib
                         break;
                     case "CustomVoidGod":
                         Console.WriteLine("CommunityLib: The Living Void is Enabled");
-                        ModIntegrationData intDataVoid = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        ModIntegrationData intDataVoid = new ModIntegrationData(kernel);
                         data.addModIntegrationData("LivingVoid", intDataVoid);
 
                         if (data.tryGetModIntegrationData("LivingVoid", out intDataVoid))
@@ -1050,7 +1044,7 @@ namespace CommunityLib
                         break;
                     case "TheOtherworlder":
                         Console.WriteLine("CommunityLib: The Otherworlder is Enabled");
-                        ModIntegrationData intDataOtherworld = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        ModIntegrationData intDataOtherworld = new ModIntegrationData(kernel);
                         data.addModIntegrationData("Otherworlder", intDataOtherworld);
 
                         if (data.tryGetModIntegrationData("Otherworlder", out intDataOtherworld))
@@ -1068,7 +1062,7 @@ namespace CommunityLib
                         break;
                     case "Modjam_Ratking":
                         Console.WriteLine("CommunityLib: The Rat King is Enabled");
-                        ModIntegrationData intDataRatKing = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        ModIntegrationData intDataRatKing = new ModIntegrationData(kernel);
                         data.addModIntegrationData("RatKing", intDataRatKing);
 
                         if (data.tryGetModIntegrationData("RatKing", out intDataRatKing))
@@ -1086,7 +1080,7 @@ namespace CommunityLib
                         break;
                     case "ModJam_Redeemer":
                         Console.WriteLine("CommunityLib: The Redeemer is Enabled");
-                        ModIntegrationData intDataRedeemer = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        ModIntegrationData intDataRedeemer = new ModIntegrationData(kernel);
                         data.addModIntegrationData("Redeemer", intDataRedeemer);
 
                         if (data.tryGetModIntegrationData("Redeemer", out intDataRedeemer))
@@ -1104,7 +1098,7 @@ namespace CommunityLib
                         break;
                     case "Whisperer":
                         Console.WriteLine("CommunityLib: The Whisperer is Enabled");
-                        ModIntegrationData intDataWhisperer = new ModIntegrationData(kernel.GetType().Assembly, kernel);
+                        ModIntegrationData intDataWhisperer = new ModIntegrationData(kernel);
                         data.addModIntegrationData("Whisperer", intDataWhisperer);
 
                         if (data.tryGetModIntegrationData("Whisperer", out intDataWhisperer))

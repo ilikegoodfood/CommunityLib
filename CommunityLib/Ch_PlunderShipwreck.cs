@@ -263,7 +263,7 @@ namespace CommunityLib
             {
                 bool gotAbyssalItem = false;
 
-                if (Eleven.random.Next(2) == 0 && ModCore.Get().data.tryGetModIntegrationData("DeepOnesPlus", out ModIntegrationData intDataDOPlus) && intDataDOPlus.assembly != null && intDataDOPlus.typeDict.TryGetValue("Kernel", out Type kernelType) && kernelType != null)
+                if (Eleven.random.Next(2) == 0 && ModCore.Get().data.tryGetModIntegrationData("DeepOnesPlus", out ModIntegrationData intDataDOPlus) && intDataDOPlus.typeDict.TryGetValue("Kernel", out Type kernelType) && kernelType != null)
                 {
                     ModKernel kernel = map.mods.FirstOrDefault(k => k.GetType() == kernelType);
 

@@ -33,17 +33,17 @@ namespace CommunityLib
             Harmony.DEBUG = false;
 
             //Console.WriteLine("CommunityLib: Initializing Conditional Patches");
-            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
+            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord))
             {
                 Patching_Cordyceps(intDataCord);
             }
 
-            if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC) && intDataCCC.assembly != null)
+            if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC))
             {
                 Patching_CovensCursesCurios(intDataCCC);
             }
 
-            if (ModCore.Get().data.tryGetModIntegrationData("Ixthus", out ModIntegrationData intDataIxthus) && intDataIxthus.assembly != null)
+            if (ModCore.Get().data.tryGetModIntegrationData("Ixthus", out ModIntegrationData intDataIxthus))
             {
                 Patching_Ixthus(intDataIxthus);
             }
@@ -436,7 +436,7 @@ namespace CommunityLib
 
         private static void CCCToad_AddChallenges_TranspilerBody(UAEN uaen, Location location, List<Challenge> standardChallenges)
         {
-            if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC) && intDataCCC.assembly != null && intDataCCC.fieldInfoDict.TryGetValue("UAEN_Toad.Squash", out FieldInfo FI_Squash) && FI_Squash != null)
+            if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC) && intDataCCC.fieldInfoDict.TryGetValue("UAEN_Toad.Squash", out FieldInfo FI_Squash) && FI_Squash != null)
             {
                 Challenge squash = (Challenge)FI_Squash.GetValue(uaen);
                 if (squash == null)
@@ -516,7 +516,7 @@ namespace CommunityLib
 
         private static void CCCPigeon_TurnTick_TranspilerBody(UA ua)
         {
-            if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC) && intDataCCC.assembly != null)
+            if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC))
             {
                 if (intDataCCC.typeDict.TryGetValue("UAEN_Pigeon", out Type pigeonType) && pigeonType != null)
                 {
