@@ -74,7 +74,7 @@ namespace CommunityLib
 
         private bool delegate_Validity_SeekPrey(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData taskData)
         {
-            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
+            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord))
             {
                 if (intDataCord.typeDict.TryGetValue("Hive", out Type hiveType) && hiveType != null)
                 {
@@ -113,7 +113,7 @@ namespace CommunityLib
 
         private bool delegate_Validity_ExploreDrone(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData taskData)
         {
-            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
+            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord))
             {
                 if (intDataCord.typeDict.TryGetValue("Hive", out Type hiveType) && hiveType != null && intDataCord.typeDict.TryGetValue("God", out Type godType) && godType != null)
                 {
@@ -137,7 +137,7 @@ namespace CommunityLib
 
         private bool delegate_Validity_GoHome(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData taskData)
         {
-            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
+            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord))
             {
                 if (intDataCord.typeDict.TryGetValue("Hive", out Type hiveType) && hiveType != null)
                 {
@@ -244,7 +244,7 @@ namespace CommunityLib
 
         private Assets.Code.Task delegate_Instantiate_DeliverItems(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData taskData)
         {
-            if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC) && intDataCCC.assembly != null)
+            if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC))
             {
                 if (intDataCCC.typeDict.TryGetValue("UAEN_Pigeon", out Type pigeonType) && pigeonType != null && ua.GetType() == pigeonType)
                 {
@@ -266,7 +266,7 @@ namespace CommunityLib
 
         private bool delegate_Validity_DeliverItems(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData taskData)
         {
-            if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC) && intDataCCC.assembly != null)
+            if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC))
             {
                 if (intDataCCC.typeDict.TryGetValue("UAEN_Pigeon", out Type pigeonType) && pigeonType != null)
                 {
@@ -315,7 +315,7 @@ namespace CommunityLib
 
         private Assets.Code.Task delegate_Instantiate_PigeonFlyHome(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData taskData)
         {
-            if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC) && intDataCCC.assembly != null)
+            if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC))
             {
                 if (intDataCCC.typeDict.TryGetValue("UAEN_Pigeon", out Type pigeonType) && pigeonType != null && ua.GetType() == pigeonType)
                 {
@@ -337,7 +337,7 @@ namespace CommunityLib
 
         private bool delegate_Validity_PigeonFlyHome(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData taskData)
         {
-            if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC) && intDataCCC.assembly != null)
+            if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC))
             {
                 if (intDataCCC.typeDict.TryGetValue("UAEN_Pigeon", out Type pigeonType) && pigeonType != null)
                 {

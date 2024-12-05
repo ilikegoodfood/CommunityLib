@@ -503,7 +503,7 @@ namespace CommunityLib
 
             bool livingWildsEnabled = false;
             Type wildernessSettlementType = null;
-            if (ModCore.Get().data.tryGetModIntegrationData("LivingWilds", out ModIntegrationData intDataLW) && intDataLW.assembly != null)
+            if (ModCore.Get().data.tryGetModIntegrationData("LivingWilds", out ModIntegrationData intDataLW))
             {
                 livingWildsEnabled = true;
                 intDataLW.typeDict.TryGetValue("WildSettlement", out wildernessSettlementType);
@@ -5862,7 +5862,7 @@ namespace CommunityLib
         // UA
         private static bool UA_isCommandable_Postfix(bool result, UA __instance)
         {
-            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null && intDataCord.typeDict.TryGetValue("Drone", out Type droneType) && droneType != null)
+            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.typeDict.TryGetValue("Drone", out Type droneType) && droneType != null)
             {
                 if (__instance.GetType() == droneType)
                 {

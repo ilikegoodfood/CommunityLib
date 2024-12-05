@@ -170,7 +170,7 @@ namespace CommunityLib
                     break;
             }
 
-            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
+            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord))
             {
                 if (intDataCord.typeDict.TryGetValue("Drone", out Type droneType) && droneType != null)
                 {
@@ -200,7 +200,7 @@ namespace CommunityLib
                 }
             }
 
-            if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC) && intDataCCC.assembly != null)
+            if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC))
             {
                 if (intDataCCC.typeDict.TryGetValue("UAEN_Pigeon", out Type pigeonType) && pigeonType != null)
                 {
@@ -249,7 +249,7 @@ namespace CommunityLib
                     break;
             }
 
-            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.assembly != null)
+            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord))
             {
                 if (intDataCord.typeDict.TryGetValue("Drone", out Type droneType) && droneType != null)
                 {
@@ -317,7 +317,7 @@ namespace CommunityLib
                 }
             }
 
-            if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC) && intDataCCC.assembly != null)
+            if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC))
             {
                 if (intDataCCC.typeDict.TryGetValue("UAEN_Pigeon", out Type pigeonType) && pigeonType != null)
                 {
