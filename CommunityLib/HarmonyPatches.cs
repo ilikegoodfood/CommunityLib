@@ -210,6 +210,8 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_BuildMines), nameof(Ch_Orcs_BuildMines.validFor), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Ch_Orcs_BuildMines_validFor_Postfix)));
             // Orcs Raiding Party
             harmony.Patch(original: AccessTools.Method(typeof(Rt_Orcs_RaidingParty), nameof(Rt_Orcs_RaidingParty.complete), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Rt_Orcs_RaidingParty_complete_Transpiler)));
+            // Orc Funding
+            harmony.Patch(original: AccessTools.Method(typeof(Rt_Orc_ReceiveFunding), nameof(Rt_Orc_ReceiveFunding.validFor)), prefix: new HarmonyMethod(patchType, nameof(Rt_Orc_ReceiveFunding_validFor_Postfix)));
 
             // Task Fixes //
             // Follow
@@ -1487,6 +1489,10 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
+            MethodInfo MI_GetLocation = AccessTools.PropertyGetter(typeof(Unit), nameof(Unit.location));
+
+            FieldInfo FI_Soc = AccessTools.Field(typeof(Location), nameof(Location.soc));
+
             FieldInfo FIS_SelectedUnit = AccessTools.Field(typeof(GraphicalMap), nameof(GraphicalMap.selectedUnit));
 
             Label skipLabel = ilg.DefineLabel();
@@ -1498,6 +1504,19 @@ namespace CommunityLib
                 if (targetIndex > 0)
                 {
                     if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_1 && instructionList[i+1].opcode == OpCodes.Ldfld)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_GetLocation);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Soc);
+
+                            i += 2;
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
                     {
                         if (instructionList[i].opcode == OpCodes.Ldloc_1 && instructionList[i+1].opcode == OpCodes.Stsfld)
                         {
@@ -1524,6 +1543,14 @@ namespace CommunityLib
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static void Rt_Orc_ReceiveFunding_validFor_Postfix(UA __instance, ref bool __result)
+        {
+            if (!(__instance.society is SG_Orc))
+            {
+                __result = false;
             }
         }
 
