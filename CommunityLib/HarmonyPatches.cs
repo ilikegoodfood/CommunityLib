@@ -158,6 +158,9 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Person), nameof(Person.die), new Type[] { typeof(string), typeof(bool), typeof(object), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(Person_die_Transpiler)));
 
             // Challenge fixes //
+            // Cultivate Vinerva's Gifts
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_H_CultivateHerGifts), nameof(Ch_H_CultivateHerGifts.validFor)), transpiler: new HarmonyMethod(patchType, nameof(Ch_H_CultivateHerGifts_validFor_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_H_CultivateHerGifts), nameof(Ch_H_CultivateHerGifts.complete)), transpiler: new HarmonyMethod(patchType, nameof(Ch_H_CultivateHerGifts_complete_Transpiler)));
             // Infiltrate
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Infiltrate), nameof (Ch_Infiltrate.getComplexity), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Ch_Infiltrate_getComplexity_Transpiler)));
             // Buy Item
@@ -817,6 +820,92 @@ namespace CommunityLib
         }
 
         // CHallenge Fixes
+        private static IEnumerable<CodeInstruction> Ch_H_CultivateHerGifts_validFor_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            FieldInfo FI_DarkGaia = AccessTools.Field(typeof(HolyOrder_Witches), nameof(HolyOrder_Witches.tenet_darkGaia));
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Brfalse_S)
+                        {
+                            Label falseLabel = (Label)instructionList[i].operand;
+                            yield return instructionList[i];
+
+                            yield return new CodeInstruction(OpCodes.Ldloc_0);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_DarkGaia);
+                            yield return new CodeInstruction(OpCodes.Ldnull);
+                            yield return new CodeInstruction(OpCodes.Cgt_Un);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, falseLabel);
+
+                            i++;
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Ch_H_CultivateHerGifts_validFor_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> Ch_H_CultivateHerGifts_complete_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            FieldInfo FI_DarkGaia = AccessTools.Field(typeof(HolyOrder_Witches), nameof(HolyOrder_Witches.tenet_darkGaia));
+
+            Label falseLabel = ilg.DefineLabel();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Brfalse_S)
+                        {
+                            falseLabel = (Label)instructionList[i].operand;
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_0)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldloc_0);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_DarkGaia);
+                            yield return new CodeInstruction(OpCodes.Ldnull);
+                            yield return new CodeInstruction(OpCodes.Cgt_Un);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, falseLabel);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Ch_H_CultivateHerGifts_complete_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
         private static IEnumerable<CodeInstruction> Ch_Infiltrate_getComplexity_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
