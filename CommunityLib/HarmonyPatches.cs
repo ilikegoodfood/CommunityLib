@@ -1105,13 +1105,11 @@ namespace CommunityLib
             }
         }
 
-        private static IEnumerable<CodeInstruction> Ch_H_CultivateHerGifts_complete_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        private static IEnumerable<CodeInstruction> Ch_H_CultivateHerGifts_complete_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
             FieldInfo FI_DarkGaia = AccessTools.Field(typeof(HolyOrder_Witches), nameof(HolyOrder_Witches.tenet_darkGaia));
-
-            Label falseLabel = ilg.DefineLabel();
 
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
@@ -1122,20 +1120,16 @@ namespace CommunityLib
                     {
                         if (instructionList[i].opcode == OpCodes.Brfalse_S)
                         {
-                            falseLabel = (Label)instructionList[i].operand;
-                            targetIndex++;
-                        }
-                    }
-                    else if (targetIndex == 2)
-                    {
-                        if (instructionList[i].opcode == OpCodes.Ldloc_0)
-                        {
+                            Label falseLabel = (Label)instructionList[i].operand;
+                            yield return instructionList[i];
+
                             yield return new CodeInstruction(OpCodes.Ldloc_0);
                             yield return new CodeInstruction(OpCodes.Ldfld, FI_DarkGaia);
                             yield return new CodeInstruction(OpCodes.Ldnull);
                             yield return new CodeInstruction(OpCodes.Cgt_Un);
                             yield return new CodeInstruction(OpCodes.Brfalse_S, falseLabel);
 
+                            i++;
                             targetIndex = 0;
                         }
                     }
