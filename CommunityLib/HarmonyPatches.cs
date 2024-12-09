@@ -159,8 +159,8 @@ namespace CommunityLib
 
             // Challenge fixes //
             // Cultivate Vinerva's Gifts
-            harmony.Patch(original: AccessTools.Method(typeof(Ch_H_CultivateHerGifts), nameof(Ch_H_CultivateHerGifts.validFor)), transpiler: new HarmonyMethod(patchType, nameof(Ch_H_CultivateHerGifts_validFor_Transpiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(Ch_H_CultivateHerGifts), nameof(Ch_H_CultivateHerGifts.complete)), transpiler: new HarmonyMethod(patchType, nameof(Ch_H_CultivateHerGifts_complete_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_H_CultivateHerGifts), nameof(Ch_H_CultivateHerGifts.validFor), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_H_CultivateHerGifts_validFor_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_H_CultivateHerGifts), nameof(Ch_H_CultivateHerGifts.complete), new Type[] { typeof (UA) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_H_CultivateHerGifts_complete_Transpiler)));
             // Infiltrate
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Infiltrate), nameof (Ch_Infiltrate.getComplexity), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Ch_Infiltrate_getComplexity_Transpiler)));
             // Buy Item
