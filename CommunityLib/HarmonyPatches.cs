@@ -179,7 +179,7 @@ namespace CommunityLib
             // Orcs Raiding Party
             harmony.Patch(original: AccessTools.Method(typeof(Rt_Orcs_RaidingParty), nameof(Rt_Orcs_RaidingParty.complete), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Rt_Orcs_RaidingParty_complete_Transpiler)));
             // Orc Funding
-            harmony.Patch(original: AccessTools.Method(typeof(Rt_Orc_ReceiveFunding), nameof(Rt_Orc_ReceiveFunding.validFor)), prefix: new HarmonyMethod(patchType, nameof(Rt_Orc_ReceiveFunding_validFor_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(Rt_Orc_ReceiveFunding), nameof(Rt_Orc_ReceiveFunding.validFor), new Type[] { typeof(UA) }), prefix: new HarmonyMethod(patchType, nameof(Rt_Orc_ReceiveFunding_validFor_Prefix)));
 
             // Task Fixes //
             // Follow
@@ -1096,7 +1096,6 @@ namespace CommunityLib
             Label skipLabel = ilg.DefineLabel();
 
             int targetIndex = 1;
-
             for (int i = 0; i < instructionList.Count; i++)
             {
                 if (targetIndex > 0)
@@ -1123,12 +1122,14 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Ceq);
                             yield return new CodeInstruction(OpCodes.Brfalse_S, skipLabel);
 
-                            yield return new CodeInstruction(OpCodes.Ldloc_1);
-                            yield return new CodeInstruction(OpCodes.Stsfld, FIS_SelectedUnit);
-
-                            i += 2;
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0)
+                        {
                             instructionList[i].labels.Add(skipLabel);
-
                             targetIndex = 0;
                         }
                     }
@@ -1144,17 +1145,20 @@ namespace CommunityLib
             }
         }
 
-        private static void Rt_Orc_ReceiveFunding_validFor_Postfix(UA __instance, ref bool __result)
+        private static bool Rt_Orc_ReceiveFunding_validFor_Prefix(UA __instance, ref bool __result)
         {
             if (!(__instance.society is SG_Orc))
             {
                 __result = false;
+                return false;
             }
+
+            return true;
         }
 
         // Task Fixes //
         // Task_Follow
-        private static IEnumerable<CodeInstruction> Task_Follow_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        private static IEnumerable<CodeInstruction> Task_Follow_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
@@ -1174,7 +1178,7 @@ namespace CommunityLib
                         {
                             returnCode = false;
 
-                            yield return new CodeInstruction(OpCodes.Nop);
+                            yield return instructionList[i];
                             yield return new CodeInstruction(OpCodes.Ldarg_1);
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Ldfld, FI_Target);
@@ -1217,6 +1221,7 @@ namespace CommunityLib
                     return false;
                 }
 
+                self.movesTaken++;
                 if (self.location == target.location)
                 {
                     return true;
