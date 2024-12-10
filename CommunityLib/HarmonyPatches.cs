@@ -235,6 +235,9 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Society), nameof(Society.populateActions), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Society_populateActions_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(SG_Orc), nameof(SG_Orc.getActions), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(SG_Orc_getActions_Transpiler)));
 
+            // AddProperty fix
+            harmony.Patch(original: AccessTools.Method(typeof(Property), nameof(Property.addProperty), new Type[] { typeof(Map), typeof(Location), typeof(Property) }), prefix: new HarmonyMethod(patchType, nameof(Property_addProperty_Prefix)));
+
             // Religion UI Screen modification
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bPrev), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bNext), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
@@ -4570,6 +4573,42 @@ namespace CommunityLib
             }
 
             return true;
+        }
+
+        // Property.addProperty fix
+        private static bool Property_addProperty_Prefix(Map map, Location location, Property pr, Property __result)
+        {
+            if (pr.stackStyle == Property.stackStyleEnum.NONE)
+            {
+                return false;
+            }
+
+            Property property = location.properties.FirstOrDefault(prop => prop.GetType() == pr.GetType());
+            if (property != null)
+            {
+                __result = property;
+                if (pr.influences != null)
+                {
+                    property.influences?.AddRange(pr.influences);
+                }
+
+                if (pr.stackStyle == Property.stackStyleEnum.TO_MAX_CHARGE)
+                {
+                    property.charge = Math.Min(property.charge + pr.charge, 100.0);
+                }
+                else if (pr.stackStyle == Property.stackStyleEnum.ADD_CHARGE)
+                {
+                    property.charge += pr.charge;
+                }
+            }
+            else
+            {
+                __result = pr;
+                pr.location = location;
+                location.properties.Add(pr);
+            }
+
+            return false;
         }
 
         // Religion UI Screen modification
