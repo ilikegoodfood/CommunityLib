@@ -1125,14 +1125,7 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Ceq);
                             yield return new CodeInstruction(OpCodes.Brfalse_S, skipLabel);
 
-                            targetIndex++;
-                        }
-                    }
-                    else if (targetIndex == 3)
-                    {
-                        if (instructionList[i].opcode == OpCodes.Ldarg_0)
-                        {
-                            instructionList[i].labels.Add(skipLabel);
+                            instructionList[i+2].labels.Add(skipLabel);
                             targetIndex = 0;
                         }
                     }
