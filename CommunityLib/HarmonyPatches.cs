@@ -4573,6 +4573,9 @@ namespace CommunityLib
         {
             if (pr.stackStyle == Property.stackStyleEnum.NONE)
             {
+                __result = pr;
+                pr.location = location;
+                location.properties.Add(pr);
                 return false;
             }
 
