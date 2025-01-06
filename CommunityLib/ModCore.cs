@@ -233,7 +233,7 @@ namespace CommunityLib
 
         public override void afterMapGenBeforeHistorical(Map map)
         {
-            data.initialiseHideenThoughts();
+            Get().data.initialiseHidenThoughts();
         }
 
         public override void afterLoading(Map map)
@@ -241,11 +241,11 @@ namespace CommunityLib
             core = this;
             this.map = map;
 
-            if (data == null)
+            if (Get().data == null)
             {
-                data = new ModData();
+                Get().data = new ModData();
             }
-            data.onLoad(map);
+            Get().data.onLoad(map);
             getModKernels(map);
             HarmonyPatches_Conditional.PatchingInit(map);
 

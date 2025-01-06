@@ -517,7 +517,7 @@ namespace CommunityLib
                                 pr_ItemCache.gold = ua.person.gold;
                             }
 
-                            ua.map.addUnifiedMessage(ua, ua.location, "Pigeon flew away", $"After loosing it's owner the pigeon has flown away, leaving any gold or items it was carrying behind.", "PigeonFlewAway");
+                            ua.map.addUnifiedMessage(ua, ua.location, "Pigeon flew away", $"After loosing its owner the pigeon has flown away, leaving any gold or items it was carrying behind.", "PigeonFlewAway");
                             if (GraphicalMap.selectedUnit == ua)
                             {
                                 GraphicalMap.selectedUnit = null;
