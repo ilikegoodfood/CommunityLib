@@ -4520,8 +4520,11 @@ namespace CommunityLib
                         {
                             if (neighbour.soc == null && neighbour.settlement is Set_MinorOther)
                             {
-                                neighbour.soc = orcs;
-                                map.addMessage("Orcs expand into " + neighbour.getName(), 0.5, true, neighbour.hex);
+                                if (!orcs.isAtWar())
+                                {
+                                    neighbour.soc = orcs;
+                                    map.addMessage("Orcs expand into " + neighbour.getName(), 0.5, true, neighbour.hex);
+                                }
                             }
                             else if (!settleCandidateHashSet.Contains(neighbour))
                             {
