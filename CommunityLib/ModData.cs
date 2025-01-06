@@ -138,7 +138,7 @@ namespace CommunityLib
             }
         }
 
-        internal void initialiseHideenThoughts()
+        internal void initialiseHidenThoughts()
         {
             if (hiddenThoughts == null)
             {
@@ -254,7 +254,7 @@ namespace CommunityLib
             initialiseWonderGenTypes();
 
             initialiseInfluenceGain();
-            initialiseHideenThoughts();
+            initialiseHidenThoughts();
         }
 
         public void onTurnStart(Map map)
