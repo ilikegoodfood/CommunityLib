@@ -258,6 +258,9 @@ namespace CommunityLib
             // Culture modifications
             harmony.Patch(original: AccessTools.Method(typeof(Set_MinorHuman), nameof(Set_MinorHuman.getSprite), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Set_MinorHuman_getSprite_Transpiler)));
 
+            // COnsole Command Fixes
+            harmony.Patch(original: AccessTools.Method(typeof(Cheat), nameof(Cheat.takeCommand), new Type[] { typeof(Map), typeof(string) }), prefix: new HarmonyMethod(patchType, nameof(Cheat_takeCommand_Prefix)));
+
             // AGENT UI //
             // UIScroll_Unit (Challenge utility panel)
             harmony.Patch(original: AccessTools.Method(typeof(UIScroll_Unit), nameof(UIScroll_Unit.checkData), new Type[0]), prefix: new HarmonyMethod(patchType, nameof(UIScroll_Unit_checkData_Prefix)), transpiler: new HarmonyMethod(patchType, nameof(UIScroll_Unit_checkData_Transpiler)));
@@ -4894,6 +4897,12 @@ namespace CommunityLib
                 return cultureData.defaultMinorSettlementIcon;
             }
             return set.map.world.textureStore.loc_minor_farm;
+        }
+
+        // Cheat Command Fix
+        private static bool Cheat_takeCommand_Prefix(Map map, string command)
+        {
+            return ConsoleCommandOverrides.overrideCommand(map, command);
         }
 
         // Challenge Hooks
