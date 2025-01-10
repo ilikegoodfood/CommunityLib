@@ -886,6 +886,28 @@ namespace CommunityLib
                             {
                                 Console.WriteLine("CommunityLib: Failed to get Unoccupied Wildernes settlement Type (LivingWilds.Set_Nature_UnoccupiedWilderness)");
                             }
+
+                            Type werewolfInfectedType = intDataLW.assembly.GetType("LivingWilds.UAEN_Nature_WerewolfInfected", false);
+                            if (werewolfInfectedType != null)
+                            {
+                                intDataLW.typeDict.Add("InfectedWerewolf", werewolfInfectedType);
+                                intDataLW.fieldInfoDict.Add("InfectedWerewolfSubsumedUnit",werewolfInfectedType.GetField("oldUnit"));
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Werewolf agent Type (LivingWilds.UAEN_Nature_WerewolfInfected)");
+                            }
+
+                            Type werewolfInfectedHeroType = intDataLW.assembly.GetType("LivingWilds.UAG_Nature_WerewolfInfected", false);
+                            if (werewolfInfectedHeroType != null)
+                            {
+                                intDataLW.typeDict.Add("InfectedWerewolfHero", werewolfInfectedHeroType);
+                                intDataLW.fieldInfoDict.Add("InfectedWerewolfHeroSubsumedUnit", werewolfInfectedHeroType.GetField("oldUnit"));
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Werewolf agent Type (LivingWilds.UAG_Nature_WerewolfInfected)");
+                            }
                         }
                         break;
                     case "MEKHANE":
