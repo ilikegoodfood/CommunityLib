@@ -206,8 +206,8 @@ namespace CommunityLib
 
             // Trait Fixes
             harmony.Patch(original: AccessTools.Method(typeof(T_NobleConnections), nameof(T_NobleConnections.getDesc)), postfix: new HarmonyMethod(patchType, nameof(T_NobleConnections_getDesc_Postfix)));
-            harmony.Patch(original: AccessTools.Method(typeof(T_Howl_Sin), nameof(T_Howl_Sin.turnTick)), transpiler: new HarmonyMethod(patchType, nameof(T_Howl_EITHER_turnTick_Transpiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(T_Howl_Madness), nameof(T_Howl_Madness.turnTick)), transpiler: new HarmonyMethod(patchType, nameof(T_Howl_EITHER_turnTick_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(T_Howl_Sin), nameof(T_Howl_Sin.turnTick), new Type[] { typeof(Person) }), transpiler: new HarmonyMethod(patchType, nameof(T_Howl_EITHER_turnTick_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(T_Howl_Madness), nameof(T_Howl_Madness.turnTick), new Type[] { typeof(Person) }), transpiler: new HarmonyMethod(patchType, nameof(T_Howl_EITHER_turnTick_Transpiler)));
 
             // Pan to Holy Order Screen
             harmony.Patch(original: AccessTools.Method(typeof(PopupMsgUnified), nameof(PopupMsgUnified.dismissAgentA), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(PopupMsgUnified_dismissAgentA_Postfix)));
@@ -3888,8 +3888,7 @@ namespace CommunityLib
                         yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
                         yield return new CodeInstruction(OpCodes.Stloc_S, 11);
 
-
-                        targetIndex++;
+                        targetIndex = 0;
                     }
                 }
 

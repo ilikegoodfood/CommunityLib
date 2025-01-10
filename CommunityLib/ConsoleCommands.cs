@@ -373,12 +373,5 @@ namespace CommunityLib
                 return;
             }
         }
-
-        public bool parseVanillaCommand()
-        {
-
-
-            return true;
-        }
     }
 }
