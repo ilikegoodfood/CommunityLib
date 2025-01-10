@@ -256,6 +256,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(T_NobleConnections), nameof(T_NobleConnections.getDesc)), postfix: new HarmonyMethod(patchType, nameof(T_NobleConnections_getDesc_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(T_Howl_Sin), nameof(T_Howl_Sin.turnTick)), transpiler: new HarmonyMethod(patchType, nameof(T_Howl_EITHER_turnTick_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(T_Howl_Madness), nameof(T_Howl_Madness.turnTick)), transpiler: new HarmonyMethod(patchType, nameof(T_Howl_EITHER_turnTick_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Mt_UrbanProwler), nameof(Mt_UrbanProwler.turnTick)), transpiler: new HarmonyMethod(patchType, nameof(Mt_UrbanProwler_turnTick_Transpiler)));
 
             // Pan to Holy Order Screen
             harmony.Patch(original: AccessTools.Method(typeof(PopupMsgUnified), nameof(PopupMsgUnified.dismissAgentA), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(PopupMsgUnified_dismissAgentA_Postfix)));
@@ -5052,6 +5053,47 @@ namespace CommunityLib
             }
         }
 
+        private static IEnumerable<CodeInstruction> Mt_UrbanProwler_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_getLocation = AccessTools.PropertyGetter(typeof(Unit), nameof(Unit.location));
+
+            FieldInfo FI_settlement = AccessTools.Field(typeof(Location), nameof(Location.settlement));
+
+            Label trueLabel = ilg.DefineLabel();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex == 1)
+                {
+                    if (instructionList[i].opcode == OpCodes.Ldloc_0 && instructionList[i - 1].opcode == OpCodes.Stloc_0)
+                    {
+                        instructionList[i + 2].labels.Add(trueLabel);
+
+                        yield return new CodeInstruction(OpCodes.Ldloc_0);
+                        yield return new CodeInstruction(OpCodes.Brtrue, trueLabel); // If false, skip
+
+                        yield return new CodeInstruction(OpCodes.Ldarg_1);
+                        yield return new CodeInstruction(OpCodes.Callvirt, MI_getLocation);
+                        yield return new CodeInstruction(OpCodes.Ldfld, FI_settlement);
+                        yield return new CodeInstruction(OpCodes.Isinst, typeof(Set_DwarvenCity));
+
+
+                        targetIndex++;
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Mt_UrbanProwler_turnTick_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
 
         private static bool T_Howl_EITHER_turnTick_TranspilerBody(Unit unit)
         {
