@@ -17,6 +17,41 @@ namespace CommunityLib
 
         public override bool isUnitSubsumed(Unit uOriginal, Unit uSubsuming)
         {
+            if (ModCore.Get().data.tryGetModIntegrationData("LivingWilds", out ModIntegrationData intDataLW))
+            {
+                if (intDataLW.typeDict.TryGetValue("InfectedWerewolf", out Type infectedWolfType) && infectedWolfType != null)
+                {
+                    if (uSubsuming.GetType() == infectedWolfType || uSubsuming.GetType().IsSubclassOf(infectedWolfType))
+                    {
+                        if (intDataLW.fieldInfoDict.TryGetValue("InfectedWerewolfSubsumedUnit", out FieldInfo FI_SubsumedUnit) && FI_SubsumedUnit != null)
+                        {
+                            if (uOriginal == FI_SubsumedUnit.GetValue(uSubsuming))
+                            {
+                                return true;
+                            }
+                        }
+
+                        return false;
+                    }
+                }
+
+                if (intDataLW.typeDict.TryGetValue("InfectedWerewolf", out Type infectedWolfHeroType) && infectedWolfHeroType != null)
+                {
+                    if (uSubsuming.GetType() == infectedWolfHeroType || uSubsuming.GetType().IsSubclassOf(infectedWolfHeroType))
+                    {
+                        if (intDataLW.fieldInfoDict.TryGetValue("InfectedWerewolfHeroSubsumedUnit", out FieldInfo FI_SubsumedUnit) && FI_SubsumedUnit != null)
+                        {
+                            if (uOriginal == FI_SubsumedUnit.GetValue(uSubsuming))
+                            {
+                                return true;
+                            }
+                        }
+
+                        return false;
+                    }
+                }
+            }
+
             return uSubsuming is UM_OrcRaiders raiders && raiders.subsumedUnit == uOriginal;
         }
 
