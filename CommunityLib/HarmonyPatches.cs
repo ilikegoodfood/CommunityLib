@@ -5106,6 +5106,8 @@ namespace CommunityLib
                         yield return new CodeInstruction(OpCodes.Callvirt, MI_getLocation);
                         yield return new CodeInstruction(OpCodes.Ldfld, FI_settlement);
                         yield return new CodeInstruction(OpCodes.Isinst, typeof(Set_DwarvenCity));
+                        yield return new CodeInstruction(OpCodes.Ldnull);
+                        yield return new CodeInstruction(OpCodes.Cgt_Un);
                         yield return new CodeInstruction(OpCodes.Stloc_0);
 
                         targetIndex = 0;
