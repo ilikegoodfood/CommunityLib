@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace CommunityLib
 {
-    public class ConsoleCommands
+    public static class ConsoleCommands
     {
         public static void parseCommand(string command, Map map)
         {
