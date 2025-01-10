@@ -3902,7 +3902,6 @@ namespace CommunityLib
             }
         }
 
-
         private static bool T_Howl_EITHER_turnTick_TranspilerBody(Unit unit)
         {
             if (unit.person == null)
