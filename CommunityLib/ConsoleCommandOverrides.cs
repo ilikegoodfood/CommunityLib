@@ -183,6 +183,8 @@ namespace CommunityLib
                     }
 
                     GraphicalMap.selectedUnit.person.shadow = value / 100.0;
+                    GraphicalMap.checkLoaded();
+                    map.world.ui.checkData();
                 }
 
                 return;
@@ -230,16 +232,18 @@ namespace CommunityLib
                         hex.purity = purity;
                     }
 
+                    GraphicalMap.checkLoaded();
+                    map.world.ui.checkData();
                     return;
                 }
                 
                 if (force)
                 {
                     GraphicalMap.selectedHex.purity = purity;
+                    GraphicalMap.checkLoaded();
+                    map.world.ui.checkData();
                     return;
                 }
-
-                return;
             }
         }
 
@@ -343,6 +347,9 @@ namespace CommunityLib
                     unit.person.shadow = value / 100.0;
                 }
             }
+
+            GraphicalMap.checkLoaded();
+            map.world.ui.checkData();
         }
     }
 }
