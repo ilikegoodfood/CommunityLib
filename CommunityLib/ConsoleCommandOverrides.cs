@@ -91,17 +91,17 @@ namespace CommunityLib
                     }
                     else
                     {
-                        Shadow(map, 100);
+                        NationShadow(map, 100);
                     }
                     return false;
                 case "forcenationshadow":
                     if (int.TryParse(commandChunks[1], out int value4))
                     {
-                        Shadow(map, value4, true);
+                        NationShadow(map, value4, true);
                     }
                     else
                     {
-                        Shadow(map, 100, true);
+                        NationShadow(map, 100, true);
                     }
                     return false;
                 default:
