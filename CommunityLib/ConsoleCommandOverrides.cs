@@ -113,8 +113,13 @@ namespace CommunityLib
 
         public static void Ghast(Map map)
         {
-            Location location = GraphicalMap.selectedHex.location;
-            if (location == null)
+            Location location = null;
+            if (GraphicalMap.selectedHex != null)
+            {
+                location = GraphicalMap.selectedHex.location;
+            }
+
+            if (location == null && GraphicalMap.selectedUnit != null)
             {
                 location = GraphicalMap.selectedUnit.location;
             }
@@ -132,8 +137,13 @@ namespace CommunityLib
 
         public static void Ravenous(Map map)
         {
-            Location location = GraphicalMap.selectedHex.location;
-            if (location == null)
+            Location location = null;
+            if (GraphicalMap.selectedHex != null)
+            {
+                location = GraphicalMap.selectedHex.location;
+            }
+
+            if (location == null && GraphicalMap.selectedUnit != null)
             {
                 location = GraphicalMap.selectedUnit.location;
             }
@@ -314,6 +324,11 @@ namespace CommunityLib
 
             foreach (Unit unit in map.units)
             {
+                if (unit.society != sg)
+                {
+                    continue;
+                }
+
                 if (unit.person != null)
                 {
                     if (unit.person.rulerOf != -1)
