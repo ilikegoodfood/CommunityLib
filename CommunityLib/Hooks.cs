@@ -189,6 +189,38 @@ namespace CommunityLib
         }
 
         /// <summary>
+        /// This hook fires when the number of recruited agents is recalculated. It recieves the list of controllable units (playerControlledUnits), and the current count of recruited agents in that list (recruitmentCapUsed). It returns the modfied number of recruited agents. <br></br>
+        /// If a mod that is loaded before yours has already altered the current count of recruited agents, the recruitmentCapUsed passed into this hook will already include that change.
+        /// </summary>
+        /// <param name="playerControlledUnits"></param>
+        /// <param name="recruitmentCapUsed"></param>
+        /// <returns></returns>
+        public virtual int onCalculateAgentsUsed(List<Unit> playerControlledUnits, int recruitmentCapUsed)
+        {
+            return recruitmentCapUsed;
+        }
+
+        /// <summary>
+        /// This hook fires when the game requests the player's agent limits. It recieves the current god (god) and the array agent limits, indexed by the number of seals broken, (agentCapBySeal). A mod may modifify the values inm the array.
+        /// </summary>
+        /// <param name="agentCapBySeal"></param>
+        public virtual void onGetAgentCaps(God god, int[] agentCapBySeal)
+        {
+            return;
+        }
+
+        /// <summary>
+        /// This hook fires when the game requests the maximum amount of power that the player may have. It recieves the current god (god) and the maximim power value (maxPower), and returns the new maximum power value. <br></br>
+        /// If a mod that is loaded before yours has already altered the maximim power value, the maxPower passed into this hook will already include that change.
+        /// </summary>
+        /// <param name="maxPower"></param>
+        /// <returns></returns>
+        public virtual int onGetMaxPower(God god, int maxPower)
+        {
+            return maxPower;
+        }
+
+        /// <summary>
         /// This hook fires when a unit is instructed to die. It recieves the Unit (u), a string representation of the cause (v), and the person, if applicable, that casued their death (killer). <br></br>
         /// If this hook returns true, the rest of the death proccess will not happen. If you wish to keep the unit alive and prevent this check being performed multiple times per turn, make sure that their health is greater than 0, or their cause of death has been removed. The process which initially instructed the unit to die will still continue, so if you wish to keep the unit alive, make to sure to account for, and act in response to, the method of its death.
         /// <para>Instances of this hook will be called up to the first to return true, aborting the death process.</para>
