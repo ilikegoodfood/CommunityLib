@@ -105,6 +105,9 @@ namespace CommunityLib
             // Settlement destruction hooks
             harmony.Patch(original: AccessTools.Method(typeof(Settlement), nameof(Settlement.fallIntoRuin), new Type[] { typeof(string), typeof(object) }), prefix: new HarmonyMethod(patchType, nameof(Settlement_FallIntoRuin_Prefix)), postfix: new HarmonyMethod(patchType, nameof(Settlement_FallIntoRuin_Postfix)));
 
+            // Overmind onCalculateAgentsUsed
+            harmony.Patch(original: AccessTools.Method(typeof(Overmind), nameof(Overmind.calculateAgentsUsed), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Overmind_calculateAgentsUsed_Postfix)));
+
             // Religion UI Screen hooks
             harmony.Patch(original: AccessTools.Method(typeof(PrefabStore), nameof(PrefabStore.popHolyOrder), new Type[] { typeof(HolyOrder) }), prefix: new HarmonyMethod(patchType, nameof(PrefabStore_popHolyOrder_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.setTo), new Type[] { typeof(HolyOrder), typeof(int) }), prefix: new HarmonyMethod(patchType, nameof(PopupHolyOrder_setTo_Prefix)), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_setTo_Transpiler)));
@@ -3487,6 +3490,21 @@ namespace CommunityLib
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
+        }
+
+        private static void Overmind_calculateAgentsUsed_Postfix(Overmind __instance)
+        {
+            int result = __instance.nEnthralled;
+
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            {
+                if (hook != null)
+                {
+                    result = hook?.onCalculateAgentsUsed(__instance.agents, result) ?? result;
+                }
+            }
+
+            __instance.nEnthralled = result;
         }
 
         private static void PrefabStore_popHolyOrder_Prefix()

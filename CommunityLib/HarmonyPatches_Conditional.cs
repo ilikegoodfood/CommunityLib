@@ -56,6 +56,8 @@ namespace CommunityLib
             List<MethodInfo> targetMethods_getChallengeUtility = new List<MethodInfo> { AccessTools.Method(typeof(UA), nameof(UA.getChallengeUtility), new Type[] { typeof(Challenge), typeof(List<ReasonMsg>) }) };
             List<MethodInfo> targetMethods_getStartingTraits = new List<MethodInfo> { AccessTools.Method(typeof(UA), nameof(UA.getStartingTraits), new Type[0]) };
             List<MethodInfo> targetMethods_turnTickAI = new List<MethodInfo> { AccessTools.Method(typeof(UA), nameof(UA.turnTickAI), new Type[0]) };
+            List<MethodInfo> targetMethods_getMaxPower = new List<MethodInfo> { AccessTools.Method(typeof(God), nameof(God.getMaxPower), new Type[0]) };
+            List<MethodInfo> targetMethods_getAgentCaps = new List<MethodInfo> { AccessTools.Method(typeof(God), nameof(God.getAgentCaps), new Type[0]) };
 
             foreach (Type t in asm.GetTypes())
             {
@@ -77,6 +79,20 @@ namespace CommunityLib
                     if (targetMethod_turnTickAI != null)
                     {
                         targetMethods_turnTickAI.Add(targetMethod_turnTickAI);
+                    }
+                }
+                else if (t.IsSubclassOf(typeof(God)))
+                {
+                    MethodInfo targetMethod_getAgentCaps = AccessTools.DeclaredMethod(t, "getAgentCaps", new Type[0]);
+                    if (targetMethod_getAgentCaps != null)
+                    {
+                        targetMethods_getAgentCaps.Add(targetMethod_getAgentCaps);
+                    }
+
+                    MethodInfo targetMethod_getMaxPower = AccessTools.DeclaredMethod(t, "getMaxPower", new Type[0]);
+                    if (targetMethod_getMaxPower != null)
+                    {
+                        targetMethods_getMaxPower.Add(targetMethod_getMaxPower);
                     }
                 }
             }
@@ -107,6 +123,20 @@ namespace CommunityLib
                             targetMethods_turnTickAI.Add(targetMethod_turnTickAI);
                         }
                     }
+                    else if (t.IsSubclassOf(typeof(God)))
+                    {
+                        MethodInfo targetMethod_getAgentCaps = AccessTools.DeclaredMethod(t, "getAgentCaps", new Type[0]);
+                        if (targetMethod_getAgentCaps != null)
+                        {
+                            targetMethods_getAgentCaps.Add(targetMethod_getAgentCaps);
+                        }
+
+                        MethodInfo targetMethod_getMaxPower = AccessTools.DeclaredMethod(t, "getMaxPower", new Type[0]);
+                        if (targetMethod_getMaxPower != null)
+                        {
+                            targetMethods_getMaxPower.Add(targetMethod_getMaxPower);
+                        }
+                    }
                 }
             }
 
@@ -126,6 +156,18 @@ namespace CommunityLib
             foreach (MethodInfo mi in targetMethods_turnTickAI)
             {
                 harmony.Patch(original: mi, prefix: prefix_turnTickAI);
+            }
+
+            HarmonyMethod postfix_getAgentCaps = new HarmonyMethod(patchType, nameof(God_getAgentCaps_BultPostfix));
+            foreach (MethodInfo mi in targetMethods_getAgentCaps)
+            {
+                harmony.Patch(original: mi, postfix: postfix_getAgentCaps);
+            }
+
+            HarmonyMethod postfix_getMaxPower = new HarmonyMethod(patchType, nameof(God_getMaxPower_BulkPostfix));
+            foreach (MethodInfo mi in targetMethods_getMaxPower)
+            {
+                harmony.Patch(original: mi, postfix: postfix_getMaxPower);
             }
         }
 
@@ -218,6 +260,22 @@ namespace CommunityLib
             }
 
             return true;
+        }
+
+        private static void God_getAgentCaps_BultPostfix(God __instance, ref int[] __result)
+        {
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            {
+                hook?.onGetAgentCaps(__instance, __result);
+            }
+        }
+
+        private static void God_getMaxPower_BulkPostfix(God __instance, ref int __result)
+        {
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            {
+                __result = hook?.onGetMaxPower(__instance, __result) ?? __result;
+            }
         }
 
         private static void Patching_Cordyceps(ModIntegrationData intData)
