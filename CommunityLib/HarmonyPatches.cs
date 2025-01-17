@@ -3491,36 +3491,38 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            Label retLabel = ilg.DefineLabel();
+            Label nullLabel = ilg.DefineLabel();
 
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
             {
-
-                if (targetIndex == 1)
+                if (targetIndex > 0)
                 {
-                    if (instructionList[i].opcode == OpCodes.Brfalse_S)
+                    if (targetIndex == 1)
                     {
-                        retLabel = (Label)instructionList[i].operand;
+                        if (instructionList[i].opcode == OpCodes.Ldfld && instructionList[i - 1].opcode == OpCodes.Ldfld)
+                        {
+                            Label skipLabel = ilg.DefineLabel();
+                            instructionList[i].labels.Add(skipLabel);
 
-                        targetIndex++;
+                            yield return new CodeInstruction(OpCodes.Dup);
+                            yield return new CodeInstruction(OpCodes.Ldnull);
+                            yield return new CodeInstruction(OpCodes.Cgt_Un);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, skipLabel);
+                            yield return new CodeInstruction(OpCodes.Pop);
+                            yield return new CodeInstruction(OpCodes.Br_S, nullLabel);
+
+                            targetIndex++;
+                        }
                     }
-                }
-                else if (targetIndex == 2)
-                {
-                    if (instructionList[i].opcode == OpCodes.Ldfld && instructionList[i - 1].opcode == OpCodes.Ldfld)
+                    else if (targetIndex == 2)
                     {
-                        Label skipLabel = ilg.DefineLabel();
-                        instructionList[i].labels.Add(skipLabel);
+                        if (instructionList[i].opcode == OpCodes.Nop)
+                        {
+                            instructionList[i].labels.Add(nullLabel);
 
-                        yield return new CodeInstruction(OpCodes.Dup);
-                        yield return new CodeInstruction(OpCodes.Ldnull);
-                        yield return new CodeInstruction(OpCodes.Cgt_Un);
-                        yield return new CodeInstruction(OpCodes.Brtrue_S,  skipLabel);
-                        yield return new CodeInstruction(OpCodes.Pop);
-                        yield return new CodeInstruction(OpCodes.Brfalse_S, retLabel);
-
-                        targetIndex = 0;
+                            targetIndex = 0;
+                        }
                     }
                 }
 
