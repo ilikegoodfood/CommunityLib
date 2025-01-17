@@ -47,6 +47,8 @@ namespace CommunityLib
 
         public static bool opt_ophanimFaithTomb = true;
 
+        public static bool opt_chosenOneDeathMessage = true;
+
         public static bool opt_allowCulturalMinorSettelementGraphics = true;
 
         public static bool opt_enhancedTradeRouteLinks = true;
@@ -116,6 +118,9 @@ namespace CommunityLib
                     break;
                 case "Show Ophanim's Faith at Elder Tomb":
                     opt_ophanimFaithTomb = value;
+                    break;
+                case "Chosen One Death Message":
+                    opt_chosenOneDeathMessage = value;
                     break;
                 case "Enhanced Trade Route Links":
                     opt_enhancedTradeRouteLinks = value;

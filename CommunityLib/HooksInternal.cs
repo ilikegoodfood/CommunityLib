@@ -71,9 +71,9 @@ namespace CommunityLib
                 }
             }
 
-            if (map.awarenessManager.chosenOne == u || (u.person != null && u.person.traits.Any(t => t is T_ChosenOne)))
+            if (ModCore.opt_chosenOneDeathMessage && map.awarenessManager.chosenOne == u || (u.person != null && u.person.traits.Any(t => t is T_ChosenOne)))
             {
-                map.addUnifiedMessage(u, null, "Chosen One Dies", $"{u.getName()}, the Chosen One, foretold saviour of mankind and thorn in your side, has fallen. They have sucumbed to the trials and tiribulations of their brief existence. An inevitable end. No doubt another \"saviour\" will emerge from the population, and no doubt, they will be just as false. \n\n Death Message: {v}", "Chosen One Dies", true);
+                map.addUnifiedMessage(u, u.location, "Chosen One Dies", $"{u.getName()}, the Chosen One, has died. Another may step up to take their place. \n\n Cause of Death: {v}", "Chosen One Dies", true);
             }
         }
 
