@@ -194,6 +194,9 @@ namespace CommunityLib
             // AddProperty fix
             harmony.Patch(original: AccessTools.Method(typeof(Property), nameof(Property.addProperty), new Type[] { typeof(Map), typeof(Location), typeof(Property) }), prefix: new HarmonyMethod(patchType, nameof(Property_addProperty_Prefix)));
 
+            // Property Fixes
+            harmony.Patch(original: AccessTools.Method(typeof(Pr_ArcaneSecret), nameof(Pr_ArcaneSecret.turnTick), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Pr_ArcaneSecret_turnTick_Transpiler)));
+
             // Religion UI Screen modification
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bPrev), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bNext), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
@@ -3481,6 +3484,54 @@ namespace CommunityLib
             }
 
             return false;
+        }
+
+        // Property Fixes
+        private static IEnumerable<CodeInstruction> Pr_ArcaneSecret_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            Label retLabel = ilg.DefineLabel();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+
+                if (targetIndex == 1)
+                {
+                    if (instructionList[i].opcode == OpCodes.Brfalse_S)
+                    {
+                        retLabel = (Label)instructionList[i].operand;
+
+                        targetIndex++;
+                    }
+                }
+                else if (targetIndex == 2)
+                {
+                    if (instructionList[i].opcode == OpCodes.Ldfld && instructionList[i - 1].opcode == OpCodes.Ldfld)
+                    {
+                        Label skipLabel = ilg.DefineLabel();
+                        instructionList[i].labels.Add(skipLabel);
+
+                        yield return new CodeInstruction(OpCodes.Dup);
+                        yield return new CodeInstruction(OpCodes.Ldnull);
+                        yield return new CodeInstruction(OpCodes.Cgt_Un);
+                        yield return new CodeInstruction(OpCodes.Brtrue_S,  skipLabel);
+                        yield return new CodeInstruction(OpCodes.Pop);
+                        yield return new CodeInstruction(OpCodes.Brfalse_S, retLabel);
+
+                        targetIndex = 0;
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Pr_ArcaneSecret_turnTick_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
         }
 
         // Religion UI Screen modification
