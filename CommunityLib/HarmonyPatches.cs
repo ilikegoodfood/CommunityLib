@@ -160,6 +160,9 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(God_Snake), nameof(God_Snake.awaken), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(God_Snake_Awaken_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Person), nameof(Person.die), new Type[] { typeof(string), typeof(bool), typeof(object), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(Person_die_Transpiler)));
 
+            // Curse Fixes
+            harmony.Patch(original: AccessTools.Method(typeof(Curse_WastingSouls), nameof(Curse_WastingSouls.turnTick), new Type[] { typeof(Person) }), transpiler: new HarmonyMethod(patchType, nameof(Curse_WastingSoul_turnTick_Transpiler)));
+
             // Challenge fixes //
             // Cultivate Vinerva's Gifts
             harmony.Patch(original: AccessTools.Method(typeof(Ch_H_CultivateHerGifts), nameof(Ch_H_CultivateHerGifts.validFor), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_H_CultivateHerGifts_validFor_Transpiler)));
@@ -184,7 +187,7 @@ namespace CommunityLib
             // Orc Funding
             harmony.Patch(original: AccessTools.Method(typeof(Rt_Orc_ReceiveFunding), nameof(Rt_Orc_ReceiveFunding.validFor), new Type[] { typeof(UA) }), prefix: new HarmonyMethod(patchType, nameof(Rt_Orc_ReceiveFunding_validFor_Prefix)));
 
-            // Task Fixes //
+            // Task Fixes
             // Follow
             harmony.Patch(original: AccessTools.Method(typeof(Task_Follow), nameof(Task_Follow.turnTick), new Type[] { typeof(Unit) }), transpiler: new HarmonyMethod(patchType, nameof(Task_Follow_turnTick_Transpiler)));
 
@@ -831,6 +834,57 @@ namespace CommunityLib
             }
 
             return null;
+        }
+
+        // Curse Fixes
+        private static IEnumerable<CodeInstruction> Curse_WastingSoul_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Curse_WastingSoul_turnTick_TranspilerBody), new Type[] { typeof(UA) });
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_2)
+                        {
+                            Label falseLabel = (Label)instructionList[i+1].operand;
+
+                            yield return new CodeInstruction(OpCodes.Ldloc_2);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, falseLabel);
+
+                            yield return new CodeInstruction(OpCodes.Ldloc_0);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                            yield return new CodeInstruction(OpCodes.Stloc_2);
+
+                            i++;
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Curse_WastingSoul_turnTick_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static bool Curse_WastingSoul_turnTick_TranspilerBody(UA ua)
+        {
+            if (ua is UAE || ua.isCommandable() || ua.society.isDark() || (ua.society is HolyOrder order && order.worshipsThePlayer))
+            {
+                return false;
+            }
+
+            return true;
         }
 
         // CHallenge Fixes
