@@ -218,6 +218,9 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(T_Howl_Sin), nameof(T_Howl_Sin.turnTick), new Type[] { typeof(Person) }), transpiler: new HarmonyMethod(patchType, nameof(T_Howl_EITHER_turnTick_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(T_Howl_Madness), nameof(T_Howl_Madness.turnTick), new Type[] { typeof(Person) }), transpiler: new HarmonyMethod(patchType, nameof(T_Howl_EITHER_turnTick_Transpiler)));
 
+            // Person fixes
+            harmony.Patch(original: AccessTools.Method(typeof(Person), nameof(Person.embedIntoSociety), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Person_embedIntoSociety_Transpiler)));
+
             // Pan to Holy Order Screen
             harmony.Patch(original: AccessTools.Method(typeof(PopupMsgUnified), nameof(PopupMsgUnified.dismissAgentA), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(PopupMsgUnified_dismissAgentA_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(PopupMsgUnified), nameof(PopupMsgUnified.dismissAgentB), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(PopupMsgUnified_dismissAgentB_Postfix)));
@@ -861,7 +864,6 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
                             yield return new CodeInstruction(OpCodes.Stloc_2);
 
-                            i++;
                             targetIndex = 0;
                         }
                     }
@@ -4050,6 +4052,67 @@ namespace CommunityLib
             }
 
             return true;
+        }
+
+        // Person Fixes
+        private static IEnumerable<CodeInstruction> Person_embedIntoSociety_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            Label nullLabel = ilg.DefineLabel();
+            Label notNullLabel = ilg.DefineLabel();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Brfalse && instructionList[i + 1].opcode == OpCodes.Nop && instructionList[i + 2].opcode == OpCodes.Nop)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Brfalse && instructionList[i + 1].opcode == OpCodes.Nop && instructionList[i + 2].opcode == OpCodes.Nop)
+                        {
+                            nullLabel = (Label)instructionList[i].operand;
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Callvirt)
+                        {
+                            MethodInfo  MI_getCapital = (MethodInfo)instructionList[i].operand;
+
+                            yield return new CodeInstruction(OpCodes.Dup);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_getCapital);
+                            yield return new CodeInstruction(OpCodes.Ldnull);
+                            yield return new CodeInstruction(OpCodes.Cgt_Un);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, notNullLabel);
+
+                            yield return new CodeInstruction(OpCodes.Pop);
+                            yield return new CodeInstruction(OpCodes.Br, nullLabel);
+
+                            instructionList[i].labels.Add(notNullLabel);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Person_embedIntoSociety_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
         }
 
         // Pan To Holy Order
