@@ -203,6 +203,8 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Mg_DeathOfTheSun), nameof(Mg_DeathOfTheSun.turnTick), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Mg_DeathOfTheSun_turnTick_Transpiler)));
             // Disrupt Conclave
             harmony.Patch(original: AccessTools.Method(typeof(Ch_DisruptConclave), nameof(Ch_DisruptConclave.getProgressPerTurnInner), new Type[] { typeof(UA), typeof(List<ReasonMsg>) }), postfix: new HarmonyMethod(patchType, nameof(Ch_DisruptConclave_getProgressPerTurnInner_Postfix)));
+            // Elf Finbd Ruler
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_Elf_FindRuler), nameof(Ch_Elf_FindRuler.validFor), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Ch_Elf_FindRuler_validFor_Postfix)));
             // Opportunistict Encroachment
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_OpportunisticEncroachment), nameof(Ch_Orcs_OpportunisticEncroachment.getDesc), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Ch_Orcs_OpportunisticEncroachment_getDesc_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_OpportunisticEncroachment), nameof(Ch_Orcs_OpportunisticEncroachment.valid), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Ch_Orcs_OpportunisticEncroachment_valid_Transpiler)));
@@ -266,6 +268,9 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(T_Howl_Sin), nameof(T_Howl_Sin.turnTick), new Type[] { typeof(Person) }), transpiler: new HarmonyMethod(patchType, nameof(T_Howl_EITHER_turnTick_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(T_Howl_Madness), nameof(T_Howl_Madness.turnTick), new Type[] { typeof(Person) }), transpiler: new HarmonyMethod(patchType, nameof(T_Howl_EITHER_turnTick_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Mt_UrbanProwler), nameof(Mt_UrbanProwler.turnTick), new Type[] { typeof(UA), typeof(Minion) }), transpiler: new HarmonyMethod(patchType, nameof(Mt_UrbanProwler_turnTick_Transpiler)));
+
+            // Person fixes
+            harmony.Patch(original: AccessTools.Method(typeof(Person), nameof(Person.embedIntoSociety), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Person_embedIntoSociety_Transpiler)));
 
             // Pan to Holy Order Screen
             harmony.Patch(original: AccessTools.Method(typeof(PopupMsgUnified), nameof(PopupMsgUnified.dismissAgentA), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(PopupMsgUnified_dismissAgentA_Postfix)));
@@ -1107,7 +1112,6 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
                             yield return new CodeInstruction(OpCodes.Stloc_2);
 
-                            i++;
                             targetIndex = 0;
                         }
                     }
@@ -1347,6 +1351,17 @@ namespace CommunityLib
             }
 
             __result = Math.Max(1, total);
+        }
+
+        private static void Ch_Elf_FindRuler_validFor_Postfix(UA ua, ref bool __result)
+        {
+            if (__result)
+            {
+                if (!(ua.location.settlement is Set_ElvenCity elvenCity) || elvenCity.ruler != null)
+                {
+                    __result = false;
+                }
+            }
         }
 
         private static void Ch_Orcs_OpportunisticEncroachment_getDesc_Postfix(ref string __result)
@@ -5218,24 +5233,27 @@ namespace CommunityLib
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
             {
-                if (targetIndex == 1)
+                if (targetIndex > 0)
                 {
-                    if (instructionList[i].opcode == OpCodes.Ldloc_0 && instructionList[i - 1].opcode == OpCodes.Stloc_0)
+                    if (targetIndex == 1)
                     {
-                        instructionList[i + 2].labels.Add(trueLabel);
+                        if (instructionList[i].opcode == OpCodes.Ldloc_0 && instructionList[i - 1].opcode == OpCodes.Stloc_0)
+                        {
+                            instructionList[i + 2].labels.Add(trueLabel);
 
-                        yield return new CodeInstruction(OpCodes.Ldloc_0);
-                        yield return new CodeInstruction(OpCodes.Brtrue, trueLabel); // If false, skip
+                            yield return new CodeInstruction(OpCodes.Ldloc_0);
+                            yield return new CodeInstruction(OpCodes.Brtrue, trueLabel); // If false, skip
 
-                        yield return new CodeInstruction(OpCodes.Ldarg_1);
-                        yield return new CodeInstruction(OpCodes.Callvirt, MI_getLocation);
-                        yield return new CodeInstruction(OpCodes.Ldfld, FI_settlement);
-                        yield return new CodeInstruction(OpCodes.Isinst, typeof(Set_DwarvenCity));
-                        yield return new CodeInstruction(OpCodes.Ldnull);
-                        yield return new CodeInstruction(OpCodes.Cgt_Un);
-                        yield return new CodeInstruction(OpCodes.Stloc_0);
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_getLocation);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_settlement);
+                            yield return new CodeInstruction(OpCodes.Isinst, typeof(Set_DwarvenCity));
+                            yield return new CodeInstruction(OpCodes.Ldnull);
+                            yield return new CodeInstruction(OpCodes.Cgt_Un);
+                            yield return new CodeInstruction(OpCodes.Stloc_0);
 
-                        targetIndex = 0;
+                            targetIndex = 0;
+                        }
                     }
                 }
 
@@ -5243,6 +5261,67 @@ namespace CommunityLib
             }
 
             Console.WriteLine("CommunityLib: Completed Mt_UrbanProwler_turnTick_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        // Person Fixes
+        private static IEnumerable<CodeInstruction> Person_embedIntoSociety_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            Label nullLabel = ilg.DefineLabel();
+            Label notNullLabel = ilg.DefineLabel();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Brfalse && instructionList[i + 1].opcode == OpCodes.Nop && instructionList[i + 2].opcode == OpCodes.Nop)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Brfalse && instructionList[i + 1].opcode == OpCodes.Nop && instructionList[i + 2].opcode == OpCodes.Nop)
+                        {
+                            nullLabel = (Label)instructionList[i].operand;
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Callvirt)
+                        {
+                            MethodInfo  MI_getCapital = (MethodInfo)instructionList[i].operand;
+
+                            yield return new CodeInstruction(OpCodes.Dup);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_getCapital);
+                            yield return new CodeInstruction(OpCodes.Ldnull);
+                            yield return new CodeInstruction(OpCodes.Cgt_Un);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, notNullLabel);
+
+                            yield return new CodeInstruction(OpCodes.Pop);
+                            yield return new CodeInstruction(OpCodes.Br, nullLabel);
+
+                            instructionList[i].labels.Add(notNullLabel);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Person_embedIntoSociety_Transpiler");
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
