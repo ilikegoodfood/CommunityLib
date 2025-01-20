@@ -203,8 +203,6 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Mg_DeathOfTheSun), nameof(Mg_DeathOfTheSun.turnTick), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Mg_DeathOfTheSun_turnTick_Transpiler)));
             // Disrupt Conclave
             harmony.Patch(original: AccessTools.Method(typeof(Ch_DisruptConclave), nameof(Ch_DisruptConclave.getProgressPerTurnInner), new Type[] { typeof(UA), typeof(List<ReasonMsg>) }), postfix: new HarmonyMethod(patchType, nameof(Ch_DisruptConclave_getProgressPerTurnInner_Postfix)));
-            // Elf Finbd Ruler
-            harmony.Patch(original: AccessTools.Method(typeof(Ch_Elf_FindRuler), nameof(Ch_Elf_FindRuler.validFor), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Ch_Elf_FindRuler_validFor_Postfix)));
             // Opportunistict Encroachment
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_OpportunisticEncroachment), nameof(Ch_Orcs_OpportunisticEncroachment.getDesc), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Ch_Orcs_OpportunisticEncroachment_getDesc_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_OpportunisticEncroachment), nameof(Ch_Orcs_OpportunisticEncroachment.valid), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Ch_Orcs_OpportunisticEncroachment_valid_Transpiler)));
@@ -1351,17 +1349,6 @@ namespace CommunityLib
             }
 
             __result = Math.Max(1, total);
-        }
-
-        private static void Ch_Elf_FindRuler_validFor_Postfix(UA ua, ref bool __result)
-        {
-            if (__result)
-            {
-                if (!(ua.location.settlement is Set_ElvenCity elvenCity) || elvenCity.ruler != null)
-                {
-                    __result = false;
-                }
-            }
         }
 
         private static void Ch_Orcs_OpportunisticEncroachment_getDesc_Postfix(ref string __result)
