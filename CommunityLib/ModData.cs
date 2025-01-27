@@ -116,7 +116,7 @@ namespace CommunityLib
         {
             if (naturalWonderTypes == null)
             {
-                naturalWonderTypes = new HashSet<Type>();
+                naturalWonderTypes = new HashSet<Type> { typeof(Sub_Wonder_DeathIsland), typeof(Sub_Wonder_Doorway), typeof(Sub_Wonder_PrimalFont) };
             }
         }
 
@@ -174,6 +174,10 @@ namespace CommunityLib
             locusTypes.Clear();
             magicTraitTypes.Clear();
             naturalWonderTypes.Clear();
+            naturalWonderTypes.Add(typeof(Sub_Wonder_DeathIsland));
+            naturalWonderTypes.Add(typeof(Sub_Wonder_Doorway));
+            naturalWonderTypes.Add(typeof(Sub_Wonder_PrimalFont));
+
             vampireTypes.Clear();
 
             wonderGenTypes.Clear();
@@ -466,10 +470,7 @@ namespace CommunityLib
 
             initialiseNaturalWonderTypes();
 
-            if (!naturalWonderTypes.Contains(t))
-            {
-                naturalWonderTypes.Add(t);
-            }
+            naturalWonderTypes.Add(t);
         }
 
         internal bool isNaturalWonder(Location location)
@@ -482,15 +483,15 @@ namespace CommunityLib
                     {
                         return true;
                     }
+                }
 
-                    foreach (Subsettlement sub in location.settlement.subs)
+                foreach (Subsettlement sub in location.settlement.subs)
+                {
+                    foreach (Type type2 in naturalWonderTypes)
                     {
-                        foreach (Type type2 in naturalWonderTypes)
+                        if (type2.IsSubclassOf(typeof(Subsettlement)) && (sub.GetType() == type2 || sub.GetType().IsSubclassOf(type2)))
                         {
-                            if (type2.IsSubclassOf(typeof(Subsettlement)) && (sub.GetType() == type2 || sub.GetType().IsSubclassOf(type2)))
-                            {
-                                return true;
-                            }
+                            return true;
                         }
                     }
                 }
