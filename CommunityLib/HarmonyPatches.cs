@@ -4918,6 +4918,11 @@ namespace CommunityLib
             }
             if (location.settlement != null)
             {
+                if (CommunityLib.ModCore.Get().checkIsNaturalWonder(location))
+                {
+                    return false;
+                }
+
                 if (ModCore.Get().getSettlementTypesForOrcExpanion().TryGetValue(location.settlement.GetType(), out HashSet<Type> subsettlementBlacklist))
                 {
                     if (subsettlementBlacklist != null)
@@ -6982,19 +6987,6 @@ namespace CommunityLib
             if (map.tutorial)
             {
                 return;
-            }
-
-            if (!ModCore.Get().data.getWonderGenTypes().Contains(typeof(Sub_Wonder_DeathIsland)))
-            {
-                ModCore.Get().data.addWonderGenType(typeof(Sub_Wonder_DeathIsland));
-            }
-            if (!ModCore.Get().data.getWonderGenTypes().Contains(typeof(Sub_Wonder_Doorway)))
-            {
-                ModCore.Get().data.addWonderGenType(typeof(Sub_Wonder_Doorway));
-            }
-            if (!ModCore.Get().data.getWonderGenTypes().Contains(typeof(Sub_Wonder_PrimalFont)))
-            {
-                ModCore.Get().data.addWonderGenType(typeof(Sub_Wonder_PrimalFont));
             }
 
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
