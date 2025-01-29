@@ -461,19 +461,22 @@ namespace CommunityLib
             return false;
         }
 
-        internal bool knowsMagicAdvanced(Person p, out List<string> knownTraitNames, out List<Type> knownTraitTypes, out List<int> knownTraitLevels)
+        internal bool knowsMagicAdvanced(Person p, out List<Trait> magicTraits)
         {
-            knownTraitNames = new List<string>();
-            knownTraitTypes = new List<Type>();
-            knownTraitLevels = new List<int>();
+            magicTraits = new List<Trait>();
+            bool knowsMagic = false;
 
             foreach (Trait trait in p.traits)
             {
                 if (trait is T_MasteryBlood || trait is T_MasteryDeath || trait is T_MasteryGeomancy)
                 {
-                    knownTraitNames.Add(trait.getName());
-                    knownTraitTypes.Add(trait.GetType());
-                    knownTraitLevels.Add(trait.level);
+                    magicTraits.Add(trait);
+
+                    if (trait.level > 0)
+                    {
+                        knowsMagic = true;
+                    }
+
                     continue;
                 }
 
@@ -481,17 +484,21 @@ namespace CommunityLib
                 {
                     if (trait.GetType() == type || trait.GetType().IsSubclassOf(type))
                     {
-                        knownTraitNames.Add(trait.getName());
-                        knownTraitTypes.Add(trait.GetType());
-                        knownTraitLevels.Add(trait.level);
+                        magicTraits.Add(trait);
+
+                        if (trait.level > 0)
+                        {
+                            knowsMagic = true;
+                        }
+
                         break;
                     }
                 }
             }
 
-            if (knownTraitTypes.Count > 0)
+            if (magicTraits.Count > 0)
             {
-                return true;
+                return knowsMagic;
             }
 
             return false;

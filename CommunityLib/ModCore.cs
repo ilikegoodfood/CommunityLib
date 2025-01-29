@@ -2340,7 +2340,7 @@ namespace CommunityLib
 
         public bool checkKnowsMagic(Person person) => data.knowsMagic(person);
 
-        public bool checkKnownsMagic(Person person, out List<string> knownTraitNames, out List<Type> knownTraitTypes, out List<int> knownTraitLevels) => data.knowsMagicAdvanced(person, out knownTraitNames, out knownTraitTypes, out knownTraitLevels);
+        public bool checkKnownsMagic(Person person, out List<Trait> magicTraits) => data.knowsMagicAdvanced(person, out magicTraits);
 
         public void registerNaturalWonderType(Type type) => data.addNaturalWonderType(type);
 
