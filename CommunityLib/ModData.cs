@@ -412,6 +412,42 @@ namespace CommunityLib
             return false;
         }
 
+        internal bool knowsMagicAdvanced(Person p, out List<string> knownTraitNames, out List<Type> knownTraitTypes, out List<int> knownTraitLevels)
+        {
+            knownTraitNames = new List<string>();
+            knownTraitTypes = new List<Type>();
+            knownTraitLevels = new List<int>();
+
+            foreach (Trait trait in p.traits)
+            {
+                if (trait is T_MasteryBlood || trait is T_MasteryDeath || trait is T_MasteryGeomancy)
+                {
+                    knownTraitNames.Add(trait.getName());
+                    knownTraitTypes.Add(trait.GetType());
+                    knownTraitLevels.Add(trait.level);
+                    continue;
+                }
+
+                foreach (Type type in magicTraitTypes)
+                {
+                    if (trait.GetType() == type || trait.GetType().IsSubclassOf(type))
+                    {
+                        knownTraitNames.Add(trait.getName());
+                        knownTraitTypes.Add(trait.GetType());
+                        knownTraitLevels.Add(trait.level);
+                        break;
+                    }
+                }
+            }
+
+            if (knownTraitTypes.Count > 0)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         internal void addNaturalWonderType(Type t)
         {
             if (!t.IsSubclassOf(typeof(Settlement)) && !t.IsSubclassOf(typeof(Subsettlement)))
