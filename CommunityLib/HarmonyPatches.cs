@@ -225,6 +225,8 @@ namespace CommunityLib
             // Task Fixes
             // Follow
             harmony.Patch(original: AccessTools.Method(typeof(Task_Follow), nameof(Task_Follow.turnTick), new Type[] { typeof(Unit) }), transpiler: new HarmonyMethod(patchType, nameof(Task_Follow_turnTick_Transpiler)));
+            // Raze Subsettlement
+            harmony.Patch(original: AccessTools.Method(typeof(Task_GoRazeSubsettlement), nameof(Task_GoRazeSubsettlement.turnTick), new Type[] { typeof(Unit) }), transpiler: new HarmonyMethod(patchType, nameof(Task_GoRazeSubsettlement_turnTick_Transpiler)));
 
             // Dwarven Changes //
             harmony.Patch(original: AccessTools.Constructor(typeof(Set_DwarvenCity), new Type[] { typeof(Location) }), postfix: new HarmonyMethod(patchType, nameof(Set_DwarvenCity_ctor_Postfix)));
@@ -1778,6 +1780,75 @@ namespace CommunityLib
             }
 
             return true;
+        }
+
+        // Raze Subsettlement
+        private static IEnumerable<CodeInstruction> Task_GoRazeSubsettlement_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Task_GoRazeSubsettlement_turnTick_TranspilerBody), new Type[] { typeof(Task_GoRazeSubsettlement), typeof(int) });
+
+            bool returnCode = true;
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldfld && instructionList[i-1].opcode == OpCodes.Ldarg_0 && instructionList[i-2].opcode == OpCodes.Endfinally)
+                        {
+                            returnCode = false;
+
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 8);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Stloc_S)
+                        {
+                            returnCode = true;
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
+
+            }
+
+            Console.WriteLine("CommunityLib: Completed Task_GoRazeSubsettlement_turnTick_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static bool Task_GoRazeSubsettlement_turnTick_TranspilerBody(Task_GoRazeSubsettlement task, int subCount)
+        {
+            if (task.target.settlement.location.soc != null && task.target.settlement.location.soc.getCapitalHex() == task.target.settlement.location.hex)
+            {
+                return true;
+            }
+
+            if (task.target.settlement is Set_City || task.target.settlement is Set_DwarvenCity || task.target.settlement is Set_ElvenCity)
+            {
+                if (subCount <= 1)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+
+            return false;
         }
 
         // Dwarven Changes
