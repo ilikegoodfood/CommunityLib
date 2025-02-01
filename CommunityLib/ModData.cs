@@ -396,7 +396,7 @@ namespace CommunityLib
         {
             foreach (Trait trait in p.traits)
             {
-                if (trait is T_MasteryBlood || trait is T_MasteryDeath || trait is T_MasteryGeomancy)
+                if (trait is T_MasteryBlood || trait is T_MasteryDeath || trait is T_MasteryGeomancy || trait is T_MagicMastery)
                 {
                     return true;
                 }
@@ -419,7 +419,7 @@ namespace CommunityLib
 
             foreach (Trait trait in p.traits)
             {
-                if (trait is T_MasteryBlood || trait is T_MasteryDeath || trait is T_MasteryGeomancy)
+                if (trait is T_MasteryBlood || trait is T_MasteryDeath || trait is T_MasteryGeomancy || trait is T_MagicMastery)
                 {
                     magicTraits.Add(trait);
 
@@ -471,6 +471,11 @@ namespace CommunityLib
         {
             if (location.settlement != null)
             {
+                if (location.settlement is Set_NaturalWonder)
+                {
+                    return true;
+                }
+
                 foreach (Type type in naturalWonderTypes)
                 {
                     if (type.IsSubclassOf(typeof(Settlement)) && (location.settlement.GetType() == type || location.settlement.GetType().IsSubclassOf(type)))
@@ -481,6 +486,11 @@ namespace CommunityLib
 
                 foreach (Subsettlement sub in location.settlement.subs)
                 {
+                    if (sub is Sub_NaturalWonder)
+                    {
+                        return true;
+                    }
+
                     foreach (Type type2 in naturalWonderTypes)
                     {
                         if (type2.IsSubclassOf(typeof(Subsettlement)) && (sub.GetType() == type2 || sub.GetType().IsSubclassOf(type2)))
