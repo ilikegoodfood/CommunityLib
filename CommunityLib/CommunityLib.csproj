@@ -77,6 +77,7 @@
     <Compile Include="ModIntegrationData.cs" />
     <Compile Include="ConditionalUAENOverrideAI.cs" />
     <Compile Include="OnChallengeComplete.cs" />
+    <Compile Include="OrderedDictionary.cs" />
     <Compile Include="PriorityQueue.cs" />
     <Compile Include="Rt_DeepOnes_TravelBeneath.cs" />
     <Compile Include="Rt_HiddenThoughts.cs" />
