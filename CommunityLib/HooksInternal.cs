@@ -103,6 +103,42 @@ namespace CommunityLib
             }
         }
 
+        public override bool onCheckIsProphetPlayerAligned(HolyOrder order, UA prophet)
+        {
+            if (prophet.isCommandable())
+            {
+                return true;
+            }
+
+            if (ModCore.Get().data.tryGetModIntegrationData("DeepOnesPlus", out ModIntegrationData intDataDOP) && intDataDOP.typeDict.TryGetValue("DrownedProphet", out Type drownedProphetType) && drownedProphetType != null)
+            {
+                if (prophet.GetType() == drownedProphetType)
+                {
+                    return true;
+                }
+            }
+
+            if (ModCore.opt_darkProphets)
+            {
+                if (prophet.society is Society society)
+                {
+                    if (society.isDarkEmpire)
+                    {
+                        if (prophet.person.shadow > 50.0)
+                        {
+                            return true;
+                        }
+                    }
+                    else if (society.isOphanimControlled)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
         public override HolyOrder onLocationViewFaithButton_GetHolyOrder(Location loc)
         {
             if (ModCore.opt_ophanimFaithTomb)
