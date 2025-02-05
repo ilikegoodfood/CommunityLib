@@ -15,6 +15,97 @@ namespace CommunityLib
             
         }
 
+        public override void onMapGen_PlaceWonders(Type t)
+        {
+            if (t == typeof(Sub_Wonder_DeathIsland))
+            {
+                List<Location> locations = new List<Location>();
+                Location target = null;
+
+                foreach (Location location in map.locations)
+                {
+                    if (location.hex.z == 0 && location.isOcean && !location.getNeighbours().Any(n => !n.isOcean) && location.settlement == null)
+                    {
+                        locations.Add(location);
+                    }
+                }
+
+                if (locations.Count > 0)
+                {
+                    target = locations[0];
+                    if (Location.indexCounter > 1)
+                    {
+                        target = locations[Eleven.random.Next(locations.Count)];
+                    }
+                }
+
+                if (target != null)
+                {
+                    target.settlement = new Set_MinorOther(target);
+                    target.settlement.subs.Clear();
+                    target.settlement.subs.Add(new Sub_Wonder_DeathIsland(target.settlement));
+                }
+            }
+            else if (t == typeof(Sub_Wonder_Doorway))
+            {
+                List<Location> locations = new List<Location>();
+                Location target = null;
+
+                foreach (Location location in map.locations)
+                {
+                    if (location.hex.z == 0 && location.settlement == null && !location.isOcean && (location.hex.terrain == Hex.terrainType.ARID || location.hex.terrain == Hex.terrainType.DESERT || location.hex.terrain == Hex.terrainType.DRY))
+                    {
+                        locations.Add(location);
+                    }
+                }
+
+                if (locations.Count > 0)
+                {
+                    target = locations[0];
+                    if (Location.indexCounter > 1)
+                    {
+                        target = locations[Eleven.random.Next(locations.Count)];
+                    }
+                }
+
+                if (target != null)
+                {
+                    target.settlement = new Set_MinorOther(target);
+                    target.settlement.subs.Clear();
+                    target.settlement.subs.Add(new Sub_Wonder_Doorway(target.settlement));
+                }
+            }
+            else if (t == typeof(Sub_Wonder_PrimalFont))
+            {
+                List<Location> locations = new List<Location>();
+                Location target = null;
+
+                foreach (Location location in map.locations)
+                {
+                    if (location.hex.z == 0 && location.settlement == null && !location.isOcean)
+                    {
+                        locations.Add(location);
+                    }
+                }
+
+                if (locations.Count > 0)
+                {
+                    target = locations[0];
+                    if (Location.indexCounter > 1)
+                    {
+                        target = locations[Eleven.random.Next(locations.Count)];
+                    }
+                }
+
+                if (target != null)
+                {
+                    target.settlement = new Set_MinorOther(target);
+                    target.settlement.subs.Clear();
+                    target.settlement.subs.Add(new Sub_Wonder_PrimalFont(target.settlement));
+                }
+            }
+        }
+
         public override bool isUnitSubsumed(Unit uOriginal, Unit uSubsuming)
         {
             if (ModCore.Get().data.tryGetModIntegrationData("LivingWilds", out ModIntegrationData intDataLW))

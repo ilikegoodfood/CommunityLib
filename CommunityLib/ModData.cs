@@ -159,7 +159,22 @@ namespace CommunityLib
         {
             if (wonderGenTypes == null)
             {
-                wonderGenTypes = new List<Type>();
+                wonderGenTypes = new List<Type> { typeof(Sub_Wonder_DeathIsland), typeof(Sub_Wonder_Doorway), typeof(Sub_Wonder_PrimalFont) };
+            }
+
+            if (!wonderGenTypes.Contains(typeof(Sub_Wonder_DeathIsland)))
+            {
+                wonderGenTypes.Add(typeof(Sub_Wonder_DeathIsland));
+            }
+
+            if (!wonderGenTypes.Contains(typeof(Sub_Wonder_Doorway)))
+            {
+                wonderGenTypes.Add(typeof(Sub_Wonder_Doorway));
+            }
+
+            if (!wonderGenTypes.Contains(typeof(Sub_Wonder_PrimalFont)))
+            {
+                wonderGenTypes.Add(typeof(Sub_Wonder_PrimalFont));
             }
         }
 
