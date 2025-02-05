@@ -236,6 +236,8 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Constructor(typeof(Set_DwarvenCity), new Type[] { typeof(Location) }), postfix: new HarmonyMethod(patchType, nameof(Set_DwarvenCity_ctor_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(Set_DwarvenCity), nameof(Set_DwarvenCity.turnTick), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Set_DwarvenSettlement_turnTick_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(Set_DwarvenOutpost), nameof(Set_DwarvenOutpost.turnTick), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Set_DwarvenSettlement_turnTick_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(Set_DwarvenCity), nameof(Set_DwarvenCity.getInnerSecurity), new Type[] { typeof(List<ReasonMsg>) }), transpiler: new HarmonyMethod(patchType, nameof(Set_DwarvenSettlement_getSecurityInner_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Set_DwarvenOutpost), nameof(Set_DwarvenOutpost.getInnerSecurity), new Type[] { typeof(List<ReasonMsg>) }), transpiler: new HarmonyMethod(patchType, nameof(Set_DwarvenSettlement_getSecurityInner_Transpiler)));
 
             // Item Fixes
             harmony.Patch(original: AccessTools.Method(typeof(I_DarkStone), nameof(I_DarkStone.getShortDesc), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(I_DarkStone_getShortDesc_Postfix)));
@@ -2038,6 +2040,37 @@ namespace CommunityLib
 
             Task_BuildSettlement task = new Task_BuildSettlement(targetLocation, isFortress, 1);
             settlers.task = task;
+        }
+
+        private static IEnumerable<CodeInstruction> Set_DwarvenSettlement_getSecurityInner_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldc_R8)
+                        {
+                            instructionList[i].operand = 4.0;
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+
+            }
+
+            Console.WriteLine("CommunityLib: Completed Set_DwarvenSettlement_getSecurityInner_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
         }
 
         // Item Fixes
