@@ -468,6 +468,18 @@ namespace CommunityLib
         }
 
         /// <summary>
+        /// This hook fires when the influence gain of a holy order is calculated, or when a mod calls the `checkIsProphetPlayerAligned` helper function in the Community Library's Mod Kernel. It recieves the order for which influence is being calculated (order), and the unit that is their prophet (prophet). It returns whether the prophet should be considered player controlled for the purposes of influence gain. <br></br>
+        /// No hook is called after the first isnatnce to return true.
+        /// </summary>
+        /// <param name="order"></param>
+        /// <param name="prophet"></param>
+        /// <returns></returns>
+        public virtual bool onCheckIsProphetPlayerAligned(HolyOrder order, UA prophet)
+        {
+            return false;
+        }
+
+        /// <summary>
         /// This hook fires when the relgion UI is openned. It recieves the holy order that the ui has opened to. This hook does not fire when a player switches which religion they are viewing.
         /// </summary>
         /// <param name="order"></param>

@@ -53,6 +53,8 @@ namespace CommunityLib
 
         public static bool opt_enhancedTradeRouteLinks = true;
 
+        public static bool opt_darkProphets = false;
+
         public static bool opt_DynamicOrcCount = false;
 
         public static int opt_targetOrcCount = 2;
@@ -100,6 +102,9 @@ namespace CommunityLib
             {
                 case "Auto-Relaunch on Mod List Change":
                     opt_autoRelaunch = value;
+                    break;
+                case "Dark Prophets":
+                    opt_darkProphets = value;
                     break;
                 case "Dynamic Orc Horde Count":
                     opt_DynamicOrcCount = value;
@@ -2317,11 +2322,33 @@ namespace CommunityLib
 
         public bool checkIsNaturalWonder(Location location) => data.isNaturalWonder(location);
 
+        public void registerWonderType(Type type) => data.addWonderType(type);
+
+        public bool checkIsWonder(Location location) => data.isWonder(location);
+
         public void registerVampireType(Type type) => data.addVampireType(type);
 
         public bool checkIsVampire(Unit unit) => data.isVampireType(unit);
 
         public void registerReviveAgentCreationFunction(Func<Person, Location, UA> func) => data.addReviveAgentCreationFunction(func);
+
+        public bool checkIsProphetPlayerAligned(HolyOrder order)
+        {
+            if (order == null || order.prophet == null || order.prophet == order.map.awarenessManager.chosenOne)
+            {
+                return false;
+            }
+
+            foreach (Hooks hook in Get().GetRegisteredHooks())
+            {
+                if (hook?.onCheckIsProphetPlayerAligned(order, order.prophet) ?? false)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         public int getTravelTimeTo(Unit u, Location location)
         {

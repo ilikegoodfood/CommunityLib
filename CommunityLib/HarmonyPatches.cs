@@ -94,6 +94,10 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(UIE_HolyTenet), nameof(UIE_HolyTenet.bInfluenceNegatively), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(UIE_HolyTenet_bInfluence_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(UIE_HolyTenet), nameof(UIE_HolyTenet.bInfluencePositively), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(UIE_HolyTenet_bInfluence_Postfix)));
 
+            // Religion Hooks
+            harmony.Patch(original: AccessTools.Method(typeof(HolyOrder), nameof(HolyOrder.computeInfluenceDark), new Type[] { typeof(List<ReasonMsg>) }), transpiler: new HarmonyMethod(patchType, nameof(HolyOrder_computeInfluenceDark_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(HolyOrder), nameof(HolyOrder.computeInfluenceHuman), new Type[] { typeof(List<ReasonMsg>) }), transpiler: new HarmonyMethod(patchType, nameof(HolyOrder_computeInfluenceHuman_Transpiler)));
+
             // UILeft Location Modifications and Hooks
             harmony.Patch(original: AccessTools.Method(typeof(UILeftLocation), nameof(UILeftLocation.setTo), new Type[] { typeof(Location) }), postfix: new HarmonyMethod(patchType, nameof(UILeftLocation_setTo_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(UILeftLocation), nameof(UILeftLocation.bViewFaith), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(UILeftLocation_bViewFaith_Transpiler)));
@@ -2783,6 +2787,133 @@ namespace CommunityLib
             return false;
         }
 
+        // Religion Hooks
+        private static IEnumerable<CodeInstruction> HolyOrder_computeInfluenceDark_Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            List<CodeInstruction> instructionList = instructions.ToList();
+
+            MethodInfo MI_GetComLib = AccessTools.Method(typeof(ModCore), nameof(ModCore.Get), new Type[0]);
+            MethodInfo MI_checkPropetDark = AccessTools.Method(typeof(ModCore), nameof(ModCore.checkIsProphetPlayerAligned), new Type[] { typeof(HolyOrder) });
+
+            FieldInfo FI_Prophet = AccessTools.Field(typeof(HolyOrder), nameof(HolyOrder.prophet));
+
+            bool returnCode = true;
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i + 1].opcode == OpCodes.Ldfld && instructionList[i + 2].opcode == OpCodes.Brfalse_S)
+                        {
+                            returnCode = false;
+
+                            CodeInstruction code = new CodeInstruction(OpCodes.Call, MI_GetComLib);
+                            code.labels.AddRange(instructionList[i].labels);
+                            yield return code;
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_checkPropetDark);
+                            yield return new CodeInstruction(OpCodes.Stloc_S, 36);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S)
+                        {
+                            returnCode = true;
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
+            }
+
+            Console.WriteLine("CommunityLib: Completed HolyOrder_computeInfluenceDark_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> HolyOrder_computeInfluenceHuman_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = instructions.ToList();
+
+            MethodInfo MI_GetComLib = AccessTools.Method(typeof(ModCore), nameof(ModCore.Get), new Type[0]);
+            MethodInfo MI_checkPropetDark = AccessTools.Method(typeof(ModCore), nameof(ModCore.checkIsProphetPlayerAligned), new Type[] { typeof(HolyOrder) });
+
+            FieldInfo FI_Prophet = AccessTools.Field(typeof(HolyOrder), nameof(HolyOrder.prophet));
+
+            bool returnCode = true;
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i + 1].opcode == OpCodes.Ldfld && instructionList[i + 2].opcode == OpCodes.Brfalse_S)
+                        {
+                            Label storeLabel = ilg.DefineLabel();
+                            Label falseLabel = ilg.DefineLabel();
+
+                            returnCode = false;
+
+                            yield return instructionList[i];
+                            yield return instructionList[i + 1];
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, falseLabel);
+
+                            yield return new CodeInstruction(OpCodes.Call, MI_GetComLib);
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_checkPropetDark);
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_0);
+                            yield return new CodeInstruction(OpCodes.Ceq);
+                            yield return new CodeInstruction(OpCodes.Br_S, storeLabel);
+
+                            CodeInstruction falseLine = new CodeInstruction(OpCodes.Ldc_I4_0);
+                            falseLine.labels.Add(falseLabel);
+                            yield return falseLine;
+
+                            CodeInstruction storeLine = new CodeInstruction(OpCodes.Stloc_S, 15);
+                            storeLine.labels.Add(storeLabel);
+                            yield return storeLine;
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S)
+                        {
+                            returnCode = true;
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
+            }
+
+            Console.WriteLine("CommunityLib: Completed HolyOrder_computeInfluenceHuman_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        // Agent Home button tweaks
         private static IEnumerable<CodeInstruction> UILeftLocation_bHeroesHome_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator ilg)
         {
             List<CodeInstruction> instructionList = instructions.ToList();
