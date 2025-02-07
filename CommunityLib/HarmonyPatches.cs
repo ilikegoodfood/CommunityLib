@@ -213,6 +213,8 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_OpportunisticEncroachment), nameof(Ch_Orcs_OpportunisticEncroachment.complete), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_Orcs_OpportunisticEncroachment_complete_Transpiler)));
             // Orcs Attack Here
             harmony.Patch(original: AccessTools.Method(typeof(Rti_Orc_AttackHere), nameof(Rti_Orc_AttackHere.valid), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Rti_Orc_AttackHere_Postfix)));
+            // Build Mages Camp
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_BuildMages), nameof(Ch_Orcs_BuildMages.validFor), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Ch_Orcs_BuildMages_validFor_Postfix)));
             // Orcs Build Menagerie
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_BuildMenagerie), nameof(Ch_Orcs_BuildMenagerie.getRestriction), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Ch_Orcs_BuildMenagerie_getRestriction_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_BuildMenagerie), nameof(Ch_Orcs_BuildMenagerie.validFor), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Ch_Orcs_BuildMenagerie_validFor_Postfix)));
@@ -1509,6 +1511,33 @@ namespace CommunityLib
             {
                 __result = false;
             }
+        }
+
+        private static void Ch_Orcs_BuildMages_validFor_Postfix(Ch_Orcs_BuildMages __instance, UA ua, ref bool __result)
+        {
+            int specializedCount = 2;
+            foreach (Location neighbour in __instance.location.getNeighbours())
+            {
+                if (neighbour.settlement is Set_OrcCamp camp && camp.specialism != 0)
+                {
+                    specializedCount++;
+                }
+            }
+
+            if (ua.person.gold < __instance.map.param.ch_orc_buildFortressCostPerNeighbour * specializedCount)
+            {
+                __result = false;
+                return;
+            }
+
+            if (ModCore.Get().checkKnowsMagic(ua.person, out List<Trait> magicTraits))
+            {
+                __result = magicTraits.Any(t => t.level >= 2);
+                return;
+            }
+
+            __result = false;
+            return;
         }
 
         private static void Ch_Orcs_BuildMenagerie_getRestriction_Postfix(Ch_Orcs_BuildMenagerie __instance, ref string __result)
