@@ -246,6 +246,8 @@ namespace CommunityLib
 
             // Local Action Fixes
             harmony.Patch(original: AccessTools.Method(typeof(Act_FundOutpost), nameof(Act_FundOutpost.valid), new Type[] { typeof(Person), typeof(SettlementHuman) }), postfix: new HarmonyMethod(patchType, nameof(Act_FundOutpost_valid_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(Act_E_Expand), nameof(Act_E_Expand.valid), new Type[] { typeof(Person), typeof(SettlementHuman) }), transpiler: new HarmonyMethod(patchType, nameof(Act_E_Expand_valid_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Act_E_Expand), nameof(Act_E_Expand.complete), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Act_E_Expand_complete_Transpiler)));
 
             // Relationship Interaction Fixes
             harmony.Patch(original: AccessTools.Method(typeof(Society), nameof(Society.populateActions), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Society_populateActions_Transpiler)));
@@ -2149,6 +2151,226 @@ namespace CommunityLib
 
                     __result = false;
                 }
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> Act_E_Expand_valid_Transpiler (IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            FieldInfo FI_City = AccessTools.Field(typeof(Act_E_Expand), nameof(Act_E_Expand.city));
+            MethodInfo MI_Location = AccessTools.PropertyGetter(typeof(Settlement), nameof(Settlement.location));
+            FieldInfo FI_map = AccessTools.Field(typeof(Location), nameof(Location.map));
+            FieldInfo FI_Society = AccessTools.Field(typeof(Location), nameof(Location.soc));
+
+            FieldInfo FI_isDarkEmpire = AccessTools.Field(typeof(Society), nameof(Society.isDarkEmpire));
+            FieldInfo FI_IsOphanimTheocracy = AccessTools.Field(typeof(Society), nameof(Society.isOphanimControlled));
+            FieldInfo FI_awarenessOfUnderground = AccessTools.Field(typeof(Map), nameof(Map.awarenessOfUnderground));
+
+            FieldInfo FI_Hex = AccessTools.Field(typeof(Location), nameof(Location.hex));
+            FieldInfo FI_z = AccessTools.Field(typeof(Hex), nameof(Hex.z));
+
+            Label validLabel = ilg.DefineLabel ();
+            Label invalidLabel = ilg.DefineLabel ();
+            Label societyNullLabel = ilg.DefineLabel ();
+
+            int societyLoc = ilg.DeclareLocal(typeof(Society)).LocalIndex;
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (i > 0 && instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i-1].opcode == OpCodes.Nop)
+                        {
+                            // Get society and store to local variable
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_City);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_Location);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Society);
+                            yield return new CodeInstruction(OpCodes.Isinst, typeof(Society));
+                            yield return new CodeInstruction(OpCodes.Stloc_S, societyLoc);
+                            
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_3)
+                        {
+                            // If awareness of underground is 100%
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_City);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_Location);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_map);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_awarenessOfUnderground);
+                            yield return new CodeInstruction(OpCodes.Ldc_R8, 0.9995);
+                            yield return new CodeInstruction(OpCodes.Cgt);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, validLabel);
+
+                            // Or `if (city.location.hex.z == neighbour.hez.z)
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_City);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_Location);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Hex);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_z);
+                            yield return new CodeInstruction(OpCodes.Ldloc_3);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Hex);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_z);
+                            yield return new CodeInstruction(OpCodes.Ceq);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, validLabel);
+
+                            // Or Society is not null
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, societyLoc);
+                            yield return new CodeInstruction(OpCodes.Ldnull);
+                            yield return new CodeInstruction(OpCodes.Cgt_Un);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, invalidLabel);
+
+                            // and is dark empire
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, societyLoc);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_isDarkEmpire);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, validLabel);
+
+                            // Or ophanim controlled.
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, societyLoc);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_IsOphanimTheocracy);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, invalidLabel);
+
+                            instructionList[i].labels.Add(validLabel);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloca_S)
+                        {
+                            instructionList[i].labels.Add(invalidLabel);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Act_E_Expand_valid_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> Act_E_Expand_complete_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            FieldInfo FI_City = AccessTools.Field(typeof(Act_E_Expand), nameof(Act_E_Expand.city));
+            MethodInfo MI_Location = AccessTools.PropertyGetter(typeof(Settlement), nameof(Settlement.location));
+            FieldInfo FI_map = AccessTools.Field(typeof(Location), nameof(Location.map));
+            FieldInfo FI_Society = AccessTools.Field(typeof(Location), nameof(Location.soc));
+
+            FieldInfo FI_isDarkEmpire = AccessTools.Field(typeof(Society), nameof(Society.isDarkEmpire));
+            FieldInfo FI_IsOphanimTheocracy = AccessTools.Field(typeof(Society), nameof(Society.isOphanimControlled));
+            FieldInfo FI_awarenessOfUnderground = AccessTools.Field(typeof(Map), nameof(Map.awarenessOfUnderground));
+
+            FieldInfo FI_Hex = AccessTools.Field(typeof(Location), nameof(Location.hex));
+            FieldInfo FI_z = AccessTools.Field(typeof(Hex), nameof(Hex.z));
+
+            Label validLabel = ilg.DefineLabel();
+            Label invalidLabel = ilg.DefineLabel();
+            Label societyNullLabel = ilg.DefineLabel();
+
+            int societyLoc = ilg.DeclareLocal(typeof(Society)).LocalIndex;
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (i > 0 && instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i + 1].opcode == OpCodes.Ldfld && instructionList[i + 2].opcode == OpCodes.Callvirt && instructionList[i + 3].opcode == OpCodes.Callvirt)
+                        {
+                            // Get society and store to local variable
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_City);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_Location);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Society);
+                            yield return new CodeInstruction(OpCodes.Isinst, typeof(Society));
+                            yield return new CodeInstruction(OpCodes.Stloc_S, societyLoc);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_3)
+                        {
+                            // If awareness of underground is 100%
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_City);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_Location);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_map);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_awarenessOfUnderground);
+                            yield return new CodeInstruction(OpCodes.Ldc_R8, 0.9995);
+                            yield return new CodeInstruction(OpCodes.Cgt);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, validLabel);
+
+                            // Or `if (city.location.hex.z == neighbour.hez.z)
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_City);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_Location);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Hex);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_z);
+                            yield return new CodeInstruction(OpCodes.Ldloc_3);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Hex);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_z);
+                            yield return new CodeInstruction(OpCodes.Ceq);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, validLabel);
+
+                            // Or Society is not null
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, societyLoc);
+                            yield return new CodeInstruction(OpCodes.Ldnull);
+                            yield return new CodeInstruction(OpCodes.Cgt_Un);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, invalidLabel);
+
+                            // and is dark empire
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, societyLoc);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_isDarkEmpire);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, validLabel);
+
+                            // Or ophanim controlled.
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, societyLoc);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_IsOphanimTheocracy);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, invalidLabel);
+
+                            instructionList[i].labels.Add(validLabel);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloca_S && instructionList[i - 1].opcode == OpCodes.Leave_S && instructionList[i + 1].opcode == OpCodes.Call)
+                        {
+                            instructionList[i].labels.Add(invalidLabel);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Act_E_Expand_complete_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
