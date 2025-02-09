@@ -61,6 +61,8 @@ namespace CommunityLib
 
         public static bool opt_DynamicNaturalWonderCount = false;
 
+        public static bool opt_DuplicateWonders = false;
+
         public static int opt_targetNaturalWonderCount = 1;
 
         public static bool opt_godSort_Alphabetise = false;
@@ -111,6 +113,9 @@ namespace CommunityLib
                     break;
                 case "Dynamic Natural Wonder Count":
                     opt_DynamicNaturalWonderCount = value;
+                    break;
+                case "Allow Duplicate Wonders":
+                    opt_DuplicateWonders = value;
                     break;
                 case "Spawn Shipwrecks":
                     opt_spawnShipwrecks = value;
