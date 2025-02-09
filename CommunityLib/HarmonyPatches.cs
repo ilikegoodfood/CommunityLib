@@ -9134,11 +9134,7 @@ namespace CommunityLib
 
         private static void Map_placeWonders_TranspilerBody(Map map)
         {
-            if (map.tutorial)
-            {
-                return;
-            }
-
+            ModCore.Get().data.initialiseWonderGenTypes();
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 List<Type> retValue = hook.onMapGen_PlaceWonders();
@@ -9166,21 +9162,23 @@ namespace CommunityLib
                 }
             }
 
-            if (i < 1 || map.seed == 0L)
+            if (i < 1 || map.seed == 0L || map.tutorial)
             {
                 i = 1;
             }
 
-            while (i > 0 && ModCore.Get().data.getWonderGenTypes().Count > 0)
+            List<Type> wonderTypes = ModCore.Get().data.getWonderGenTypes().ToList();
+            while (i > 0 && wonderTypes.Count > 0)
             {
-                List<Type> wonderTypes = ModCore.Get().data.getWonderGenTypes().ToList();
-                Type wonderType = wonderTypes[Eleven.random.Next(ModCore.Get().data.getWonderGenTypes().Count)];
-                wonderTypes.Remove(wonderType);
+                Type wonderType = wonderTypes[Eleven.random.Next(wonderTypes.Count)];
+                if (!ModCore.opt_DuplicateWonders)
+                {
+                    wonderTypes.Remove(wonderType);
+                }
 
-                if (map.seed == 0L)
+                if (map.seed == 0L || map.tutorial)
                 {
                     wonderType = typeof(Sub_Wonder_Doorway);
-                    wonderTypes.Clear();
                 }
 
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())

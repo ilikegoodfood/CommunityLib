@@ -155,11 +155,12 @@ namespace CommunityLib
             }
         }
 
-        private void initialiseWonderGenTypes()
+        internal void initialiseWonderGenTypes()
         {
             if (wonderGenTypes == null)
             {
                 wonderGenTypes = new List<Type> { typeof(Sub_Wonder_DeathIsland), typeof(Sub_Wonder_Doorway), typeof(Sub_Wonder_PrimalFont) };
+                return;
             }
 
             if (!wonderGenTypes.Contains(typeof(Sub_Wonder_DeathIsland)))
@@ -207,24 +208,24 @@ namespace CommunityLib
             }
 
             map = null;
-            modIntegrationData.Clear();
-            modCultureData.Clear();
-            reviveAgentCreationFunctons.Clear();
-            dwarfExpansionCooldowns.Clear();
+            modIntegrationData?.Clear();
+            modCultureData?.Clear();
+            reviveAgentCreationFunctons?.Clear();
+            dwarfExpansionCooldowns?.Clear();
 
             // COllections
-            locusTypes.Clear();
-            magicTraitTypes.Clear();
-            wonderTypes.Clear();
-            naturalWonderTypes.Clear();
+            locusTypes?.Clear();
+            magicTraitTypes?.Clear();
+            wonderTypes?.Clear();
+            naturalWonderTypes?.Clear();
             initialiseNaturalWonderTypes();
 
-            vampireTypes.Clear();
+            vampireTypes?.Clear();
 
-            wonderGenTypes.Clear();
+            wonderGenTypes?.Clear();
 
-            influenceGainElder.Clear();
-            influenceGainHuman.Clear();
+            influenceGainElder?.Clear();
+            influenceGainHuman?.Clear();
 
             hiddenThoughts = null;
 
