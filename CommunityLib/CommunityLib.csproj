@@ -101,6 +101,7 @@
     <Compile Include="UIE_ChallengeTask.cs" />
     <Compile Include="UIUtils.cs" />
     <Compile Include="UM_DwarvenSettlers.cs" />
+    <Compile Include="WonderData.cs" />
     <None Include="packages.config" />
     <None Include="Storage %28NotCompiled%29.cs" />
     <Compile Include="HarmonyPatches.cs" />

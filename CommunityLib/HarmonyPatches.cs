@@ -9134,16 +9134,19 @@ namespace CommunityLib
 
         private static void Map_placeWonders_TranspilerBody(Map map)
         {
-            ModCore.Get().data.initialiseWonderGenTypes();
+            List<WonderData> wonderData = new List<WonderData>();
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                List<Type> retValue = hook.onMapGen_PlaceWonders();
+                List<WonderData> retValue = hook.onMapGen_PlaceWonders();
 
                 if (retValue != null)
                 {
-                    foreach (Type t in retValue)
+                    foreach (WonderData data in retValue)
                     {
-                        ModCore.Get().data.addWonderGenType(t);
+                        if (!wonderData.Contains(data))
+                        {
+                            wonderData.Add(data);
+                        }
                     }
                 }
             }
@@ -9167,29 +9170,79 @@ namespace CommunityLib
                 i = 1;
             }
 
-            List<Type> wonderTypes = ModCore.Get().data.getWonderGenTypes().ToList();
-            while (i > 0 && wonderTypes.Count > 0)
+            List<WonderData> standard = new List<WonderData>();
+            List<WonderData> high = new List<WonderData>();
+
+            foreach (WonderData data in wonderData)
             {
-                Type wonderType = wonderTypes[Eleven.random.Next(wonderTypes.Count)];
-                if (!ModCore.opt_DuplicateWonders)
+                switch(data.Priority)
                 {
-                    wonderTypes.Remove(wonderType);
-                }
+                    case 1:
+                        standard.Add(data);
+                        break;
+                    case 2:
+                        high.Add(data);
+                        break;
+                    case 3:
+                        foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                        {
+                            hook.onMapGen_PlaceWonders(data.WonderType);
+                        }
 
-                if (map.seed == 0L || map.tutorial)
-                {
-                    wonderType = typeof(Sub_Wonder_Doorway);
+                        i--;
+                        if (i < 0)
+                        {
+                            Console.WriteLine($"CommunityLib: WARNING: Number of forced wonders exceeds target wonder count.");
+                        }
+                        Console.WriteLine($"CommunityLib: Spawning forced wonder of type {data.WonderType.Name}");
+                        break;
                 }
-
-                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
-                {
-                    hook.onMapGen_PlaceWonders(wonderType);
-                }
-
-                i--;
             }
 
-            ModCore.Get().data.getWonderGenTypes().Clear();
+            if (map.seed == 0L || map.tutorial)
+            {
+                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                {
+                    hook.onMapGen_PlaceWonders(typeof(Sub_Wonder_Doorway));
+                }
+
+                return;
+            }
+
+            while (i > 0 && (high.Count > 0 || standard.Count > 0))
+            {
+                while (i > 0 && high.Count > 0)
+                {
+                    WonderData data = high[Eleven.random.Next(high.Count)];
+                    if (data.Unique || !ModCore.opt_DuplicateWonders)
+                    {
+                        high.Remove(data);
+                    }
+
+                    foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                    {
+                        hook.onMapGen_PlaceWonders(data.WonderType);
+                    }
+
+                    i--;
+                }
+
+                while (i > 0 && standard.Count > 0)
+                {
+                    WonderData data = standard[Eleven.random.Next(standard.Count)];
+                    if (data.Unique || !ModCore.opt_DuplicateWonders)
+                    {
+                        standard.Remove(data);
+                    }
+
+                    foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                    {
+                        hook.onMapGen_PlaceWonders(data.WonderType);
+                    }
+
+                    i--;
+                }
+            }
         }
     }
 }
