@@ -45,7 +45,7 @@ namespace CommunityLib
             this.map = map;
         }
 
-        public virtual List<Type> onMapGen_PlaceWonders()
+        public virtual List<WonderData> onMapGen_PlaceWonders()
         {
             return null;
         }

@@ -85,6 +85,12 @@ namespace CommunityLib
 
         public static bool opt_realisticTradeRoutes = false;
 
+        public static int opt_wonderPriority_entrance = 1;
+
+        public static int opt_wonderPriority_brother = 1;
+
+        public static int opt_wonderPriority_font = 1;
+
         public override void onModsInitiallyLoaded()
         {
             core = this;
@@ -182,6 +188,15 @@ namespace CommunityLib
                     break;
                 case "Target Natural Wonder Count":
                     opt_targetNaturalWonderCount = value;
+                    break;
+                case "Wonder Priority: The Entrance":
+                    opt_wonderPriority_entrance = value;
+                    break;
+                case "Wonder Priority: Brother of Sleep":
+                    opt_wonderPriority_brother = value;
+                    break;
+                case "Wonder Priority: Primordial Font":
+                    opt_wonderPriority_font = value;
                     break;
                 default:
                     break;

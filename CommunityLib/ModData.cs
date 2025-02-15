@@ -39,8 +39,6 @@ namespace CommunityLib
         private HashSet<Type> vampireTypes;
         // end
 
-        private List<Type> wonderGenTypes;
-
         public bool isPlayerTurn = false;
 
         public Dictionary<HolyOrder, List<ReasonMsg>> influenceGainElder;
@@ -60,7 +58,6 @@ namespace CommunityLib
             initialiseNaturalWonderTypes();
             initialiseVampireTypes();
 
-            initialiseWonderGenTypes();
             initialiseInfluenceGain();
         }
 
@@ -144,30 +141,6 @@ namespace CommunityLib
             }
         }
 
-        internal void initialiseWonderGenTypes()
-        {
-            if (wonderGenTypes == null)
-            {
-                wonderGenTypes = new List<Type> { typeof(Sub_Wonder_DeathIsland), typeof(Sub_Wonder_Doorway), typeof(Sub_Wonder_PrimalFont) };
-                return;
-            }
-
-            if (!wonderGenTypes.Contains(typeof(Sub_Wonder_DeathIsland)))
-            {
-                wonderGenTypes.Add(typeof(Sub_Wonder_DeathIsland));
-            }
-
-            if (!wonderGenTypes.Contains(typeof(Sub_Wonder_Doorway)))
-            {
-                wonderGenTypes.Add(typeof(Sub_Wonder_Doorway));
-            }
-
-            if (!wonderGenTypes.Contains(typeof(Sub_Wonder_PrimalFont)))
-            {
-                wonderGenTypes.Add(typeof(Sub_Wonder_PrimalFont));
-            }
-        }
-
         private void initialiseInfluenceGain()
         {
             if (influenceGainElder == null)
@@ -209,8 +182,6 @@ namespace CommunityLib
             initialiseNaturalWonderTypes();
 
             vampireTypes?.Clear();
-
-            wonderGenTypes?.Clear();
 
             influenceGainElder?.Clear();
             influenceGainHuman?.Clear();
@@ -296,8 +267,6 @@ namespace CommunityLib
             initialiseMagicTraitTypes();
             initialiseNaturalWonderTypes();
             initialiseVampireTypes();
-
-            initialiseWonderGenTypes();
 
             initialiseInfluenceGain();
             initialiseHidenThoughts();
@@ -652,17 +621,5 @@ namespace CommunityLib
 
             return false;
         }
-
-        internal void addWonderGenType(Type t)
-        {
-            initialiseWonderGenTypes();
-
-            if (!wonderGenTypes.Contains(t))
-            {
-                wonderGenTypes.Add(t);
-            }
-        }
-
-        internal List<Type> getWonderGenTypes() => wonderGenTypes;
     }
 }

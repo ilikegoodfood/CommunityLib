@@ -15,6 +15,15 @@ namespace CommunityLib
             
         }
 
+        public override List<WonderData> onMapGen_PlaceWonders()
+        {
+            return new List<WonderData> {
+                new WonderData(typeof(Sub_Wonder_Doorway), ModCore.opt_wonderPriority_entrance),
+                new WonderData(typeof(Sub_Wonder_DeathIsland), ModCore.opt_wonderPriority_brother),
+                new WonderData(typeof(Sub_Wonder_PrimalFont), ModCore.opt_wonderPriority_font)
+            };
+        }
+
         public override void onMapGen_PlaceWonders(Type t)
         {
             if (t == typeof(Sub_Wonder_DeathIsland))
