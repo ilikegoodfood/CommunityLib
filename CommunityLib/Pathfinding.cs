@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Assets.Code;
+using UnityEngine;
 
 namespace CommunityLib
 {
@@ -185,12 +186,12 @@ namespace CommunityLib
                 hook.onPopulatingPathfindingDelegates(locA, u, pathfindingDelegates);
             }
 
-            HashSet<Location> locationHashes = new HashSet<Location> { locA };
-            PriorityQueue<Location[], double> paths = new PriorityQueue<Location[], double>();
-            paths.Enqueue(new Location[1] { locA }, 0.0);
-
             for (int pass = 0; pass < 2; pass++)
             {
+                HashSet<Location> locationHashes = new HashSet<Location> { locA };
+                PriorityQueue<Location[], double> paths = new PriorityQueue<Location[], double>();
+                paths.Enqueue(new Location[1] { locA }, 0.0);
+
                 int i = 0;
                 while (i < 5 * locA.map.locations.Count && paths.Count > 0)
                 {
@@ -329,13 +330,12 @@ namespace CommunityLib
                 hook.onPopulatingPathfindingDelegates(loc, u, pathfindingDelegates);
             }
 
-            HashSet<Location> locationHashes = new HashSet<Location> { loc };
-            PriorityQueue<Location[], double> paths = new PriorityQueue<Location[], double>();
-
-            paths.Enqueue(new Location[1] { loc }, 0.0);
-
             for (int pass = 0; pass < 2; pass++)
             {
+                HashSet<Location> locationHashes = new HashSet<Location> { loc };
+                PriorityQueue<Location[], double> paths = new PriorityQueue<Location[], double>();
+                paths.Enqueue(new Location[1] { loc }, 0.0);
+
                 PriorityQueue<Location[], double> destinations = new PriorityQueue<Location[], double>();
                 double destinationPriority = -1.0;
 
@@ -493,13 +493,12 @@ namespace CommunityLib
                 hook.onPopulatingPathfindingDelegates(loc, u, pathfindingDelegates);
             }
 
-            HashSet<Location> locationHashes = new HashSet<Location> { loc };
-            PriorityQueue<Location[], double> paths = new PriorityQueue<Location[], double>();
-
-            paths.Enqueue(new Location[] { loc }, 0.0);
-
             for (int pass = 0; pass < 2; pass++)
             {
+                HashSet<Location> locationHashes = new HashSet<Location> { loc };
+                PriorityQueue<Location[], double> paths = new PriorityQueue<Location[], double>();
+                paths.Enqueue(new Location[] { loc }, 0.0);
+
                 PriorityQueue<Location[], double> destinations = new PriorityQueue<Location[], double>();
                 double destinationPriority = -1.0;
 
@@ -669,27 +668,36 @@ namespace CommunityLib
             Location locLast = currentPath[currentPath.Length - 1];
             if (location.soc == null)
             {
-                if (location.isOcean)
+                if (location.isOcean != locLast.isOcean)
                 {
-                    if (locLast.settlement is Set_City && locLast.settlement.subs.Any(sub => sub is Sub_Docks))
+                    if (locLast.settlement != null && locLast.settlement.subs.Any(sub => sub is Sub_Docks))
                     {
                         result += 2.5;
                     }
                     else
                     {
-                        result += 7.5;
+                        result += 30.0;
                     }
+                }
+                else if (location.isOcean)
+                {
+                    result += 15.0;
                 }
                 else
                 {
                     result += 15.0;
                 }
             }
-            else if (location.soc is Society society)
+            else
             {
-                if (location.settlement is Set_City)
+                if (location.soc.isDark())
                 {
-                    if (locLast.isOcean && location.settlement.subs.Any(sub => sub is Sub_Docks))
+                    result += 2.5;
+                }
+
+                if (location.soc is Society society)
+                {
+                    if (location.isOcean != locLast.isOcean && location.settlement != null && location.settlement.subs.Any(sub => sub is Sub_Docks))
                     {
                         result += 2.5;
                     }
@@ -697,19 +705,51 @@ namespace CommunityLib
                     {
                         result += 2.5;
                     }
+                    else if (location.settlement is Set_City)
+                    {
+                        if (location.isOcean != locLast.isOcean)
+                        {
+                            result += 10.0;
+                        }
+                        else
+                        {
+                            result += 5.0;
+                        }
+                    }
+                    else if (locLast.settlement is SettlementHuman)
+                    {
+                        if (location.isOcean != locLast.isOcean)
+                        {
+                            result += 15.0;
+                        }
+                        else
+                        {
+                            result += 7.5;
+                        }
+                    }
                     else
                     {
-                        result += 5.0;
+                        if (location.isOcean != locLast.isOcean)
+                        {
+                            result += 20.0;
+                        }
+                        else
+                        {
+                            result += 10.0;
+                        }
                     }
                 }
                 else
                 {
-                    result += 7.5;
+                    if (location.isOcean != locLast.isOcean)
+                    {
+                        result += 45.0;
+                    }
+                    else
+                    {
+                        result += 30.0;
+                    }
                 }
-            }
-            else
-            {
-                result += 30.0;
             }
 
             // Consideration for low habitability. Strong avoidance of uninhabitable lands. Weak avoidance of low habitability lands. Ignored on ocean.
@@ -725,6 +765,12 @@ namespace CommunityLib
                     result += 10.0;
                 }
             }
+            else if (location.hex.getTemperature() < 0.2)
+            {
+                double tempModifier = (0.2 - location.hex.getTemperature()) * 20;
+                tempModifier *= tempModifier;
+                result += tempModifier;
+            }
 
             return result;
         }
@@ -732,6 +778,11 @@ namespace CommunityLib
         public static bool delegate_TRADEVALID_NODUPLICATES(Location[] currentPath, Location location)
         {
             return !location.map.tradeManager.routes.Any(r => (r.start() == currentPath[0] && r.end() == location) || (r.start() == location && r.end() == currentPath[0]));
+        }
+
+        public static bool delegate_TRADEVALID_MERGEREGIONS(Location[] currentPath, Location location)
+        {
+            return ModCore.Get().tradeRouteManager.routeData.indexGroups.Any(ig => ig.Contains(location.index) && !ig.Contains(currentPath[0].index));
         }
 
         public static Location[] getTradeRouteTo(Location start, Location end)
@@ -789,13 +840,12 @@ namespace CommunityLib
                 hook.onPopulatingTradeRoutePathfindingDelegates(start, pathfindingDelegates, destinationValidityDelegates);
             }
 
-            HashSet<Location> locationHashes = new HashSet<Location> { start };
-            PriorityQueue<Location[], double> paths = new PriorityQueue<Location[], double>();
-
-            paths.Enqueue(new Location[] { start }, 0.0);
-
             for (int pass = 0; pass < 2; pass++)
             {
+                HashSet<Location> locationHashes = new HashSet<Location> { start };
+                PriorityQueue<Location[], double> paths = new PriorityQueue<Location[], double>();
+                paths.Enqueue(new Location[] { start }, 0.0);
+
                 int i = 0;
                 while (i < 5 * start.map.locations.Count && paths.Count > 0)
                 {
@@ -886,7 +936,7 @@ namespace CommunityLib
 
             if (endpointsAll == null || endpointsAll.Count == 0)
             {
-                endpointsAll = getTradeRouteEndPoints(start.map);
+                endpointsAll = ModCore.Get().tradeRouteManager.getTradeRouteEndPoints();
             }
 
             if (endpointsAll.Count < 2)
@@ -941,13 +991,12 @@ namespace CommunityLib
                 hook.onPopulatingTradeRoutePathfindingDelegates(start, pathfindingDelegates, destinationValidityDelegates);
             }
 
-            HashSet<Location> locationHashes = new HashSet<Location> { start };
-            PriorityQueue<Location[], double> paths = new PriorityQueue<Location[], double>();
-
-            paths.Enqueue(new Location[] { start }, 0.0);
-
             for (int pass = 0; pass < 2; pass++)
             {
+                HashSet<Location> locationHashes = new HashSet<Location> { start };
+                PriorityQueue<Location[], double> paths = new PriorityQueue<Location[], double>();
+                paths.Enqueue(new Location[] { start }, 0.0);
+
                 PriorityQueue<Location[], double> destinations = new PriorityQueue<Location[], double>();
                 double destinationPriority = -1.0;
 
@@ -1050,36 +1099,6 @@ namespace CommunityLib
             }
 
             return null;
-        }
-
-        internal static List<Location> getTradeRouteEndPoints(Map map)
-        {
-            List<Location> endPoints = new List<Location>();
-
-            foreach (Location location in map.locations)
-            {
-                if (map.overmind.god is God_Mammon && location.settlement is Set_TombOfGods)
-                {
-                    endPoints.Add(location);
-                    continue;
-                }
-
-                if (location.soc is Society society && location.index == society.capital && !society.isDarkEmpire && !society.isOphanimControlled)
-                {
-                    if (location.settlement is Set_City)
-                    {
-                        endPoints.Add(location);
-                        continue;
-                    }
-                }
-            }
-
-            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
-            {
-                hook.onGetTradeRouteEndpoints(map, endPoints);
-            }
-
-            return endPoints;
         }
     }
 }

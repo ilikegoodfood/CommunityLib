@@ -73,6 +73,7 @@
     <Compile Include="ItemPriorityPair.cs" />
     <Compile Include="I_TestItem_Blank.cs" />
     <Compile Include="I_Test_DeathSave.cs" />
+    <Compile Include="ManagerTradeRoutes.cs" />
     <Compile Include="ModCultureData.cs" />
     <Compile Include="ModIntegrationData.cs" />
     <Compile Include="ConditionalUAENOverrideAI.cs" />
@@ -95,6 +96,7 @@
     <Compile Include="Task_BuildSettlement.cs" />
     <Compile Include="Task_GoToUnit.cs" />
     <Compile Include="Task_ReturnToTheDeep.cs" />
+    <Compile Include="TradeRouteData.cs" />
     <Compile Include="T_MagicMastery.cs" />
     <Compile Include="UIE_ChallengeTask.cs" />
     <Compile Include="UIUtils.cs" />

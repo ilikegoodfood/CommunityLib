@@ -17,6 +17,8 @@ namespace CommunityLib
 
         public ModData data;
 
+        public ManagerTradeRoutes tradeRouteManager;
+
         public static double versionID;
 
         public Dictionary<Unit, Dictionary<object, Dictionary<string, double>>> randStore;
@@ -214,6 +216,7 @@ namespace CommunityLib
             registeredHooks.Clear();
             randStore.Clear();
             data.clean();
+            tradeRouteManager = new ManagerTradeRoutes(map);
         }
 
         public override void beforeMapGen(Map map)
