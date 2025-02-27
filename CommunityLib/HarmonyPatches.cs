@@ -5417,6 +5417,7 @@ namespace CommunityLib
 
         private static void rebuildTradeRoutes(ManagerTrade tradeManager, List<Location> endpoints)
         {
+            ModCore.Get().hooks.densifyingTradeRoutes = false;
             if (endpoints == null || endpoints.Count < 2)
             {
                 endpoints = Pathfinding.getTradeRouteEndPoints(tradeManager.map);
@@ -5432,6 +5433,7 @@ namespace CommunityLib
             {
                 if (!endpoints.Contains(route.start()) || !endpoints.Contains(route.end()))
                 {
+                    World.log($"CommunityLib: Trade route from {route.start().getName()} to {route.end().getName()} is no longer valid. One or both ends are no longer valid destinations for a trade route. Removed.");
                     tradeManager.routes.Remove(route);
                 }
             }
@@ -5459,29 +5461,20 @@ namespace CommunityLib
             World.log($"CommunityLib: Found {endpointsDisconnected.Count} endpoints for trade routes that are not connected to a trade route.");
             while (endpointsDisconnected.Count > 0)
             {
-                List<Location> newlyConnectedEndpoints = new List<Location>();
-                foreach (Location endpointDisconnected in endpointsDisconnected)
+                Location[] routePath = Pathfinding.getTradeRouteFrom(endpointsDisconnected[0], null, endpoints);
+                if (routePath == null || routePath.Length < 2)
                 {
-                    Location[] routePath = Pathfinding.getTradeRouteFrom(endpointDisconnected, null, endpoints);
-                    if (routePath == null || routePath.Length < 2)
-                    {
-                        newlyConnectedEndpoints.Add(endpointDisconnected);
-                        World.log($"CommunityLib: Trade Route from {endpointDisconnected.getName()} failed to link to anywhere. Skipping endpoint...");
-                        break;
-                    }
-                    else
-                    {
-                        newlyConnectedEndpoints.Add(endpointDisconnected);
-                        newlyConnectedEndpoints.Add(routePath[routePath.Length - 1]);
-                        tradeManager.routes.Add(new TradeRoute(routePath.ToList()));
-                        World.log($"CommunityLib: Trade Route created from {endpointDisconnected.getName()} to {routePath[routePath.Length - 1].getName()}");
-                        break;
-                    }
+                    World.log($"CommunityLib: Trade Route from {endpointsDisconnected[0].getName()} failed to link to anywhere. Skipping endpoint...");
+                    endpointsDisconnected.RemoveAt(0);
+                    break;
                 }
-
-                foreach (Location endpoint in newlyConnectedEndpoints)
+                else
                 {
-                    endpointsDisconnected.Remove(endpoint);
+                    tradeManager.routes.Add(new TradeRoute(routePath.ToList()));
+                    World.log($"CommunityLib: Trade Route created from {endpointsDisconnected[0].getName()} to {routePath[routePath.Length - 1].getName()}");
+                    endpointsDisconnected.RemoveAt(0);
+                    endpointsDisconnected.Remove(routePath[routePath.Length - 1]);
+                    break;
                 }
             }
 
@@ -5493,104 +5486,123 @@ namespace CommunityLib
                 indexGroups.Add(set.ToList());
             }
 
-            bool loop = true;
             int i = 0;
-            while (loop && i < 5 * tradeManager.map.locations.Count)
+            while (indexGroups.Count > 1 && i < 5 * tradeManager.map.locations.Count)
             {
-                loop = false;
                 i++;
 
-                if (indexGroups.Count > 1)
+                indexGroups.Shuffle();
+                bool connectionMade = false;
+                List<List<int>> unifiedIndexGroups = new List<List<int>>();
+
+                foreach (List<int> indexGroup in indexGroups)
                 {
-                    indexGroups.Shuffle();
-                    List<List<int>> unifiedIndexGroups = new List<List<int>>();
+                    bool connectionInvalid = true;
 
-                    foreach (List<int> indexGroup in indexGroups)
+                    foreach (List<int> otherGroup in indexGroups)
                     {
-                        foreach (List<int> otherGroup in indexGroups)
+                        if (indexGroup == otherGroup)
                         {
-                            if (indexGroup == otherGroup)
-                            {
-                                continue;
-                            }
+                            continue;
+                        }
 
-                            Location[] routePath = Pathfinding.getTradeRouteTo(tradeManager.map.locations[indexGroup[0]], tradeManager.map.locations[otherGroup[0]]);
+                        Location[] routePath = Pathfinding.getTradeRouteTo(tradeManager.map.locations[indexGroup[0]], tradeManager.map.locations[otherGroup[0]]);
+
+                        if (routePath == null || routePath.Length < 2)
+                        {
+                            World.log($"CommunityLib: Trade Route from set {tradeManager.map.locations[indexGroup[0]].getName()} (size {indexGroup.Count}) to {tradeManager.map.locations[otherGroup[0]].getName()} (size {otherGroup.Count}) is not possible. Checking against next group...");
+                            continue;
+                        }
+                        connectionInvalid = false;
+
+                        World.log($"CommunityLib: Adding Trade Routes to set {tradeManager.map.locations[indexGroup[0]].getName()} (size {indexGroup.Count}) until a connection is made to another set");
+                            
+                        int iterations = 0;
+                        while (iterations < 25)
+                        {
+                            iterations++;
+                            Location loc = tradeManager.map.locations[indexGroup[Eleven.random.Next(indexGroup.Count)]];
+                            routePath = Pathfinding.getTradeRouteFrom(loc, endpoints);
 
                             if (routePath == null || routePath.Length < 2)
                             {
-                                World.log($"CommunityLib: Trade Route from set {tradeManager.map.locations[indexGroup[0]].getName()} (size {indexGroup.Count}) to {tradeManager.map.locations[otherGroup[0]].getName()} (size {otherGroup.Count}) is not possible. Checking against next group...");
-                                continue;
-                            }
-
-                            World.log($"CommunityLib: Adding Trade Routes to set {tradeManager.map.locations[indexGroup[0]].getName()} (size {indexGroup.Count}) until a connection is made to another set");
-                            bool connectionInvalid = false;
-                            int iterations = 0;
-                            while (iterations < 25)
-                            {
-                                iterations++;
-
-                                Location loc = tradeManager.map.locations[indexGroup[Eleven.random.Next(indexGroup.Count)]];
-                                routePath = Pathfinding.getTradeRouteFrom(loc, endpoints);
-
-                                if (routePath == null || routePath.Length < 2)
-                                {
-                                    World.log($"CommunityLib: Failed Trade Route from indexGroup {tradeManager.map.locations[indexGroup[0]].getName()} (size {indexGroup.Count}). Skippig group...");
-                                    connectionInvalid = true;
-                                    break;
-                                }
-
-                                tradeManager.routes.Add(new TradeRoute(routePath.ToList()));
-
-                                List<int> connectedGroup = indexGroups.FirstOrDefault(group => group != indexGroup && group.Contains(routePath[routePath.Length - 1].index));
-                                if (connectedGroup != null)
-                                {
-                                    World.log($"CommunityLib: Trade Route made connecting index Group {tradeManager.map.locations[indexGroup[0]].getName()} (size {indexGroup.Count}) to {tradeManager.map.locations[connectedGroup[0]].getName()} (size {connectedGroup.Count}) after {iterations} trade route(s) were added");
-                                    
-                                    foreach (int index in connectedGroup)
-                                    {
-                                        if (!indexGroup.Contains(index))
-                                        {
-                                            indexGroup.Add(index);
-                                        }
-                                    }
-                                    unifiedIndexGroups.Add(connectedGroup);
-
-                                    loop = true;
-                                }
-
-                                if (loop)
-                                {
-                                    break;
-                                }
-                            }
-
-                            if (connectionInvalid)
-                            {
-                                continue;
-                            }
-
-                            if (loop)
-                            {
+                                World.log($"CommunityLib: Failed Trade Route from indexGroup {tradeManager.map.locations[indexGroup[0]].getName()} (size {indexGroup.Count}). Skippig group...");
+                                connectionInvalid = true;
                                 break;
                             }
 
-                            World.log($"CommunityLib: Timed out connecting from indexGroup {tradeManager.map.locations[indexGroup[0]].getName()} (size {indexGroup.Count}) to another index group after adding {iterations} additional trade routes.");
+                            tradeManager.routes.Add(new TradeRoute(routePath.ToList()));
+
+                            List<int> connectedGroup = indexGroups.FirstOrDefault(group => group != indexGroup && group.Contains(routePath[routePath.Length - 1].index));
+                            if (connectedGroup != null)
+                            {
+                                World.log($"CommunityLib: Trade Route made connecting index Group {tradeManager.map.locations[indexGroup[0]].getName()} (size {indexGroup.Count}) to {tradeManager.map.locations[connectedGroup[0]].getName()} (size {connectedGroup.Count}) after {iterations} trade route(s) were added");
+                                    
+                                foreach (int index in connectedGroup)
+                                {
+                                    if (!indexGroup.Contains(index))
+                                    {
+                                        indexGroup.Add(index);
+                                    }
+                                }
+                                unifiedIndexGroups.Add(connectedGroup);
+                                connectionMade = true;
+                            }
+
+                            if (connectionMade)
+                            {
+                                break;
+                            }
                         }
 
-                        if (loop)
+                        if (connectionInvalid || connectionMade)
                         {
                             break;
                         }
 
-                        World.log($"CommunityLib: IndexGroup {tradeManager.map.locations[indexGroup[0]].getName()} (size {indexGroup.Count}) cannot form any trade routes to other groups. Skipping Group...");
+                        World.log($"CommunityLib: Timed out connecting from indexGroup {tradeManager.map.locations[indexGroup[0]].getName()} (size {indexGroup.Count}) to another index group after adding {iterations} additional trade routes.");
                     }
 
-                    foreach (List<int> unifiedIndexGroup in unifiedIndexGroups)
+                    if (connectionInvalid)
                     {
-                        indexGroups.Remove(unifiedIndexGroup);
+                        unifiedIndexGroups.Add(indexGroup);
+                        break;
                     }
+
+                    if (connectionMade)
+                    {
+                        break;
+                    }
+
+                    World.log($"CommunityLib: IndexGroup {tradeManager.map.locations[indexGroup[0]].getName()} (size {indexGroup.Count}) cannot form any trade routes to other groups. Skipping Group...");
+                }
+
+                foreach (List<int> unifiedIndexGroup in unifiedIndexGroups)
+                {
+                    indexGroups.Remove(unifiedIndexGroup);
                 }
             }
+
+            if (ModCore.opt_denseTradeRoutes)
+            {
+                ModCore.Get().hooks.densifyingTradeRoutes = true;
+                foreach (Location endpoint in endpoints)
+                {
+                    Location[] route = Pathfinding.getTradeRouteFrom(endpoint, endpoints);
+                    if (route == null || route.Length < 2)
+                    {
+                        continue;
+                    }
+
+                    if (tradeManager.routes.Any(r => (r.start() == endpoint || r.end() == endpoint) && (r.start() == route[route.Length - 1] || r.end() == route[route.Length - 1])))
+                    {
+                        continue;
+                    }
+
+                    tradeManager.routes.Add(new TradeRoute(route.ToList()));
+                }
+            }
+            ModCore.Get().hooks.densifyingTradeRoutes = false;
         }
 
         private static List<HashSet<int>> findAllConnectedSets(ManagerTrade tradeManager)
@@ -9172,6 +9184,7 @@ namespace CommunityLib
 
             List<WonderData> standard = new List<WonderData>();
             List<WonderData> high = new List<WonderData>();
+            List<WonderData> force = new List<WonderData>();
 
             foreach (WonderData data in wonderData)
             {
@@ -9184,63 +9197,101 @@ namespace CommunityLib
                         high.Add(data);
                         break;
                     case 3:
-                        foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
-                        {
-                            hook.onMapGen_PlaceWonders(data.WonderType);
-                        }
-
-                        i--;
-                        if (i < 0)
-                        {
-                            Console.WriteLine($"CommunityLib: WARNING: Number of forced wonders exceeds target wonder count.");
-                        }
-                        Console.WriteLine($"CommunityLib: Spawning forced wonder of type {data.WonderType.Name}");
+                        force.Add(data);
                         break;
                 }
             }
 
-            if (map.seed == 0L || map.tutorial)
+            if (map.tutorial)
             {
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
-                    hook.onMapGen_PlaceWonders(typeof(Sub_Wonder_Doorway));
+                    hook.onMapGen_PlaceWonders(typeof(Sub_Wonder_Doorway), out bool fail);
                 }
 
                 return;
             }
 
-            while (i > 0 && (high.Count > 0 || standard.Count > 0))
+            while (i > 0 && (force.Count > 0 || high.Count > 0 || standard.Count > 0))
             {
-                while (i > 0 && high.Count > 0)
+                foreach(WonderData data in force)
                 {
-                    WonderData data = high[Eleven.random.Next(high.Count)];
-                    if (data.Unique || !ModCore.opt_DuplicateWonders)
-                    {
-                        high.Remove(data);
-                    }
-
+                    bool failed = false;
                     foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                     {
-                        hook.onMapGen_PlaceWonders(data.WonderType);
+                        hook.onMapGen_PlaceWonders(data.WonderType, out failed);
+
+                        if (failed)
+                        {
+                            break;
+                        }
+                    }
+
+                    if (failed)
+                    {
+                        continue;
                     }
 
                     i--;
+                }
+                force.Clear();
+
+                while (i > 0 && high.Count > 0)
+                {
+                    WonderData data = high[Eleven.random.Next(high.Count)];
+                    bool failed = false;
+                    foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                    {
+                        hook.onMapGen_PlaceWonders(data.WonderType, out failed);
+
+                        if (failed)
+                        {
+                            break;
+                        }
+                    }
+
+                    if (failed)
+                    {
+                        high.Remove(data);
+                    }
+                    else
+                    {
+                        if (data.Unique || !ModCore.opt_DuplicateWonders)
+                        {
+                            high.Remove(data);
+                        }
+
+                        i--;
+                    }
                 }
 
                 while (i > 0 && standard.Count > 0)
                 {
                     WonderData data = standard[Eleven.random.Next(standard.Count)];
-                    if (data.Unique || !ModCore.opt_DuplicateWonders)
+                    bool failed = false;
+                    foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                    {
+                        hook.onMapGen_PlaceWonders(data.WonderType, out failed);
+
+                        if (failed)
+                        {
+                            break;
+                        }
+                    }
+
+                    if (failed)
                     {
                         standard.Remove(data);
                     }
-
-                    foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                    else
                     {
-                        hook.onMapGen_PlaceWonders(data.WonderType);
-                    }
+                        if (data.Unique || !ModCore.opt_DuplicateWonders)
+                        {
+                            standard.Remove(data);
+                        }
 
-                    i--;
+                        i--;
+                    }
                 }
             }
         }
