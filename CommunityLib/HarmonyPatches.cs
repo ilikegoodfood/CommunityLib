@@ -271,7 +271,7 @@ namespace CommunityLib
 
             // Trade Route Fixes
             harmony.Patch(original: AccessTools.Method(typeof(ManagerTrade), nameof(ManagerTrade.checkTradeNetwork), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(ManagerTrade_checkTradeNetwork_Transpiler)));
-            //harmony.Patch(original: AccessTools.Method(typeof(PrefabStore), nameof(PrefabStore.popUnderground), new Type[] { typeof(bool), typeof(bool) }), postfix: new HarmonyMethod(patchType, nameof(PrefabStore_popUnderground_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(PrefabStore), nameof(PrefabStore.popUnderground), new Type[] { typeof(bool), typeof(bool) }), postfix: new HarmonyMethod(patchType, nameof(PrefabStore_popUnderground_Postfix)));
 
             // Trait Fixes
             harmony.Patch(original: AccessTools.Method(typeof(T_NobleConnections), nameof(T_NobleConnections.getDesc)), postfix: new HarmonyMethod(patchType, nameof(T_NobleConnections_getDesc_Postfix)));
@@ -5366,10 +5366,10 @@ namespace CommunityLib
             ModCore.Get().tradeRouteManager.checkTradeNetwork(tradeManager);
         }
 
-        /*private static void PrefabStore_popUnderground_Postfix(PrefabStore __instance)
+        private static void PrefabStore_popUnderground_Postfix(PrefabStore __instance)
         {
-            rebuildTradeRoutes(__instance.world.map.tradeManager, null);
-        }*/
+            ModCore.Get().tradeRouteManager.checkTradeNetwork(__instance.world.map.tradeManager);
+        }
 
         // Trait Fixes
         public static void T_NobleConnections_getDesc_Postfix(ref string __result)
