@@ -416,7 +416,6 @@ namespace CommunityLib
             return false;
         }
 
-
         public override void onPopulatingTradeRoutePathfindingDelegates(Location start, List<Func<Location[], Location, double>> pathfindingDelegates, List<Func<Location[], Location, bool>> destinationValidityDelegates)
         {
             if (ModCore.opt_denseTradeRoutes && densifyingTradeRoutes)

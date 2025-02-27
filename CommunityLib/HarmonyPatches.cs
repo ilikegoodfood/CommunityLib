@@ -3964,11 +3964,6 @@ namespace CommunityLib
             ModCore.Get().tradeRouteManager.checkTradeNetwork(tradeManager);
         }
 
-        /*private static void PrefabStore_popUnderground_Postfix(PrefabStore __instance)
-        {
-            rebuildTradeRoutes(__instance.world.map.tradeManager, null);
-        }*/
-
         // Trait Fixes
         public static void T_NobleConnections_getDesc_Postfix(ref string __result)
         {
