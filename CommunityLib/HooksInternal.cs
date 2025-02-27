@@ -509,9 +509,7 @@ namespace CommunityLib
 
         public override bool onPathfindingTadeRoute_AllowSecondPass(Location start, List<int> endPointMapLayers, List<Func<Location[], Location, List<int>, double>> pathfindingDelegates, List<Func<Location[], Location, List<int>, bool>> destinationValidityDelegates)
         {
-            pathfindingDelegates.Remove(Pathfinding.delegate_TRADE_LAYERBOUND);
-
-            return true;
+            return pathfindingDelegates.Remove(Pathfinding.delegate_TRADE_LAYERBOUND);
         }
 
         public override void onPopulatingTradeRoutePathfindingDelegates(Location start, List<int> endPointMapLayers, List<Func<Location[], Location, List<int>, double>> pathfindingDelegates, List<Func<Location[], Location, List<int>, bool>> destinationValidityDelegates)
@@ -551,39 +549,45 @@ namespace CommunityLib
                 Location tomb = endpoints.FirstOrDefault(l => l.settlement is Set_TombOfGods);
                 if (tomb != null)
                 {
-                    List<int> linkedLayerIDs = new List<int>();
+                    HashSet<int> linkedLayerIDs = new HashSet<int>();
                     foreach (TradeRoute route in tradeManager.routes)
                     {
                         if (route.start() == tomb)
                         {
-                            if (!linkedLayerIDs.Contains(route.end().hex.z))
-                            {
-                                linkedLayerIDs.Add(route.end().hex.z);
-                            }
+                            linkedLayerIDs.Add(route.end().hex.z);
                         }
                         else if (route.end() == tomb)
                         {
-                            if (!linkedLayerIDs.Contains(route.start().hex.z))
-                            {
-                                linkedLayerIDs.Add(route.start().hex.z);
-                            }
+                            linkedLayerIDs.Add(route.start().hex.z);
                         }
                     }
 
                     if (!linkedLayerIDs.Contains(0))
                     {
+                        World.log($"CommunityLib: Finding Trade Route connecting Mammon's Tomb to the surface (map layer 0).");
                         Location[] routePath = Pathfinding.getTradeRouteFrom(tomb, 0);
-                        if (routePath != null && routePath.Length >= 2)
+                        if (routePath == null || routePath.Length < 2)
                         {
+                            World.log($"CommunityLib: Failed to find Trade Route connecting Mammon's Tomb to the surface (map layer 0).");
+                        }
+                        else
+                        {
+                            World.log($"CommunityLib: Trade Route made connecting Mammon's Tomb to {routePath[routePath.Length - 1].getName()} on the surface (map layer 0).");
                             tradeManager.routes.Add(new TradeRoute(routePath.ToList()));
                         }
                     }
 
                     if (!linkedLayerIDs.Contains(1))
                     {
+                        World.log($"CommunityLib: Finding Trade Route connecting Mammon's Tomb to the uderground (map layer 1).");
                         Location[] routePath = Pathfinding.getTradeRouteFrom(tomb, 1);
-                        if (routePath != null && routePath.Length >= 2)
+                        if (routePath == null || routePath.Length < 2)
                         {
+                            World.log($"CommunityLib: Failed to find Trade Route connecting Mammon's Tomb to the underground (map layer 1).");
+                        }
+                        else
+                        {
+                            World.log($"CommunityLib: Trade Route made connecting Mammon's Tomb to {routePath[routePath.Length - 1].getName()} in the underground (map layer 1).");
                             tradeManager.routes.Add(new TradeRoute(routePath.ToList()));
                         }
                     }
