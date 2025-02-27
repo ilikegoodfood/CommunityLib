@@ -50,8 +50,9 @@ namespace CommunityLib
             return null;
         }
 
-        public virtual void onMapGen_PlaceWonders(Type t)
+        public virtual void onMapGen_PlaceWonders(Type t, out bool failedToPlaceWonder)
         {
+            failedToPlaceWonder = false;
             return;
         }
 

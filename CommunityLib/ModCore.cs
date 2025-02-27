@@ -29,7 +29,7 @@ namespace CommunityLib
 
         private AgentAI agentAI;
 
-        private Hooks hooks;
+        internal HooksInternal hooks;
 
         private UAENOverrideAI overrideAI;
 
@@ -84,6 +84,8 @@ namespace CommunityLib
         public static bool opt_usePreciseDistanceDivisor = true;
 
         public static bool opt_realisticTradeRoutes = false;
+
+        public static bool opt_denseTradeRoutes = false;
 
         public static int opt_wonderPriority_entrance = 1;
 
@@ -140,6 +142,9 @@ namespace CommunityLib
                     break;
                 case "Enhanced Trade Route Links":
                     opt_enhancedTradeRouteLinks = value;
+                    break;
+                case "Dense Trade Routes":
+                    opt_denseTradeRoutes = value;
                     break;
                 case "Realistic Trade Routes":
                     opt_realisticTradeRoutes = value;

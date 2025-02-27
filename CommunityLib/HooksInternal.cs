@@ -9,6 +9,8 @@ namespace CommunityLib
 {
     internal class HooksInternal : Hooks
     {
+        public bool densifyingTradeRoutes = false;
+
         internal HooksInternal(Map map)
             : base(map)
         {
@@ -24,8 +26,10 @@ namespace CommunityLib
             };
         }
 
-        public override void onMapGen_PlaceWonders(Type t)
+        public override void onMapGen_PlaceWonders(Type t, out bool failedToPlaceWonder)
         {
+            failedToPlaceWonder = false;
+
             if (t == typeof(Sub_Wonder_DeathIsland))
             {
                 List<Location> locations = new List<Location>();
@@ -53,9 +57,14 @@ namespace CommunityLib
                     target.settlement = new Set_MinorOther(target);
                     target.settlement.subs.Clear();
                     target.settlement.subs.Add(new Sub_Wonder_DeathIsland(target.settlement));
+                    return;
                 }
+
+                failedToPlaceWonder = true;
+
             }
-            else if (t == typeof(Sub_Wonder_Doorway))
+
+            if (t == typeof(Sub_Wonder_Doorway))
             {
                 List<Location> locations = new List<Location>();
                 Location target = null;
@@ -82,9 +91,13 @@ namespace CommunityLib
                     target.settlement = new Set_MinorOther(target);
                     target.settlement.subs.Clear();
                     target.settlement.subs.Add(new Sub_Wonder_Doorway(target.settlement));
+                    return;
                 }
+
+                failedToPlaceWonder = true;
             }
-            else if (t == typeof(Sub_Wonder_PrimalFont))
+            
+            if (t == typeof(Sub_Wonder_PrimalFont))
             {
                 List<Location> locations = new List<Location>();
                 Location target = null;
@@ -111,7 +124,10 @@ namespace CommunityLib
                     target.settlement = new Set_MinorOther(target);
                     target.settlement.subs.Clear();
                     target.settlement.subs.Add(new Sub_Wonder_PrimalFont(target.settlement));
+                    return;
                 }
+
+                failedToPlaceWonder = true;
             }
         }
 
@@ -398,6 +414,15 @@ namespace CommunityLib
             }
 
             return false;
+        }
+
+
+        public override void onPopulatingTradeRoutePathfindingDelegates(Location start, List<Func<Location[], Location, double>> pathfindingDelegates, List<Func<Location[], Location, bool>> destinationValidityDelegates)
+        {
+            if (ModCore.opt_denseTradeRoutes && densifyingTradeRoutes)
+            {
+                destinationValidityDelegates.Remove(Pathfinding.delegate_TRADEVALID_NODUPLICATES);
+            }
         }
 
         public override void onAgentLevelup_GetTraits(UA ua, List<Trait> availableTraits, bool startingTraits)
