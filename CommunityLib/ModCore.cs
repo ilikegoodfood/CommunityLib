@@ -1702,6 +1702,11 @@ namespace CommunityLib
             {
                 opt_targetNaturalWonderCount = 1;
             }
+
+            if (tradeRouteManager == null)
+            {
+                tradeRouteManager = new ManagerTradeRoutes(map);
+            }
         }
 
         public override bool interceptDeath(Person person, string v, object killer)
