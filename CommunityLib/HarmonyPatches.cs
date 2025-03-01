@@ -407,6 +407,10 @@ namespace CommunityLib
             // Patches for Map
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.placeWonders), new Type[0]), transpiler: new HarmonyMethod(patchType, nameof(Map_placeWonders_Transpiler)));
 
+            // Dwarven Civilisation Count //
+            // Patches for Map.placeDwarves
+            harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.placeDwarves), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Map_placeDwarves_Transpiler)));
+
             // Template Patch
             // harmony.Patch(original: AccessTools.Method(typeof(), nameof(), new Type[] { typeof() }), postfix: new HarmonyMethod(patchType, nameof()));
         }
@@ -9027,6 +9031,310 @@ namespace CommunityLib
                     }
                 }
             }
+        }
+
+        private static IEnumerable<CodeInstruction> Map_placeDwarves_Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Map_placeDwarves_TranspilerBody), new Type[] { typeof(Map) });
+
+            yield return new CodeInstruction(OpCodes.Nop);
+            yield return new CodeInstruction(OpCodes.Ldarg_0);
+            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+            yield return new CodeInstruction(OpCodes.Ret);
+
+            Console.WriteLine("CommunityLib: Completed complete function replacement transpiler Map_placeDwarves_Transpiler");
+        }
+
+        private static void Map_placeDwarves_TranspilerBody(Map map)
+        {
+            if (!map.opt_allowDwarves)
+            {
+                return;
+            }
+
+            //Console.WriteLine($"CommunityLib: Placing Dwarves.");
+            int i = ModCore.opt_targetDwarfCount;
+
+            if (ModCore.opt_dynamicDwarfCount)
+            {
+                if (map.sizeX * map.sizeY >= 3136)
+                {
+                    i++;
+                }
+                else if (map.sizeX * map.sizeY < 1600)
+                {
+                    i--;
+                }
+            }
+
+            if (i < 1 || map.seed == 0L || map.tutorial)
+            {
+                i = 1;
+            }
+
+            double roll = Eleven.random.NextDouble();
+            if (roll < 0.1)
+            {
+                i--;
+            }
+            else if (roll < 0.35)
+            {
+                i++;
+            }
+
+            if (i == 0)
+            {
+                i = 1;
+            }
+
+            //Console.WriteLine($"CommunityLib: Placing {i} dwarven civilizations.");
+
+            PriorityQueue<Location, double> priorityLocations = new PriorityQueue<Location, double>();
+            foreach (Location location in map.locations)
+            {
+                double priority = ScoreLocationForDwarvenHabitation(location);
+                if (priority < 0.0)
+                {
+                    continue;
+                }
+
+                //Console.WriteLine($"CommunityLib: Queuing {location.getName()} (Score: {priority}).");
+                priorityLocations.Enqueue(location, -priority);
+            }
+            //Console.WriteLine($"CommunityLib: {priorityLocations.Count} possible locations found.");
+            int maxDwarvenSettlementCount = (int)(Math.Ceiling(priorityLocations.Count / 3.0) + (((i - 1) / 5.0) * (priorityLocations.Count / 3.0)));
+            //Console.WriteLine($"CommunityLib: Target number of Dwarven settlements is {maxDwarvenSettlementCount}.");
+
+            HashSet<Location> dwarvenLocations = new HashSet<Location>();
+            PriorityQueue<Location, double> expansionsLocations = new PriorityQueue<Location, double>();
+            PriorityQueue<Location, double> priorityLocationsLocal = priorityLocations.ToPriorityQueue();
+            int seperationDistance = 3;
+            while (seperationDistance > 0 && dwarvenLocations.Count < i && priorityLocationsLocal.Count > 0)
+            {
+                while (dwarvenLocations.Count < i && priorityLocationsLocal.Count > 0)
+                {
+                    Location location = priorityLocationsLocal.Dequeue();
+                    bool tooClose = false;
+                    foreach (Location dwarvenLocation in dwarvenLocations)
+                    {
+                        if (map.getStepDist(location, dwarvenLocation) <= seperationDistance)
+                        {
+                            tooClose = true;
+                            break;
+                        }
+                    }
+
+                    if (tooClose)
+                    {
+                        continue;
+                    }
+
+                    location.isMajor = true;
+                    dwarvenLocations.Add(location);
+
+                    Soc_Dwarves dwarfs = new Soc_Dwarves(location.map, location);
+                    location.soc = dwarfs;
+
+                    //Console.WriteLine($"CommunityLib: Placing {dwarfs.getName()} at {location.getName()} ({dwarvenLocations.Count}/{i} civilizations placed).");
+
+                    SettlementHuman humanSettlement = new Set_DwarvenCity(location);
+                    location.settlement = humanSettlement;
+                    humanSettlement.population = humanSettlement.getFoodGenerated();
+                    humanSettlement.defences = humanSettlement.getMaxDefence();
+
+                    Person ruler = new Person(dwarfs);
+                    humanSettlement.ruler = ruler;
+                    ruler.rulerOf = location.index;
+                    ruler.society.people.Add(ruler.index);
+                    ruler.species = location.map.species_dwarf;
+                    ruler.embedIntoSociety();
+                    ruler.gainItem(new I_DwarvenCrownJewels(map, dwarfs), true);
+
+                    UM_HumanArmy army = new UM_HumanArmy(location, dwarfs);
+                    army.maxHp = army.recomputeMaxHP();
+                    army.hp = army.maxHp;
+                    location.units.Add(army);
+                    location.map.units.Add(army);
+
+                    int expansionCount = 0;
+                    foreach (Location neighbour in location.getNeighbours())
+                    {
+                        double priority = ScoreLocationForDwarvenHabitation(neighbour);
+                        if (priority < 0.0)
+                        {
+                            continue;
+                        }
+
+                        if (expansionsLocations.Contains(neighbour))
+                        {
+                            expansionsLocations.UpdatePriority(neighbour, -priority);
+                        }
+                        else
+                        {
+                            expansionCount++;
+                            expansionsLocations.Enqueue(neighbour, -priority);
+                        }
+                    }
+                    //Console.WriteLine($"CommunityLib: Added {expansionCount} locations to the expansion pool.");
+                }
+
+                //Console.WriteLine($"CommunityLib: Placed {dwarvenLocations.Count} dwarven civilizations with a minimum spacing of {seperationDistance}");
+                priorityLocationsLocal = priorityLocations.ToPriorityQueue();
+                seperationDistance--;
+            }
+
+            //Console.WriteLine($"CommunityLib: {expansionsLocations.Count} locations available for expansion.");
+            if (expansionsLocations.Count == 0)
+            {
+                return;
+            }
+
+            //Console.WriteLine($"CommunityLib: Expanding {dwarvenLocations.Count} dwarven civilizations until {maxDwarvenSettlementCount} settlements exist.");
+            List<Soc_Dwarves> neighbouringDwarfs = new List<Soc_Dwarves>();
+            while (expansionsLocations.Count > 0 && dwarvenLocations.Count < maxDwarvenSettlementCount)
+            {
+                Location location = expansionsLocations.Dequeue();
+
+                dwarvenLocations.Add(location);
+
+                neighbouringDwarfs.Clear();
+                bool neighboursCity = false;
+                foreach (Location neighbour in location.getNeighbours())
+                {
+                    if (neighbour.soc is Soc_Dwarves dwarf)
+                    {
+                        if (!neighbouringDwarfs.Contains(dwarf))
+                        {
+                            neighbouringDwarfs.Add(dwarf);
+                        }
+                        
+                        if (neighbour.settlement is Set_DwarvenCity)
+                        {
+                            neighboursCity = true;
+                        }
+                    }
+                }
+
+                if (neighbouringDwarfs.Count == 0)
+                {
+                    continue;
+                }
+
+                Soc_Dwarves dwarfs;
+                if (neighbouringDwarfs.Count == 1)
+                {
+                    dwarfs = neighbouringDwarfs[0];
+                }
+                else
+                {
+                    dwarfs = neighbouringDwarfs[Eleven.random.Next(neighbouringDwarfs.Count)];
+                }
+
+                location.soc = dwarfs;
+
+                //Console.WriteLine($"CommunityLib: Expanding {dwarfs.getName()} to {location.getName()} ({dwarvenLocations.Count}/{maxDwarvenSettlementCount} settlements placed)");
+
+                SettlementHuman humanSettlement;
+                if (neighboursCity)
+                {
+                    location.isMajor = false;
+                    humanSettlement = new Set_DwarvenOutpost(location);
+                }
+                else
+                {
+                    location.isMajor = true;
+                    humanSettlement = new Set_DwarvenCity(location);
+                }
+
+                location.settlement = humanSettlement;
+                humanSettlement.population = humanSettlement.getFoodGenerated();
+                humanSettlement.defences = humanSettlement.getMaxDefence();
+
+                Person ruler = new Person(dwarfs);
+                humanSettlement.ruler = ruler;
+                ruler.rulerOf = location.index;
+                ruler.society.people.Add(ruler.index);
+                ruler.species = location.map.species_dwarf;
+                ruler.embedIntoSociety();
+
+                UM_HumanArmy army = new UM_HumanArmy(location, dwarfs);
+                army.maxHp = army.recomputeMaxHP();
+                army.hp = army.maxHp;
+                location.units.Add(army);
+                location.map.units.Add(army);
+
+                int expansionCount = 0;
+                foreach (Location neighbour in location.getNeighbours())
+                {
+                    if (dwarvenLocations.Contains(neighbour))
+                    {
+                        continue;
+                    }
+
+                    double priority = ScoreLocationForDwarvenHabitation(neighbour);
+                    if (priority < 0.0)
+                    {
+                        continue;
+                    }
+
+                    if (expansionsLocations.Contains(neighbour))
+                    {
+                        expansionsLocations.UpdatePriority(neighbour, -priority);
+                    }
+                    else
+                    {
+                        expansionCount++;
+                        expansionsLocations.Enqueue(neighbour, -priority);
+                    }
+                }
+                //Console.WriteLine($"CommunityLib: Added {expansionCount} locations to the expansion pool.");
+            }
+        }
+
+        private static double ScoreLocationForDwarvenHabitation(Location location)
+        {
+            if (location.hex.z != 1 || location.isOcean || location.soc != null || (location.settlement != null && !(location.settlement is Set_CityRuins)) || location.hex.getHabilitability() < location.map.param.mapGen_minHabitabilityForHumans / 2.0)
+            {
+                return -1.0;
+            }
+
+            bool canExpand = false;
+            int dwarvenNeighbourCount = 0;
+            foreach (Location neighbour in location.getNeighbours())
+            {
+                if (neighbour.soc is Soc_Dwarves)
+                {
+                    dwarvenNeighbourCount++;
+                    continue;
+                }
+
+                if (location.hex.z != 1 || location.isOcean || location.soc != null || (location.settlement != null && !(location.settlement is Set_CityRuins)) || location.hex.getHabilitability() < location.map.param.mapGen_minHabitabilityForHumans / 2.0)
+                {
+                    continue;
+                }
+
+                canExpand = true;
+            }
+
+            if (dwarvenNeighbourCount == 0 && !canExpand)
+            {
+                return -1.0;
+            }
+
+            double priority = location.hex.getHabilitability();
+            if (ModCore.Get().checkHasLocus(location))
+            {
+                priority *= 2.0;
+            }
+
+            if (dwarvenNeighbourCount > 0)
+            {
+                priority *= 3.0 * dwarvenNeighbourCount;
+            }
+
+            priority *= Eleven.random.NextDouble() + Eleven.random.NextDouble();
+
+            return priority;
         }
     }
 }

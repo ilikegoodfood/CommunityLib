@@ -97,6 +97,10 @@ namespace CommunityLib
 
         public static bool opt_dwarven_fortresses = false;
 
+        public static int opt_targetDwarfCount = 1;
+
+        public static bool opt_dynamicDwarfCount = false;
+
         public static int opt_wonderPriority_entrance = 1;
 
         public static int opt_wonderPriority_brother = 1;
@@ -137,6 +141,9 @@ namespace CommunityLib
                     break;
                 case "Dwarven Surface Fortresses":
                     opt_dwarven_fortresses = value;
+                    break;
+                case "Dynamic Dwarven Civilization Count":
+                    opt_dynamicDwarfCount = value;
                     break;
                 case "Dynamic Orc Horde Count":
                     opt_DynamicOrcCount = value;
@@ -210,6 +217,9 @@ namespace CommunityLib
         {
             switch (optName)
             {
+                case "Target Dwarven Civilization Count":
+                    opt_targetDwarfCount = value;
+                    break;
                 case "Target Orc Horde Count":
                     opt_targetOrcCount = value;
                     break;
@@ -1701,6 +1711,11 @@ namespace CommunityLib
             if (opt_targetNaturalWonderCount == 0)
             {
                 opt_targetNaturalWonderCount = 1;
+            }
+
+            if (opt_targetDwarfCount == 0)
+            {
+                opt_targetDwarfCount = 1;
             }
 
             if (tradeRouteManager == null)
