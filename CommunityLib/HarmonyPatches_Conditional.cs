@@ -54,10 +54,10 @@ namespace CommunityLib
             Assembly asm = typeof(Map).Assembly;
 
             List<MethodInfo> targetMethods_getChallengeUtility = new List<MethodInfo> { AccessTools.Method(typeof(UA), nameof(UA.getChallengeUtility), new Type[] { typeof(Challenge), typeof(List<ReasonMsg>) }) };
-            List<MethodInfo> targetMethods_getStartingTraits = new List<MethodInfo> { AccessTools.Method(typeof(UA), nameof(UA.getStartingTraits), new Type[0]) };
-            List<MethodInfo> targetMethods_turnTickAI = new List<MethodInfo> { AccessTools.Method(typeof(UA), nameof(UA.turnTickAI), new Type[0]) };
-            List<MethodInfo> targetMethods_getMaxPower = new List<MethodInfo> { AccessTools.Method(typeof(God), nameof(God.getMaxPower), new Type[0]) };
-            List<MethodInfo> targetMethods_getAgentCaps = new List<MethodInfo> { AccessTools.Method(typeof(God), nameof(God.getAgentCaps), new Type[0]) };
+            List<MethodInfo> targetMethods_getStartingTraits = new List<MethodInfo> { AccessTools.Method(typeof(UA), nameof(UA.getStartingTraits), Type.EmptyTypes) };
+            List<MethodInfo> targetMethods_turnTickAI = new List<MethodInfo> { AccessTools.Method(typeof(UA), nameof(UA.turnTickAI), Type.EmptyTypes) };
+            List<MethodInfo> targetMethods_getMaxPower = new List<MethodInfo> { AccessTools.Method(typeof(God), nameof(God.getMaxPower), Type.EmptyTypes) };
+            List<MethodInfo> targetMethods_getAgentCaps = new List<MethodInfo> { AccessTools.Method(typeof(God), nameof(God.getAgentCaps), Type.EmptyTypes) };
 
             foreach (Type t in asm.GetTypes())
             {
@@ -69,13 +69,13 @@ namespace CommunityLib
                         targetMethods_getChallengeUtility.Add(targetMethod_getChallengeUtility);
                     }
 
-                    MethodInfo targetMethod_getStartingTraits = AccessTools.DeclaredMethod(t, "getStartingTraits", new Type[0]);
+                    MethodInfo targetMethod_getStartingTraits = AccessTools.DeclaredMethod(t, "getStartingTraits", Type.EmptyTypes);
                     if (targetMethod_getStartingTraits != null)
                     {
                         targetMethods_getStartingTraits.Add(targetMethod_getStartingTraits);
                     }
 
-                    MethodInfo targetMethod_turnTickAI = AccessTools.DeclaredMethod(t, "turnTickAI", new Type[0]);
+                    MethodInfo targetMethod_turnTickAI = AccessTools.DeclaredMethod(t, "turnTickAI", Type.EmptyTypes);
                     if (targetMethod_turnTickAI != null)
                     {
                         targetMethods_turnTickAI.Add(targetMethod_turnTickAI);
@@ -83,13 +83,13 @@ namespace CommunityLib
                 }
                 else if (t.IsSubclassOf(typeof(God)))
                 {
-                    MethodInfo targetMethod_getAgentCaps = AccessTools.DeclaredMethod(t, "getAgentCaps", new Type[0]);
+                    MethodInfo targetMethod_getAgentCaps = AccessTools.DeclaredMethod(t, "getAgentCaps", Type.EmptyTypes);
                     if (targetMethod_getAgentCaps != null)
                     {
                         targetMethods_getAgentCaps.Add(targetMethod_getAgentCaps);
                     }
 
-                    MethodInfo targetMethod_getMaxPower = AccessTools.DeclaredMethod(t, "getMaxPower", new Type[0]);
+                    MethodInfo targetMethod_getMaxPower = AccessTools.DeclaredMethod(t, "getMaxPower", Type.EmptyTypes);
                     if (targetMethod_getMaxPower != null)
                     {
                         targetMethods_getMaxPower.Add(targetMethod_getMaxPower);
@@ -111,13 +111,13 @@ namespace CommunityLib
                             targetMethods_getChallengeUtility.Add(targetMethod_getChallengeUtility);
                         }
 
-                        MethodInfo targetMethod_getStartingTraits = AccessTools.DeclaredMethod(t, "getStartingTraits", new Type[0]);
+                        MethodInfo targetMethod_getStartingTraits = AccessTools.DeclaredMethod(t, "getStartingTraits", Type.EmptyTypes);
                         if (targetMethod_getStartingTraits != null)
                         {
                             targetMethods_getStartingTraits.Add(targetMethod_getStartingTraits);
                         }
 
-                        MethodInfo targetMethod_turnTickAI = AccessTools.DeclaredMethod(t, "turnTickAI", new Type[0]);
+                        MethodInfo targetMethod_turnTickAI = AccessTools.DeclaredMethod(t, "turnTickAI", Type.EmptyTypes);
                         if (targetMethod_turnTickAI != null)
                         {
                             targetMethods_turnTickAI.Add(targetMethod_turnTickAI);
@@ -125,13 +125,13 @@ namespace CommunityLib
                     }
                     else if (t.IsSubclassOf(typeof(God)))
                     {
-                        MethodInfo targetMethod_getAgentCaps = AccessTools.DeclaredMethod(t, "getAgentCaps", new Type[0]);
+                        MethodInfo targetMethod_getAgentCaps = AccessTools.DeclaredMethod(t, "getAgentCaps", Type.EmptyTypes);
                         if (targetMethod_getAgentCaps != null)
                         {
                             targetMethods_getAgentCaps.Add(targetMethod_getAgentCaps);
                         }
 
-                        MethodInfo targetMethod_getMaxPower = AccessTools.DeclaredMethod(t, "getMaxPower", new Type[0]);
+                        MethodInfo targetMethod_getMaxPower = AccessTools.DeclaredMethod(t, "getMaxPower", Type.EmptyTypes);
                         if (targetMethod_getMaxPower != null)
                         {
                             targetMethods_getMaxPower.Add(targetMethod_getMaxPower);
