@@ -316,8 +316,8 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(PopupMsg), nameof(PopupMsg.dismissKeyHit), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(PopupMsg_dismissKeyHit_Prefix)));
 
             // Victory Point Fixes
-            harmony.Patch(original: AccessTools.Method(typeof(Overmind), nameof(Overmind.computeVictoryProgress), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Overming_computeVictoryProgress_Transpiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(Overmind), nameof(Overmind.victory), new Type[] { typeof(string), typeof(int) }), transpiler: new HarmonyMethod(patchType, nameof(Overming_victory_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Overmind), nameof(Overmind.computeVictoryProgress), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Overmind_computeVictoryProgress_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Overmind), nameof(Overmind.victory), new Type[] { typeof(string), typeof(int) }), transpiler: new HarmonyMethod(patchType, nameof(Overmind_victory_Transpiler)));
 
             // Victory Message Fixes
             //harmony.Patch(original: AccessTools.Method(typeof(God_Cards), nameof(God_Cards.getVictoryMessage)), postfix: new HarmonyMethod(patchType, nameof(God_Cards_getVictoryMessage_Postfix)));
@@ -6299,7 +6299,7 @@ namespace CommunityLib
         }
 
         // Victory Point Fixes
-        private static IEnumerable<CodeInstruction> Overming_computeVictoryProgress_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        private static IEnumerable<CodeInstruction> Overmind_computeVictoryProgress_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
@@ -6347,7 +6347,7 @@ namespace CommunityLib
             }
         }
 
-        private static IEnumerable<CodeInstruction> Overming_victory_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        private static IEnumerable<CodeInstruction> Overmind_victory_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
