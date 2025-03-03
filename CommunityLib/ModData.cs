@@ -59,6 +59,7 @@ namespace CommunityLib
             initialiseMagicTraitTypes();
             initialiseVampireTypes();
             initialiseNaturalWonderTypes();
+            InitialiseWonderTypes();
             initialiseVampireTypes();
 
             initialiseInfluenceGain();
