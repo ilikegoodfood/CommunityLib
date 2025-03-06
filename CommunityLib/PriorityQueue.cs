@@ -5,36 +5,36 @@ using System.Linq;
 
 namespace CommunityLib
 {
-    public class PriorityQueue<T, U> : IEnumerable<T>, IEnumerable<ItemPriorityPair<T, U>> where U : IComparable<U>
+    public class PriorityQueue<TValue, TPriority> : IEnumerable<TValue>, IEnumerable<ValuePriorityPair<TValue, TPriority>> where TPriority : IComparable<TPriority>
     {
-        private List<ItemPriorityPair<T, U>> heap = new List<ItemPriorityPair<T, U>>();
+        private List<ValuePriorityPair<TValue, TPriority>> heap = new List<ValuePriorityPair<TValue, TPriority>>();
 
         public int Count => heap.Count;
 
-        public void Enqueue(T item, U priority)
+        public void Enqueue(TValue item, TPriority priority)
         {
-            Enqueue(new ItemPriorityPair<T, U>(item, priority));
+            Enqueue(new ValuePriorityPair<TValue, TPriority>(item, priority));
         }
 
-        public void Enqueue(ItemPriorityPair<T, U> pair)
+        public void Enqueue(ValuePriorityPair<TValue, TPriority> pair)
         {
             heap.Add(pair);
             HeapifyUp(heap.Count - 1);
         }
 
-        public void Enqueue((T, U) tuple)
+        public void Enqueue((TValue, TPriority) tuple)
         {
-            Enqueue(new ItemPriorityPair<T, U>(tuple.Item1, tuple.Item2));
+            Enqueue(new ValuePriorityPair<TValue, TPriority>(tuple.Item1, tuple.Item2));
         }
 
-        public T Dequeue()
+        public TValue Dequeue()
         {
             if (heap.Count == 0)
             {
                 throw new InvalidOperationException("The priority queue is empty.");
             }
 
-            T root = heap[0].Item;
+            TValue root = heap[0].Value;
             heap[0] = heap[heap.Count - 1];
             heap.RemoveAt(heap.Count - 1);
 
@@ -42,11 +42,11 @@ namespace CommunityLib
             return root;
         }
 
-        public bool TryDequeue(out T result)
+        public bool TryDequeue(out TValue result)
         {
             if (heap.Count == 0)
             {
-                result = default(T);
+                result = default(TValue);
                 return false;
             }
 
@@ -54,7 +54,7 @@ namespace CommunityLib
             return true;
         }
 
-        public ItemPriorityPair<T, U> DequeueWithPriority()
+        public ValuePriorityPair<TValue, TPriority> DequeueWithPriority()
         {
             if (heap.Count == 0)
             {
@@ -69,36 +69,36 @@ namespace CommunityLib
             return root;
         }
 
-        public bool TryDequeueWithPriority(out T item, out U priority)
+        public bool TryDequeueWithPriority(out TValue item, out TPriority priority)
         {
             if (heap.Count == 0)
             {
-                item = default(T);
-                priority = default(U);
+                item = default(TValue);
+                priority = default(TPriority);
                 return false;
             }
 
             var result = DequeueWithPriority();
-            item = result.Item;
+            item = result.Value;
             priority = result.Priority;
             return true;
         }
 
-        public T Peek()
+        public TValue Peek()
         {
             if (heap.Count == 0)
             {
                 throw new InvalidOperationException("The priority queue is empty.");
             }
 
-            return heap[0].Item;
+            return heap[0].Value;
         }
 
-        public bool TryPeek(out T result)
+        public bool TryPeek(out TValue result)
         {
             if (heap.Count == 0)
             {
-                result = default(T);
+                result = default(TValue);
                 return false;
             }
 
@@ -106,7 +106,7 @@ namespace CommunityLib
             return true;
         }
 
-        public ItemPriorityPair<T, U> PeekWithPriority()
+        public ValuePriorityPair<TValue, TPriority> PeekWithPriority()
         {
             if (heap.Count == 0)
             {
@@ -116,34 +116,34 @@ namespace CommunityLib
             return heap[0];
         }
 
-        public bool TryPeekWithPriority(out T item, out U priority)
+        public bool TryPeekWithPriority(out TValue item, out TPriority priority)
         {
             if (Count == 0)
             {
-                item = default(T);
-                priority = default(U);
+                item = default(TValue);
+                priority = default(TPriority);
                 return false;
             }
 
             var result = PeekWithPriority();
-            item = result.Item;
+            item = result.Value;
             priority = result.Priority;
             return true;
         }
 
-        public bool Contains(T item)
+        public bool Contains(TValue item)
         {
-            return heap.Any(pair => EqualityComparer<T>.Default.Equals(item, pair.Item));
+            return heap.Any(pair => EqualityComparer<TValue>.Default.Equals(item, pair.Value));
         }
 
-        public bool UpdatePriority(T item, U newPriority)
+        public bool UpdatePriority(TValue item, TPriority newPriority)
         {
             for (int i = 0; i < heap.Count; i++)
             {
-                if (EqualityComparer<T>.Default.Equals(item, heap[i].Item))
+                if (EqualityComparer<TValue>.Default.Equals(item, heap[i].Value))
                 {
-                    U oldPriority = heap[i].Priority;
-                    heap[i] = new ItemPriorityPair<T, U>(item, newPriority);
+                    TPriority oldPriority = heap[i].Priority;
+                    heap[i] = new ValuePriorityPair<TValue, TPriority>(item, newPriority);
                     if (newPriority.CompareTo(oldPriority) < 0)
                     {
                         HeapifyUp(i);
@@ -159,11 +159,11 @@ namespace CommunityLib
             return false;
         }
 
-        public bool Remove(T item)
+        public bool Remove(TValue item)
         {
             for (int i = 0; i < heap.Count; i++)
             {
-                if (EqualityComparer<T>.Default.Equals(item, heap[i].Item))
+                if (EqualityComparer<TValue>.Default.Equals(item, heap[i].Value))
                 {
                     heap[i] = heap[heap.Count - 1];
                     heap.RemoveAt(heap.Count - 1);
@@ -230,27 +230,27 @@ namespace CommunityLib
 
         private void Swap(int index1, int index2)
         {
-            ItemPriorityPair<T, U> temp = heap[index1];
+            ValuePriorityPair<TValue, TPriority> temp = heap[index1];
             heap[index1] = heap[index2];
             heap[index2] = temp;
         }
 
-        public PriorityQueue<T, U> Clone()
+        public PriorityQueue<TValue, TPriority> Clone()
         {
-            PriorityQueue<T, U> copy = new PriorityQueue<T, U>();
+            PriorityQueue<TValue, TPriority> copy = new PriorityQueue<TValue, TPriority>();
 
-            foreach (ItemPriorityPair<T, U> element in heap)
+            foreach (ValuePriorityPair<TValue, TPriority> element in heap)
             {
-                copy.Enqueue(element.Item, element.Priority);
+                copy.Enqueue(element.Value, element.Priority);
             }
 
             return copy;
         }
 
-        public List<T> ToList()
+        public List<TValue> ToList()
         {
-            PriorityQueue<T, U> copy = Clone();
-            List<T> list = new List<T>();
+            PriorityQueue<TValue, TPriority> copy = Clone();
+            List<TValue> list = new List<TValue>();
             while(copy.Count > 0)
             {
                 list.Add(copy.Dequeue());
@@ -258,11 +258,11 @@ namespace CommunityLib
             return list;
         }
 
-        public T[] ToArray()
+        public TValue[] ToArray()
         {
-            PriorityQueue<T, U> copy = Clone();
+            PriorityQueue<TValue, TPriority> copy = Clone();
             int count = copy.Count;
-            T[] array = new T[count];
+            TValue[] array = new TValue[count];
             for (int i = 0; i < count; i++)
             {
                 array[i] = copy.Dequeue();
@@ -270,34 +270,34 @@ namespace CommunityLib
             return array;
         }
 
-        public Dictionary<T, U> ToDictionary()
+        public Dictionary<TValue, TPriority> ToDictionary()
         {
-            PriorityQueue<T, U> copy = Clone();
-            Dictionary<T, U> dict = new Dictionary<T, U>();
+            PriorityQueue<TValue, TPriority> copy = Clone();
+            Dictionary<TValue, TPriority> dict = new Dictionary<TValue, TPriority>();
             while (copy.Count > 0)
             {
-                ItemPriorityPair<T, U> pair = copy.DequeueWithPriority();
+                ValuePriorityPair<TValue, TPriority> pair = copy.DequeueWithPriority();
 
-                if (dict.ContainsKey(pair.Item))
+                if (dict.ContainsKey(pair.Value))
                 {
                     // Keep the higher priority (smaller value) if a duplicate is found
-                    if (pair.Priority.CompareTo(dict[pair.Item]) < 0)
+                    if (pair.Priority.CompareTo(dict[pair.Value]) < 0)
                     {
-                        dict[pair.Item] = pair.Priority;
+                        dict[pair.Value] = pair.Priority;
                     }
                 }
                 else
                 {
-                    dict.Add(pair.Item, pair.Priority);
+                    dict.Add(pair.Value, pair.Priority);
                 }
             }
-            return heap.ToDictionary(pair => pair.Item, pair => pair.Priority);
+            return heap.ToDictionary(pair => pair.Value, pair => pair.Priority);
         }
 
-        public LinkedList<T> ToLinkedList()
+        public LinkedList<TValue> ToLinkedList()
         {
-            PriorityQueue<T, U> copy = Clone();
-            LinkedList<T> linkedList = new LinkedList<T>();
+            PriorityQueue<TValue, TPriority> copy = Clone();
+            LinkedList<TValue> linkedList = new LinkedList<TValue>();
             while (copy.Count > 0)
             {
                 linkedList.AddLast(copy.Dequeue());
@@ -305,10 +305,10 @@ namespace CommunityLib
             return linkedList;
         }
 
-        public Queue<T> ToQueue()
+        public Queue<TValue> ToQueue()
         {
-            PriorityQueue<T, U> copy = Clone();
-            Queue<T> queue = new Queue<T>();
+            PriorityQueue<TValue, TPriority> copy = Clone();
+            Queue<TValue> queue = new Queue<TValue>();
             while (copy.Count > 0)
             {
                 queue.Enqueue(copy.Dequeue());
@@ -316,13 +316,13 @@ namespace CommunityLib
             return queue;
         }
 
-        public Stack<T> ToStack()
+        public Stack<TValue> ToStack()
         {
-            PriorityQueue<T, U> copy = Clone();
-            Stack<T> stack = new Stack<T>();
+            PriorityQueue<TValue, TPriority> copy = Clone();
+            Stack<TValue> stack = new Stack<TValue>();
 
             // Dequeue elements from the PriorityQueue and push them onto the Stack
-            var list = new List<T>();
+            var list = new List<TValue>();
             while (copy.Count > 0)
             {
                 list.Add(copy.Dequeue());
@@ -337,24 +337,24 @@ namespace CommunityLib
         }
 
 
-        public void Merge(PriorityQueue<T, U> other)
+        public void Merge(PriorityQueue<TValue, TPriority> other)
         {
-            PriorityQueue<T, U> copy = other.Clone();
+            PriorityQueue<TValue, TPriority> copy = other.Clone();
             while (copy.Count > 0)
             {
                 Enqueue(copy.DequeueWithPriority());
             }
         }
 
-        public void MergeNoDuplicates(PriorityQueue<T, U> other)
+        public void MergeNoDuplicates(PriorityQueue<TValue, TPriority> other)
         {
-            PriorityQueue<T, U> copy = other.Clone();
+            PriorityQueue<TValue, TPriority> copy = other.Clone();
             while (copy.Count > 0)
             {
-                ItemPriorityPair<T, U> value = other.DequeueWithPriority();
-                if (!Contains(value.Item))
+                ValuePriorityPair<TValue, TPriority> value = other.DequeueWithPriority();
+                if (!Contains(value.Value))
                 {
-                    Enqueue(value.Item, value.Priority);
+                    Enqueue(value.Value, value.Priority);
                 }
             }
         }
@@ -364,20 +364,20 @@ namespace CommunityLib
             heap.TrimExcess();
         }
 
-        public List<T> FindAll(Predicate<T> match)
+        public List<TValue> FindAll(Predicate<TValue> match)
         {
-            return heap.Where(pair => match(pair.Item)).Select(pair => pair.Item).ToList();
+            return heap.Where(pair => match(pair.Value)).Select(pair => pair.Value).ToList();
         }
 
-        public T Find(Predicate<T> match)
+        public TValue Find(Predicate<TValue> match)
         {
-            ItemPriorityPair<T, U> pair = heap.FirstOrDefault(p => match(p.Item));
-            return pair == null ? default(T) : pair.Item;
+            ValuePriorityPair<TValue, TPriority> pair = heap.FirstOrDefault(p => match(p.Value));
+            return pair == null ? default(TValue) : pair.Value;
         }
 
-        public bool TryGetPriority(T item, out U priority)
+        public bool TryGetPriority(TValue item, out TPriority priority)
         {
-            var pair = heap.FirstOrDefault(p => EqualityComparer<T>.Default.Equals(p.Item, item));
+            var pair = heap.FirstOrDefault(p => EqualityComparer<TValue>.Default.Equals(p.Value, item));
             if (pair == null)
             {
                 priority = default;
@@ -387,9 +387,9 @@ namespace CommunityLib
             return true;
         }
 
-        public U GetPriority(T item)
+        public TPriority GetPriority(TValue item)
         {
-            var pair = heap.FirstOrDefault(p => EqualityComparer<T>.Default.Equals(p.Item, item));
+            var pair = heap.FirstOrDefault(p => EqualityComparer<TValue>.Default.Equals(p.Value, item));
             if (pair == null)
             {
                 throw new InvalidOperationException("Item not found in the priority queue.");
@@ -397,18 +397,18 @@ namespace CommunityLib
             return pair.Priority;
         }
 
-        public void ForEach(Action<T> action)
+        public void ForEach(Action<TValue> action)
         {
             foreach (var pair in heap)
             {
-                action(pair.Item);
+                action(pair.Value);
             }
         }
 
 
-        public IEnumerator<T> GetEnumerator()
+        public IEnumerator<TValue> GetEnumerator()
         {
-            PriorityQueue<T, U> copy = Clone();
+            PriorityQueue<TValue, TPriority> copy = Clone();
 
             while (copy.Count > 0)
             {
@@ -416,9 +416,9 @@ namespace CommunityLib
             }
         }
 
-        IEnumerator<ItemPriorityPair<T, U>> IEnumerable<ItemPriorityPair<T, U>>.GetEnumerator()
+        IEnumerator<ValuePriorityPair<TValue, TPriority>> IEnumerable<ValuePriorityPair<TValue, TPriority>>.GetEnumerator()
         {
-            PriorityQueue<T, U> copy = Clone();
+            PriorityQueue<TValue, TPriority> copy = Clone();
 
             while (copy.Count > 0)
             {

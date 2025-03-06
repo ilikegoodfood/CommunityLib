@@ -85,9 +85,9 @@ namespace CommunityLib
             return values.Contains(value);
         }
 
-        public bool Contains(KeyValuePair<TKey, TValue> item)
+        public bool Contains(KeyValuePair<TKey, TValue> kvp)
         {
-            return keyIndexMap.TryGetValue(item.Key, out int index) && EqualityComparer<TValue>.Default.Equals(item.Value, values[index]);
+            return keyIndexMap.TryGetValue(kvp.Key, out int index) && EqualityComparer<TValue>.Default.Equals(kvp.Value, values[index]);
         }
 
         public bool TryGetValue(TKey key, out TValue value)
@@ -131,13 +131,13 @@ namespace CommunityLib
             return false;
         }
 
-        public bool Remove(KeyValuePair<TKey, TValue> item)
+        public bool Remove(KeyValuePair<TKey, TValue> kvp)
         {
-            if (keyIndexMap.TryGetValue(item.Key, out int index) && EqualityComparer<TValue>.Default.Equals(item.Value, values[index]))
+            if (keyIndexMap.TryGetValue(kvp.Key, out int index) && EqualityComparer<TValue>.Default.Equals(kvp.Value, values[index]))
             {
                 keys.RemoveAt(index);
                 values.RemoveAt(index);
-                keyIndexMap.Remove(item.Key);
+                keyIndexMap.Remove(kvp.Key);
                 UpdateIndexes(index);
                 return true;
             }

@@ -197,15 +197,15 @@ namespace CommunityLib
                 {
                     i++;
 
-                    ItemPriorityPair<Location[], double> pair = paths.DequeueWithPriority();
-                    foreach (Location neighbour in getNeighboursConditional(pair.Item[pair.Item.Length - 1], u))
+                    ValuePriorityPair<Location[], double> pair = paths.DequeueWithPriority();
+                    foreach (Location neighbour in getNeighboursConditional(pair.Value[pair.Value.Length - 1], u))
                     {
                         if (!locationHashes.Contains(neighbour))
                         {
                             double stepCost = 10.0;
                             foreach (Func<Location[], Location, Unit, double> pathfindingDelegate in pathfindingDelegates)
                             {
-                                double cost = pathfindingDelegate(pair.Item, neighbour, u);
+                                double cost = pathfindingDelegate(pair.Value, neighbour, u);
                                 if (cost >= 10000.0)
                                 {
                                     stepCost = cost;
@@ -219,8 +219,8 @@ namespace CommunityLib
                                 continue;
                             }
 
-                            Location[] newPathArray = new Location[pair.Item.Length + 1];
-                            Array.Copy(pair.Item, newPathArray, pair.Item.Length);
+                            Location[] newPathArray = new Location[pair.Value.Length + 1];
+                            Array.Copy(pair.Value, newPathArray, pair.Value.Length);
                             newPathArray[newPathArray.Length - 1] = neighbour;
 
                             if (neighbour == locB)
@@ -344,15 +344,15 @@ namespace CommunityLib
                 {
                     i++;
 
-                    ItemPriorityPair<Location[], double> pair = paths.DequeueWithPriority();
-                    foreach (Location neighbour in getNeighboursConditional(pair.Item[pair.Item.Length - 1], u))
+                    ValuePriorityPair<Location[], double> pair = paths.DequeueWithPriority();
+                    foreach (Location neighbour in getNeighboursConditional(pair.Value[pair.Value.Length - 1], u))
                     {
                         if (!locationHashes.Contains(neighbour))
                         {
                             double stepCost = 10.0;
                             foreach (Func<Location[], Location, Unit, double> pathfindingDelegate in pathfindingDelegates)
                             {
-                                double cost = pathfindingDelegate(pair.Item, neighbour, u);
+                                double cost = pathfindingDelegate(pair.Value, neighbour, u);
                                 if (cost >= 10000.0)
                                 {
                                     stepCost = cost;
@@ -366,8 +366,8 @@ namespace CommunityLib
                                 continue;
                             }
 
-                            Location[] newPathArray = new Location[pair.Item.Length + 1];
-                            Array.Copy(pair.Item, newPathArray, pair.Item.Length);
+                            Location[] newPathArray = new Location[pair.Value.Length + 1];
+                            Array.Copy(pair.Value, newPathArray, pair.Value.Length);
                             newPathArray[newPathArray.Length - 1] = neighbour;
 
                             double newPathCost = pair.Priority + stepCost;
@@ -391,10 +391,10 @@ namespace CommunityLib
                         List<Location[]> destinationPaths = new List<Location[]>();
                         while (destinations.Count > 0)
                         {
-                            ItemPriorityPair<Location[], double> destinationPair = destinations.DequeueWithPriority();
+                            ValuePriorityPair<Location[], double> destinationPair = destinations.DequeueWithPriority();
                             if (destinationPair.Priority == destinationPriority)
                             {
-                                destinationPaths.Add(destinationPair.Item);
+                                destinationPaths.Add(destinationPair.Value);
                             }
                             else
                             {
@@ -507,15 +507,15 @@ namespace CommunityLib
                 {
                     i++;
 
-                    ItemPriorityPair<Location[], double> pair = paths.DequeueWithPriority();
-                    foreach (Location neighbour in getNeighboursConditional(pair.Item[pair.Item.Length - 1], u))
+                    ValuePriorityPair<Location[], double> pair = paths.DequeueWithPriority();
+                    foreach (Location neighbour in getNeighboursConditional(pair.Value[pair.Value.Length - 1], u))
                     {
                         if (!locationHashes.Contains(neighbour))
                         {
                             double stepCost = 10.0;
                             foreach (Func<Location[], Location, Unit, double> pathfindingDelegate in pathfindingDelegates)
                             {
-                                double cost = pathfindingDelegate(pair.Item, neighbour, u);
+                                double cost = pathfindingDelegate(pair.Value, neighbour, u);
                                 if (cost >= 10000.0)
                                 {
                                     stepCost = cost;
@@ -529,8 +529,8 @@ namespace CommunityLib
                                 continue;
                             }
 
-                            Location[] newPathArray = new Location[pair.Item.Length + 1];
-                            Array.Copy(pair.Item, newPathArray, pair.Item.Length);
+                            Location[] newPathArray = new Location[pair.Value.Length + 1];
+                            Array.Copy(pair.Value, newPathArray, pair.Value.Length);
                             newPathArray[newPathArray.Length - 1] = neighbour;
 
                             double newPathCost = pair.Priority + stepCost;
@@ -538,7 +538,7 @@ namespace CommunityLib
                             bool valid = true;
                             foreach (Func<Location[], Location, Unit, bool> validDelegate in destinationValidityDelegates)
                             {
-                                if (!destinationValidityDelegate(pair.Item, neighbour, u))
+                                if (!destinationValidityDelegate(pair.Value, neighbour, u))
                                 {
                                     valid = false;
                                     break;
@@ -564,10 +564,10 @@ namespace CommunityLib
                         List<Location[]> destinationPaths = new List<Location[]>();
                         while (destinations.Count > 0)
                         {
-                            ItemPriorityPair<Location[], double> destinationPair = destinations.DequeueWithPriority();
+                            ValuePriorityPair<Location[], double> destinationPair = destinations.DequeueWithPriority();
                             if (destinationPair.Priority <= destinationPriority)
                             {
-                                destinationPaths.Add(destinationPair.Item);
+                                destinationPaths.Add(destinationPair.Value);
                             }
                             else
                             {
@@ -851,15 +851,15 @@ namespace CommunityLib
                 {
                     i++;
 
-                    ItemPriorityPair<Location[], double> pair = paths.DequeueWithPriority();
-                    foreach (Location neighbour in pair.Item[pair.Item.Length - 1].getNeighbours())
+                    ValuePriorityPair<Location[], double> pair = paths.DequeueWithPriority();
+                    foreach (Location neighbour in pair.Value[pair.Value.Length - 1].getNeighbours())
                     {
                         if (!locationHashes.Contains(neighbour))
                         {
                             double stepCost = 0.0;
                             foreach (Func<Location[], Location, double> pathfindingDelegate in pathfindingDelegates)
                             {
-                                double cost = pathfindingDelegate(pair.Item, neighbour);
+                                double cost = pathfindingDelegate(pair.Value, neighbour);
                                 if (cost >= 10000.0)
                                 {
                                     stepCost = cost;
@@ -873,8 +873,8 @@ namespace CommunityLib
                                 continue;
                             }
 
-                            Location[] newPathArray = new Location[pair.Item.Length + 1];
-                            Array.Copy(pair.Item, newPathArray, pair.Item.Length);
+                            Location[] newPathArray = new Location[pair.Value.Length + 1];
+                            Array.Copy(pair.Value, newPathArray, pair.Value.Length);
                             newPathArray[newPathArray.Length - 1] = neighbour;
 
                             double newPathCost = pair.Priority + stepCost;
@@ -1005,15 +1005,15 @@ namespace CommunityLib
                 {
                     i++;
 
-                    ItemPriorityPair<Location[], double> pair = paths.DequeueWithPriority();
-                    foreach (Location neighbour in pair.Item[pair.Item.Length - 1].getNeighbours())
+                    ValuePriorityPair<Location[], double> pair = paths.DequeueWithPriority();
+                    foreach (Location neighbour in pair.Value[pair.Value.Length - 1].getNeighbours())
                     {
                         if (!locationHashes.Contains(neighbour))
                         {
                             double stepCost = 0.0;
                             foreach (Func<Location[], Location, double> pathfindingDelegate in pathfindingDelegates)
                             {
-                                double cost = pathfindingDelegate(pair.Item, neighbour);
+                                double cost = pathfindingDelegate(pair.Value, neighbour);
                                 if (cost >= 10000.0)
                                 {
                                     stepCost = cost;
@@ -1027,8 +1027,8 @@ namespace CommunityLib
                                 continue;
                             }
 
-                            Location[] newPathArray = new Location[pair.Item.Length + 1];
-                            Array.Copy(pair.Item, newPathArray, pair.Item.Length);
+                            Location[] newPathArray = new Location[pair.Value.Length + 1];
+                            Array.Copy(pair.Value, newPathArray, pair.Value.Length);
                             newPathArray[newPathArray.Length - 1] = neighbour;
 
                             double newPathCost = pair.Priority + stepCost;
@@ -1052,7 +1052,7 @@ namespace CommunityLib
                                     {
                                         destinationPriority = newPathCost;
                                     }
-                                    destinations.Enqueue(new ItemPriorityPair<Location[], double>(newPathArray, newPathCost));
+                                    destinations.Enqueue(new ValuePriorityPair<Location[], double>(newPathArray, newPathCost));
                                 }
                             }
 
@@ -1066,10 +1066,10 @@ namespace CommunityLib
                         List<Location[]> destinationPaths = new List<Location[]>();
                         while (destinations.Count > 0)
                         {
-                            ItemPriorityPair<Location[], double> destinationPair = destinations.DequeueWithPriority();
+                            ValuePriorityPair<Location[], double> destinationPair = destinations.DequeueWithPriority();
                             if (destinationPriority == -1.0 || destinationPair.Priority == destinationPriority)
                             {
-                                destinationPaths.Add(destinationPair.Item);
+                                destinationPaths.Add(destinationPair.Value);
                             }
                             else
                             {

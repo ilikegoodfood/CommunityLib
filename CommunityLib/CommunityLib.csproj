@@ -70,7 +70,9 @@
     <Compile Include="Ch_PlunderShipwreck.cs" />
     <Compile Include="Ch_RecoverShipwreck.cs" />
     <Compile Include="GodSortData.cs" />
-    <Compile Include="ItemPriorityPair.cs" />
+    <Compile Include="Pair.cs" />
+    <Compile Include="PowerDelayed.cs" />
+    <Compile Include="ValuePriorityPair.cs" />
     <Compile Include="I_TestItem_Blank.cs" />
     <Compile Include="I_Test_DeathSave.cs" />
     <Compile Include="ManagerTradeRoutes.cs" />
