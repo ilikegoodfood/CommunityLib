@@ -235,7 +235,7 @@ namespace CommunityLib
             heap[index2] = temp;
         }
 
-        public PriorityQueue<TValue, TPriority> Clone()
+        private PriorityQueue<TValue, TPriority> Clone()
         {
             PriorityQueue<TValue, TPriority> copy = new PriorityQueue<TValue, TPriority>();
 
@@ -245,6 +245,11 @@ namespace CommunityLib
             }
 
             return copy;
+        }
+
+        public PriorityQueue<TValue, TPriority> ToPriorityQueue()
+        {
+            return Clone();
         }
 
         public List<TValue> ToList()
