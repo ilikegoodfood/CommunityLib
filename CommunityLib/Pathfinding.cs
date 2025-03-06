@@ -608,7 +608,7 @@ namespace CommunityLib
                             double stepCost = 10.0;
                             foreach (Func<Location[], Location, Unit, List<int>, double> pathfindingDelegate in pathfindingDelegates)
                             {
-                                double cost = pathfindingDelegate(pair.Value, neighbour, u, expectedMapLayers);
+                                double cost = pathfindingDelegate(pair.Value, neighbour, u, targetMapLayers);
                                 if (cost >= 10000.0)
                                 {
                                     stepCost = cost;
@@ -631,7 +631,7 @@ namespace CommunityLib
                             bool valid = true;
                             foreach (Func<Location[], Location, Unit, List<int>, bool> validDelegate in destinationValidityDelegates)
                             {
-                                if (!destinationValidityDelegate(pair.Item, neighbour, u, targetMapLayers))
+                                if (!destinationValidityDelegate(pair.Value, neighbour, u, targetMapLayers))
                                 {
                                     valid = false;
                                     break;
