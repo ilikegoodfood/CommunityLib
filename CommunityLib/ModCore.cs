@@ -1987,6 +1987,14 @@ namespace CommunityLib
         public override void onTurnStart(Map map)
         {
             data.onTurnStart(map);
+
+            foreach (Power power in map.overmind.god.powers)
+            {
+                if (power is PowerDelayed delayedPower)
+                {
+                    delayedPower.turnTick();
+                }
+            }
         }
 
         public override void onTurnEnd(Map map)
