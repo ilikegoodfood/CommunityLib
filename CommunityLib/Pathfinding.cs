@@ -103,6 +103,11 @@ namespace CommunityLib
             return 0.0;
         }
 
+        public static double delegate_IMMOBILE(Location[] currentPath, Location location, Unit u)
+        {
+            return 10000.0;
+        }
+
         public static double delegate_TRAIT_WITHTHEWIND(Location[] currentPath, Location location, Unit u)
         {
             Location currentLoc = currentPath[currentPath.Length - 1];
@@ -139,6 +144,14 @@ namespace CommunityLib
                     if (!pathfindingDelegates.Contains(delegate_FAVOURABLE_WIND))
                     {
                         pathfindingDelegates.Add(delegate_FAVOURABLE_WIND);
+                    }
+                }
+
+                if (u.getMaxMoves() <= 0)
+                {
+                    if (!pathfindingDelegates.Contains(delegate_IMMOBILE))
+                    {
+                        pathfindingDelegates.Add(delegate_IMMOBILE);
                     }
                 }
 

@@ -61,6 +61,12 @@ namespace CommunityLib
         public static void LogSiblings(Component c)
         {
             Component parent = c.transform.parent;
+            if (parent == null)
+            {
+                Console.WriteLine($"CommunityLib: {c.name} ({c.GetType().Name}) is unparented, and therefore cannot have siblings.");
+                return;
+            }
+
             Component[] siblings = parent.GetComponentsInChildren<Component>();
             Console.WriteLine($"{siblings.Length} {(siblings.Length == 1 ? "Sibling" : "Siblings")} Found");
             for (int i = 0; i < siblings.Length; i++)

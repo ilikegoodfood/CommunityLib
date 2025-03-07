@@ -31,6 +31,10 @@ namespace CommunityLib
                     expiredLocationPairs.Add(pair);
                     CastDelayed(pair.Item1);
                 }
+                else
+                {
+                    WhileDelayed(pair.Item1);
+                }
             }
             foreach (Pair<Location, int> expiredPair in expiredLocationPairs)
             {
@@ -47,11 +51,25 @@ namespace CommunityLib
                     expiredUnitPairs.Add(pair);
                     CastDelayed(pair.Item1);
                 }
+                else
+                {
+                    WhileDelayed(pair.Item1);
+                }
             }
             foreach (Pair<Unit, int> expiredPair in expiredUnitPairs)
             {
                 TargetDelays_Units.Remove(expiredPair);
             }
+        }
+
+        public virtual void WhileDelayed(Location location)
+        {
+
+        }
+
+        public virtual void WhileDelayed(Unit unit)
+        {
+
         }
 
         public virtual void CastDelayed(Location location)
