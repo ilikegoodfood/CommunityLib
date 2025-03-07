@@ -176,6 +176,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(UAE_Abstraction), nameof(UAE_Abstraction.validTarget), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(UAE_Abstraction_validTarget_transpiler)));
 
             // AI Fixes
+            harmony.Patch(original: AccessTools.Method(typeof(UM_HumanArmy), nameof(UM_HumanArmy.turnTickAI), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UM_HumanArmy_turnTickAI_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(UM_Refugees), nameof(UM_Refugees.turnTickAI), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UM_Refugees_turnTickAI_Transpiler)));
 
             // AgentBattle Fixes
@@ -383,6 +384,8 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(UIE_AgentRoster), nameof(UIE_AgentRoster.setTo), new Type[] { typeof(World), typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(UIE_AgentRoster_setToUA_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(UIE_AgentRoster), nameof(UIE_AgentRoster.setTo), new Type[] { typeof(World), typeof(UM) }), transpiler: new HarmonyMethod(patchType, nameof(UIE_AgentRoster_setToUM_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(UIE_AgentRoster), nameof(UIE_AgentRoster.doAgentBattle), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UIE_AgentRoster_doAgentBattle_Transpiler)));
+
+            harmony.Patch(original: AccessTools.Method(typeof(PrefabStore), nameof(PrefabStore.popConfirmOrder), new Type[] { typeof(string), typeof(Action<string>), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(PrefabStore_popConfirmAction_Transpiler)));
 
             // Check Engaging patches
             harmony.Patch(original: AccessTools.Method(typeof(UA), "playedOpensMinions", new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(checkEngaging_BulkTranspiler)));
@@ -792,6 +795,122 @@ namespace CommunityLib
         }
 
         // AI Fixes
+        // Human Army
+        private static IEnumerable<CodeInstruction> UM_HumanArmy_turnTickAI_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(UM_HumanArmy_turnTickAI_TranspilerBody), new Type[] { typeof(UM_HumanArmy), typeof(UM) });
+            MethodInfo MI_randomNext = AccessTools.Method(typeof(System.Random), nameof(System.Random.Next), new Type[] { typeof(int) });
+
+            FieldInfo FI_elevenRandom = AccessTools.Field(typeof(Eleven), nameof(Eleven.random));
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i+1].opcode == OpCodes.Nop && instructionList[i+2].opcode == OpCodes.Ldloca_S)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i + 1].opcode == OpCodes.Nop && instructionList[i + 2].opcode == OpCodes.Ldloca_S)
+                        {
+                            Label skipIfElse = ilg.DefineLabel();
+                            Label stepsIsLessThanLabel = ilg.DefineLabel();
+                            int stepDistanceIndex = ilg.DeclareLocal(typeof(int)).LocalIndex;
+
+                            // Insert a Br_s beofre the current line to skip the if else we are adding after the current line.
+                            yield return new CodeInstruction(OpCodes.Br_S, skipIfElse);
+
+                            // return the current line that has the break label attached.
+                            yield return instructionList[i];
+
+                            // create the new if else block
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 7);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                            yield return new CodeInstruction(OpCodes.Stloc_S, stepDistanceIndex);
+
+                            // If the result is less than 0, continue;
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, stepDistanceIndex);
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_0);
+                            yield return new CodeInstruction(OpCodes.Cgt);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, skipIfElse);
+
+                            // If the result greater than the nearest, continue
+                            yield return new CodeInstruction(OpCodes.Ldloc_0);
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, stepDistanceIndex);
+                            yield return new CodeInstruction(OpCodes.Conv_R8);
+                            yield return new CodeInstruction(OpCodes.Cgt);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, skipIfElse);
+
+                            // If the result is equal to the nearest, roll randomly.
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, stepDistanceIndex);
+                            yield return new CodeInstruction(OpCodes.Conv_R8);
+                            yield return new CodeInstruction(OpCodes.Ldloc_0);
+                            yield return new CodeInstruction(OpCodes.Clt);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, stepsIsLessThanLabel);
+
+                            // if equal, roll 1d2 and skip if rolled 2.
+                            yield return new CodeInstruction(OpCodes.Ldsfld, FI_elevenRandom);
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_2);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_randomNext);
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_0);
+                            yield return new CodeInstruction(OpCodes.Cgt);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, skipIfElse);
+
+                            // Set as target
+                            CodeInstruction code = new CodeInstruction(OpCodes.Nop);
+                            code.labels.Add(stepsIsLessThanLabel);
+                            yield return code;
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, stepDistanceIndex);
+                            yield return new CodeInstruction(OpCodes.Conv_R8);
+                            yield return new CodeInstruction(OpCodes.Stloc_0);
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 7);
+                            yield return new CodeInstruction(OpCodes.Stloc_1);
+
+                            // Add the skip if else label here.
+                            instructionList[i + 1].labels.Add(skipIfElse);
+
+                            // We have  returned the current line manually, so skip it.
+                            i++;
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed UM_HumanArmy_turnTickAI_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static int UM_HumanArmy_turnTickAI_TranspilerBody(UM_HumanArmy army, UM target)
+        {
+            if (army.society != target.society && army.society.getRel(target.society).state != DipRel.dipState.alliance)
+            {
+                if (target.location.soc == army.society)
+                {
+                    if (target.task is Task_RazeLocation || target.task is Task_CaptureLocation)
+                    {
+                        return army.map.getStepDist(army.location, target.location);
+                    }
+                }
+            }
+
+            return -1;
+        }
+
         // Refugess
         private static IEnumerable<CodeInstruction> UM_Refugees_turnTickAI_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
         {
@@ -8595,8 +8714,62 @@ namespace CommunityLib
             }
         }
 
-        // engaging Patches
+        // Other UI tweak
+        private static IEnumerable<CodeInstruction> PrefabStore_popConfirmAction_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
 
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(PrefabStore_popConfirmAction_TranspilerBody), new Type[] { typeof(PopupConfirmOrder) });
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ret)
+                        {
+                            CodeInstruction code = new CodeInstruction(OpCodes.Ldloc_1);
+                            code.labels.AddRange(instructionList[i].labels);
+                            instructionList[i].labels.Clear();
+                            yield return code;
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed PrefabStore_popConfirmAction_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static void PrefabStore_popConfirmAction_TranspilerBody(PopupConfirmOrder blocker)
+        {
+            Text confirmText = blocker.GetComponentsInChildren<Text>().FirstOrDefault(t => t.text == "Confirm");
+            Text abortText = blocker.GetComponentsInChildren<Text>().FirstOrDefault(t => t.text == "Abort");
+
+            if (confirmText != null)
+            {
+                //Console.WriteLine($"CommunityLib: Found \"Confirm\" button");
+                confirmText.text = "Confirm New Task";
+            }
+
+            if (abortText != null)
+            {
+                //Console.WriteLine($"CommunityLib: Found \"Abort\" button");
+                abortText.text = "Continue Current Challenge";
+            }
+        }
+
+        // engaging Patches
         private static IEnumerable<CodeInstruction> checkEngaging_BulkTranspiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
