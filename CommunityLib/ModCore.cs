@@ -2363,9 +2363,13 @@ namespace CommunityLib
 
         public bool checkIsNaturalWonder(Location location) => data.isNaturalWonder(location);
 
+        public bool checkIsNaturalWonder(Location location, out Settlement naturalWonderSettlement, out List<Subsettlement> naturalWonderSubsettlements) => data.isNaturalWonder(location, out naturalWonderSettlement, out naturalWonderSubsettlements);
+
         public void registerWonderType(Type type) => data.addWonderType(type);
 
         public bool checkIsWonder(Location location) => data.isWonder(location);
+
+        public bool checkIsWonder(Location location, out Settlement wonderSettlement, out bool settlementIsNaturalWonder, out List<Subsettlement> wonderSubsettlements, out List<Subsettlement> naturalWonderSubsettlements) => data.isWonder(location, out wonderSettlement, out settlementIsNaturalWonder, out wonderSubsettlements, out naturalWonderSubsettlements);
 
         public void registerVampireType(Type type) => data.addVampireType(type);
 
