@@ -552,9 +552,10 @@ namespace CommunityLib
                 return true;
             }
 
+            Type settlementType = location.settlement.GetType();
             foreach (Type type in naturalWonderTypes)
             {
-                if (type.IsSubclassOf(typeof(Settlement)) && (location.settlement.GetType() == type || location.settlement.GetType().IsSubclassOf(type)))
+                if (type.IsSubclassOf(typeof(Settlement)) && (settlementType == type || settlementType.IsSubclassOf(type)))
                 {
                     return true;
                 }
@@ -567,9 +568,10 @@ namespace CommunityLib
                     return true;
                 }
 
+                Type subsettlementType = sub.GetType();
                 foreach (Type type in naturalWonderTypes)
                 {
-                    if (type.IsSubclassOf(typeof(Subsettlement)) && (sub.GetType() == type || sub.GetType().IsSubclassOf(type)))
+                    if (type.IsSubclassOf(typeof(Subsettlement)) && (subsettlementType == type || subsettlementType.IsSubclassOf(type)))
                     {
                         return true;
                     }
@@ -577,6 +579,61 @@ namespace CommunityLib
             }
 
             return false;
+        }
+
+        internal bool isNaturalWonder(Location location, out Settlement naturalWonderSettlement, out List<Subsettlement> naturalWonderSubsettlements)
+        {
+            bool result = false;
+            naturalWonderSettlement = null;
+            naturalWonderSubsettlements = new List<Subsettlement>();
+
+            if (location == null || location.settlement == null)
+            {
+                return false;
+            }
+
+            if (location.settlement is Set_NaturalWonder)
+            {
+                naturalWonderSettlement = location.settlement;
+                result = true;
+            }
+
+            if (naturalWonderSettlement == null)
+            {
+                Type settlementType = location.settlement.GetType();
+                foreach (Type type in naturalWonderTypes)
+                {
+                    if (type.IsSubclassOf(typeof(Settlement)) && (settlementType == type || settlementType.IsSubclassOf(type)))
+                    {
+                        naturalWonderSettlement = location.settlement;
+                        result = true;
+                        break;
+                    }
+                }
+            }
+
+            foreach (Subsettlement sub in location.settlement.subs)
+            {
+                if (sub is Sub_NaturalWonder)
+                {
+                    naturalWonderSubsettlements.Add(sub);
+                    result = true;
+                    continue;
+                }
+
+                Type subsettlementType = sub.GetType();
+                foreach (Type type in naturalWonderTypes)
+                {
+                    if (type.IsSubclassOf(typeof(Subsettlement)) && (subsettlementType == type || subsettlementType.IsSubclassOf(type)))
+                    {
+                        naturalWonderSubsettlements.Add(sub);
+                        result = true;
+                        break;
+                    }
+                }
+            }
+
+            return result;
         }
 
         internal bool isWonder(Location location)
@@ -591,9 +648,10 @@ namespace CommunityLib
                 return true;
             }
 
+            Type settlementType = location.settlement.GetType();
             foreach (Type type in wonderTypes)
             {
-                if (type.IsSubclassOf(typeof(Settlement)) && (location.settlement.GetType() == type || location.settlement.GetType().IsSubclassOf(type)))
+                if (type.IsSubclassOf(typeof(Settlement)) && (settlementType == type || settlementType.IsSubclassOf(type)))
                 {
                     return true;
                 }
@@ -601,7 +659,7 @@ namespace CommunityLib
 
             foreach (Type type in naturalWonderTypes)
             {
-                if (type.IsSubclassOf(typeof(Settlement)) && (location.settlement.GetType() == type || location.settlement.GetType().IsSubclassOf(type)))
+                if (type.IsSubclassOf(typeof(Settlement)) && (settlementType == type || settlementType.IsSubclassOf(type)))
                 {
                     return true;
                 }
@@ -614,9 +672,10 @@ namespace CommunityLib
                     return true;
                 }
 
+                Type subsettlementType = sub.GetType();
                 foreach (Type type in wonderTypes)
                 {
-                    if (type.IsSubclassOf(typeof(Subsettlement)) && (sub.GetType() == type || sub.GetType().IsSubclassOf(type)))
+                    if (type.IsSubclassOf(typeof(Subsettlement)) && (subsettlementType == type || subsettlementType.IsSubclassOf(type)))
                     {
                         return true;
                     }
@@ -624,7 +683,7 @@ namespace CommunityLib
 
                 foreach (Type type in naturalWonderTypes)
                 {
-                    if (type.IsSubclassOf(typeof(Subsettlement)) && (sub.GetType() == type || sub.GetType().IsSubclassOf(type)))
+                    if (type.IsSubclassOf(typeof(Subsettlement)) && (subsettlementType == type || subsettlementType.IsSubclassOf(type)))
                     {
                         return true;
                     }
@@ -632,6 +691,109 @@ namespace CommunityLib
             }
 
             return false;
+        }
+
+        internal bool isWonder(Location location, out Settlement wonderSettlement, out bool settlementIsNaturalWonder, out List<Subsettlement> wonderSubsettlements, out List<Subsettlement> naturalWonderSubsettlements)
+        {
+            bool result = false;
+            wonderSettlement = null;
+            settlementIsNaturalWonder = false;
+            wonderSubsettlements = new List<Subsettlement>();
+            naturalWonderSubsettlements = new List<Subsettlement>();
+
+            if (location == null || location.settlement == null)
+            {
+                return false;
+            }
+
+            if (location.settlement is Set_Wonder)
+            {
+                result = true;
+                wonderSettlement = location.settlement;
+
+                if (location.settlement is Set_NaturalWonder)
+                {
+                    settlementIsNaturalWonder = true;
+                }
+            }
+
+            if (wonderSettlement == null)
+            {
+                Type settlementType = location.settlement.GetType();
+
+                foreach (Type type in wonderTypes)
+                {
+                    if (type.IsSubclassOf(typeof(Settlement)) && (settlementType == type || settlementType.IsSubclassOf(type)))
+                    {
+                        wonderSettlement = location.settlement;
+                        result = true;
+                        break;
+                    }
+                }
+
+                if (wonderSettlement == null)
+                {
+                    foreach (Type type in naturalWonderTypes)
+                    {
+                        if (type.IsSubclassOf(typeof(Settlement)) && (location.settlement.GetType() == type || location.settlement.GetType().IsSubclassOf(type)))
+                        {
+                            wonderSettlement = location.settlement;
+                            settlementIsNaturalWonder = true;
+                            result = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            foreach (Subsettlement sub in location.settlement.subs)
+            {
+                if (sub is Sub_Wonder)
+                {
+                    result = true;
+
+                    if (sub is Sub_NaturalWonder)
+                    {
+                        naturalWonderSubsettlements.Add(sub);
+                    }
+                    else
+                    {
+                        wonderSubsettlements.Add(sub);
+                    }
+
+                    continue;
+                }
+
+                Type subsettlementType = sub.GetType();
+                bool found = false;
+                foreach (Type type in wonderTypes)
+                {
+                    if (type.IsSubclassOf(typeof(Subsettlement)) && (subsettlementType == type || subsettlementType.IsSubclassOf(type)))
+                    {
+                        wonderSubsettlements.Add(sub);
+                        result = true;
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (found)
+                {
+                    continue;
+                }
+
+                foreach (Type type in naturalWonderTypes)
+                {
+                    if (type.IsSubclassOf(typeof(Subsettlement)) && (subsettlementType == type || subsettlementType.IsSubclassOf(type)))
+                    {
+                        naturalWonderSubsettlements.Add(sub);
+                        result = true;
+                        break;
+                    }
+                }
+            }
+
+            return result;
         }
 
         internal void addVampireType(Type t)
