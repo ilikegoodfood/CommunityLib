@@ -83,7 +83,7 @@ namespace CommunityLib
 
         private void rebuildTradeRoutes(ManagerTrade tradeManager, List<Location> endpoints)
         {
-            ModCore.Get().hooks.densifyingTradeRoutes = false;
+            ModCore.Get().hooks.DensifyingTradeRoutes = false;
             if (endpoints == null || endpoints.Count < 2)
             {
                 endpoints = getTradeRouteEndPoints();
@@ -293,7 +293,7 @@ namespace CommunityLib
             if (ModCore.opt_denseTradeRoutes)
             {
                 World.log($"CommunityLib: Desnifying trade network.");
-                ModCore.Get().hooks.densifyingTradeRoutes = true;
+                ModCore.Get().hooks.DensifyingTradeRoutes = true;
                 foreach (Location endpoint in endpoints)
                 {
                     Location[] routePath = Pathfinding.getTradeRouteFrom(endpoint, endpoints);
@@ -311,7 +311,7 @@ namespace CommunityLib
                     World.log($"CommunityLib: Densification trade route created from {endpoint.getName()} to {routePath[routePath.Length - 1].getName()}.");
                 }
             }
-            ModCore.Get().hooks.densifyingTradeRoutes = false;
+            ModCore.Get().hooks.DensifyingTradeRoutes = false;
         }
 
         private List<HashSet<int>> findAllConnectedSets(ManagerTrade tradeManager)

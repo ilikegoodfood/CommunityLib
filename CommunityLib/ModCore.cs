@@ -275,8 +275,7 @@ namespace CommunityLib
             overrideAI = new UAENOverrideAI(map);
             conditionalOverrideAI = new ConditionalUAENOverrideAI(map);
 
-            hooks = new HooksInternal(map);
-            RegisterHooks(hooks);
+            hooks = new HooksInternal(map, this);
 
             orcExpansionDefaults();
             eventModifications();
@@ -311,8 +310,7 @@ namespace CommunityLib
             overrideAI = new UAENOverrideAI(map);
             conditionalOverrideAI = new ConditionalUAENOverrideAI(map);
 
-            hooks = new HooksInternal(map);
-            RegisterHooks(hooks);
+            hooks = new HooksInternal(map, this);
 
             settlementTypesForOrcExpansion = new Dictionary<Type, HashSet<Type>>();
             orcExpansionDefaults();
