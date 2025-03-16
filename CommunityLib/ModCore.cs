@@ -27,6 +27,8 @@ namespace CommunityLib
 
         private List<Hooks> registeredHooks = new List<Hooks>();
 
+        public HooksDelegateRegistry HookRegistry;
+
         private Dictionary<Type, HashSet<Type>> settlementTypesForOrcExpansion;
 
         private AgentAI agentAI;
@@ -244,6 +246,7 @@ namespace CommunityLib
         {
             settlementTypesForOrcExpansion.Clear();
             registeredHooks.Clear();
+            HookRegistry = new HooksDelegateRegistry();
             randStore.Clear();
             data.clean();
             tradeRouteManager = new ManagerTradeRoutes(map);
@@ -1863,10 +1866,9 @@ namespace CommunityLib
 
             if ((unit == null || unit.isDead || unit is UM) && agent == null && location != null && rulerSettlement == null)
             {
-                //Console.WriteLine("CommunityLib: victim needs new agent");
-                foreach (Hooks hook in GetRegisteredHooks())
+                foreach (var hook in HookRegistry.Delegate_onRevivePerson_CreateAgent)
                 {
-                    UA retValue = hook.onRevivePerson_CreateAgent(victim, location);
+                    UA retValue = hook(victim, location);
 
                     if (retValue != null)
                     {
@@ -1874,7 +1876,20 @@ namespace CommunityLib
                         break;
                     }
                 }
+                if (agent == null)
+                {
+                    foreach (Hooks hook in GetRegisteredHooks())
+                    {
+                        UA retValue = hook.onRevivePerson_CreateAgent(victim, location);
 
+                        if (retValue != null)
+                        {
+                            agent = retValue;
+                            break;
+                        }
+                    }
+                }
+                
                 if (agent == null)
                 {
                     foreach (Func<Person, Location, UA> func in data.iterateReviveAgentCreationFunctions())
@@ -1977,11 +1992,14 @@ namespace CommunityLib
                 }
             }
 
+            foreach (var hook in HookRegistry.Delegate_onRevivePerson_EndOfProcess)
+            {
+                hook(victim, location);
+            }
             foreach (Hooks hook in GetRegisteredHooks())
             {
                 hook.onRevivePerson_EndOfProcess(victim, location);
             }
-            //Console.WriteLine("CommunityLib: Revival complete");
         }
 
         public override void onTurnStart(Map map)
@@ -2333,6 +2351,13 @@ namespace CommunityLib
                 return true;
             }
 
+            foreach (var hook in HookRegistry.Delegate_onEvent_IsLocationElderTomb)
+            {
+                if (hook(location))
+                {
+                    return true;
+                }
+            }
             foreach (Hooks hook in GetRegisteredHooks())
             {
                 if (hook.onEvent_IsLocationElderTomb(location))
@@ -2378,6 +2403,13 @@ namespace CommunityLib
 
             if (u.isDead && u.person != null && !u.person.isDead && u.person.unit != null && u.person.unit != u && !u.person.unit.isDead)
             {
+                foreach (var hook in ModCore.Get().HookRegistry.Delegate_isUnitSubsumed)
+                {
+                    if (hook(u, u.person.unit))
+                    {
+                        return true;
+                    }
+                }
                 foreach (Hooks hook in GetRegisteredHooks())
                 {
                     if (hook.isUnitSubsumed(u, u.person.unit))
@@ -2428,14 +2460,20 @@ namespace CommunityLib
                 return false;
             }
 
-            foreach (Hooks hook in Get().GetRegisteredHooks())
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onCheckIsProphetPlayerAligned)
             {
-                if (hook?.onCheckIsProphetPlayerAligned(order, order.prophet) ?? false)
+                if (hook.Invoke(order, order.prophet))
                 {
                     return true;
                 }
             }
-
+            foreach (Hooks hook in Get().GetRegisteredHooks())
+            {
+                if (hook.onCheckIsProphetPlayerAligned(order, order.prophet))
+                {
+                    return true;
+                }
+            }
             return false;
         }
 
@@ -2460,6 +2498,10 @@ namespace CommunityLib
 
             if (travelTime > 0)
             {
+                foreach (var hook in HookRegistry.Delegate_onUnitAI_GetsDistanceToLocation)
+                {
+                    travelTime = hook(u, location, path, travelTime);
+                }
                 foreach (Hooks hook in GetRegisteredHooks())
                 {
                     travelTime = hook.onUnitAI_GetsDistanceToLocation(u, location, path, travelTime);

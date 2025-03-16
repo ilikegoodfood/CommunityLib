@@ -21,6 +21,7 @@ namespace CommunityLib
 
         public bool isClean = true;
 
+        #region InternalCaches
         private Dictionary<string, ModIntegrationData> modIntegrationData;
 
         private Dictionary<Culture, ModCultureData> modCultureData;
@@ -28,8 +29,9 @@ namespace CommunityLib
         private List<Func<Person, Location, UA>> reviveAgentCreationFunctons;
 
         private Dictionary<Soc_Dwarves, int> dwarfExpansionCooldowns;
+        #endregion InternalCaches
 
-        // Collections
+        #region Collections
         private HashSet<Type> locusTypes;
 
         private HashSet<Type> magicTraitTypes;
@@ -39,7 +41,7 @@ namespace CommunityLib
         private HashSet<Type> naturalWonderTypes;
 
         private HashSet<Type> vampireTypes;
-        // end
+        #endregion Collections
 
         public bool isPlayerTurn = false;
 
