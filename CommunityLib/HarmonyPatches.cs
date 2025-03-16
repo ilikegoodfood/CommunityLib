@@ -1,4 +1,6 @@
 ﻿using Assets.Code;
+using DuloGames.UI;
+using FullSerializer;
 using HarmonyLib;
 using System;
 using System.Collections.Generic;
@@ -9,6 +11,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using UnityEngine;
 using UnityEngine.UI;
+using static CommunityLib.AgentAI;
 
 namespace CommunityLib
 {
@@ -21,6 +24,8 @@ namespace CommunityLib
         public static string[] popupHolyOrder_DefaultPageText = new string[6];
 
         public static Text popupHolyOrder_PageText;
+
+        private static Dictionary<UIE_Challenge, Hooks.TaskUIData> umTaskUIData;
 
         private static bool populatedUM;
 
@@ -351,6 +356,11 @@ namespace CommunityLib
         // Graphical unit updated hook
         private static void GraphicalUnit_checkData_Postfix(GraphicalUnit __instance)
         {
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onGraphicalUnitUpdated)
+            {
+                hook(__instance);
+            }
+
             //Console.WriteLine("CommunityLib: Calling onGraphicalUnitUpdated hook");
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
@@ -361,6 +371,10 @@ namespace CommunityLib
 
         private static void GraphicalLink_Update_Postfix(GraphicalLink __instance)
         {
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onGraphicalLinkUpdated)
+            {
+                hook(__instance);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onGraphicalLinkUpdated(__instance);
@@ -1531,15 +1545,23 @@ namespace CommunityLib
             bool result = true;
 
             //Console.WriteLine("CommunityLib: Intercept Unit Death");
-            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_interceptUnitDeath)
             {
-                bool retValue = hook.interceptUnitDeath(__instance, v, killer);
-
-                if (retValue)
+                if (hook(__instance, v, killer))
                 {
                     result = false;
-                    //Console.WriteLine("CommunityLib: " + hook.GetType().Namespace + " has intercepted death of " + __instance.getName());
                     break;
+                }
+            }
+            if (result)
+            {
+                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                {
+                    if (hook.interceptUnitDeath(__instance, v, killer))
+                    {
+                        result = false;
+                        break;
+                    }
                 }
             }
 
@@ -1601,6 +1623,10 @@ namespace CommunityLib
 
         private static void Unit_die_TranspilerBody_InterceptAndStartOfUnitDeath(Unit u, string v, Person killer = null)
         {
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onUnitDeath_StartOfProcess)
+            {
+                hook(u, v, killer);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onUnitDeath_StartOfProcess(u, v, killer);
@@ -1737,11 +1763,16 @@ namespace CommunityLib
 
             // Intercept Hook
             bool result = false;
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_interceptArmyBattleCycle)
+            {
+                if (hook(battle))
+                {
+                    result = true;
+                }
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                bool retValue = hook.interceptArmyBattleCycle(battle);
-
-                if (retValue)
+                if (hook.interceptArmyBattleCycle(battle))
                 {
                     result = true;
                 }
@@ -1759,6 +1790,10 @@ namespace CommunityLib
             }
 
             // Start of Process hook if not intercepted
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onArmyBattleCycle_StartOfProcess)
+            {
+                hook(battle);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook?.onArmyBattleCycle_StartOfProcess(battle);
@@ -1769,9 +1804,13 @@ namespace CommunityLib
 
         private static void BattleArmy_cycle_TranspilerBody_EndOfProcess(BattleArmy battle)
         {
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onArmyBattleCycle_EndOfProcess)
+            {
+                hook(battle);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                hook?.onArmyBattleCycle_EndOfProcess(battle);
+                hook.onArmyBattleCycle_EndOfProcess(battle);
             }
         }
 
@@ -1810,9 +1849,13 @@ namespace CommunityLib
 
             if (defeatedUnits.Count > 0)
             {
+                foreach (var hook in ModCore.Get().HookRegistry.Delegate_onArmyBattleVictory)
+                {
+                    hook(battle, victorUnits, victorComs, defeatedUnits, defeatedComs);
+                }
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
-                    hook?.onArmyBattleVictory(battle, victorUnits, victorComs, defeatedUnits, defeatedComs);
+                    hook.onArmyBattleVictory(battle, victorUnits, victorComs, defeatedUnits, defeatedComs);
                 }
             }
         }
@@ -1835,9 +1878,13 @@ namespace CommunityLib
 
             if (unit != null && target != null)
             {
+                foreach (var hook in ModCore.Get().HookRegistry.Delegate_onArmyBattleCycle_DamageCalculated)
+                {
+                    dmg = hook(battle, dmg, unit, target);
+                }
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
-                    dmg = hook?.onArmyBattleCycle_DamageCalculated(battle, dmg, unit, target) ?? dmg;
+                    dmg = hook.onArmyBattleCycle_DamageCalculated(battle, dmg, unit, target);
                 }
             }
 
@@ -1893,9 +1940,13 @@ namespace CommunityLib
 
         private static void BattleArmy_unitMovesFromLocation_TranspilerBody_OnAmryBattleRetreatOrFlee(BattleArmy battle, Unit u)
         {
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onArmyBattleRetreatOrFlee)
+            {
+                hook(battle, u);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                hook?.onArmyBattleRetreatOrFlee(battle, u);
+                hook.onArmyBattleRetreatOrFlee(battle, u);
             }
         }
 
@@ -1915,9 +1966,13 @@ namespace CommunityLib
                 victorComs.AddRange(battle.attComs);
             }
 
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onArmyBattleTerminated)
+            {
+                hook(battle, victorUnits, victorComs, u);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                hook?.onArmyBattleTerminated(battle, victorUnits, victorComs, u);
+                hook.onArmyBattleTerminated(battle, victorUnits, victorComs, u);
             }
         }
 
@@ -1957,9 +2012,13 @@ namespace CommunityLib
 
         private static void BattleArmy_computeAdvantage_TranspilerBody(BattleArmy battle, double advantage)
         {
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onArmyBattleCycle_ComputeAdvantage)
+            {
+                advantage = hook(battle, advantage);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                hook?.onArmyBattleCycle_ComputeAdvantage(battle, advantage);
+                advantage = hook.onArmyBattleCycle_ComputeAdvantage(battle, advantage);
             }
         }
 
@@ -2014,23 +2073,35 @@ namespace CommunityLib
 
         private static void BattleArmy_allocateDamage_TranspilerBody_allocateDamage(BattleArmy battle, List<UM> units, int[] dmgs)
         {
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onArmyBattleCycle_AllocateDamage)
+            {
+                hook(battle, units, dmgs);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                hook?.onArmyBattleCycle_AllocateDamage(battle, units, dmgs);
+                hook.onArmyBattleCycle_AllocateDamage(battle, units, dmgs);
             }
         }
 
         private static void BattleArmy_allocateDamage_TranspilerBody_receivesDamage(BattleArmy battle, List<UM> units, int[] dmgs, int index)
         {
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onUnitReceivesArmyBattleDamage)
+            {
+                dmgs[index] = hook(battle, units[index], dmgs[index]);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                dmgs[index] = hook?.onUnitReceivesArmyBattleDamage(battle, units[index], dmgs[index]) ?? dmgs[index];
+                dmgs[index] = hook.onUnitReceivesArmyBattleDamage(battle, units[index], dmgs[index]);
             }
         }
 
         // BattleAgent hooks
         private static void BattleAgents_setupBattle_Postfix(BattleAgents __instance)
         {
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onAgentBattle_Setup)
+            {
+                hook(__instance);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onAgentBattle_Setup(__instance);
@@ -2152,45 +2223,54 @@ namespace CommunityLib
 
         private static int BattleAgents_step_Intercept(PopupBattleAgent popup, BattleAgents battle)
         {
-            //Console.WriteLine("CommunityLib: Calling intercept hooks for BattleAgents.step");
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_interceptAgentBattleStep)
+            {
+                if (hook(popup, battle, out bool battleOver))
+                {
+                    if (battleOver)
+                    {
+                        return 2;
+                    }
+                    return 1;
+                }
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 if (hook.interceptAgentBattleStep(popup, battle, out bool battleOver))
                 {
                     if (battleOver)
                     {
-                        //Console.WriteLine("CommunityLib: Intercept used by " + hook.GetType().Namespace + ". Battle is over.");
                         return 2;
                     }
-
-                    //Console.WriteLine("CommunityLib: Intercept used by " + hook.GetType().Namespace + ". Battle is ongoing");
                     return 1;
                 }
             }
-
-            //Console.WriteLine("CommunityLib: Intercept not used");
             return 0;
         }
 
         private static Minion BattleAgents_step_ReinforceFromEscort(UA ua, UM escort)
         {
             Minion result = null;
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onAgentBattle_ReinforceFromEscort)
+            {
+                result = hook(ua, escort);
+
+                if (result != null)
+                {
+                    return result;
+                }
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 result = hook.onAgentBattle_ReinforceFromEscort(ua, escort);
 
                 if (result != null)
                 {
-                    break;
+                    return result;
                 }
             }
 
-            if (result == null)
-            {
-                result = new M_Knight(ua.map);
-            }
-
-            return result;
+            return new M_Knight(ua.map);
         }
 
         // Agent Battle Hooks BattleAgents_AttackDownRow_Minion_Transpiler
@@ -2267,15 +2347,16 @@ namespace CommunityLib
         {
             if (me != null && me.minions[row] != null)
             {
-                //Console.WriteLine("CommunityLib: Minion about to attack");
                 UA other = battle.att;
                 if (battle.att == me)
                 {
-                    //Console.WriteLine("CommunityLib: other is defender");
                     other = battle.def;
                 }
 
-                //Console.WriteLine("CommunityLib: Callning hooks");
+                foreach (var hook in ModCore.Get().HookRegistry.Delegate_onMinionAttackAboutToBePerformed)
+                {
+                    hook(me.minions[row], other, popup, battle, dmg, row);
+                }
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
                     dmg = hook.onMinionAttackAboutToBePerformed(me.minions[row], other, popup, battle, dmg, row);
@@ -2327,15 +2408,16 @@ namespace CommunityLib
 
         private static int BattleAgents_AttackDownRow_TranspilerBody_ReceiveDamage(BattleAgents battle, PopupBattleAgent popup, UA defender, int dmg, int row)
         {
-            //Console.WriteLine("CommunityLib: About to receive damage");
             Minion minion = defender.minions[row];
             if (minion != null && minion.isDead)
             {
-                //Console.WriteLine("CommunityLib: minion is dead");
                 minion = null;
             }
 
-            //Console.WriteLine("CommunityLib: Calling hooks");
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onAgentBattle_ReceiveDamage)
+            {
+                hook(popup, battle, defender, minion, dmg, row);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 dmg = hook.onAgentBattle_ReceiveDamage(popup, battle, defender, minion, dmg, row);
@@ -2353,13 +2435,25 @@ namespace CommunityLib
             }
             else
             {
-                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                foreach (var hook in ModCore.Get().HookRegistry.Delegate_onAgentBattleStarts)
                 {
-                    BattleAgents retValue = hook.onAgentBattleStarts(__instance.att, __instance.def);
+                    BattleAgents retValue = hook(__instance.att, __instance.def);
                     if (retValue != null)
                     {
                         battle = retValue;
                         break;
+                    }
+                }
+                if (battle == null)
+                {
+                    foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                    {
+                        BattleAgents retValue = hook.onAgentBattleStarts(__instance.att, __instance.def);
+                        if (retValue != null)
+                        {
+                            battle = retValue;
+                            break;
+                        }
                     }
                 }
             }
@@ -2370,10 +2464,16 @@ namespace CommunityLib
             }
             else
             {
+                foreach (var hook in ModCore.Get().HookRegistry.Delegate_interceptAgentBattleAutomatic)
+                {
+                    if (hook(__instance))
+                    {
+                        return false;
+                    }
+                }
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
-                    bool retValue = hook.interceptAgentBattleAutomatic(battle);
-                    if (retValue)
+                    if (hook.interceptAgentBattleAutomatic(battle))
                     {
                         return false;
                     }
@@ -2455,27 +2555,51 @@ namespace CommunityLib
                 BattleAgents battle = null;
                 if (amAttacker)
                 {
-                    foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                    foreach (var hook in ModCore.Get().HookRegistry.Delegate_onAgentBattleStarts)
                     {
-                        BattleAgents retValue = hook.onAgentBattleStarts(ua, other);
-
+                        BattleAgents retValue = hook(ua, other);
                         if (retValue != null)
                         {
                             battle = retValue;
                             break;
                         }
                     }
+                    if (battle == null)
+                    {
+                        foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                        {
+                            BattleAgents retValue = hook.onAgentBattleStarts(ua, other);
+
+                            if (retValue != null)
+                            {
+                                battle = retValue;
+                                break;
+                            }
+                        }
+                    }
                 }
                 else
                 {
-                    foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                    foreach (var hook in ModCore.Get().HookRegistry.Delegate_onAgentBattleStarts)
                     {
-                        BattleAgents retValue = hook.onAgentBattleStarts(other, ua);
-
+                        BattleAgents retValue = hook(other, ua);
                         if (retValue != null)
                         {
                             battle = retValue;
                             break;
+                        }
+                    }
+                    if (battle == null)
+                    {
+                        foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                        {
+                            BattleAgents retValue = hook.onAgentBattleStarts(other, ua);
+
+                            if (retValue != null)
+                            {
+                                battle = retValue;
+                                break;
+                            }
                         }
                     }
                 }
@@ -2510,7 +2634,10 @@ namespace CommunityLib
         // Popup Battle Agent hooks
         private static void PopupBattleAgent_populate_Postfix(PopupBattleAgent __instance)
         {
-            //Console.WriteLine("CommunityLib: PopupAgentBattle Populated. Calling hooks.");
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onPopupBattleAgent_Populate)
+            {
+                hook(__instance, __instance.battle);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onPopupBattleAgent_Populate(__instance, __instance.battle);
@@ -2570,10 +2697,13 @@ namespace CommunityLib
         {
             if (razeIsValid && unit is UM um)
             {
-                //Console.WriteLine("CommunityLib: onRazeLocationEndOfProcess");
+                foreach (var hook in ModCore.Get().HookRegistry.Delegate_onRazeLocation_EndOfProcess)
+                {
+                    hook(um);
+                }
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
-                    hook?.onRazeLocation_EndOfProcess(um);
+                    hook.onRazeLocation_EndOfProcess(um);
                 }
             }
         }
@@ -2629,7 +2759,10 @@ namespace CommunityLib
 
             if (u is UM um)
             {
-                //Console.WriteLine("CommunityLib: onRazeLocation_StartOfProcess");
+                foreach (var hook in ModCore.Get().HookRegistry.Delegate_onRazeLocation_StartOfProcess)
+                {
+                    hook(um);
+                }
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
                     hook?.onRazeLocation_StartOfProcess(um);
@@ -2649,12 +2782,16 @@ namespace CommunityLib
         {
             bool result = true;
 
-            //Console.WriteLine("CommunityLib: interceptSettlementFallIntoRuin");
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_interceptSettlementFallIntoRuin)
+            {
+                if (hook(__instance, v, killer))
+                {
+                    result = false;
+                }
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                bool retValue = hook.interceptSettlementFallIntoRuin(__instance, v, killer);
-
-                if (retValue)
+                if (hook.interceptSettlementFallIntoRuin(__instance, v, killer))
                 {
                     result = false;
                 }
@@ -2666,7 +2803,10 @@ namespace CommunityLib
                 return result;
             }
 
-            //Console.WriteLine("CommunityLib: onSettlementFallIntoRuin_StartOfProcess");
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onSettlementFallIntoRuin_StartOfProcess)
+            {
+                hook(__instance, v, killer);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onSettlementFallIntoRuin_StartOfProcess(__instance, v, killer);
@@ -2679,7 +2819,10 @@ namespace CommunityLib
         {
             if (__state)
             {
-                //Console.WriteLine("CommunityLib: onSettlementFallIntoRuin_EndOfProcess");
+                foreach (var hook in ModCore.Get().HookRegistry.Delegate_onSettlementFallIntoRuin_EndOfProcess)
+                {
+                    hook(__instance, v, killer);
+                }
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
                     hook.onSettlementFallIntoRuin_EndOfProcess(__instance, v, killer);
@@ -2747,11 +2890,16 @@ namespace CommunityLib
         {
             bool result = false;
 
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_interceptSettlementFallIntoRuin)
+            {
+                if (hook(__instance, v, killer))
+                {
+                    result = true;
+                }
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                bool retValue = hook.interceptSettlementFallIntoRuin(__instance, v, killer);
-
-                if (retValue)
+                if (hook.interceptSettlementFallIntoRuin(__instance, v, killer))
                 {
                     result = true;
                 }
@@ -2762,6 +2910,10 @@ namespace CommunityLib
                 return result;
             }
 
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onSettlementFallIntoRuin_StartOfProcess)
+            {
+                hook(__instance, v, killer);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onSettlementFallIntoRuin_StartOfProcess(__instance, v, killer);
@@ -2772,6 +2924,10 @@ namespace CommunityLib
 
         private static void Settlement_FallIntoRuin_TranspilerBody_End(Settlement __instance, string v, object killer)
         {
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onSettlementFallIntoRuin_EndOfProcess)
+            {
+                hook(__instance, v, killer);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook?.onSettlementFallIntoRuin_EndOfProcess(__instance, v, killer);
@@ -2780,9 +2936,13 @@ namespace CommunityLib
 
         private static void UIE_HolyTenet_bInfluence_Postfix(UIE_HolyTenet __instance)
         {
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onPlayerInfluenceTenet)
+            {
+                hook(__instance.tenet.order, __instance.tenet);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                hook?.onPlayerInfluenceTenet(__instance.tenet.order, __instance.tenet);
+                hook.onPlayerInfluenceTenet(__instance.tenet.order, __instance.tenet);
             }
         }
 
@@ -2795,15 +2955,30 @@ namespace CommunityLib
                     __instance.stat_faith.text = "No Faith";
                 }
 
-                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                bool foundOrder = false;
+                foreach (var hook in ModCore.Get().HookRegistry.Delegate_onLocationViewFaithButton_GetHolyOrder)
                 {
-                    HolyOrder order = hook?.onLocationViewFaithButton_GetHolyOrder(loc);
+                    HolyOrder order = hook(loc);
                     if (order != null)
                     {
                         __instance.stat_faith.text = order.getName();
+                        foundOrder = true;
                         break;
                     }
                 }
+                if (!foundOrder)
+                {
+                    foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                    {
+                        HolyOrder order = hook?.onLocationViewFaithButton_GetHolyOrder(loc);
+                        if (order != null)
+                        {
+                            __instance.stat_faith.text = order.getName();
+                            break;
+                        }
+                    }
+                }
+
             }
 
             Transform buttonTransform = UIUtils.GetChildStrict(__instance, "bHeroesHere");
@@ -2917,13 +3092,24 @@ namespace CommunityLib
         private static bool UIRightLocation_bViewFaith_TranspilerBody(Location loc)
         {
             HolyOrder order = null;
-            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onLocationViewFaithButton_GetHolyOrder)
             {
-                order = hook?.onLocationViewFaithButton_GetHolyOrder(loc);
-
+                order = hook(loc);
                 if (order != null)
                 {
                     break;
+                }
+            }
+            if (order == null)
+            {
+                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                {
+                    order = hook.onLocationViewFaithButton_GetHolyOrder(loc);
+
+                    if (order != null)
+                    {
+                        break;
+                    }
                 }
             }
 
@@ -3110,12 +3296,13 @@ namespace CommunityLib
         {
             int result = __instance.nEnthralled;
 
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onCalculateAgentsUsed)
+            {
+                result = hook(__instance.agents, result);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                if (hook != null)
-                {
-                    result = hook?.onCalculateAgentsUsed(__instance.agents, result) ?? result;
-                }
+                result = hook?.onCalculateAgentsUsed(__instance.agents, result) ?? result;
             }
 
             __instance.nEnthralled = result;
@@ -3159,11 +3346,13 @@ namespace CommunityLib
 
                         if (popupHolyOrder_DefaultPageText[page] == null)
                         {
-                            //Console.WriteLine("CommunityLib: Storing default page text for page " + page);
                             popupHolyOrder_DefaultPageText[page] = string.Copy(text.text);
                         }
 
-                        //Console.WriteLine("CommunityLib: Running hooks for page " + page);
+                        foreach (var hook in ModCore.Get().HookRegistry.Delegate_onPopupHolyOrder_DisplayPageText)
+                        {
+                            text.text = hook(soc, text.text, page);
+                        }
                         foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                         {
                             text.text = hook.onPopupHolyOrder_DisplayPageText(soc, text.text, page);
@@ -3394,9 +3583,13 @@ namespace CommunityLib
                     new ReasonMsgMax("Gold for Temples", order.cashForTemples, order.costTemple)
                 };
 
+                foreach (var hook in ModCore.Get().HookRegistry.Delegate_onPopupHolyOrder_DisplayBudget)
+                {
+                    hook(order, msgs);
+                }
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
-                    hook?.onPopupHolyOrder_DisplayBudget(order, msgs);
+                    hook.onPopupHolyOrder_DisplayBudget(order, msgs);
                 }
 
                 Transform textTransform = UIUtils.GetChildStrict(popupOrder.pages[2].transform, "BudgetFixed");
@@ -3499,9 +3692,13 @@ namespace CommunityLib
                 new ReasonMsg("of which Rulers", order.nWorshippingRulers)
             };
 
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onPopupHolyOrder_DisplayStats)
+            {
+                hook(order, msgs);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                hook?.onPopupHolyOrder_DisplayStats(order, msgs);
+                hook.onPopupHolyOrder_DisplayStats(order, msgs);
             }
 
             foreach (ReasonMsg msg in msgs)
@@ -3530,11 +3727,14 @@ namespace CommunityLib
                 "/turn)"
             });
 
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onPopupHolyOrder_DisplayInfluenceElder)
+            {
+                s = hook(order, s, infGain);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                s = hook?.onPopupHolyOrder_DisplayInfluenceElder(order, s, infGain);
+                s = hook.onPopupHolyOrder_DisplayInfluenceElder(order, s, infGain);
             }
-
             return s;
         }
 
@@ -3550,11 +3750,14 @@ namespace CommunityLib
                 "/turn)"
             });
 
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onPopupHolyOrder_DisplayInfluenceHuman)
+            {
+                s = hook(order, s, infGain);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                s = hook?.onPopupHolyOrder_DisplayInfluenceHuman(order, s, infGain);
+                s = hook.onPopupHolyOrder_DisplayInfluenceHuman(order, s, infGain);
             }
-
             return s;
         }
 
@@ -3571,11 +3774,14 @@ namespace CommunityLib
             }
 
             bool startingTraits = ua.hasStartingTraits() && !ua.hasAssignedStartingTraits;
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onAgentLevelup_GetTraits)
+            {
+                hook(ua, __result, startingTraits);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                hook?.onAgentLevelup_GetTraits(ua, __result, startingTraits);
+                hook.onAgentLevelup_GetTraits(ua, __result, startingTraits);
             }
-
             gettingAvailableTraits = false;
         }
 
@@ -3631,17 +3837,20 @@ namespace CommunityLib
         private static bool Person_gainItem_TranspilerBody(Person person, Item item, Item newItem, bool obligateHold)
         {
             bool result = true;
-
-            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_interceptReplaceItem)
             {
-                bool retValue = hook?.interceptReplaceItem(person, item, newItem, obligateHold) ?? false;
-
-                if (retValue)
+                if (hook(person, item, newItem, obligateHold))
                 {
                     result = false;
                 }
             }
-
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            {
+                if (hook.interceptReplaceItem(person, item, newItem, obligateHold))
+                {
+                    result = false;
+                }
+            }
             return result;
         }
 
@@ -3782,31 +3991,40 @@ namespace CommunityLib
 
         private static List<MonsterAction> SG_ActionTakingMonster_turnTick_TranspilerBody_populate(SG_ActionTakingMonster monster, List<MonsterAction> actions)
         {
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_populatingMonsterActions)
+            {
+                hook(monster, actions);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                hook?.populatingMonsterActions(monster, actions);
+                hook.populatingMonsterActions(monster, actions);
             }
-
             return actions;
         }
 
         private static double SG_ActionTakingMonster_turnTick_TranspilerBody_getUtility(SG_ActionTakingMonster monster, MonsterAction action, double utility, List<ReasonMsg> reasonMsgs)
         {
             double result = utility;
-
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onActionTakingMonster_getUtility)
+            {
+                result = hook(monster, action, utility, reasonMsgs);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                result = hook?.onActionTakingMonster_getUtility(monster, action, utility, reasonMsgs) ?? result;
+                result = hook.onActionTakingMonster_getUtility(monster, action, utility, reasonMsgs);
             }
-
             return result;
         }
 
         private static void SG_ActionTakingMonster_turnTick_TranspilerBody_onAIDecision(SG_ActionTakingMonster monster)
         {
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onActionTakingMonsterAIDecision)
+            {
+                hook(monster);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                hook?.onActionTakingMonsterAIDecision(monster);
+                hook.onActionTakingMonsterAIDecision(monster);
             }
         }
 
@@ -3847,9 +4065,13 @@ namespace CommunityLib
 
         private static void Society_processActions_TranspilerBody_onAIDecision(Society society, Person sovereign)
         {
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onSovereignAIDecision)
+            {
+                hook(society, sovereign);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                hook?.onSovereignAIDecision(society, sovereign);
+                hook.onSovereignAIDecision(society, sovereign);
             }
         }
 
@@ -4531,11 +4753,17 @@ namespace CommunityLib
 
         private static void Map_adjacentMoveTo_Prefix(Map __instance, Unit u, Location loc, Location __state)
         {
+            if (u == null)
+            {
+                __state = null;
+                return;
+            }
+
             __state = u.location;
 
-            bool theEntrance = false;
-            if (u != null && u.isCommandable() && u is UA ua)
+            if (u.isCommandable() && u is UA ua)
             {
+                bool theEntrance = false;
                 if (u.location.settlement is Set_MinorOther && u.location.settlement.subs.Any(sub => sub is Sub_Wonder_Doorway))
                 {
                     Location tomb = u.map.locations.FirstOrDefault(l => ModCore.Get().checkIsElderTomb(l));
@@ -4550,24 +4778,35 @@ namespace CommunityLib
                         theEntrance = true;
                     }
                 }
-            }
 
-            if (theEntrance)
-            {
-                u.movesTaken--;
-
-                foreach (Unit unit in __instance.units)
+                if (theEntrance)
                 {
-                    if ((unit.task is Task_AttackUnit attack && attack.target == u) || (unit.task is Task_DisruptUA disrupt && disrupt.other == u) || (unit.task is Task_AttackUnitWithEscort attackEscort && attackEscort.target == u))
+                    u.movesTaken--;
+
+                    foreach (Unit unit in __instance.units)
                     {
-                        unit.task = null;
+                        if ((unit.task is Task_AttackUnit attack && attack.target == u) || (unit.task is Task_DisruptUA disrupt && disrupt.other == u) || (unit.task is Task_AttackUnitWithEscort attackEscort && attackEscort.target == u))
+                        {
+                            unit.task = null;
+                        }
                     }
                 }
             }
+
+            
         }
 
         private static void Map_adjacentMoveTo_Postfix(Unit u, Location __state)
         {
+            if (u == null)
+            {
+                return;
+            }
+
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onMoveTaken)
+            {
+                hook(u, __state, u.location);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onMoveTaken(u, __state, u.location);
@@ -5201,9 +5440,13 @@ namespace CommunityLib
         // Challenge Hooks
         private static void Challenge_getProgressPerTurn_Postfix(Challenge __instance, UA unit, List<ReasonMsg> msgs, ref double __result)
         {
-            foreach(Hooks hook in ModCore.Get().GetRegisteredHooks())
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onGetChallengeProgressPerTurn)
             {
-                __result = hook?.onGetChallengeProgressPerTurn(__instance, unit, msgs, __result) ?? __result;
+                __result = hook(__instance, unit, msgs, __result);
+            }
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            {
+                __result = hook.onGetChallengeProgressPerTurn(__instance, unit, msgs, __result);
             }
         }
 
@@ -5395,7 +5638,6 @@ namespace CommunityLib
 
         private static bool PopupAgentCreation_populate_TranspilerBody(Unit unit, bool result)
         {
-            //Console.WriteLine("CommunityLib: Checking if unit is recruitable");
             if (unit is UA ua && !ua.isCommandable())
             {
                 if (!(ua is UAG) && !(ua is UAA))
@@ -5403,7 +5645,10 @@ namespace CommunityLib
                     result = false;
                 }
 
-                //Console.WriteLine("CommunityLib: Unit is noncommandable agent");
+                foreach (var hook in ModCore.Get().HookRegistry.Delegate_onAgentIsRecruitable)
+                {
+                    result = hook(ua, result);
+                }
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
                     result = hook.onAgentIsRecruitable(ua, result);
@@ -5413,8 +5658,6 @@ namespace CommunityLib
             {
                 return false;
             }
-
-            //Console.WriteLine("CommunityLib: result is " + result);
             return result;
         }
 
@@ -5588,14 +5831,14 @@ namespace CommunityLib
 
         private static string P_Eternity_CreateAgent_createAgent_TranspilerBody_Hook(Curse curse, Person person, Location loc, string text)
         {
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onBrokenMakerPowerCreatesAgent_ProcessCurse)
+            {
+                text = hook(curse, person, loc, text);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                if (hook != null)
-                {
-                    text = hook.onBrokenMakerPowerCreatesAgent_ProcessCurse(curse, person, loc, text);
-                }
+                text = hook.onBrokenMakerPowerCreatesAgent_ProcessCurse(curse, person, loc, text);
             }
-
             return text;
         }
 
@@ -5686,6 +5929,10 @@ namespace CommunityLib
 
                 if (distance > 0 && ua != null)
                 {
+                    foreach (var hook in ModCore.Get().HookRegistry.Delegate_onUnitAI_GetsDistanceToLocation)
+                    {
+                        distance = hook(ua, c.location, pathTo, distance);
+                    }
                     foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                     {
                         distance = hook.onUnitAI_GetsDistanceToLocation(ua, c.location, pathTo, distance);
@@ -5726,6 +5973,10 @@ namespace CommunityLib
         // Prefab Store hooks
         private static void Prefab_popHolyOrder_Prefix(HolyOrder order)
         {
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onPlayerOpensReligionUI)
+            {
+                hook(order);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onPlayerOpensReligionUI(order);
@@ -5884,6 +6135,7 @@ namespace CommunityLib
                     }
                     //Console.WriteLine("CommunityLib: Added " + challengeData.challenge.getName());
                 }
+
                 foreach (AgentAI.TaskData taskData in ModCore.Get().GetAgentAI().getAllValidTasks(ua))
                 {
                     SortableTaskBlock_Advanced blockTask = new SortableTaskBlock_Advanced();
@@ -6068,39 +6320,43 @@ namespace CommunityLib
             {
                 return;
             }
-            else
-            {
-                populatedUM = true;
-            }
+
+            populatedUM = true;
+            umTaskUIData = new Dictionary<UIE_Challenge, Hooks.TaskUIData>();
 
             //Console.WriteLine("CommunityLib: UI_Scroll_Unit_checkData_TranspilerBody_UM");
 
             UM um = GraphicalMap.selectedUnit as UM;
 
-            List<Hooks.TaskData> data = new List<Hooks.TaskData>();
+            List<Hooks.TaskUIData> data = new List<Hooks.TaskUIData>();
 
             if (um != null && um.isCommandable())
             {
-                //Console.WriteLine("CommunityLib: UM is commandable");
-                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                foreach (var hook in ModCore.Get().HookRegistry.Delegate_onUIScroll_Unit_populateUM)
                 {
-                    //Console.WriteLine("CommunityLib: calling onUIScroll_unit_populateUM hook for " + hook.GetType().Namespace);
-                    List<Hooks.TaskData> retData = hook?.onUIScroll_Unit_populateUM(um);
-                    //Console.WriteLine("CommunityLib: " + (retData?.ToString() ?? "ret data is null") + " " + (retData?.Count.ToString() ?? ""));
+                    List<Hooks.TaskUIData> retData = hook(um);
 
                     if (retData != null && retData.Count > 0)
                     {
-                        //Console.WriteLine("CommunityLib: Recieved " + retData.Count + " TaskData objects");
                         data.AddRange(retData);
                     }
                 }
-
+                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                {
+                    List<Hooks.TaskUIData> retData = hook?.onUIScroll_Unit_populateUM(um);
+                    if (retData != null && retData.Count > 0)
+                    {
+                        data.AddRange(retData);
+                    }
+                }
+                
                 if (data.Count > 0)
                 {
-                    foreach (Hooks.TaskData taskData in data)
+                    foreach (Hooks.TaskUIData taskData in data)
                     {
                         GameObject block = GameObject.Instantiate<GameObject>(ui.master.world.prefabStore.uieChallengeBox, ui.listContent);
                         UIE_Challenge challenge = block.GetComponent<UIE_Challenge>();
+                        umTaskUIData.Add(challenge, taskData);
 
                         if (taskData.challenge != null)
                         {
@@ -6235,128 +6491,78 @@ namespace CommunityLib
 
         private static bool UIScroll_Unit_Update_TranspilerBody_Popout(UIScroll_Unit __instance, UIE_Challenge challenge)
         {
-            bool result = false;
-
             if (challenge.challenge != null)
             {
-                return result;
+                return false;
             }
 
             UM um = GraphicalMap.selectedUnit as UM;
             if (um == null)
             {
-                return result;
+                return false;
             }
 
-            // Partially reconstruct TaskData
-            Hooks.TaskData taskData = new Hooks.TaskData();
-            taskData.challenge = challenge.challenge;
-            taskData.title = challenge.title.text;
-            taskData.icon = challenge.icon.sprite;
-            taskData.backColor = challenge.backColour.color;
-
-            if (challenge.disabledMask.enabled)
+            if (!umTaskUIData.TryGetValue(challenge, out Hooks.TaskUIData taskData))
             {
-                taskData.enabled = false;
-            }
-            else
-            {
-                taskData.enabled = true;
+                return false;
             }
 
-            taskData.special = challenge.special;
-            taskData.targetUA = challenge.target;
-            taskData.targetUM = challenge.targetUM;
+            taskData.progressReasonMsgs = new List<ReasonMsg>();
+            __instance.challengePopout.title.text = taskData.title;
+            __instance.challengePopout.icon.sprite = taskData.icon;
+            __instance.challengePopout.tDesc.text = taskData.description;
+            __instance.challengePopout.tRestriction.text = taskData.restrictions;
 
-            // Prepopulate popoutData
-            Hooks.TaskData_Popout popoutData = new Hooks.TaskData_Popout();
-            popoutData.title = challenge.title.text;
-            popoutData.icon = challenge.icon.sprite;
-
-            if (challenge.target != null)
+            if (taskData.iconBackground == null)
             {
-                popoutData.iconBackground = challenge.target.getPortraitBackground();
-            }
-            else if (challenge.targetUM != null)
-            {
-                popoutData.iconBackground = challenge.targetUM.getPortraitBackground();
+                __instance.challengePopout.iconBack.sprite = __instance.master.world.iconStore.standardBack;
             }
             else
             {
-                popoutData.iconBackground = __instance.master.world.iconStore.standardBack;
+                __instance.challengePopout.iconBack.sprite = taskData.iconBackground;
             }
 
-            popoutData.progressReasonMsgs = new List<ReasonMsg>();
-
-            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            if (taskData.profileGain != 0 || taskData.menaceGain != 0)
             {
-                // Call hook.
-                bool retValue = hook.interceptChallengePopout(um, taskData, ref popoutData);
+                __instance.challengePopout.tStats.text = taskData.profileGain.ToString() + "\n" + taskData.menaceGain.ToString() + "\n";
+            }
+            else
+            {
+                __instance.challengePopout.tStats.text = "";
+            }
 
-                if (retValue)
+            if (taskData.backColor == null)
+            {
+                __instance.challengePopout.backColour.color = taskData.backColor;
+            }
+            else
+            {
+                __instance.challengePopout.backColour.color = taskData.backColor;
+            }
+
+            if (taskData.complexity > 0 && taskData.progressPerTurn > 0)
+            {
+                __instance.challengePopout.tComplexity.text = taskData.complexity.ToString() + "\n" + taskData.progressPerTurn.ToString() + "\n" + Math.Ceiling((double)taskData.complexity / (double)taskData.progressPerTurn).ToString();
+            }
+            else
+            {
+                __instance.challengePopout.tComplexity.text = "";
+            }
+
+            if (taskData.progressReasonMsgs?.Count > 0)
+            {
+                string text = "";
+                foreach (ReasonMsg msg in taskData.progressReasonMsgs)
                 {
-                    __instance.challengePopout.title.text = popoutData.title;
-                    __instance.challengePopout.icon.sprite = popoutData.icon;
-
-                    if (popoutData.iconBackground == null)
-                    {
-                        __instance.challengePopout.iconBack.sprite = __instance.master.world.iconStore.standardBack;
-                    }
-                    else
-                    {
-                        __instance.challengePopout.iconBack.sprite = popoutData.iconBackground;
-                    }
-
-                    __instance.challengePopout.tDesc.text = popoutData.description;
-                    __instance.challengePopout.tRestriction.text = popoutData.restrictions;
-
-                    if (popoutData.profileGain != 0 || popoutData.menaceGain != 0)
-                    {
-                        __instance.challengePopout.tStats.text = popoutData.profileGain.ToString() + "\n" + popoutData.menaceGain.ToString() + "\n";
-                    }
-                    else
-                    {
-                        __instance.challengePopout.tStats.text = "";
-                    }
-
-                    if (popoutData.backColor == null)
-                    {
-                        __instance.challengePopout.backColour.color = taskData.backColor;
-                    }
-                    else
-                    {
-                        __instance.challengePopout.backColour.color = popoutData.backColor;
-                    }
-
-                    if (popoutData.complexity > 0 && popoutData.progressPerTurn > 0)
-                    {
-                        __instance.challengePopout.tComplexity.text = popoutData.complexity.ToString() + "\n" + popoutData.progressPerTurn.ToString() + "\n" + Math.Ceiling((double)popoutData.complexity / (double)popoutData.progressPerTurn).ToString();
-                    }
-                    else
-                    {
-                        __instance.challengePopout.tComplexity.text = "";
-                    }
-
-
-                    if (popoutData.progressReasonMsgs?.Count > 0)
-                    {
-                        string text = "";
-                        foreach (ReasonMsg msg in popoutData.progressReasonMsgs)
-                        {
-                            text += msg.msg + " +" + msg.value.ToString() + "\n";
-                        }
-                    }
-                    else
-                    {
-                        __instance.challengePopout.tProgressReasons.text = "";
-                    }
-
-                    result = true;
-                    break;
+                    text += msg.msg + " +" + msg.value.ToString() + "\n";
                 }
             }
+            else
+            {
+                __instance.challengePopout.tProgressReasons.text = "";
+            }
 
-            return result;
+            return true;
         }
 
         // RECRUITABILITY //
@@ -6488,11 +6694,16 @@ namespace CommunityLib
                 __result = new List<Unit>();
             }
 
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_interceptGetVisibleUnits)
+            {
+                if (hook(__instance, __result))
+                {
+                    result = false;
+                }
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                bool retValue = hook.interceptGetVisibleUnits(__instance, __result);
-
-                if (retValue)
+                if (hook.interceptGetVisibleUnits(__instance, __result))
                 {
                     result = false;
                 }
@@ -6506,6 +6717,10 @@ namespace CommunityLib
         {
             if (__state)
             {
+                foreach (var hook in ModCore.Get().HookRegistry.Delegate_getVisibleUnits_EndOfProcess)
+                {
+                    hook(__instance, visibleUnits);
+                }
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
                     hook.getVisibleUnits_EndOfProcess(__instance, visibleUnits);
@@ -6738,27 +6953,51 @@ namespace CommunityLib
                 BattleAgents battle = null;
                 if (amAttacker)
                 {
-                    foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                    foreach (var hook in ModCore.Get().HookRegistry.Delegate_onAgentBattleStarts)
                     {
-                        BattleAgents retValue = hook.onAgentBattleStarts(ua, other);
-
+                        BattleAgents retValue = hook(ua, other);
                         if (retValue != null)
                         {
                             battle = retValue;
                             break;
                         }
                     }
+                    if (battle == null)
+                    {
+                        foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                        {
+                            BattleAgents retValue = hook.onAgentBattleStarts(ua, other);
+
+                            if (retValue != null)
+                            {
+                                battle = retValue;
+                                break;
+                            }
+                        }
+                    }
                 }
                 else
                 {
-                    foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                    foreach (var hook in ModCore.Get().HookRegistry.Delegate_onAgentBattleStarts)
                     {
-                        BattleAgents retValue = hook.onAgentBattleStarts(other, ua);
-
+                        BattleAgents retValue = hook(other, ua);
                         if (retValue != null)
                         {
                             battle = retValue;
                             break;
+                        }
+                    }
+                    if (battle == null)
+                    {
+                        foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                        {
+                            BattleAgents retValue = hook.onAgentBattleStarts(other, ua);
+
+                            if (retValue != null)
+                            {
+                                battle = retValue;
+                                break;
+                            }
                         }
                     }
                 }
@@ -7141,6 +7380,22 @@ namespace CommunityLib
         private static void Map_placeWonders_TranspilerBody(Map map)
         {
             List<WonderData> wonderData = new List<WonderData>();
+            foreach (Func<List<WonderData>> hook in ModCore.Get().HookRegistry.Delegate_onMapGen_PlaceWonders_1)
+            {
+                List<WonderData> retValue = hook();
+
+                if (retValue != null)
+                {
+                    foreach (WonderData data in retValue)
+                    {
+                        if (!wonderData.Contains(data))
+                        {
+                            wonderData.Add(data);
+                        }
+                    }
+                }
+            }
+
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 List<WonderData> retValue = hook.onMapGen_PlaceWonders();
@@ -7198,11 +7453,14 @@ namespace CommunityLib
 
             if (map.tutorial)
             {
+                foreach (var hook in ModCore.Get().HookRegistry.Delegate_onMapGen_PlaceWonders_2)
+                {
+                    hook(typeof(Sub_Wonder_Doorway), out bool fail);
+                }
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
                     hook.onMapGen_PlaceWonders(typeof(Sub_Wonder_Doorway), out bool fail);
                 }
-
                 return;
             }
 
@@ -7211,13 +7469,26 @@ namespace CommunityLib
                 foreach(WonderData data in force)
                 {
                     bool failed = false;
-                    foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                    foreach (var hook in ModCore.Get().HookRegistry.Delegate_onMapGen_PlaceWonders_2)
                     {
-                        hook.onMapGen_PlaceWonders(data.WonderType, out failed);
+                        hook(data.WonderType, out failed);
 
                         if (failed)
                         {
                             break;
+                        }
+                    }
+
+                    if (!failed)
+                    {
+                        foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                        {
+                            hook.onMapGen_PlaceWonders(data.WonderType, out failed);
+
+                            if (failed)
+                            {
+                                break;
+                            }
                         }
                     }
 
@@ -7234,38 +7505,50 @@ namespace CommunityLib
                 {
                     WonderData data = high[Eleven.random.Next(high.Count)];
                     bool failed = false;
-                    foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                    foreach (var hook in ModCore.Get().HookRegistry.Delegate_onMapGen_PlaceWonders_2)
                     {
-                        hook.onMapGen_PlaceWonders(data.WonderType, out failed);
+                        hook(data.WonderType, out failed);
 
                         if (failed)
                         {
                             break;
+                        }
+                    }
+
+                    if (!failed)
+                    {
+                        foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                        {
+                            hook.onMapGen_PlaceWonders(data.WonderType, out failed);
+
+                            if (failed)
+                            {
+                                break;
+                            }
                         }
                     }
 
                     if (failed)
                     {
                         high.Remove(data);
+                        continue;
                     }
-                    else
-                    {
-                        if (data.Unique || !ModCore.opt_DuplicateWonders)
-                        {
-                            high.Remove(data);
-                        }
 
-                        i--;
+                    if (data.Unique || !ModCore.opt_DuplicateWonders)
+                    {
+                        high.Remove(data);
                     }
+
+                    i--;
                 }
 
                 while (i > 0 && standard.Count > 0)
                 {
                     WonderData data = standard[Eleven.random.Next(standard.Count)];
                     bool failed = false;
-                    foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                    foreach (var hook in ModCore.Get().HookRegistry.Delegate_onMapGen_PlaceWonders_2)
                     {
-                        hook.onMapGen_PlaceWonders(data.WonderType, out failed);
+                        hook(data.WonderType, out failed);
 
                         if (failed)
                         {
@@ -7273,19 +7556,31 @@ namespace CommunityLib
                         }
                     }
 
+                    if (!failed)
+                    {
+                        foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                        {
+                            hook.onMapGen_PlaceWonders(data.WonderType, out failed);
+
+                            if (failed)
+                            {
+                                break;
+                            }
+                        }
+                    }
+
                     if (failed)
                     {
                         standard.Remove(data);
+                        continue;
                     }
-                    else
-                    {
-                        if (data.Unique || !ModCore.opt_DuplicateWonders)
-                        {
-                            standard.Remove(data);
-                        }
 
-                        i--;
+                    if (data.Unique || !ModCore.opt_DuplicateWonders)
+                    {
+                        standard.Remove(data);
                     }
+
+                    i--;
                 }
             }
         }

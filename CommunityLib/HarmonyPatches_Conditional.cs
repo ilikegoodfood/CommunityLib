@@ -245,9 +245,13 @@ namespace CommunityLib
                 __result = new List<Trait>();
             }
 
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onAgentLevelup_GetTraits)
+            {
+                hook(__instance, __result, true);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                hook?.onAgentLevelup_GetTraits(__instance, __result, true);
+                hook.onAgentLevelup_GetTraits(__instance, __result, true);
             }
         }
 
@@ -264,6 +268,10 @@ namespace CommunityLib
 
         private static void God_getAgentCaps_BultPostfix(God __instance, ref int[] __result)
         {
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onGetAgentCaps)
+            {
+                hook(__instance, __result);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook?.onGetAgentCaps(__instance, __result);
@@ -272,6 +280,10 @@ namespace CommunityLib
 
         private static void God_getMaxPower_BulkPostfix(God __instance, ref int __result)
         {
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onGetMaxPower)
+            {
+                __result = hook(__instance, __result);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 __result = hook?.onGetMaxPower(__instance, __result) ?? __result;

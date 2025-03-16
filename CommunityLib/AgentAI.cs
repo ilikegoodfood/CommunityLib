@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using HarmonyLib;
 using System.Reflection;
+using static CommunityLib.AgentAI;
 
 namespace CommunityLib
 {
@@ -991,10 +992,16 @@ namespace CommunityLib
 
             bool result = false;
             isDuringIntercept = true;
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_interceptAgentAI)
+            {
+                if (hook(ua, aiData, validChallengeData, validTasks, visibleUnits))
+                {
+                    result = true;
+                }
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                bool retValue = hook.interceptAgentAI(ua, aiData, validChallengeData, validTasks, visibleUnits);
-                if (retValue)
+                if (hook.interceptAgentAI(ua, aiData, validChallengeData, validTasks, visibleUnits))
                 {
                     result = true;
                 }
@@ -1010,6 +1017,10 @@ namespace CommunityLib
                 return;
             }
 
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onAgentAI_StartOfProcess)
+            {
+                hook(ua, aiData, validChallengeData, validTasks, visibleUnits);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onAgentAI_StartOfProcess(ua, aiData, validChallengeData, validTasks, visibleUnits);
@@ -1395,6 +1406,10 @@ namespace CommunityLib
                 }
             }
 
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onAgentAI_EndOfProcess)
+            {
+                hook(ua, aiData, validChallengeData, validTasks, visibleUnits);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onAgentAI_EndOfProcess(ua, aiData, validChallengeData, validTasks, visibleUnits);
@@ -1784,11 +1799,16 @@ namespace CommunityLib
             double utility = 0.0;
 
             bool intercept = false;
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_interceptAgentAI_GetChallengeUtility)
+            {
+                if (hook(ua, aiData, challengeData, ref utility, reasonMsgs))
+                {
+                    intercept = true;
+                }
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                bool retValue = hook.interceptAgentAI_GetChallengeUtility(ua, aiData, challengeData, ref utility, reasonMsgs);
-
-                if (retValue)
+                if (hook.interceptAgentAI_GetChallengeUtility(ua, aiData, challengeData, ref utility, reasonMsgs))
                 {
                     intercept = true;
                 }
@@ -1866,6 +1886,10 @@ namespace CommunityLib
                 utility /= getDistanceDivisor(challengeData, aiData, ua);
             }
 
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onAgentAI_GetChallengeUtility)
+            {
+                utility = hook(ua, aiData, challengeData, utility, reasonMsgs);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 utility = hook.onAgentAI_GetChallengeUtility(ua, aiData, challengeData, utility, reasonMsgs);
@@ -1929,9 +1953,13 @@ namespace CommunityLib
 
             distance = (int)Math.Ceiling((double)(pathTo.Length - 1) / (double)ua.getMaxMoves());
 
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onUnitAI_GetsDistanceToLocation)
+            {
+                distance = hook(ua, challengeData.location, pathTo, distance);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                distance = hook.onUnitAI_GetsDistanceToLocation(ua, challengeData.location, pathTo, (int)distance);
+                distance = hook.onUnitAI_GetsDistanceToLocation(ua, challengeData.location, pathTo, distance);
             }
 
             int duration = (int)Math.Max(1.0, Math.Ceiling(challengeData.challenge.getCompletionMenaceAfterDifficulty() / challengeData.challenge.getProgressPerTurn(ua, null)));
@@ -2054,14 +2082,21 @@ namespace CommunityLib
             double utility = 0.0;
 
             bool intercept = false;
-            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_interceptAgentAI_GetTaskUtility)
             {
-                bool retValue = hook.interceptAgentAI_GetTaskUtility(ua, aiData, taskData, ref utility, reasonMsgs);
-                if (retValue)
+                if (hook(ua, aiData, taskData, ref utility, reasonMsgs))
                 {
                     intercept = true;
                 }
             }
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            {
+                if (hook.interceptAgentAI_GetTaskUtility(ua, aiData, taskData, ref utility, reasonMsgs))
+                {
+                    intercept = true;
+                }
+            }
+
             if (intercept)
             {
                 return utility;
@@ -2069,6 +2104,10 @@ namespace CommunityLib
 
             utility = taskData.aiTask.checkTaskUtility(taskData, ua, controlParams, reasonMsgs);
 
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onAgentAI_GetTaskUtility)
+            {
+                utility = hook(ua, aiData, taskData, utility, reasonMsgs);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 utility = hook.onAgentAI_GetTaskUtility(ua, aiData, taskData, utility, reasonMsgs);
