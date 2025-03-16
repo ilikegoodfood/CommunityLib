@@ -7,17 +7,38 @@ using System.Linq;
 
 namespace CommunityLib
 {
-    internal class HooksInternal : Hooks
+    internal class HooksInternal
     {
-        public bool densifyingTradeRoutes = false;
+        private ModCore _modCore;
 
-        internal HooksInternal(Map map)
-            : base(map)
+        private Map _map;
+
+        internal bool DensifyingTradeRoutes = false;
+
+        internal HooksInternal(Map map, ModCore core)
         {
-            
+            _map = map;
+            _modCore = core;
+
+            HooksDelegateRegistry registry = core.HookRegistry;
+            registry.RegisterHook_onMapGen_PlaceWonders_1(onMapGen_PlaceWonders);
+            registry.RegisterHook_onMapGen_PlaceWonders_2(onMapGen_PlaceWonders);
+            registry.RegisterHook_isUnitSubsumed(isUnitSubsumed);
+            registry.RegisterHook_onUnitDeath_StartOfProcess(onUnitDeath_StartOfProcess);
+            registry.RegisterHook_onSettlementFallIntoRuin_StartOfProcess(onSettlementFallIntoRuin_StartOfProcess);
+            registry.RegisterHook_onSettlementFallIntoRuin_EndOfProcess(onSettlementFallIntoRuin_EndOfProcess);
+            registry.RegisterHook_onCheckIsProphetPlayerAligned(onCheckIsProphetPlayerAligned);
+            registry.RegisterHook_onLocationViewFaithButton_GetHolyOrder(onLocationViewFaithButton_GetHolyOrder);
+            registry.RegisterHook_onGraphicalLinkUpdated(onGraphicalLinkUpdated);
+            registry.RegisterHook_interceptGetVisibleUnits(interceptGetVisibleUnits);
+            registry.RegisterHook_onPopulatingTradeRoutePathfindingDelegates(onPopulatingTradeRoutePathfindingDelegates);
+            registry.RegisterHook_onAgentLevelup_GetTraits(onAgentLevelup_GetTraits);
+            registry.RegisterHook_interceptAgentAI(interceptAgentAI);
+            registry.RegisterHook_onAgentAI_EndOfProcess(onAgentAI_EndOfProcess);
+            registry.RegisterHook_onUnitAI_GetsDistanceToLocation(onUnitAI_GetsDistanceToLocation);
         }
 
-        public override List<WonderData> onMapGen_PlaceWonders()
+        public List<WonderData> onMapGen_PlaceWonders()
         {
             return new List<WonderData> {
                 new WonderData(typeof(Sub_Wonder_Doorway), ModCore.opt_wonderPriority_entrance),
@@ -26,7 +47,7 @@ namespace CommunityLib
             };
         }
 
-        public override void onMapGen_PlaceWonders(Type t, out bool failedToPlaceWonder)
+        public void onMapGen_PlaceWonders(Type t, out bool failedToPlaceWonder)
         {
             failedToPlaceWonder = false;
 
@@ -35,7 +56,7 @@ namespace CommunityLib
                 List<Location> locations = new List<Location>();
                 Location target = null;
 
-                foreach (Location location in map.locations)
+                foreach (Location location in _map.locations)
                 {
                     if (location.isOcean && !location.getNeighbours().Any(n => !n.isOcean) && location.settlement == null)
                     {
@@ -69,7 +90,7 @@ namespace CommunityLib
                 List<Location> locations = new List<Location>();
                 Location target = null;
 
-                foreach (Location location in map.locations)
+                foreach (Location location in _map.locations)
                 {
                     if (location.settlement == null && !location.isOcean && (location.hex.terrain == Hex.terrainType.ARID || location.hex.terrain == Hex.terrainType.DESERT || location.hex.terrain == Hex.terrainType.DRY))
                     {
@@ -102,7 +123,7 @@ namespace CommunityLib
                 List<Location> locations = new List<Location>();
                 Location target = null;
 
-                foreach (Location location in map.locations)
+                foreach (Location location in _map.locations)
                 {
                     if (location.settlement == null && !location.isOcean)
                     {
@@ -131,7 +152,7 @@ namespace CommunityLib
             }
         }
 
-        public override bool isUnitSubsumed(Unit uOriginal, Unit uSubsuming)
+        public bool isUnitSubsumed(Unit uOriginal, Unit uSubsuming)
         {
             if (ModCore.Get().data.tryGetModIntegrationData("LivingWilds", out ModIntegrationData intDataLW))
             {
@@ -171,7 +192,7 @@ namespace CommunityLib
             return uSubsuming is UM_OrcRaiders raiders && raiders.subsumedUnit == uOriginal;
         }
 
-        public override void onUnitDeath_StartOfProcess(Unit u, string v, Person killer)
+        public void onUnitDeath_StartOfProcess(Unit u, string v, Person killer)
         {
             if (ModCore.opt_forceShipwrecks || ModCore.opt_spawnShipwrecks)
             {
@@ -187,13 +208,13 @@ namespace CommunityLib
                 }
             }
 
-            if (ModCore.opt_chosenOneDeathMessage && map.awarenessManager.chosenOne == u || (u.person != null && u.person.traits.Any(t => t is T_ChosenOne)))
+            if (ModCore.opt_chosenOneDeathMessage && _map.awarenessManager.chosenOne == u || (u.person != null && u.person.traits.Any(t => t is T_ChosenOne)))
             {
-                map.addUnifiedMessage(u, u.location, "Chosen One Dies", $"{u.getName()}, the Chosen One, has died. Another may step up to take their place. \n\n Cause of Death: {v}", "Chosen One Dies", true);
+                _map.addUnifiedMessage(u, u.location, "Chosen One Dies", $"{u.getName()}, the Chosen One, has died. Another may step up to take their place. \n\n Cause of Death: {v}", "Chosen One Dies", true);
             }
         }
 
-        public override void onSettlementFallIntoRuin_EndOfProcess(Settlement set, string v, object killer = null)
+        public void onSettlementFallIntoRuin_EndOfProcess(Settlement set, string v, object killer = null)
         {
             if (set is Set_OrcCamp && set.location.settlement is Set_CityRuins ruins && ruins.subs.Count == 0)
             {
@@ -201,7 +222,7 @@ namespace CommunityLib
             }
         }
 
-        public override void onSettlementFallIntoRuin_StartOfProcess(Settlement set, string v, object killer = null)
+        public void onSettlementFallIntoRuin_StartOfProcess(Settlement set, string v, object killer = null)
         {
             if (ModCore.opt_forceShipwrecks || ModCore.opt_spawnShipwrecks)
             {
@@ -219,7 +240,7 @@ namespace CommunityLib
             }
         }
 
-        public override bool onCheckIsProphetPlayerAligned(HolyOrder order, UA prophet)
+        public bool onCheckIsProphetPlayerAligned(HolyOrder order, UA prophet)
         {
             if (prophet.isCommandable())
             {
@@ -255,7 +276,7 @@ namespace CommunityLib
             return false;
         }
 
-        public override HolyOrder onLocationViewFaithButton_GetHolyOrder(Location loc)
+        public HolyOrder onLocationViewFaithButton_GetHolyOrder(Location loc)
         {
             if (ModCore.opt_ophanimFaithTomb)
             {
@@ -271,7 +292,7 @@ namespace CommunityLib
             return null;
         }
 
-        public override void onGraphicalLinkUpdated(GraphicalLink graphicalLink)
+        public void onGraphicalLinkUpdated(GraphicalLink graphicalLink)
         {
             if (ModCore.opt_enhancedTradeRouteLinks)
             {
@@ -342,7 +363,7 @@ namespace CommunityLib
             }
         }
 
-        public override bool interceptGetVisibleUnits(UA ua, List<Unit> visibleUnits)
+        public bool interceptGetVisibleUnits(UA ua, List<Unit> visibleUnits)
         {
             switch (ua)
             {
@@ -379,9 +400,9 @@ namespace CommunityLib
                     {
                         visibleUnits.Clear();
 
-                        foreach (Unit unit in map.units)
+                        foreach (Unit unit in _map.units)
                         {
-                            if (!unit.isDead && map.getStepDist(ua.location, unit.location) < 4)
+                            if (!unit.isDead && _map.getStepDist(ua.location, unit.location) < 4)
                             {
                                 visibleUnits.Add(unit);
                             }
@@ -416,15 +437,15 @@ namespace CommunityLib
             return false;
         }
 
-        public override void onPopulatingTradeRoutePathfindingDelegates(Location start, List<Func<Location[], Location, double>> pathfindingDelegates, List<Func<Location[], Location, bool>> destinationValidityDelegates)
+        public void onPopulatingTradeRoutePathfindingDelegates(Location start, List<Func<Location[], Location, double>> pathfindingDelegates, List<Func<Location[], Location, bool>> destinationValidityDelegates)
         {
-            if (ModCore.opt_denseTradeRoutes && densifyingTradeRoutes)
+            if (ModCore.opt_denseTradeRoutes && DensifyingTradeRoutes)
             {
                 destinationValidityDelegates.Remove(Pathfinding.delegate_TRADEVALID_NODUPLICATES);
             }
         }
 
-        public override void onAgentLevelup_GetTraits(UA ua, List<Trait> availableTraits, bool startingTraits)
+        public void onAgentLevelup_GetTraits(UA ua, List<Trait> availableTraits, bool startingTraits)
         {
             if (startingTraits && ua is UAE_Warlock)
             {
@@ -439,7 +460,7 @@ namespace CommunityLib
             }
         }
 
-        public override bool interceptAgentAI(UA ua, AgentAI.AIData aiData, List<AgentAI.ChallengeData> challengeData, List<AgentAI.TaskData> taskData, List<Unit> visibleUnits)
+        public bool interceptAgentAI(UA ua, AgentAI.AIData aiData, List<AgentAI.ChallengeData> challengeData, List<AgentAI.TaskData> taskData, List<Unit> visibleUnits)
         {
             switch (ua)
             {
@@ -475,7 +496,7 @@ namespace CommunityLib
         {
             if (upstart.society.checkIsGone() || upstart.society.lastTurnLocs.Count == 0)
             {
-                upstart.die(map, "Died in the wilderness", null);
+                upstart.die(_map, "Died in the wilderness", null);
                 return true;
             }
             return false;
@@ -503,7 +524,7 @@ namespace CommunityLib
             return false;
         }
 
-        public override void onAgentAI_EndOfProcess(UA ua, AgentAI.AIData aiData, List<AgentAI.ChallengeData> validChallengeData, List<AgentAI.TaskData> validTaskData, List<Unit> visibleUnits)
+        public void onAgentAI_EndOfProcess(UA ua, AgentAI.AIData aiData, List<AgentAI.ChallengeData> validChallengeData, List<AgentAI.TaskData> validTaskData, List<Unit> visibleUnits)
         {
             if (ua is UAEN_DeepOne)
             {
@@ -555,7 +576,7 @@ namespace CommunityLib
             return;
         }
 
-        public override int onUnitAI_GetsDistanceToLocation(Unit u, Location target, Location[] pathTo, int travelTime)
+        public int onUnitAI_GetsDistanceToLocation(Unit u, Location target, Location[] pathTo, int travelTime)
         {
             //Console.WriteLine("CommunityLib: Internal Hook GetDistance for " + u.getName() + " of type " + u.GetType().Name);
             if (u.person != null)
