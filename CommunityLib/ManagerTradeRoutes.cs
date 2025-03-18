@@ -18,7 +18,7 @@ namespace CommunityLib
             this.map = map;
         }
 
-        public void checkTradeNetwork(ManagerTrade tradeManager)
+        public void checkTradeNetwork(ManagerTrade tradeManager, bool forceRebuild = false)
         {
             List<Location> endpoints = getTradeRouteEndPoints();
 
@@ -27,7 +27,7 @@ namespace CommunityLib
                 hook.onGetTradeRouteEndpoints(tradeManager.map, endpoints);
             }
 
-            bool dirty = false;
+            bool dirty = forceRebuild;
             if (endpoints.Count != tradeManager.cached.Count)
             {
                 dirty = true;

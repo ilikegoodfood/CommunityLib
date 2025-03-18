@@ -628,6 +628,19 @@ namespace CommunityLib
         }
 
         /// <summary>
+        /// This hook fires when a settlement has cmputed its shadow gain. It recives the settlement (set), the list of reasonMsgs (msgs), and the current total shadow gain (shadoiwGain). It returns the new total shadow gain.<br></br>
+        /// If a mod earlier in the load order modifies a settlement's shadow gain, the msgs and shadowGain parameters will already include the modifications.
+        /// </summary>
+        /// <param name="set"></param>
+        /// <param name="msgs"></param>
+        /// <param name="shadowGain"></param>
+        /// <returns></returns>
+        public virtual double onSettlementComputesShadowGain(Settlement set, List<ReasonMsg> msgs, double shadowGain)
+        {
+            return shadowGain;
+        }
+
+        /// <summary>
         /// This hook fires when the Community Library's Agent AI beings processing an agent. It recieves the agent (ua), the AIData for its Agent AI (aiData), a list of AgentAI.ChallengeData structs (validChallengeData), a list of AgentAI.TaskData structs (validTaskData), and a list of Units (visibleUnits).<br></br>
         /// If this hook returns true, the rest of the AI process will not happen.
         /// <para>All instances of this hook will run whenever an AgentAI runs, even those after one which has returned true.</para>
