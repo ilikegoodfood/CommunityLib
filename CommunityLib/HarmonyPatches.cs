@@ -110,6 +110,9 @@ namespace CommunityLib
             // Settlement destruction hooks
             harmony.Patch(original: AccessTools.Method(typeof(Settlement), nameof(Settlement.fallIntoRuin), new Type[] { typeof(string), typeof(object) }), prefix: new HarmonyMethod(patchType, nameof(Settlement_FallIntoRuin_Prefix)), postfix: new HarmonyMethod(patchType, nameof(Settlement_FallIntoRuin_Postfix)));
 
+            // Settlement shadow gain hooks
+            harmony.Patch(original: AccessTools.Method(typeof(Settlement), nameof(Settlement.computeShadowGain), new Type[] { typeof(List<ReasonMsg>) }), postfix: new HarmonyMethod(patchType, nameof(Settlement_computeShadowGain_Postfix)));
+
             // Overmind onCalculateAgentsUsed
             harmony.Patch(original: AccessTools.Method(typeof(Overmind), nameof(Overmind.calculateAgentsUsed), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(Overmind_calculateAgentsUsed_Postfix)));
 
@@ -3986,6 +3989,14 @@ namespace CommunityLib
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook?.onSettlementFallIntoRuin_EndOfProcess(__instance, v, killer);
+            }
+        }
+
+        private static void Settlement_computeShadowGain_Postfix(Settlement __instance, List<ReasonMsg> msgs, ref double __result)
+        {
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            {
+                __result = hook.onSettlementComputesShadowGain(__instance, msgs, __result);
             }
         }
 
