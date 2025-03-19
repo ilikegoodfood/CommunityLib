@@ -67,6 +67,8 @@ namespace CommunityLib
 
         public static int opt_targetNaturalWonderCount = 1;
 
+        public static bool opt_NoCountForcedWonders = false;
+
         public static bool opt_godSort_Alphabetise = false;
 
         public static bool opt_godSort_swwfFirst = true;
@@ -126,6 +128,9 @@ namespace CommunityLib
                     break;
                 case "Allow Duplicate Wonders":
                     opt_DuplicateWonders = value;
+                    break;
+                case "Forced Wonders Do Not Count":
+                    opt_NoCountForcedWonders = value;
                     break;
                 case "Spawn Shipwrecks":
                     opt_spawnShipwrecks = value;
@@ -2114,6 +2119,18 @@ namespace CommunityLib
                     }
                 }
             }
+
+            /*if (graphicalHex.hex.x == graphicalHex.hex.y)
+            {
+                if (graphicalHex.hex.x == 0)
+                {
+                    graphicalHex.terrainLayer.color = Color.yellow;
+                }
+                else
+                {
+                    graphicalHex.terrainLayer.color = Color.red;
+                }
+            }*/
         }
 
         /// <summary>
