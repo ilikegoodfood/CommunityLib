@@ -27,6 +27,7 @@ namespace CommunityLib
             registry.RegisterHook_onUnitDeath_StartOfProcess(onUnitDeath_StartOfProcess);
             registry.RegisterHook_onSettlementFallIntoRuin_StartOfProcess(onSettlementFallIntoRuin_StartOfProcess);
             registry.RegisterHook_onSettlementFallIntoRuin_EndOfProcess(onSettlementFallIntoRuin_EndOfProcess);
+            registry.RegisterHook_onSettlementCalculatesShadowGain(onSettlementComputesShadowGain);
             registry.RegisterHook_onCheckIsProphetPlayerAligned(onCheckIsProphetPlayerAligned);
             registry.RegisterHook_onLocationViewFaithButton_GetHolyOrder(onLocationViewFaithButton_GetHolyOrder);
             registry.RegisterHook_onGraphicalLinkUpdated(onGraphicalLinkUpdated);
@@ -224,6 +225,27 @@ namespace CommunityLib
             {
                 set.location.settlement = null;
             }
+        }
+
+        public double onSettlementComputesShadowGain(Settlement set, List<ReasonMsg> msgs, double shadowGain)
+        {
+            if (msgs != null)
+            {
+                if (set is SettlementHuman)
+                {
+                    UAE_Supplicant supplicant = (UAE_Supplicant)set.location.units.FirstOrDefault(u => u is UAE_Supplicant);
+                    if (supplicant != null)
+                    {
+                        if (supplicant.person.traits.Any(t => t is T_Snake_Enshadower))
+                        {
+                            msgs.Add(new ReasonMsg("The Dying Light", 0.01));
+                            shadowGain += 0.01;
+                        }
+                    }
+                }
+            }
+
+            return shadowGain;
         }
 
         public void onSettlementFallIntoRuin_StartOfProcess(Settlement set, string v, object killer = null)
