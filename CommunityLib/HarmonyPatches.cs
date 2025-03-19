@@ -9159,7 +9159,10 @@ namespace CommunityLib
                         continue;
                     }
 
-                    i--;
+                    if (!ModCore.opt_NoCountForcedWonders)
+                    {
+                        i--;
+                    }
                 }
                 force.Clear();
 

@@ -180,6 +180,18 @@ namespace CommunityLib
                         }
                     }
                 }
+                else if (commandComps[0] == "debug")
+                {
+                    if (commandComps.Length > 0)
+                    {
+                        if (commandComps[1] == "multidimensionalarray")
+                        {
+                            DebugHelper helper = new DebugHelper();
+                            helper.saveRoot = map;
+                            helper.DebugScan();
+                        }
+                    }
+                }
             }
         }
 

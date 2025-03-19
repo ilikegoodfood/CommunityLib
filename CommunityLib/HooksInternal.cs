@@ -201,6 +201,27 @@ namespace CommunityLib
             }
         }
 
+        public override double onSettlementComputesShadowGain(Settlement set, List<ReasonMsg> msgs, double shadowGain)
+        {
+            if (msgs != null)
+            {
+                if (set is SettlementHuman)
+                {
+                    UAE_Supplicant supplicant = (UAE_Supplicant)set.location.units.FirstOrDefault(u => u is UAE_Supplicant);
+                    if (supplicant != null)
+                    {
+                        if (supplicant.person.traits.Any(t => t is T_Snake_Enshadower))
+                        {
+                            msgs.Add(new ReasonMsg("The Dying Light", 0.01));
+                            shadowGain += 0.01;
+                        }
+                    }
+                }
+            }
+
+            return shadowGain;
+        }
+
         public override void onSettlementFallIntoRuin_StartOfProcess(Settlement set, string v, object killer = null)
         {
             if (ModCore.opt_forceShipwrecks || ModCore.opt_spawnShipwrecks)
