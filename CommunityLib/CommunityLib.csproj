@@ -69,6 +69,7 @@
     <Compile Include="Ch_DestroyShipwreck.cs" />
     <Compile Include="Ch_PlunderShipwreck.cs" />
     <Compile Include="Ch_RecoverShipwreck.cs" />
+    <Compile Include="DebugHelper.cs" />
     <Compile Include="GodSortData.cs" />
     <Compile Include="HooksDelegateRegistry.cs" />
     <Compile Include="Pair.cs" />

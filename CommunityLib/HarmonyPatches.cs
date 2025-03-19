@@ -2939,6 +2939,10 @@ namespace CommunityLib
 
         private static void Settlement_computeShadowGain_Postfix(Settlement __instance, List<ReasonMsg> msgs, ref double __result)
         {
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onSettlementCalculatesShadowGain)
+            {
+                __result = hook(__instance, msgs, __result);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 __result = hook.onSettlementComputesShadowGain(__instance, msgs, __result);
@@ -7508,7 +7512,10 @@ namespace CommunityLib
                         continue;
                     }
 
-                    i--;
+                    if (!ModCore.opt_NoCountForcedWonders)
+                    {
+                        i--;
+                    }
                 }
                 force.Clear();
 
