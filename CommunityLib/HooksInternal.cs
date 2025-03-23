@@ -428,6 +428,17 @@ namespace CommunityLib
             return false;
         }
 
+        public override void onBrokenMakerSleeps_TurnTick(Map map)
+        {
+            foreach (Unit unit in map.units)
+            {
+                if (unit is UM_RavenousDead || unit is UM_UntamedDead)
+                {
+                    unit.die(map, "Gone");
+                }
+            }
+        }
+
         public override HolyOrder onLocationViewFaithButton_GetHolyOrder(Location loc)
         {
             if (ModCore.opt_ophanimFaithTomb)

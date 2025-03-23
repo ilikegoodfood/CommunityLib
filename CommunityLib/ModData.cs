@@ -45,6 +45,12 @@ namespace CommunityLib
 
         public Dictionary<HolyOrder, List<ReasonMsg>> influenceGainHuman;
 
+        private bool _acceleratedTime = false;
+
+        private bool _brokenMakerSleeps = false;
+
+        private int _brokenMakerSleepDuration = 50;
+
         public ModData()
         {
             initialiseModIntegrationData();
@@ -271,6 +277,11 @@ namespace CommunityLib
 
             initialiseInfluenceGain();
             initialiseHidenThoughts();
+
+            // Broken Maker Handling
+            _acceleratedTime = map.acceleratedTime;
+            _brokenMakerSleeps = false;
+            _brokenMakerSleepDuration = 50;
         }
 
         public void onTurnStart(Map map)
@@ -284,6 +295,40 @@ namespace CommunityLib
 
             influenceGainElder.Clear();
             influenceGainHuman.Clear();
+
+            if (map.acceleratedTime != _acceleratedTime)
+            {
+                _acceleratedTime = map.acceleratedTime;
+
+                if (_acceleratedTime)
+                {
+                    _brokenMakerSleeps = true;
+                    foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                    {
+                        hook.onBrokenMakerSleeps_StartOfProcess(map);
+                    }
+                }
+            }
+
+            if (_brokenMakerSleeps)
+            {
+                _brokenMakerSleepDuration--;
+                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                {
+                    hook.onBrokenMakerSleeps_TurnTick(map);
+                }
+
+                if (_brokenMakerSleepDuration == 0)
+                {
+                    _brokenMakerSleeps = false;
+                    _brokenMakerSleepDuration = 50;
+
+                    foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                    {
+                        hook.onBrokenMakerSleeps_EndOfProcess(map);
+                    }
+                }
+            }
         }
 
         internal void addModIntegrationData(string key, ModIntegrationData intData)
