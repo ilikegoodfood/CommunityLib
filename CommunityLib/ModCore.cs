@@ -2163,18 +2163,6 @@ namespace CommunityLib
                     }
                 }
             }
-
-            /*if (graphicalHex.hex.x == graphicalHex.hex.y)
-            {
-                if (graphicalHex.hex.x == 0)
-                {
-                    graphicalHex.terrainLayer.color = Color.yellow;
-                }
-                else
-                {
-                    graphicalHex.terrainLayer.color = Color.red;
-                }
-            }*/
         }
 
         /// <summary>
