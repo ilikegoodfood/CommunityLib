@@ -271,7 +271,7 @@ namespace CommunityLib
 
             if (deepOneCult != null)
             {
-                double delta = map.param.prop_deepOneShadow * (deepOneCult.charge / 300.0);
+                double delta = _map.param.prop_deepOneShadow * (deepOneCult.charge / 300.0);
                 msgs.Add(new ReasonMsg("Deep One Cult", delta));
                 shadowGain += delta;
             }
@@ -289,7 +289,7 @@ namespace CommunityLib
 
                 if (malignCatch != null)
                 {
-                    double delta = map.param.ch_malignCatchShadow;
+                    double delta = _map.param.ch_malignCatchShadow;
                     msgs.Add(new ReasonMsg("Malign Catch", delta));
                     shadowGain += delta;
                 }
@@ -352,17 +352,17 @@ namespace CommunityLib
                 }
                 if (T_SettingSun_Count > 0)
                 {
-                    msgs.Add(new ReasonMsg("The Setting Sun", map.param.trait_settingSunShadowPerTurn * T_SettingSun_Count));
+                    msgs.Add(new ReasonMsg("The Setting Sun", _map.param.trait_settingSunShadowPerTurn * T_SettingSun_Count));
                     shadowGain += 0.01;
                 }
                 if (T_TheyWillObey_Count > 0 && society != null && society.isDarkEmpire)
                 {
-                    msgs.Add(new ReasonMsg("They Will Obey", map.param.trait_theyWillObeyShadowPerTurn * T_SettingSun_Count));
+                    msgs.Add(new ReasonMsg("They Will Obey", _map.param.trait_theyWillObeyShadowPerTurn * T_SettingSun_Count));
                     shadowGain += 0.01;
                 }
                 foreach (UAEN_Ghast ghast in enshadowingGhasts)
                 {
-                    double delta = map.param.ch_ghastShadowPerTurnPerLore * ghast.getStatLore() * Math.Max(0.0, 1.0 - (ward?.charge ?? 0.0));
+                    double delta = _map.param.ch_ghastShadowPerTurnPerLore * ghast.getStatLore() * Math.Max(0.0, 1.0 - (ward?.charge ?? 0.0));
                     msgs.Add(new ReasonMsg($"Being Enshadowed by {ghast.getName()}", delta));
                     shadowGain += delta;
                 }
@@ -374,10 +374,10 @@ namespace CommunityLib
                     shadowGain += 0.01;
                 }
 
-                if (map.tradeManager.tradeDensity[set.location.index] != null)
+                if (_map.tradeManager.tradeDensity[set.location.index] != null)
                 {
                     int snakeTradeRouteCount = 0;
-                    foreach (TradeRoute route in map.tradeManager.tradeDensity[set.location.index])
+                    foreach (TradeRoute route in _map.tradeManager.tradeDensity[set.location.index])
                     {
                         if (route.snake > 0)
                         {
@@ -387,7 +387,7 @@ namespace CommunityLib
 
                     if (snakeTradeRouteCount > 0)
                     {
-                        msgs.Add(new ReasonMsg("Serpent's Coils", Math.Max(0.0, 100 - (ward?.charge ?? 0.0)) * 0.01 * map.param.power_serpentsCoilsShadowGain * snakeTradeRouteCount));
+                        msgs.Add(new ReasonMsg("Serpent's Coils", Math.Max(0.0, 100 - (ward?.charge ?? 0.0)) * 0.01 * _map.param.power_serpentsCoilsShadowGain * snakeTradeRouteCount));
                         shadowGain += 0.01;
                     }
                 }
