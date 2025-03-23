@@ -641,6 +641,32 @@ namespace CommunityLib
         }
 
         /// <summary>
+        /// This hook fires the first turn that the broken maker enters sleep. It recieves the map.
+        /// </summary>
+        /// <param name="map"></param>
+        public virtual void onBrokenMakerSleeps_StartOfProcess(Map map)
+        {
+
+        }
+
+        /// <summary>
+        /// This hook fires each turn taht the broken maker sleeps, including the first ad last turns. It recieves the map.
+        /// </summary>
+        public virtual void onBrokenMakerSleeps_TurnTick(Map map)
+        {
+
+        }
+
+        /// <summary>
+        /// This hook fires on the last turn of the brken maker's sleep cycle, immediately after the TurnTick hook. It recieves the map.
+        /// </summary>
+        /// <param name="map"></param>
+        public virtual void onBrokenMakerSleeps_EndOfProcess(Map map)
+        {
+
+        }
+
+        /// <summary>
         /// This hook fires when the Community Library's Agent AI beings processing an agent. It recieves the agent (ua), the AIData for its Agent AI (aiData), a list of AgentAI.ChallengeData structs (validChallengeData), a list of AgentAI.TaskData structs (validTaskData), and a list of Units (visibleUnits).<br></br>
         /// If this hook returns true, the rest of the AI process will not happen.
         /// <para>All instances of this hook will run whenever an AgentAI runs, even those after one which has returned true.</para>
