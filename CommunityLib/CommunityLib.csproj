@@ -72,6 +72,7 @@
     <Compile Include="DebugHelper.cs" />
     <Compile Include="GodSortData.cs" />
     <Compile Include="HooksDelegateRegistry.cs" />
+    <Compile Include="HexGridUtils.cs" />
     <Compile Include="Pair.cs" />
     <Compile Include="PowerDelayed.cs" />
     <Compile Include="ValuePriorityPair.cs" />

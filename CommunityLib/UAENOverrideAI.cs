@@ -307,7 +307,7 @@ namespace CommunityLib
                 }
 
                 Pr_Ward ward = (Pr_Ward)challengeData.location.properties.FirstOrDefault(pr => pr is Pr_Ward);
-                if (ward != null && ward.charge >= 66)
+                if (ward != null && ward.charge > 0.9)
                 {
                     return false;
                 }
