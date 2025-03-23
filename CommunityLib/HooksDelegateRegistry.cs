@@ -751,6 +751,43 @@ namespace CommunityLib
             return true;
         }
 
+        // onBorkenMakerSleeps
+        private List<Action<Map>> _delegate_onBrokenMakerSleeps_StartOfProcess = new List<Action<Map>>();
+        public List<Action<Map>> Delegate_onBrokenMakerSleeps_StartOfProcess { get { return Delegate_onBrokenMakerSleeps_StartOfProcess; } }
+        public bool RegisterHook_onBrokenMakerSleeps_StartOfProcess(Action<Map> hook)
+        {
+            if (hook == null)
+                return false;
+            if (_delegate_onBrokenMakerSleeps_StartOfProcess.Contains(hook))
+                return false;
+            _delegate_onBrokenMakerSleeps_StartOfProcess.Add(hook);
+            return true;
+        }
+
+        private List<Action<Map>> _delegate_onBrokenMakerSleeps_TurnTick = new List<Action<Map>>();
+        public List<Action<Map>> Delegate_onBrokenMakerSleeps_TurnTick { get { return Delegate_onBrokenMakerSleeps_TurnTick; } }
+        public bool RegisterHook_onBrokenMakerSleeps_TurnTick(Action<Map> hook)
+        {
+            if (hook == null)
+                return false;
+            if (_delegate_onBrokenMakerSleeps_TurnTick.Contains(hook))
+                return false;
+            _delegate_onBrokenMakerSleeps_TurnTick.Add(hook);
+            return true;
+        }
+
+        private List<Action<Map>> _delegate_onBrokenMakerSleeps_EndOfProcess = new List<Action<Map>>();
+        public List<Action<Map>> Delegate_onBrokenMakerSleeps_EndOfProcess { get { return Delegate_onBrokenMakerSleeps_EndOfProcess; } }
+        public bool RegisterHook_onBrokenMakerSleeps_EndOfProcess(Action<Map> hook)
+        {
+            if (hook == null)
+                return false;
+            if (_delegate_onBrokenMakerSleeps_EndOfProcess.Contains(hook))
+                return false;
+            _delegate_onBrokenMakerSleeps_EndOfProcess.Add(hook);
+            return true;
+        }
+
         // onAgentAI
 
         private List<Func<UA, AgentAI.AIData, List<AgentAI.ChallengeData>, List<AgentAI.TaskData>, List<Unit>, bool>> _delegate_interceptAgentAI = new List<Func<UA, AgentAI.AIData, List<AgentAI.ChallengeData>, List<AgentAI.TaskData>, List<Unit>, bool>>();

@@ -28,6 +28,7 @@ namespace CommunityLib
             registry.RegisterHook_onSettlementFallIntoRuin_StartOfProcess(onSettlementFallIntoRuin_StartOfProcess);
             registry.RegisterHook_onSettlementFallIntoRuin_EndOfProcess(onSettlementFallIntoRuin_EndOfProcess);
             registry.RegisterHook_onSettlementCalculatesShadowGain(onSettlementComputesShadowGain);
+            registry.RegisterHook_onBrokenMakerSleeps_TurnTick(onBrokenMakerSleeps_TurnTick);
             registry.RegisterHook_onCheckIsProphetPlayerAligned(onCheckIsProphetPlayerAligned);
             registry.RegisterHook_onLocationViewFaithButton_GetHolyOrder(onLocationViewFaithButton_GetHolyOrder);
             registry.RegisterHook_onGraphicalLinkUpdated(onGraphicalLinkUpdated);
@@ -448,6 +449,17 @@ namespace CommunityLib
             }
 
             return false;
+        }
+
+        public void onBrokenMakerSleeps_TurnTick(Map map)
+        {
+            foreach (Unit unit in map.units)
+            {
+                if (unit is UM_RavenousDead || unit is UM_UntamedDead)
+                {
+                    unit.die(map, "Gone");
+                }
+            }
         }
 
         public HolyOrder onLocationViewFaithButton_GetHolyOrder(Location loc)
