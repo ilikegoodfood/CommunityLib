@@ -64,20 +64,30 @@ namespace CommunityLib
 
         public virtual void WhileDelayed(Location location)
         {
-
+            WhileDelayedCommon(location);
         }
 
         public virtual void WhileDelayed(Unit unit)
+        {
+            WhileDelayedCommon(unit.location);
+        }
+
+        public virtual void WhileDelayedCommon(Location location)
         {
 
         }
 
         public virtual void CastDelayed(Location location)
         {
-
+            CastDelayedCommon(location);
         }
 
         public virtual void CastDelayed(Unit unit)
+        {
+            CastDelayedCommon(unit.location);
+        }
+
+        public virtual void CastDelayedCommon(Location location)
         {
 
         }

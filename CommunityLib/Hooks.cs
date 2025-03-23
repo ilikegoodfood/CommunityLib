@@ -618,7 +618,7 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when a settlement has cmputed its shadow gain. It recives the settlement (set), the list of reasonMsgs (msgs), and the current total shadow gain (shadoiwGain). It returns the new total shadow gain.<br></br>
+        /// This hook fires when a settlement has computed its shadow gain. It recives the settlement (set), the list of reasonMsgs (msgs), and the current total shadow gain (shadoiwGain). It returns the new total shadow gain.<br></br>
         /// If a mod earlier in the load order modifies a settlement's shadow gain, the msgs and shadowGain parameters will already include the modifications.
         /// </summary>
         /// <param name="set"></param>
