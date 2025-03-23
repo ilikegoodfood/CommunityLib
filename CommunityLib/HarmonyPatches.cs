@@ -173,6 +173,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(PopupModConfig), nameof(PopupModConfig.dismiss), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(PopupModConfig_dismiss_transpiler)));
 
             // Map Fixes
+            harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.gen), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Map_gen_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.placeTomb), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Map_placeTomb_transpiler)));
 
             // Agent Fixes
@@ -609,6 +610,65 @@ namespace CommunityLib
         }
 
         // Map Fixes
+        private static IEnumerable<CodeInstruction> Map_gen_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_placeWonders = AccessTools.Method(typeof(Map), nameof(Map.placeWonders), Type.EmptyTypes);
+            MethodInfo MI_placeCthonians = AccessTools.Method(typeof(Map), nameof(Map.placeCthonians), Type.EmptyTypes);
+
+            Label placeWonderLabel = ilg.DefineLabel();
+            Label placeCthoniansLabel = ilg.DefineLabel();
+            Label placeWitchesLabel = ilg.DefineLabel();
+
+            bool returnCode = true;
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i+1].opcode == OpCodes.Ldarg_0 && instructionList[i+2].opcode == OpCodes.Call && (MethodInfo)instructionList[i+2].operand == MI_placeWonders)
+                        {
+                            yield return new CodeInstruction(OpCodes.Br_S, placeWitchesLabel);
+                            instructionList[i].labels.Add(placeWonderLabel);
+                            yield return instructionList[i];
+                            yield return instructionList[i+1];
+                            yield return instructionList[i + 2];
+                            yield return new CodeInstruction(OpCodes.Br_S, placeCthoniansLabel);
+                            instructionList[i + 3].labels.Add(placeWitchesLabel);
+
+                            i += 3;
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i + 1].opcode == OpCodes.Ldarg_0 && instructionList[i + 2].opcode == OpCodes.Callvirt && (MethodInfo)instructionList[i + 2].operand == MI_placeCthonians)
+                        {
+                            yield return new CodeInstruction(OpCodes.Br_S, placeWonderLabel);
+                            instructionList[i].labels.Add(placeCthoniansLabel);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
+
+            }
+
+            Console.WriteLine("CommunityLib: Completed Map_gen_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
         private static IEnumerable<CodeInstruction> Map_placeTomb_transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
