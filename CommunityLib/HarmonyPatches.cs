@@ -478,10 +478,10 @@ namespace CommunityLib
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
             MethodInfo MI_placeWonders = AccessTools.Method(typeof(Map), nameof(Map.placeWonders), Type.EmptyTypes);
-            MethodInfo MI_placeCthonians = AccessTools.Method(typeof(Map), nameof(Map.placeCthonians), Type.EmptyTypes);
+            MethodInfo MI_placeAncientRuins = AccessTools.Method(typeof(Map), nameof(Map.placeAncientRuins), Type.EmptyTypes);
 
             Label placeWonderLabel = ilg.DefineLabel();
-            Label placeCthoniansLabel = ilg.DefineLabel();
+            Label placeAncientRuinsLabel = ilg.DefineLabel();
             Label placeWitchesLabel = ilg.DefineLabel();
 
             bool returnCode = true;
@@ -499,7 +499,7 @@ namespace CommunityLib
                             yield return instructionList[i];
                             yield return instructionList[i+1];
                             yield return instructionList[i + 2];
-                            yield return new CodeInstruction(OpCodes.Br_S, placeCthoniansLabel);
+                            yield return new CodeInstruction(OpCodes.Br_S, placeAncientRuinsLabel);
                             instructionList[i + 3].labels.Add(placeWitchesLabel);
 
                             i += 3;
@@ -508,10 +508,10 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 2)
                     {
-                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i + 1].opcode == OpCodes.Ldarg_0 && instructionList[i + 2].opcode == OpCodes.Callvirt && (MethodInfo)instructionList[i + 2].operand == MI_placeCthonians)
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i + 1].opcode == OpCodes.Ldarg_0 && instructionList[i + 2].opcode == OpCodes.Call && (MethodInfo)instructionList[i + 2].operand == MI_placeAncientRuins)
                         {
                             yield return new CodeInstruction(OpCodes.Br_S, placeWonderLabel);
-                            instructionList[i].labels.Add(placeCthoniansLabel);
+                            instructionList[i].labels.Add(placeAncientRuinsLabel);
 
                             targetIndex = 0;
                         }
