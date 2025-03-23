@@ -1,6 +1,7 @@
 ﻿using Assets.Code;
 using System;
 using System.Collections.Generic;
+using System.Reflection.Emit;
 using UnityEngine;
 
 namespace CommunityLib
@@ -310,85 +311,12 @@ namespace CommunityLib
                 foreach (Vector3Int cube in cubeCoordinatesByDistance[d])
                 {
                     Vector2Int evenR = CubeToEvenR(cube);
-                    for (int i = 0; i < map.grid.Length; i++)
-                    {
-                        Hex hex = map.grid[i][evenR.x][evenR.y];
+                    Hex hex = map.grid[evenR.x][evenR.y];
 
-                        if (hex != null)
-                        {
-                            results.Add(hex);
-                            hexesByDistance[d].Add(hex);
-                        }
-                    }
-                }
-            }
-
-            return results;
-        }
-
-        public static List<Hex> HexesWithinRadius(Map map, Hex origin, int radius, int mapLayer, out List<Hex>[] hexesByDistance)
-        {
-            List<Hex> results = new List<Hex>();
-            hexesByDistance = new List<Hex>[radius + 1];
-
-            if (mapLayer < 0 || mapLayer >= map.grid.Length)
-            {
-                return results;
-            }
-
-
-            CubeCoordinatesWithinRadius(map, EvenRToCube(new Vector2Int(origin.x, origin.y)), radius, out List<Vector3Int>[] cubeCoordinatesByDistance);
-            for (int d = 0; d < cubeCoordinatesByDistance.Length; d++)
-            {
-                hexesByDistance[d] = new List<Hex>();
-                foreach (Vector3Int cube in cubeCoordinatesByDistance[d])
-                {
-                    Vector2Int evenR = CubeToEvenR(cube);
-                    Hex hex = map.grid[mapLayer][evenR.x][evenR.y];
                     if (hex != null)
                     {
                         results.Add(hex);
                         hexesByDistance[d].Add(hex);
-                    }
-                }
-            }
-
-            return results;
-        }
-
-        public static List<Hex> HexesWithinRadius(Map map, Hex origin, int radius, List<int> mapLayers, out List<Hex>[] hexesByDistance)
-        {
-            List<Hex> results = new List<Hex>();
-            hexesByDistance = new List<Hex>[radius + 1];
-
-            if (mapLayers == null || mapLayers.Count == 0)
-            {
-                return results;
-            }
-
-            CubeCoordinatesWithinRadius(map, EvenRToCube(new Vector2Int(origin.x, origin.y)), radius, out List<Vector3Int>[] cubeCoordinatesByDistance);
-            HashSet<int> visitedMapLayers = new HashSet<int>();
-            for (int d = 0; d < cubeCoordinatesByDistance.Length; d++)
-            {
-                hexesByDistance[d] = new List<Hex>();
-                foreach (Vector3Int cube in cubeCoordinatesByDistance[d])
-                {
-                    visitedMapLayers.Clear();
-                    Vector2Int evenR = CubeToEvenR(cube);
-                    foreach (int mapLayer in mapLayers)
-                    {
-                        if(visitedMapLayers.Contains(mapLayer))
-                        {
-                            continue;
-                        }
-                        visitedMapLayers.Add(mapLayer);
-                        Hex hex = map.grid[mapLayer][evenR.x][evenR.y];
-
-                        if (hex != null)
-                        {
-                            results.Add(hex);
-                            hexesByDistance[d].Add(hex);
-                        }
                     }
                 }
             }
@@ -552,91 +480,11 @@ namespace CommunityLib
                 foreach (var cube in cubeCoordinatesByDistanceFromInnerRadius[d])
                 {
                     Vector2Int evenR = CubeToEvenR(cube);
-                    for (int layer = 0; layer < map.grid.Length; layer++)
-                    {
-                        Hex hex = map.grid[layer][evenR.x][evenR.y];
-                        if (hex != null)
-                        {
-                            hexesByDistanceFromInnerRadius[d].Add(hex);
-                            results.Add(hex);
-                        }
-                    }
-                }
-            }
-
-            return results;
-        }
-
-        public static List<Hex> HexesWithinRing(Map map, Hex origin, int outerRadius, int innerRadius, int mapLayer, out List<Hex>[] hexesByDistanceFromInnerRadius)
-        {
-            List<Hex> results = new List<Hex>();
-
-            if (outerRadius < innerRadius)
-            {
-                hexesByDistanceFromInnerRadius = new List<Hex>[0];
-                return results;
-            }
-
-            int ringWidth = outerRadius - innerRadius;
-            hexesByDistanceFromInnerRadius = new List<Hex>[ringWidth + 1];
-
-            if (mapLayer < 0 || mapLayer >= map.grid.Length)
-            {
-                return results;
-            }
-
-            CubeCoordinatesWithinRing(map, EvenRToCube(new Vector2Int(origin.x, origin.y)), outerRadius, innerRadius, out List<Vector3Int>[] cubeCoordinatesByDistanceFromInnerRadius);
-            for (int d = 0; d < cubeCoordinatesByDistanceFromInnerRadius.Length; d++)
-            {
-                hexesByDistanceFromInnerRadius[d] = new List<Hex>();
-                foreach (var cube in cubeCoordinatesByDistanceFromInnerRadius[d])
-                {
-                    Vector2Int evenR = CubeToEvenR(cube);
-                    Hex hex = map.grid[mapLayer][evenR.x][evenR.y];
+                    Hex hex = map.grid[evenR.x][evenR.y];
                     if (hex != null)
                     {
                         hexesByDistanceFromInnerRadius[d].Add(hex);
                         results.Add(hex);
-                    }
-                }
-            }
-
-            return results;
-        }
-
-        public static List<Hex> HexesWithinRing(Map map, Hex origin, int outerRadius, int innerRadius, List<int> mapLayers, out List<Hex>[] hexesByDistanceFromInnerRadius)
-        {
-            List<Hex> results = new List<Hex>();
-
-            if (outerRadius < innerRadius)
-            {
-                hexesByDistanceFromInnerRadius = new List<Hex>[0];
-                return results;
-            }
-
-            int ringWidth = outerRadius - innerRadius;
-            hexesByDistanceFromInnerRadius = new List<Hex>[ringWidth + 1];
-
-            if (mapLayers == null || mapLayers.Count == 0)
-            {
-                return results;
-            }
-
-            CubeCoordinatesWithinRing(map, EvenRToCube(new Vector2Int(origin.x, origin.y)), outerRadius, innerRadius, out List<Vector3Int>[] cubeCoordinatesByDistanceFromInnerRadius);
-            for (int d = 0; d < cubeCoordinatesByDistanceFromInnerRadius.Length; d++)
-            {
-                hexesByDistanceFromInnerRadius[d] = new List<Hex>();
-                foreach (var cube in cubeCoordinatesByDistanceFromInnerRadius[d])
-                {
-                    Vector2Int evenR = CubeToEvenR(cube);
-                    foreach (int layer in mapLayers)
-                    {
-                        Hex hex = map.grid[layer][evenR.x][evenR.y];
-                        if (hex != null)
-                        {
-                            hexesByDistanceFromInnerRadius[d].Add(hex);
-                            results.Add(hex);
-                        }
                     }
                 }
             }
@@ -808,85 +656,12 @@ namespace CommunityLib
                 foreach (Vector3Int cube in cubeCoordinatesByDistance[d])
                 {
                     Vector2Int evenR = CubeToEvenR(cube);
-                    for (int i = 0; i < map.grid.Length; i++)
-                    {
-                        Hex hex = map.grid[i][evenR.x][evenR.y];
+                    Hex hex = map.grid[evenR.x][evenR.y];
 
-                        if (hex != null)
-                        {
-                            results.Add(hex);
-                            hexesByDistance[d].Add(hex);
-                        }
-                    }
-                }
-            }
-
-            return results;
-        }
-
-        public static List<Hex> HexesWithinCircle(Map map, Hex origin, int radius, int mapLayer, out List<Hex>[] hexesByDistance)
-        {
-            List<Hex> results = new List<Hex>();
-            hexesByDistance = new List<Hex>[radius + 1];
-
-            if (mapLayer < 0 || mapLayer >= map.grid.Length)
-            {
-                return results;
-            }
-
-
-            CubeCoordinatesWithinCircle(map, EvenRToCube(new Vector2Int(origin.x, origin.y)), radius, out List<Vector3Int>[] cudeCoordinatesByDistance);
-            for (int d = 0; d < cudeCoordinatesByDistance.Length; d++)
-            {
-                hexesByDistance[d] = new List<Hex>();
-                foreach (Vector3Int cube in cudeCoordinatesByDistance[d])
-                {
-                    Vector2Int evenR = CubeToEvenR(cube);
-                    Hex hex = map.grid[mapLayer][evenR.x][evenR.y];
                     if (hex != null)
                     {
                         results.Add(hex);
                         hexesByDistance[d].Add(hex);
-                    }
-                }
-            }
-
-            return results;
-        }
-
-        public static List<Hex> HexesWithinCircle(Map map, Hex origin, int radius, List<int> mapLayers, out List<Hex>[] hexesByDistance)
-        {
-            List<Hex> results = new List<Hex>();
-            hexesByDistance = new List<Hex>[radius + 1];
-
-            if (mapLayers == null || mapLayers.Count == 0)
-            {
-                return results;
-            }
-
-            CubeCoordinatesWithinCircle(map, EvenRToCube(new Vector2Int(origin.x, origin.y)), radius, out List<Vector3Int>[] cudeCoordinatesByDistance);
-            HashSet<int> visitedMapLayers = new HashSet<int>();
-            for (int d = 0; d < cudeCoordinatesByDistance.Length; d++)
-            {
-                hexesByDistance[d] = new List<Hex>();
-                foreach (Vector3Int cube in cudeCoordinatesByDistance[d])
-                {
-                    visitedMapLayers.Clear();
-                    Vector2Int evenR = CubeToEvenR(cube);
-                    foreach (int mapLayer in mapLayers)
-                    {
-                        if (visitedMapLayers.Contains(mapLayer))
-                        {
-                            continue;
-                        }
-                        visitedMapLayers.Add(mapLayer);
-                        Hex hex = map.grid[mapLayer][evenR.x][evenR.y];
-
-                        if (hex != null)
-                        {
-                            results.Add(hex);
-                            hexesByDistance[d].Add(hex);
-                        }
                     }
                 }
             }
@@ -1127,113 +902,11 @@ namespace CommunityLib
                 foreach (var cube in cubeCoordinatesByDistanceFromInnerRadius[d])
                 {
                     Vector2Int evenR = CubeToEvenR(cube);
-                    for (int layer = 0; layer < map.grid.Length; layer++)
-                    {
-                        Hex hex = map.grid[layer][evenR.x][evenR.y];
-                        if (hex != null)
-                        {
-                            hexesByDistanceFromInnerRadius[d].Add(hex);
-                            results.Add(hex);
-                        }
-                    }
-                }
-            }
-
-            return results;
-        }
-
-        public static List<Hex> HexesWithinCircularRing(Map map, Hex origin, double outerRadius, double innerRadius, int mapLayer, out List<Hex>[] hexesByDistanceFromInnerRadius)
-        {
-            List<Hex> results = new List<Hex>();
-
-            if (outerRadius < innerRadius)
-            {
-                hexesByDistanceFromInnerRadius = new List<Hex>[0];
-                return results;
-            }
-
-            int outerHexRadius = (int)Math.Ceiling(outerRadius);
-            int innerHexRadius = (int)Math.Floor(innerRadius);
-            if (innerHexRadius < 1)
-            {
-                innerHexRadius = 0;
-            }
-
-            int ringWidth = outerHexRadius - innerHexRadius;
-            hexesByDistanceFromInnerRadius = new List<Hex>[ringWidth + 1];
-
-            if (mapLayer < 0 || mapLayer >= map.grid.Length)
-            {
-                return results;
-            }
-
-            List<Vector3Int> cubeCoordinates = CubeCoordinatesWithinCircularRing(map, EvenRToCube(new Vector2Int(origin.x, origin.y)), outerRadius, innerRadius, out List<Vector3Int>[] cubeCoordinatesByDistanceFromInnerRadius);
-            if (cubeCoordinates.Count == 0)
-            {
-                return results;
-            }
-            for (int d = 0; d < cubeCoordinatesByDistanceFromInnerRadius.Length; d++)
-            {
-                hexesByDistanceFromInnerRadius[d] = new List<Hex>();
-                foreach (var cube in cubeCoordinatesByDistanceFromInnerRadius[d])
-                {
-                    Vector2Int evenR = CubeToEvenR(cube);
-                    Hex hex = map.grid[mapLayer][evenR.x][evenR.y];
+                    Hex hex = map.grid[evenR.x][evenR.y];
                     if (hex != null)
                     {
                         hexesByDistanceFromInnerRadius[d].Add(hex);
                         results.Add(hex);
-                    }
-                }
-            }
-
-            return results;
-        }
-
-        public static List<Hex> HexesWithinCircularRing(Map map, Hex origin, double outerRadius, double innerRadius, List<int> mapLayers, out List<Hex>[] hexesByDistanceFromInnerRadius)
-        {
-            List<Hex> results = new List<Hex>();
-
-            if (outerRadius < innerRadius)
-            {
-                hexesByDistanceFromInnerRadius = new List<Hex>[0];
-                return results;
-            }
-
-            int outerHexRadius = (int)Math.Ceiling(outerRadius);
-            int innerHexRadius = (int)Math.Floor(innerRadius);
-            if (innerHexRadius < 1)
-            {
-                innerHexRadius = 0;
-            }
-
-            int ringWidth = outerHexRadius - innerHexRadius;
-            hexesByDistanceFromInnerRadius = new List<Hex>[ringWidth + 1];
-
-            if (mapLayers == null || mapLayers.Count == 0)
-            {
-                return results;
-            }
-
-            List<Vector3Int> cubeCoordinates = CubeCoordinatesWithinCircularRing(map, EvenRToCube(new Vector2Int(origin.x, origin.y)), outerRadius, innerRadius, out List<Vector3Int>[] cubeCoordinatesByDistanceFromInnerRadius);
-            if (cubeCoordinates.Count == 0)
-            {
-                return results;
-            }
-            for (int d = 0; d < cubeCoordinatesByDistanceFromInnerRadius.Length; d++)
-            {
-                hexesByDistanceFromInnerRadius[d] = new List<Hex>();
-                foreach (var cube in cubeCoordinatesByDistanceFromInnerRadius[d])
-                {
-                    Vector2Int evenR = CubeToEvenR(cube);
-                    foreach (int layer in mapLayers)
-                    {
-                        Hex hex = map.grid[layer][evenR.x][evenR.y];
-                        if (hex != null)
-                        {
-                            hexesByDistanceFromInnerRadius[d].Add(hex);
-                            results.Add(hex);
-                        }
                     }
                 }
             }
@@ -1332,64 +1005,11 @@ namespace CommunityLib
             List<Vector2Int> evenRCoordinatesWithinLine = EvenRCoordinatesWithinLine(map, new Vector2Int(start.x, start.y), new Vector2Int(end.x, end.y));
             foreach(Vector2Int evenR in evenRCoordinatesWithinLine)
             {
-                for (int layer = 0; layer < map.grid.Length; layer++)
+                Hex hex = map.grid[evenR.x][evenR.y];
+
+                if (hex != null)
                 {
-                    Hex hex = map.grid[layer][evenR.x][evenR.y];
-
-                    if (hex != null)
-                    {
-                        results.Add(hex);
-                    }
-                }
-            }
-
-            return results;
-        }
-
-        public static List<Hex> HexesWithinLine(Map map, Hex start, Hex end, int mapLayer)
-        {
-            List<Hex> results = new List<Hex>();
-
-            if (mapLayer < 0 || mapLayer >= map.grid.Length)
-            {
-                return results;
-            }
-
-            if (mapLayer >= 0 && mapLayer < map.grid.Length)
-            {
-                List<Vector2Int> evenRCoordinatesWithinLine = EvenRCoordinatesWithinLine(map, new Vector2Int(start.x, start.y), new Vector2Int(end.x, end.y));
-                foreach (Vector2Int evenR in evenRCoordinatesWithinLine)
-                {
-                    Hex hex = map.grid[mapLayer][evenR.x][evenR.y];
-                    if (hex != null)
-                    {
-                        results.Add(hex);
-                    }
-                }
-            }
-
-            return results;
-        }
-
-        public static List<Hex> HexesWithinLine(Map map, Hex start, Hex end, List<int> mapLayers)
-        {
-            List<Hex> results = new List<Hex>();
-
-            if (mapLayers == null || mapLayers.Count == 0)
-            {
-                return results;
-            }
-
-            List<Vector2Int> evenRCoordinatesWithinLine = EvenRCoordinatesWithinLine(map, new Vector2Int(start.x, start.y), new Vector2Int(end.x, end.y));
-            foreach (Vector2Int evenR in evenRCoordinatesWithinLine)
-            {
-                foreach (int mapLayer in mapLayers)
-                {
-                    Hex hex = map.grid[mapLayer][evenR.x][evenR.y];
-                    if (hex != null)
-                    {
-                        results.Add(hex);
-                    }
+                    results.Add(hex);
                 }
             }
 
