@@ -1,8 +1,9 @@
 ﻿using Assets.Code;
 using System;
 using System.Collections.Generic;
-using System.Reflection.Emit;
+using System.Linq;
 using UnityEngine;
+using static DuloGames.UI.UIPlayAudio;
 
 namespace CommunityLib
 {
@@ -91,6 +92,26 @@ namespace CommunityLib
         public static Vector2 CubeToWorld(Vector3Int cube)
         {
             return EvenRToWorld(CubeToEvenR(cube));
+        }
+
+        public static Vector2Int HexToEvenR(Hex hex)
+        {
+            return new Vector2Int(hex.x, hex.y);
+        }
+
+        public static Vector2Int HexToAxial(Hex hex)
+        {
+            return EvenRToAxial(new Vector2Int(hex.x, hex.y));
+        }
+
+        public static Vector3Int HexToCube(Hex hex)
+        {
+            return EvenRToCube(new Vector2Int(hex.x, hex.y));
+        }
+
+        public static Vector2 HexToWorld(Hex hex)
+        {
+            return EvenRToWorld(new Vector2Int(hex.x, hex.y));
         }
         #endregion
 
@@ -203,11 +224,11 @@ namespace CommunityLib
         #region HexesInRadius
         public static List<Vector3Int> CubeCoordinatesWithinRadiusNaive(Vector3Int origin, int radius, out List<Vector3Int>[] cubeCoordinatesByDistance)
         {
-            List<Vector3Int> results = new List<Vector3Int>();
+            List<Vector3Int> results = new List<Vector3Int>(1 + 3 * radius * (radius + 1));
             cubeCoordinatesByDistance = new List<Vector3Int>[radius + 1];
             for (int d = 0; d <= radius; d++)
             {
-                cubeCoordinatesByDistance[d] = new List<Vector3Int>();
+                cubeCoordinatesByDistance[d] = new List<Vector3Int>(d == 0 ? 1 : 6 * d);
             }
 
             for (int dx = -radius; dx <= radius; dx++)
@@ -230,29 +251,42 @@ namespace CommunityLib
 
         public static List<Vector3Int> CubeCoordinatesWithinRadius(Map map, Vector3Int origin, int radius, out List<Vector3Int>[] cubeCoordinatesByDistance, bool includeOutOfBoundsCoordinates = false)
         {
-            List<Vector3Int> results = new List<Vector3Int>();
+            List<Vector3Int> results = new List<Vector3Int>(1 + 3 * radius * (radius + 1));
             cubeCoordinatesByDistance = new List<Vector3Int>[radius + 1];
 
-            List<Vector3Int> naiveResults = CubeCoordinatesWithinRadiusNaive(origin, radius, out List<Vector3Int>[] naiveCoordinatesByDistance);
             if (includeOutOfBoundsCoordinates)
             {
-                cubeCoordinatesByDistance = naiveCoordinatesByDistance;
-                return naiveResults;
+                return CubeCoordinatesWithinRadiusNaive(origin, radius, out cubeCoordinatesByDistance);
             }
 
-            for (int d = 0; d < naiveCoordinatesByDistance.Length; d++)
+            for (int d = 0; d <= radius; d++)
             {
-                cubeCoordinatesByDistance[d] = new List<Vector3Int>();
-                foreach (Vector3Int cube in naiveCoordinatesByDistance[d])
-                {
-                    Vector2Int evenR = CubeToEvenR(cube);
-                    if (evenR.x < 0 || evenR.x >= map.sizeX || evenR.y < 0 || evenR.y >= map.sizeY)
-                    {
-                        continue;
-                    }
+                cubeCoordinatesByDistance[d] = new List<Vector3Int>(d == 0 ? 1 : 6 * d);
+            }
 
-                    results.Add(cube);
-                    cubeCoordinatesByDistance[d].Add(cube);
+            int minDY = -origin.y;
+            int maxDY = map.sizeY - 1 - origin.y;
+            for (int dy = Math.Max(-radius, minDY); dy <= Math.Min(radius, maxDY); dy++)
+            {
+                int y = origin.y + dy;
+
+                int xOffset = (y + (y & 1)) / 2;
+                int minDX = -origin.x - xOffset;
+                int maxDX = (map.sizeX - 1) - xOffset - origin.x;
+
+                for (int dx = Math.Max(-radius, minDX); dx <= Math.Min(radius, maxDX); dx++)
+                {
+                    int x = origin.x + dx;
+
+                    int dz = -dx - dy;
+                    if (Math.Abs(dz) <= radius)
+                    {
+                        int z = origin.z + dz;
+                        int dist = Math.Max(Math.Abs(dx), Math.Max(Math.Abs(dy), Math.Abs(dz)));
+                        Vector3Int cube = new Vector3Int(x, y, z);
+                        cubeCoordinatesByDistance[dist].Add(cube);
+                        results.Add(cube);
+                    }
                 }
             }
 
@@ -261,13 +295,17 @@ namespace CommunityLib
 
         public static List<Vector2Int> AxialCoordinatesWithinRadius(Map map, Vector2Int origin, int radius, out List<Vector2Int>[] axialCoordinatesByDistance, bool includeOutOfBoundsCoordinates = false)
         {
-            List<Vector2Int> results = new List<Vector2Int>();
+            List<Vector2Int> results = new List<Vector2Int>(1 + 3 * radius * (radius + 1));
             axialCoordinatesByDistance = new List<Vector2Int>[radius + 1];
 
-            CubeCoordinatesWithinRadius(map, AxialToCube(origin), radius, out List<Vector3Int>[] cubeCoordinatesByDistance, includeOutOfBoundsCoordinates);
+            if (CubeCoordinatesWithinRadius(map, AxialToCube(origin), radius, out List<Vector3Int>[] cubeCoordinatesByDistance, includeOutOfBoundsCoordinates).Count == 0)
+            {
+                return results;
+            }
+
             for (int d = 0; d < cubeCoordinatesByDistance.Length; d++)
             {
-                axialCoordinatesByDistance[d] = new List<Vector2Int>();
+                axialCoordinatesByDistance[d] = new List<Vector2Int>(d == 0 ? 1 : 6 * d);
                 foreach (Vector3Int cube in cubeCoordinatesByDistance[d])
                 {
                     Vector2Int axial = CubeToAxial(cube);
@@ -281,13 +319,17 @@ namespace CommunityLib
 
         public static List<Vector2Int> EvenRCoordinatesWithinRadius(Map map, Vector2Int origin, int radius, out List<Vector2Int>[] evenRCoordinatesByDistance, bool includeOutOfBoundsCoordinates = false)
         {
-            List<Vector2Int> results = new List<Vector2Int>();
+            List<Vector2Int> results = new List<Vector2Int>(1 + 3 * radius * (radius + 1));
             evenRCoordinatesByDistance = new List<Vector2Int>[radius + 1];
 
-            CubeCoordinatesWithinRadius(map, EvenRToCube(origin), radius, out List<Vector3Int>[] cubeCoordinatesByDistance, includeOutOfBoundsCoordinates);
+            if (CubeCoordinatesWithinRadius(map, EvenRToCube(origin), radius, out List<Vector3Int>[] cubeCoordinatesByDistance, includeOutOfBoundsCoordinates).Count == 0)
+            {
+                return results;
+            }
+
             for (int d = 0; d < cubeCoordinatesByDistance.Length; d++)
             {
-                evenRCoordinatesByDistance[d] = new List<Vector2Int>();
+                evenRCoordinatesByDistance[d] = new List<Vector2Int>(d == 0 ? 1 : 6 * d);
                 foreach (Vector3Int cube in cubeCoordinatesByDistance[d])
                 {
                     Vector2Int evenR = CubeToEvenR(cube);
@@ -301,13 +343,17 @@ namespace CommunityLib
 
         public static List<Hex> HexesWithinRadius(Map map, Hex origin, int radius, out List<Hex>[] hexesByDistance)
         {
-            List<Hex> results = new List<Hex>();
+            List<Hex> results = new List<Hex>(1 + 3 * radius * (radius + 1));
             hexesByDistance = new List<Hex>[radius + 1];
 
-            CubeCoordinatesWithinRadius(map, EvenRToCube(new Vector2Int(origin.x, origin.y)), radius, out List<Vector3Int>[] cubeCoordinatesByDistance);
+            if (CubeCoordinatesWithinRadius(map, HexToCube(origin), radius, out List<Vector3Int>[] cubeCoordinatesByDistance).Count == 0)
+            {
+                return results;
+            }
+
             for (int d = 0; d < cubeCoordinatesByDistance.Length; d++)
             {
-                hexesByDistance[d] = new List<Hex>();
+                hexesByDistance[d] = new List<Hex>(d == 0 ? 1 : 6 * d);
                 foreach (Vector3Int cube in cubeCoordinatesByDistance[d])
                 {
                     Vector2Int evenR = CubeToEvenR(cube);
@@ -328,20 +374,23 @@ namespace CommunityLib
         #region HexesInRing
         public static List<Vector3Int> CubeCoordinatesWithinRingNaive(Vector3Int origin, int outerRadius, int innerRadius, out List<Vector3Int>[] cubeCoordinatesByDistanceFromInnerRadius)
         {
-            List<Vector3Int> results = new List<Vector3Int>();
-            
-            if (outerRadius < innerRadius)
+            if(outerRadius < innerRadius)
             {
                 cubeCoordinatesByDistanceFromInnerRadius = new List<Vector3Int>[0];
-                return results;
+                return new List<Vector3Int>();
             }
+
+            int outerCount = 1 + 3 * outerRadius * (outerRadius + 1);
+            int innerCount = 1 + 3 * innerRadius * (innerRadius + 1);
+            List<Vector3Int> results = new List<Vector3Int>(outerCount - innerCount);
 
             int ringWidth = outerRadius - innerRadius;
             cubeCoordinatesByDistanceFromInnerRadius = new List<Vector3Int>[ringWidth + 1];
 
             for (int d = 0; d < cubeCoordinatesByDistanceFromInnerRadius.Length; d++)
             {
-                cubeCoordinatesByDistanceFromInnerRadius[d] = new List<Vector3Int>();
+                int dist = innerRadius + d;
+                cubeCoordinatesByDistanceFromInnerRadius[d] = new List<Vector3Int>(dist == 0 ? 1 : 6 * dist);
             }
 
             for (int dx = -outerRadius; dx <= outerRadius; dx++)
@@ -367,37 +416,50 @@ namespace CommunityLib
 
         public static List<Vector3Int> CubeCoordinatesWithinRing(Map map, Vector3Int origin, int outerRadius, int innerRadius, out List<Vector3Int>[] cubeCoordinatesByDistanceFromInnerRadius, bool includeOutOfBoundsCoordinates = false)
         {
-            List<Vector3Int> results = new List<Vector3Int>();
-
             if (outerRadius < innerRadius)
             {
                 cubeCoordinatesByDistanceFromInnerRadius = new List<Vector3Int>[0];
-                return results;
+                return new List<Vector3Int>();
             }
+
+            int outerCount = 1 + 3 * outerRadius * (outerRadius + 1);
+            int innerCount = 1 + 3 * innerRadius * (innerRadius + 1);
+            List<Vector3Int> results = new List<Vector3Int>(outerCount - innerCount);
 
             int ringWidth = outerRadius - innerRadius;
             cubeCoordinatesByDistanceFromInnerRadius = new List<Vector3Int>[ringWidth + 1];
 
-            List<Vector3Int> naiveResults = CubeCoordinatesWithinRingNaive(origin, outerRadius, innerRadius, out List<Vector3Int>[] naiveCubeCoordinatesByDistanceFromInnerRadius);
             if (includeOutOfBoundsCoordinates)
             {
-                cubeCoordinatesByDistanceFromInnerRadius = naiveCubeCoordinatesByDistanceFromInnerRadius;
-                return naiveResults;
+                return CubeCoordinatesWithinRingNaive(origin, outerRadius, innerRadius, out cubeCoordinatesByDistanceFromInnerRadius);
             }
 
-            for (int i = 0; i < naiveCubeCoordinatesByDistanceFromInnerRadius.Length; i++)
+            for (int d = 0; d < cubeCoordinatesByDistanceFromInnerRadius.Length; d++)
             {
-                cubeCoordinatesByDistanceFromInnerRadius[i] = new List<Vector3Int>();
-                foreach (var cube in naiveCubeCoordinatesByDistanceFromInnerRadius[i])
-                {
-                    Vector2Int evenR = CubeToEvenR(cube);
-                    if (evenR.x < 0 || evenR.x >= map.sizeX || evenR.y < 0 || evenR.y >= map.sizeY)
-                    {
-                        continue;
-                    }
+                int dist = innerRadius + d;
+                cubeCoordinatesByDistanceFromInnerRadius[d] = new List<Vector3Int>(dist == 0 ? 1 : 6 * dist);
+            }
 
-                    cubeCoordinatesByDistanceFromInnerRadius[i].Add(cube);
-                    results.Add(cube);
+            int minDY = -origin.y;
+            int maxDY = map.sizeY - 1 - origin.y;
+            for (int dy = Math.Max(-outerRadius, minDY); dy <= Math.Min(outerRadius, maxDY); dy++)
+            {
+                int y = origin.y + dy;
+                int xOffset = (y + (y & 1)) / 2;
+                int minDX = -origin.x - xOffset;
+                int maxDX = (map.sizeX - 1) - xOffset - origin.x;
+
+                for (int dx = Math.Max(-outerRadius, minDX); dx <= Math.Min(outerRadius, maxDX); dx++)
+                {
+                    int x = origin.x + dx;
+                    int dz = -dx - dy;
+                    int dist = Math.Max(Math.Abs(dx), Math.Max(Math.Abs(dy), Math.Abs(dz)));
+                    if (dist >= innerRadius && dist <= outerRadius)
+                    {
+                        Vector3Int cube = new Vector3Int(x, y, origin.z + dz);
+                        cubeCoordinatesByDistanceFromInnerRadius[dist - innerRadius].Add(cube);
+                        results.Add(cube);
+                    }
                 }
             }
 
@@ -406,25 +468,31 @@ namespace CommunityLib
 
         public static List<Vector2Int> AxialCoordinatesWithinRing(Map map, Vector2Int origin, int outerRadius, int innerRadius, out List<Vector2Int>[] axialCoordinatesByDistanceFromInnerRadius, bool includeOutOfBoundsCoordinates = false)
         {
-            List<Vector2Int> results = new List<Vector2Int>();
-
             if (outerRadius < innerRadius)
             {
                 axialCoordinatesByDistanceFromInnerRadius = new List<Vector2Int>[0];
-                return results;
+                return new List<Vector2Int>();
             }
+
+            int outerCount = 1 + 3 * outerRadius * (outerRadius + 1);
+            int innerCount = 1 + 3 * innerRadius * (innerRadius + 1);
+            List<Vector2Int> results = new List<Vector2Int>(outerCount - innerCount);
 
             int ringWidth = outerRadius - innerRadius;
             axialCoordinatesByDistanceFromInnerRadius = new List<Vector2Int>[ringWidth + 1];
 
-            CubeCoordinatesWithinRing(map, AxialToCube(origin), outerRadius, innerRadius, out List<Vector3Int>[] cubeCoordinatesByDistanceFromInnerRadius, includeOutOfBoundsCoordinates);
-            for (int i = 0; i < cubeCoordinatesByDistanceFromInnerRadius.Length; i++)
+            if (CubeCoordinatesWithinRing(map, AxialToCube(origin), outerRadius, innerRadius, out List<Vector3Int>[] cubeCoordinatesByDistanceFromInnerRadius, includeOutOfBoundsCoordinates).Count == 0)
             {
-                axialCoordinatesByDistanceFromInnerRadius[i] = new List<Vector2Int>();
-                foreach (var cube in cubeCoordinatesByDistanceFromInnerRadius[i])
+                return results;
+            }
+
+            for (int d = 0; d < cubeCoordinatesByDistanceFromInnerRadius.Length; d++)
+            {
+                axialCoordinatesByDistanceFromInnerRadius[d] = new List<Vector2Int>(d == 0 ? 1 : 6 * d);
+                foreach (var cube in cubeCoordinatesByDistanceFromInnerRadius[d])
                 {
                     Vector2Int axial = CubeToAxial(cube);
-                    axialCoordinatesByDistanceFromInnerRadius[i].Add(axial);
+                    axialCoordinatesByDistanceFromInnerRadius[d].Add(axial);
                     results.Add(axial);
                 }
             }
@@ -434,25 +502,31 @@ namespace CommunityLib
 
         public static List<Vector2Int> EvenRCoordinatesWithinRing(Map map, Vector2Int origin, int outerRadius, int innerRadius, out List<Vector2Int>[] evenRCoordinatesByDistanceFromInnerRadius, bool includeOutOfBoundsCoordinates = false)
         {
-            List<Vector2Int> results = new List<Vector2Int>();
-
             if (outerRadius < innerRadius)
             {
                 evenRCoordinatesByDistanceFromInnerRadius = new List<Vector2Int>[0];
-                return results;
+                return new List<Vector2Int>();
             }
+
+            int outerCount = 1 + 3 * outerRadius * (outerRadius + 1);
+            int innerCount = 1 + 3 * innerRadius * (innerRadius + 1);
+            List<Vector2Int> results = new List<Vector2Int>(outerCount - innerCount);
 
             int ringWidth = outerRadius - innerRadius;
             evenRCoordinatesByDistanceFromInnerRadius = new List<Vector2Int>[ringWidth + 1];
 
-            CubeCoordinatesWithinRing(map, EvenRToCube(origin), outerRadius, innerRadius, out List<Vector3Int>[] cubeCoordinatesByDistanceFromInnerRadius, includeOutOfBoundsCoordinates);
-            for (int i = 0; i < cubeCoordinatesByDistanceFromInnerRadius.Length; i++)
+            if (CubeCoordinatesWithinRing(map, EvenRToCube(origin), outerRadius, innerRadius, out List<Vector3Int>[] cubeCoordinatesByDistanceFromInnerRadius, includeOutOfBoundsCoordinates).Count == 0)
             {
-                evenRCoordinatesByDistanceFromInnerRadius[i] = new List<Vector2Int>();
-                foreach (var cube in cubeCoordinatesByDistanceFromInnerRadius[i])
+                return results;
+            }
+
+            for (int d = 0; d < cubeCoordinatesByDistanceFromInnerRadius.Length; d++)
+            {
+                evenRCoordinatesByDistanceFromInnerRadius[d] = new List<Vector2Int>(d == 0 ? 1 : 6 * d);
+                foreach (var cube in cubeCoordinatesByDistanceFromInnerRadius[d])
                 {
                     Vector2Int evenR = CubeToEvenR(cube);
-                    evenRCoordinatesByDistanceFromInnerRadius[i].Add(evenR);
+                    evenRCoordinatesByDistanceFromInnerRadius[d].Add(evenR);
                     results.Add(evenR);
                 }
             }
@@ -462,21 +536,27 @@ namespace CommunityLib
 
         public static List<Hex> HexesWithinRing(Map map, Hex origin, int outerRadius, int innerRadius, out List<Hex>[] hexesByDistanceFromInnerRadius)
         {
-            List<Hex> results = new List<Hex>();
-
             if (outerRadius < innerRadius)
             {
                 hexesByDistanceFromInnerRadius = new List<Hex>[0];
-                return results;
+                return new List<Hex>();
             }
+
+            int outerCount = 1 + 3 * outerRadius * (outerRadius + 1);
+            int innerCount = 1 + 3 * innerRadius * (innerRadius + 1);
+            List<Hex> results = new List<Hex>(outerCount - innerCount);
 
             int ringWidth = outerRadius - innerRadius;
             hexesByDistanceFromInnerRadius = new List<Hex>[ringWidth + 1];
 
-            CubeCoordinatesWithinRing(map, EvenRToCube(new Vector2Int(origin.x, origin.y)), outerRadius, innerRadius, out List<Vector3Int>[] cubeCoordinatesByDistanceFromInnerRadius);
+            if (CubeCoordinatesWithinRing(map, HexToCube(origin), outerRadius, innerRadius, out List<Vector3Int>[] cubeCoordinatesByDistanceFromInnerRadius).Count == 0)
+            {
+                return results;
+            }
+
             for (int d = 0; d < cubeCoordinatesByDistanceFromInnerRadius.Length; d++)
             {
-                hexesByDistanceFromInnerRadius[d] = new List<Hex>();
+                hexesByDistanceFromInnerRadius[d] = new List<Hex>(d == 0 ? 1 : 6 * d);
                 foreach (var cube in cubeCoordinatesByDistanceFromInnerRadius[d])
                 {
                     Vector2Int evenR = CubeToEvenR(cube);
@@ -496,14 +576,18 @@ namespace CommunityLib
         #region HexesWithinCircle
         public static List<Vector3Int> CubeCoordinatesWithinCircleNaive(Vector3Int origin, double radius, out List<Vector3Int>[] cubeCoordinatesByDistance)
         {
-            List<Vector3Int> results = new List<Vector3Int>();
-
             int outerRadius = (int)Math.Ceiling(radius);
+
+            List<Vector3Int> results = new List<Vector3Int>(1 + 3 * outerRadius * (outerRadius + 1));
+
             int innerRadius = (int)Math.Floor((RootThree / 2) * outerRadius);
             double squareRadius = radius * radius;
             cubeCoordinatesByDistance = new List<Vector3Int>[outerRadius + 1];
 
-            List<Vector3Int> outerCubeCoordinates = CubeCoordinatesWithinRadiusNaive(origin, outerRadius, out List<Vector3Int>[] outerCubeCoordinatesByDistance);
+            if (CubeCoordinatesWithinRadiusNaive(origin, outerRadius, out List<Vector3Int>[] outerCubeCoordinatesByDistance).Count == 0)
+            {
+                return results;
+            }
 
             for (int d = 0; d < outerCubeCoordinatesByDistance.Length; d++)
             {
@@ -514,7 +598,7 @@ namespace CommunityLib
                     continue;
                 }
 
-                cubeCoordinatesByDistance[d] = new List<Vector3Int>();
+                cubeCoordinatesByDistance[d] = new List<Vector3Int>(d == 0 ? 1 : 6 * d);
                 foreach (Vector3Int cube in outerCubeCoordinatesByDistance[d])
                 {
                     float squareDistance = EuclideanSquareDistanceCube(origin, cube);
@@ -531,30 +615,42 @@ namespace CommunityLib
 
         public static List<Vector3Int> CubeCoordinatesWithinCircle(Map map, Vector3Int origin, double radius, out List<Vector3Int>[] cubeCoordinatesByDistance, bool includeOutOfBoundsCoordinates = false)
         {
-            List<Vector3Int> results = new List<Vector3Int>();
             int outerRadius = (int)Math.Ceiling(radius);
+
+            List<Vector3Int> results = new List<Vector3Int>(1 + 3 * outerRadius * (outerRadius + 1));
+
             cubeCoordinatesByDistance = new List<Vector3Int>[outerRadius + 1];
 
-            List<Vector3Int> naiveResults = CubeCoordinatesWithinCircleNaive(origin, radius, out List<Vector3Int>[] naiveCoordinatesByDistance);
             if (includeOutOfBoundsCoordinates)
             {
-                cubeCoordinatesByDistance = naiveCoordinatesByDistance;
-                return naiveResults;
+                return CubeCoordinatesWithinCircleNaive(origin, radius, out cubeCoordinatesByDistance);
             }
 
-            for (int d = 0; d < naiveCoordinatesByDistance.Length; d++)
+            if (CubeCoordinatesWithinRadius(map, origin, outerRadius, out List<Vector3Int>[] outerCubeCoordinatesByDistance).Count == 0)
             {
-                cubeCoordinatesByDistance[d] = new List<Vector3Int>();
-                foreach (Vector3Int cube in naiveCoordinatesByDistance[d])
-                {
-                    Vector2Int evenR = CubeToEvenR(cube);
-                    if (evenR.x < 0 || evenR.x >= map.sizeX || evenR.y < 0 || evenR.y >= map.sizeY)
-                    {
-                        continue;
-                    }
+                return results;
+            }
 
-                    results.Add(cube);
-                    cubeCoordinatesByDistance[d].Add(cube);
+            int innerRadius = (int)Math.Floor((RootThree / 2) * outerRadius);
+            double squareRadius = radius * radius;
+            for (int d = 0; d < outerCubeCoordinatesByDistance.Length; d++)
+            {
+                if (d <= innerRadius)
+                {
+                    cubeCoordinatesByDistance[d] = outerCubeCoordinatesByDistance[d];
+                    results.AddRange(cubeCoordinatesByDistance[d]);
+                    continue;
+                }
+
+                cubeCoordinatesByDistance[d] = new List<Vector3Int>(d == 0 ? 1 : 6 * d);
+                foreach (Vector3Int cube in outerCubeCoordinatesByDistance[d])
+                {
+                    float squareDistance = EuclideanSquareDistanceCube(origin, cube);
+                    if (squareDistance <= squareRadius + Epsilon)
+                    {
+                        cubeCoordinatesByDistance[d].Add(cube);
+                        results.Add(cube);
+                    }
                 }
             }
 
@@ -563,16 +659,21 @@ namespace CommunityLib
 
         public static List<Vector2Int> AxialCoordinatesWithinCircle(Map map, Vector2Int origin, double radius, out List<Vector2Int>[] axialCoordinatesByDistance, bool includeOutOfBoundsCoordinates = false)
         {
-            List<Vector2Int> results = new List<Vector2Int>();
             int outerRadius = (int)Math.Ceiling(radius);
+
+            List<Vector2Int> results = new List<Vector2Int>(1 + 3 * outerRadius * (outerRadius + 1));
+
             axialCoordinatesByDistance = new List<Vector2Int>[outerRadius + 1];
 
-            List<Vector3Int> naiveResults = CubeCoordinatesWithinCircleNaive(AxialToCube(origin), radius, out List<Vector3Int>[] naiveCoordinatesByDistance);
+            if (CubeCoordinatesWithinCircle(map, AxialToCube(origin), radius, out List<Vector3Int>[] naiveCoordinatesByDistance, includeOutOfBoundsCoordinates).Count == 0)
+            {
+                return results;
+            }
             if (includeOutOfBoundsCoordinates)
             {
                 for (int d = 0; d < naiveCoordinatesByDistance.Length; d++)
                 {
-                    axialCoordinatesByDistance[d] = new List<Vector2Int>();
+                    axialCoordinatesByDistance[d] = new List<Vector2Int>(d == 0 ? 1 : 6 * d);
                     foreach (Vector3Int cube in naiveCoordinatesByDistance[d])
                     {
                         Vector2Int axial = CubeToAxial(cube);
@@ -605,30 +706,20 @@ namespace CommunityLib
 
         public static List<Vector2Int> EvenRCoordinatesWithinCircle(Map map, Vector2Int origin, double radius, out List<Vector2Int>[] evenRCoordinatesByDistance, bool includeOutOfBoundsCoordinates = false)
         {
-            List<Vector2Int> results = new List<Vector2Int>();
             int outerRadius = (int)Math.Ceiling(radius);
+
+            List<Vector2Int> results = new List<Vector2Int>(1 + 3 * outerRadius * (outerRadius + 1));
+
             evenRCoordinatesByDistance = new List<Vector2Int>[outerRadius + 1];
 
-            List<Vector3Int> naiveResults = CubeCoordinatesWithinCircleNaive(EvenRToCube(origin), radius, out List<Vector3Int>[] naiveCoordinatesByDistance);
-            if (includeOutOfBoundsCoordinates)
+            if (CubeCoordinatesWithinCircle(map, EvenRToCube(origin), radius, out List<Vector3Int>[] naiveCoordinatesByDistance, includeOutOfBoundsCoordinates).Count == 0)
             {
-                for (int d = 0; d < naiveCoordinatesByDistance.Length; d++)
-                {
-                    evenRCoordinatesByDistance[d] = new List<Vector2Int>();
-                    foreach (Vector3Int cube in naiveCoordinatesByDistance[d])
-                    {
-                        Vector2Int evenR = CubeToEvenR(cube);
-                        evenRCoordinatesByDistance[d].Add(evenR);
-                        results.Add(evenR);
-                    }
-                }
-
                 return results;
             }
 
             for (int d = 0; d < naiveCoordinatesByDistance.Length; d++)
             {
-                evenRCoordinatesByDistance[d] = new List<Vector2Int>();
+                evenRCoordinatesByDistance[d] = new List<Vector2Int>(d == 0 ? 1 : 6 * d);
                 foreach (Vector3Int cube in naiveCoordinatesByDistance[d])
                 {
                     Vector2Int evenR = CubeToEvenR(cube);
@@ -644,15 +735,22 @@ namespace CommunityLib
             return results;
         }
 
-        public static List<Hex> HexesWithinCircle(Map map, Hex origin, int radius, out List<Hex>[] hexesByDistance)
+        public static List<Hex> HexesWithinCircle(Map map, Hex origin, double radius, out List<Hex>[] hexesByDistance)
         {
-            List<Hex> results = new List<Hex>();
-            hexesByDistance = new List<Hex>[radius + 1];
+            int outerRadius = (int)Math.Ceiling(radius);
 
-            CubeCoordinatesWithinCircle(map, EvenRToCube(new Vector2Int(origin.x, origin.y)), radius, out List<Vector3Int>[] cubeCoordinatesByDistance);
+            List<Hex> results = new List<Hex>(1 + 3 * outerRadius * (outerRadius + 1));
+
+            hexesByDistance = new List<Hex>[outerRadius + 1];
+
+            if (CubeCoordinatesWithinCircle(map, HexToCube(origin), radius, out List<Vector3Int>[] cubeCoordinatesByDistance).Count == 0)
+            {
+                return results;
+            }
+
             for (int d = 0; d < cubeCoordinatesByDistance.Length; d++)
             {
-                hexesByDistance[d] = new List<Hex>();
+                hexesByDistance[d] = new List<Hex>(d == 0 ? 1 : 6 * d);
                 foreach (Vector3Int cube in cubeCoordinatesByDistance[d])
                 {
                     Vector2Int evenR = CubeToEvenR(cube);
@@ -673,12 +771,10 @@ namespace CommunityLib
         #region HexesWithinCircularRing
         public static List<Vector3Int> CubeCoordinatesWithinCircularRingNaive(Vector3Int origin, double outerRadius, double innerRadius, out List<Vector3Int>[] cubeCoordinatesByDistanceFromInnerRadius)
         {
-            List<Vector3Int> results = new List<Vector3Int>();
-            
             if (outerRadius < innerRadius)
             {
                 cubeCoordinatesByDistanceFromInnerRadius = new List<Vector3Int>[0];
-                return results;
+                return new List<Vector3Int>();
             }
 
             int outerHexRadius = (int)Math.Ceiling(outerRadius);
@@ -688,20 +784,28 @@ namespace CommunityLib
                 innerHexRadius = 0;
             }
 
-            double squareOuterRadius = outerRadius * outerRadius;
-            double squareInnerRadius = innerRadius * innerRadius;
+            int outerCount = 1 + 3 * outerHexRadius * (outerHexRadius + 1);
+            int innerCount = 1 + 3 * innerHexRadius * (innerHexRadius + 1);
+            List<Vector3Int> results = new List<Vector3Int>(outerCount - innerCount);
 
             int ringWidth = outerHexRadius - innerHexRadius;
             cubeCoordinatesByDistanceFromInnerRadius = new List<Vector3Int>[ringWidth + 1];
 
-            CubeCoordinatesWithinRingNaive(origin, outerHexRadius, innerHexRadius, out var hexCubeCoordinatesByDistanceFromInnerRadius);
+            double squareOuterRadius = outerRadius * outerRadius;
+            double squareInnerRadius = innerRadius * innerRadius;
+
+            if (CubeCoordinatesWithinRingNaive(origin, outerHexRadius, innerHexRadius, out var hexCubeCoordinatesByDistanceFromInnerRadius).Count == 0)
+            {
+                return results;
+            }
+
             for (int d = 0; d < hexCubeCoordinatesByDistanceFromInnerRadius.Length; d++)
             {
-                cubeCoordinatesByDistanceFromInnerRadius[d] = new List<Vector3Int>();
+                int dist = innerHexRadius + d;
+                cubeCoordinatesByDistanceFromInnerRadius[d] = new List<Vector3Int>(dist == 0 ? 1 : 6 * dist);
                 foreach (Vector3Int cube in hexCubeCoordinatesByDistanceFromInnerRadius[d])
                 {
                     float squareDistance = EuclideanSquareDistanceCube(origin, cube);
-
                     if (squareDistance <= squareOuterRadius + Epsilon && squareDistance >= squareInnerRadius + Epsilon)
                     {
                         cubeCoordinatesByDistanceFromInnerRadius[d].Add(cube);
@@ -715,12 +819,15 @@ namespace CommunityLib
 
         public static List<Vector3Int> CubeCoordinatesWithinCircularRing(Map map, Vector3Int origin, double outerRadius, double innerRadius, out List<Vector3Int>[] cubeCoordinatesByDistanceFromInnerRadius, bool includeOutOfBoundsCoordinates = false)
         {
-            List<Vector3Int> results = new List<Vector3Int>();
-
             if (outerRadius < innerRadius)
             {
                 cubeCoordinatesByDistanceFromInnerRadius = new List<Vector3Int>[0];
-                return results;
+                return new List<Vector3Int>();
+            }
+
+            if (includeOutOfBoundsCoordinates)
+            {
+                return CubeCoordinatesWithinCircularRingNaive(origin, outerRadius, innerRadius, out cubeCoordinatesByDistanceFromInnerRadius);
             }
 
             int outerHexRadius = (int)Math.Ceiling(outerRadius);
@@ -730,29 +837,33 @@ namespace CommunityLib
                 innerHexRadius = 0;
             }
 
+            int outerCount = 1 + 3 * outerHexRadius * (outerHexRadius + 1);
+            int innerCount = 1 + 3 * innerHexRadius * (innerHexRadius + 1);
+            List<Vector3Int> results = new List<Vector3Int>(outerCount - innerCount);
+
             int ringWidth = outerHexRadius - innerHexRadius;
             cubeCoordinatesByDistanceFromInnerRadius = new List<Vector3Int>[ringWidth + 1];
 
-            List<Vector3Int> naiveResults = CubeCoordinatesWithinCircularRingNaive(origin, outerRadius, innerRadius, out List<Vector3Int>[] naiveCoordinatesByDistance);
-            if (includeOutOfBoundsCoordinates)
+            double squareOuterRadius = outerRadius * outerRadius;
+            double squareInnerRadius = innerRadius * innerRadius;
+
+            if (CubeCoordinatesWithinRing(map, origin, outerHexRadius, innerHexRadius, out var hexCubeCoordinatesByDistanceFromInnerRadius).Count == 0)
             {
-                cubeCoordinatesByDistanceFromInnerRadius = naiveCoordinatesByDistance;
-                return naiveResults;
+                return results;
             }
 
-            for (int d = 0; d < naiveCoordinatesByDistance.Length; d++)
+            for (int d = 0; d < hexCubeCoordinatesByDistanceFromInnerRadius.Length; d++)
             {
-                cubeCoordinatesByDistanceFromInnerRadius[d] = new List<Vector3Int>();
-                foreach (Vector3Int cube in naiveCoordinatesByDistance[d])
+                int dist = innerHexRadius + d;
+                cubeCoordinatesByDistanceFromInnerRadius[d] = new List<Vector3Int>(dist == 0 ? 1 : 6 * dist);
+                foreach (Vector3Int cube in hexCubeCoordinatesByDistanceFromInnerRadius[d])
                 {
-                    Vector2Int evenR = CubeToEvenR(cube);
-                    if (evenR.x < 0 || evenR.x >= map.sizeX || evenR.y < 0 || evenR.y >= map.sizeY)
+                    float squareDistance = EuclideanSquareDistanceCube(origin, cube);
+                    if (squareDistance <= squareOuterRadius + Epsilon && squareDistance >= squareInnerRadius + Epsilon)
                     {
-                        continue;
+                        cubeCoordinatesByDistanceFromInnerRadius[d].Add(cube);
+                        results.Add(cube);
                     }
-
-                    results.Add(cube);
-                    cubeCoordinatesByDistanceFromInnerRadius[d].Add(cube);
                 }
             }
 
@@ -761,12 +872,10 @@ namespace CommunityLib
 
         public static List<Vector2Int> AxialCoordinatesWithinCircularRing(Map map, Vector2Int origin, double outerRadius, double innerRadius, out List<Vector2Int>[] axialCoordinatesByDistanceFromInnerRadius, bool includeOutOfBoundsCoordinates = false)
         {
-            List<Vector2Int> results = new List<Vector2Int>();
-
             if (outerRadius < innerRadius)
             {
                 axialCoordinatesByDistanceFromInnerRadius = new List<Vector2Int>[0];
-                return results;
+                return new List<Vector2Int>();
             }
 
             int outerHexRadius = (int)Math.Ceiling(outerRadius);
@@ -776,36 +885,36 @@ namespace CommunityLib
                 innerHexRadius = 0;
             }
 
+            int outerCount = 1 + 3 * outerHexRadius * (outerHexRadius + 1);
+            int innerCount = 1 + 3 * innerHexRadius * (innerHexRadius + 1);
+            List<Vector2Int> results = new List<Vector2Int>(outerCount - innerCount);
+
             int ringWidth = outerHexRadius - innerHexRadius;
             axialCoordinatesByDistanceFromInnerRadius = new List<Vector2Int>[ringWidth + 1];
 
-            List<Vector3Int> naiveResults = CubeCoordinatesWithinCircularRingNaive(AxialToCube(origin), outerRadius, innerRadius, out List<Vector3Int>[] naiveCoordinatesByDistance);
+            List<Vector3Int>[] cubeCoordinatesByDistanceFromInnerRadius;
+
             if (includeOutOfBoundsCoordinates)
             {
-                for (int d = 0; d < naiveCoordinatesByDistance.Length; d++)
+                if (CubeCoordinatesWithinCircularRingNaive(EvenRToCube(origin), outerRadius, innerRadius, out cubeCoordinatesByDistanceFromInnerRadius).Count == 0)
                 {
-                    axialCoordinatesByDistanceFromInnerRadius[d] = new List<Vector2Int>();
-                    foreach (Vector3Int cube in naiveCoordinatesByDistance[d])
-                    {
-                        Vector2Int axial = CubeToAxial(cube);
-                        axialCoordinatesByDistanceFromInnerRadius[d].Add(axial);
-                        results.Add(axial);
-                    }
+                    return results;
                 }
-
-                return results;
+            }
+            else
+            {
+                if (CubeCoordinatesWithinCircularRing(map, EvenRToCube(origin), outerRadius, innerRadius, out cubeCoordinatesByDistanceFromInnerRadius).Count == 0)
+                {
+                    return results;
+                }
             }
 
-            for (int d = 0; d < naiveCoordinatesByDistance.Length; d++)
+            for (int d = 0; d < cubeCoordinatesByDistanceFromInnerRadius.Length; d++)
             {
-                axialCoordinatesByDistanceFromInnerRadius[d] = new List<Vector2Int>();
-                foreach (Vector3Int cube in naiveCoordinatesByDistance[d])
+                int dist = innerHexRadius + d;
+                axialCoordinatesByDistanceFromInnerRadius[d] = new List<Vector2Int>(dist == 0 ? 1 : 6 * dist);
+                foreach (Vector3Int cube in cubeCoordinatesByDistanceFromInnerRadius[d])
                 {
-                    Vector2Int evenR = CubeToEvenR(cube);
-                    if (evenR.x < 0 || evenR.x >= map.sizeX || evenR.y < 0 || evenR.y >= map.sizeY)
-                    {
-                        continue;
-                    }
                     Vector2Int axial = CubeToAxial(cube);
                     axialCoordinatesByDistanceFromInnerRadius[d].Add(axial);
                     results.Add(axial);
@@ -817,12 +926,10 @@ namespace CommunityLib
 
         public static List<Vector2Int> EvenRCoordinatesWithinCircularRing(Map map, Vector2Int origin, double outerRadius, double innerRadius, out List<Vector2Int>[] evenRCoordinatesByDistanceFromInnerRadius, bool includeOutOfBoundsCoordinates = false)
         {
-            List<Vector2Int> results = new List<Vector2Int>();
-
             if (outerRadius < innerRadius)
             {
                 evenRCoordinatesByDistanceFromInnerRadius = new List<Vector2Int>[0];
-                return results;
+                return new List<Vector2Int>();
             }
 
             int outerHexRadius = (int)Math.Ceiling(outerRadius);
@@ -832,36 +939,37 @@ namespace CommunityLib
                 innerHexRadius = 0;
             }
 
+            int outerCount = 1 + 3 * outerHexRadius * (outerHexRadius + 1);
+            int innerCount = 1 + 3 * innerHexRadius * (innerHexRadius + 1);
+            List<Vector2Int> results = new List<Vector2Int>(outerCount - innerCount);
+
             int ringWidth = outerHexRadius - innerHexRadius;
             evenRCoordinatesByDistanceFromInnerRadius = new List<Vector2Int>[ringWidth + 1];
 
-            List<Vector3Int> naiveResults = CubeCoordinatesWithinCircularRingNaive(EvenRToCube(origin), outerRadius, innerRadius, out List<Vector3Int>[] naiveCoordinatesByDistance);
+            List<Vector3Int>[] cubeCoordinatesByDistanceFromInnerRadius;
+
             if (includeOutOfBoundsCoordinates)
             {
-                for (int d = 0; d < naiveCoordinatesByDistance.Length; d++)
+                if (CubeCoordinatesWithinCircularRingNaive(EvenRToCube(origin), outerRadius, innerRadius, out cubeCoordinatesByDistanceFromInnerRadius).Count == 0)
                 {
-                    evenRCoordinatesByDistanceFromInnerRadius[d] = new List<Vector2Int>();
-                    foreach (Vector3Int cube in naiveCoordinatesByDistance[d])
-                    {
-                        Vector2Int evenR = CubeToEvenR(cube);
-                        evenRCoordinatesByDistanceFromInnerRadius[d].Add(evenR);
-                        results.Add(evenR);
-                    }
+                    return results;
                 }
-
-                return results;
+            }
+            else
+            {
+                if (CubeCoordinatesWithinCircularRing(map, EvenRToCube(origin), outerRadius, innerRadius, out cubeCoordinatesByDistanceFromInnerRadius).Count == 0)
+                {
+                    return results;
+                }
             }
 
-            for (int d = 0; d < naiveCoordinatesByDistance.Length; d++)
+            for (int d = 0; d < cubeCoordinatesByDistanceFromInnerRadius.Length; d++)
             {
-                evenRCoordinatesByDistanceFromInnerRadius[d] = new List<Vector2Int>();
-                foreach (Vector3Int cube in naiveCoordinatesByDistance[d])
+                int dist = innerHexRadius + d;
+                evenRCoordinatesByDistanceFromInnerRadius[d] = new List<Vector2Int>(dist == 0 ? 1 : 6 * dist);
+                foreach (Vector3Int cube in cubeCoordinatesByDistanceFromInnerRadius[d])
                 {
                     Vector2Int evenR = CubeToEvenR(cube);
-                    if (evenR.x < 0 || evenR.x >= map.sizeX || evenR.y < 0 || evenR.y >= map.sizeY)
-                    {
-                        continue;
-                    }
                     evenRCoordinatesByDistanceFromInnerRadius[d].Add(evenR);
                     results.Add(evenR);
                 }
@@ -872,34 +980,37 @@ namespace CommunityLib
 
         public static List<Hex> HexesWithinCircularRing(Map map, Hex origin, double outerRadius, double innerRadius, out List<Hex>[] hexesByDistanceFromInnerRadius)
         {
-            List<Hex> results = new List<Hex>();
-
             if (outerRadius < innerRadius)
             {
                 hexesByDistanceFromInnerRadius = new List<Hex>[0];
-                return results;
+                return new List<Hex>();
             }
 
             int outerHexRadius = (int)Math.Ceiling(outerRadius);
             int innerHexRadius = (int)Math.Floor(innerRadius);
-            if (innerHexRadius < 1)
+            if (innerRadius < 1f)
             {
                 innerHexRadius = 0;
             }
 
+            int outerCount = 1 + 3 * outerHexRadius * (outerHexRadius + 1);
+            int innerCount = 1 + 3 * innerHexRadius * (innerHexRadius + 1);
+            List<Hex> results = new List<Hex>(outerCount - innerCount);
+
             int ringWidth = outerHexRadius - innerHexRadius;
             hexesByDistanceFromInnerRadius = new List<Hex>[ringWidth + 1];
 
-            List<Vector3Int> cubeCoordinates = CubeCoordinatesWithinCircularRing(map, EvenRToCube(new Vector2Int(origin.x, origin.y)), outerRadius, innerRadius, out List<Vector3Int>[] cubeCoordinatesByDistanceFromInnerRadius);
-            if (cubeCoordinates.Count == 0)
+            List<Vector3Int>[] cubeCoordinatesByDistanceFromInnerRadius;
+            if (CubeCoordinatesWithinCircularRing(map, HexToCube(origin), outerRadius, innerRadius, out cubeCoordinatesByDistanceFromInnerRadius).Count == 0)
             {
                 return results;
             }
 
             for (int d = 0; d < cubeCoordinatesByDistanceFromInnerRadius.Length; d++)
             {
-                hexesByDistanceFromInnerRadius[d] = new List<Hex>();
-                foreach (var cube in cubeCoordinatesByDistanceFromInnerRadius[d])
+                int dist = innerHexRadius + d;
+                hexesByDistanceFromInnerRadius[d] = new List<Hex>(dist == 0 ? 1 : 6 * dist);
+                foreach (Vector3Int cube in cubeCoordinatesByDistanceFromInnerRadius[d])
                 {
                     Vector2Int evenR = CubeToEvenR(cube);
                     Hex hex = map.grid[evenR.x][evenR.y];
@@ -923,9 +1034,8 @@ namespace CommunityLib
 
         public static List<Vector3Int> CubeCoordinatesWithinLineNaive(Vector3Int start, Vector3Int end)
         {
-            HashSet<Vector3Int> seen = new HashSet<Vector3Int>();
-            List<Vector3Int> results = new List<Vector3Int>();
             int distance = HexDistanceCube(start, end);
+            List<Vector3Int> results = new List<Vector3Int>(distance + 1);
             if (distance == 0)
             {
                 results.Add(start);
@@ -937,7 +1047,34 @@ namespace CommunityLib
             {
                 Vector3 cubeStep = CubeLerp(start, end, stepSize * i);
                 Vector3Int cube = RoundCubeCoordinate(cubeStep);
-                if (seen.Add(cube))
+                results.Add(cube);
+            }
+
+            return results;
+        }
+
+        public static List<Vector3Int> CubeCoordinatesWithinLine(Map map, Vector3Int start, Vector3Int end, bool includeOutOfBoundsCoordinates = false)
+        {
+            if (includeOutOfBoundsCoordinates)
+            {
+                return CubeCoordinatesWithinLineNaive(start, end);
+            }
+
+            int distance = HexDistanceCube(start, end);
+            List<Vector3Int> results = new List<Vector3Int>(distance + 1);
+            if (distance == 0)
+            {
+                results.Add(start);
+                return results;
+            }
+
+            float stepSize = 1f / distance;
+            for (int i = 0; i <= distance; i++)
+            {
+                Vector3 cubeStep = CubeLerp(start, end, stepSize * i);
+                Vector3Int cube = RoundCubeCoordinate(cubeStep);
+                Vector2Int evenR = CubeToEvenR(cube);
+                if (evenR.x >= 0 && evenR.x < map.sizeX && evenR.y >= 0 && evenR.y < map.sizeY)
                 {
                     results.Add(cube);
                 }
@@ -946,33 +1083,15 @@ namespace CommunityLib
             return results;
         }
 
-        public static List<Vector3Int> CubeCoordinatesWithinLine(Map map, Vector3Int start, Vector3Int end, bool includeOutOfBoundsCoordinates = false)
-        {
-            List<Vector3Int> results = new List<Vector3Int>();
-
-            List<Vector3Int> naiveResults = CubeCoordinatesWithinLineNaive(start, end);
-            if (includeOutOfBoundsCoordinates)
-            {
-                return naiveResults;
-            }
-
-            foreach (Vector3Int cube in naiveResults)
-            {
-                Vector2Int evenR = CubeToEvenR(cube);
-                if (evenR.x < 0 || evenR.x >= map.sizeX || evenR.y < 0 || evenR.y >= map.sizeY)
-                {
-                    continue;
-                }
-
-                results.Add(cube);
-            }
-
-            return results;
-        }
-
         public static List<Vector2Int> AxialCoordinatesWithinLine(Map map, Vector2Int start, Vector2Int end, bool includeOutOfBoundsCoordinates = false)
         {
-            List<Vector2Int> results = new List<Vector2Int>();
+            int distance = HexDistanceAxial(start, end);
+            List<Vector2Int> results = new List<Vector2Int>(distance + 1);
+            if (distance == 0)
+            {
+                results.Add(start);
+                return results;
+            }
 
             List<Vector3Int> cubeCoordinatesWithinLine = CubeCoordinatesWithinLine(map, AxialToCube(start), AxialToCube(end), includeOutOfBoundsCoordinates);
             foreach (Vector3Int cube in cubeCoordinatesWithinLine)
@@ -986,7 +1105,13 @@ namespace CommunityLib
 
         public static List<Vector2Int> EvenRCoordinatesWithinLine(Map map, Vector2Int start, Vector2Int end, bool includeOutOfBoundsCoordinates = false)
         {
-            List<Vector2Int> results = new List<Vector2Int>();
+            int distance = HexDistanceEvenR(start, end);
+            List<Vector2Int> results = new List<Vector2Int>(distance + 1);
+            if (distance == 0)
+            {
+                results.Add(start);
+                return results;
+            }
 
             List<Vector3Int> cubeCoordinatesWithinLine = CubeCoordinatesWithinLine(map, EvenRToCube(start), EvenRToCube(end), includeOutOfBoundsCoordinates);
             foreach (Vector3Int cube in cubeCoordinatesWithinLine)
@@ -1000,7 +1125,13 @@ namespace CommunityLib
 
         public static List<Hex> HexesWithinLine(Map map, Hex start, Hex end)
         {
-            List<Hex> results = new List<Hex>();
+            int distance = HexDistance(start, end);
+            List<Hex> results = new List<Hex>(distance + 1);
+            if (distance == 0)
+            {
+                results.Add(start);
+                return results;
+            }
 
             List<Vector2Int> evenRCoordinatesWithinLine = EvenRCoordinatesWithinLine(map, new Vector2Int(start.x, start.y), new Vector2Int(end.x, end.y));
             foreach(Vector2Int evenR in evenRCoordinatesWithinLine)
