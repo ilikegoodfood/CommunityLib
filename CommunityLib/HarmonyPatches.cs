@@ -5104,7 +5104,7 @@ namespace CommunityLib
 
         private static bool Society_populateActions_TranspilerBody_Society(Society soc, SocialGroup other, Dictionary<SocialGroup, HashSet<int>> sgLayers)
         {
-            if (soc.map == null || soc.map.awarenessOfUnderground >= 1d)
+            if (soc.map == null || soc.map.awarenessOfUnderground >= 1.0)
             {
                 return true;
             }
@@ -5126,17 +5126,18 @@ namespace CommunityLib
                 return true;
             }
 
-            if ((capitol.z == 0 && otherCapitol.z == 1) || (capitol.z == 1 && otherCapitol.z == 0))
+            if (sgLayers.TryGetValue(soc, out HashSet<int> layers) && sgLayers.TryGetValue(other, out HashSet<int> otherLayers))
             {
-                if (sgLayers.TryGetValue(soc, out HashSet<int> layers) && sgLayers.TryGetValue(other, out HashSet<int> otherLayers) && layers.Intersect(otherLayers).Any())
+                foreach (int layer in layers)
                 {
-                    return true;
+                    if (otherLayers.Contains(layer))
+                    {
+                        return true;
+                    }
                 }
-
-                return false;
             }
 
-            return true;
+            return false;
         }
 
         private static bool Society_populateActions_TranspilerBody_Subsettlement(Society soc, Subsettlement sub, Dictionary<SocialGroup, HashSet<int>> sgLayers)
