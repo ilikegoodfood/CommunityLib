@@ -603,14 +603,15 @@ namespace CommunityLib
 
         public static List<Vector2Int> EvenRCoordinatesWithinCircle(Map map, Vector2Int origin, double radius, out List<Vector2Int>[] evenRCoordinatesByDistance, bool skipDistanceBucketing = true, bool includeOutOfBoundsCoordinates = false)
         {
-            if (radius < HexHeight)
+            double verticalSpacing = HexHeight * 0.75;
+            if (radius < verticalSpacing)
             {
                 evenRCoordinatesByDistance = new List<Vector2Int>[1];
                 evenRCoordinatesByDistance[0] = new List<Vector2Int> { origin };
                 return new List<Vector2Int> { origin };
             }
 
-            int rowOffset = (int)Math.Ceiling(radius / HexHeight);
+            int rowOffset = (int)Math.Ceiling(radius / verticalSpacing);
             int colOffset = (int)Math.Ceiling(radius / HexWidth) + 1;
 
             int minDY;
@@ -861,7 +862,8 @@ namespace CommunityLib
 
         public static List<Vector2Int> EvenRCoordinatesWithinCircularRing(Map map, Vector2Int origin, double outerRadius, double innerRadius, out List<Vector2Int>[] evenRCoordinatesByDistanceFromInnerRadius, bool skipDistanceBucketing = true, bool includeOutOfBoundsCoordinates = false)
         {
-            if (innerRadius < HexHeight)
+            double verticalSpacing = HexHeight * 0.75;
+            if (innerRadius < verticalSpacing)
             {
                 innerRadius = 0.0;
             }
@@ -872,7 +874,7 @@ namespace CommunityLib
                 return new List<Vector2Int>();
             }
 
-            if (outerRadius < HexHeight)
+            if (outerRadius < verticalSpacing)
             {
                 if (innerRadius > 0.0)
                 {
@@ -885,27 +887,6 @@ namespace CommunityLib
                 return new List<Vector2Int> { origin };
             }
 
-            int rowOffset = (int)Math.Ceiling(outerRadius / HexHeight);
-            int colOffset = (int)Math.Ceiling(outerRadius / HexWidth) + 1;
-
-            int minDY;
-            int maxDY;
-            int minDX;
-            int maxDX;
-            if (includeOutOfBoundsCoordinates)
-            {
-                minDY = -rowOffset;
-                maxDY = rowOffset;
-                minDX = -colOffset;
-                maxDX = colOffset;
-            }
-            else
-            {
-                minDY = Math.Max(-origin.y, -rowOffset);
-                maxDY = Math.Min(map.sizeY - 1 - origin.y, rowOffset);
-                minDX = Math.Max(-origin.x, -colOffset);
-                maxDX = Math.Min(map.sizeX - 1 - origin.x, colOffset);
-            }
             int roundedOuterRadius = (int)Math.Ceiling(outerRadius);
             int roundedInnerRadius = (int)Math.Floor(innerRadius);
             double squareOuterRadius = outerRadius * outerRadius;
@@ -925,32 +906,29 @@ namespace CommunityLib
                 }
             }
 
-            for (int dy = minDY; dy <= maxDY; dy++)
-            {
-                bool inside = false;
-                for (int dx = minDX; dx <= maxDX; dx++)
-                {
-                    Vector2Int evenR = new Vector2Int(origin.x + dx, origin.y + dy);
-                    double dist = EuclideanSquareDistanceEvenR(origin, evenR);
-                    if (dist <= squareOuterRadius + Epsilon)
-                    {
-                        inside = true;
-                        if (dist < squareInnerRadius - Epsilon)
-                        {
-                            continue; // If we haven't yet encountered the outer edge, and we are already within the inner edge, then the entire search space is within the inner edge.
-                        }
+            List<Vector2Int> innerCircle = EvenRCoordinatesWithinCircle(map, origin, innerRadius - (2 * Epsilon), out _);
+            List<Vector2Int> outerCircle = EvenRCoordinatesWithinCircle(map, origin, outerRadius, out _);
 
-                        if (!skipDistanceBucketing)
-                        {
-                            evenRCoordinatesByDistanceFromInnerRadius[(int)Math.Floor(Math.Sqrt(dist) - roundedInnerRadius)].Add(evenR);
-                        }
-                        results.Add(evenR);
-                    }
-                    else if (inside)
-                    {
-                        break;
-                    }
+            foreach (Vector2Int evenR in outerCircle)
+            {
+                // Check if hex wis within the inner circle. If it is,remove it and skip. This reduces the search space for all following coordinates.
+                if (innerCircle.Remove(evenR))
+                {
+                    continue;
                 }
+
+                if (!skipDistanceBucketing)
+                {
+                    double dist = EuclideanSquareDistanceEvenR(origin, evenR);
+                    double bucket = Math.Sqrt(dist) - roundedInnerRadius;
+                    if (bucket < 0)
+                    {
+                        bucket = 0;
+                    }
+                    evenRCoordinatesByDistanceFromInnerRadius[(int)bucket].Add(evenR);
+                }
+                results.Add(evenR);
+
             }
 
             return results;
