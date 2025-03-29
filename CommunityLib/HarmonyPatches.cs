@@ -9867,7 +9867,7 @@ namespace CommunityLib
                 dwarvenSocietySizes[dwarfs]++;
                 if (dwarvenSocietySizes[dwarfs] >= (maxDwarvenSettlementCount / dwarvenSocietyCount) * 1.1)
                 {
-                    dwarvenSocietySizes.Remove(dwarfs);
+                    expansionLocationsBySociety.Remove(dwarfs);
                     expansionLocations.Clear();
 
                     foreach (KeyValuePair<Soc_Dwarves, PriorityQueue<Location, double>> kvp in expansionLocationsBySociety)
