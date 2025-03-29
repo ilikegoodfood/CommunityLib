@@ -9654,11 +9654,13 @@ namespace CommunityLib
                 priorityLocations.Enqueue(location, -priority);
             }
             //Console.WriteLine($"CommunityLib: {priorityLocations.Count} possible locations found.");
-            int maxDwarvenSettlementCount = (int)(Math.Ceiling(priorityLocations.Count / 3.0) + (((i - 1) / 5.0) * (priorityLocations.Count / 3.0)));
+            int maxDwarvenSettlementCount = Math.Min((int)(Math.Ceiling(priorityLocations.Count / 3.0) + (((i - 1) / 5.0) * (priorityLocations.Count / 3.0))), (map.majorLocations.Count * i) / 6);
             //Console.WriteLine($"CommunityLib: Target number of Dwarven settlements is {maxDwarvenSettlementCount}.");
 
+            int dwarvenSocietyCount = 0;
             HashSet<Location> dwarvenLocations = new HashSet<Location>();
-            PriorityQueue<Location, double> expansionsLocations = new PriorityQueue<Location, double>();
+            Dictionary<Soc_Dwarves, PriorityQueue<Location, double>> expansionLocationsBySociety = new Dictionary<Soc_Dwarves, PriorityQueue<Location, double>>();
+            Dictionary<Soc_Dwarves, int> dwarvenSocietySizes = new Dictionary<Soc_Dwarves, int>();
             PriorityQueue<Location, double> priorityLocationsLocal = priorityLocations.ToPriorityQueue();
             int seperationDistance = 3;
             while (seperationDistance > 0 && dwarvenLocations.Count < i && priorityLocationsLocal.Count > 0)
@@ -9681,6 +9683,24 @@ namespace CommunityLib
                         continue;
                     }
 
+                    PriorityQueue<Location, double> expansionOptions = new PriorityQueue<Location, double>();
+                    foreach (Location neighbour in location.getNeighbours())
+                    {
+                        double priority = ScoreLocationForDwarvenHabitation(neighbour);
+                        if (priority < 0.0)
+                        {
+                            continue;
+                        }
+
+                        expansionOptions.Enqueue(neighbour, priority);
+                    }
+
+                    if (expansionOptions.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    dwarvenSocietyCount++;
                     location.isMajor = true;
                     dwarvenLocations.Add(location);
 
@@ -9707,27 +9727,10 @@ namespace CommunityLib
                     army.hp = army.maxHp;
                     location.units.Add(army);
                     location.map.units.Add(army);
-
-                    int expansionCount = 0;
-                    foreach (Location neighbour in location.getNeighbours())
-                    {
-                        double priority = ScoreLocationForDwarvenHabitation(neighbour);
-                        if (priority < 0.0)
-                        {
-                            continue;
-                        }
-
-                        if (expansionsLocations.Contains(neighbour))
-                        {
-                            expansionsLocations.UpdatePriority(neighbour, -priority);
-                        }
-                        else
-                        {
-                            expansionCount++;
-                            expansionsLocations.Enqueue(neighbour, -priority);
-                        }
-                    }
                     //Console.WriteLine($"CommunityLib: Added {expansionCount} locations to the expansion pool.");
+
+                    expansionLocationsBySociety.Add(dwarfs, expansionOptions);
+                    dwarvenSocietySizes.Add(dwarfs, 1);
                 }
 
                 //Console.WriteLine($"CommunityLib: Placed {dwarvenLocations.Count} dwarven civilizations with a minimum spacing of {seperationDistance}");
@@ -9735,17 +9738,24 @@ namespace CommunityLib
                 seperationDistance--;
             }
 
-            //Console.WriteLine($"CommunityLib: {expansionsLocations.Count} locations available for expansion.");
-            if (expansionsLocations.Count == 0)
+            if (dwarvenSocietyCount == 0)
             {
                 return;
             }
 
+            PriorityQueue<Location, double> expansionLocations = new PriorityQueue<Location, double>();
+            foreach (KeyValuePair<Soc_Dwarves, PriorityQueue<Location, double>> kvp in expansionLocationsBySociety)
+            {
+                expansionLocations.EnqueueRange(kvp.Value, PriorityQueue<Location, double>.DuplicateHandlingMode.KeepLowest);
+            }
+
+            //Console.WriteLine($"CommunityLib: {expansionsLocations.Count} locations available for expansion.");
+
             //Console.WriteLine($"CommunityLib: Expanding {dwarvenLocations.Count} dwarven civilizations until {maxDwarvenSettlementCount} settlements exist.");
             List<Soc_Dwarves> neighbouringDwarfs = new List<Soc_Dwarves>();
-            while (expansionsLocations.Count > 0 && dwarvenLocations.Count < maxDwarvenSettlementCount)
+            while (expansionLocations.Count > 0 && dwarvenLocations.Count < maxDwarvenSettlementCount)
             {
-                Location location = expansionsLocations.Dequeue();
+                Location location = expansionLocations.Dequeue();
 
                 dwarvenLocations.Add(location);
 
@@ -9755,7 +9765,7 @@ namespace CommunityLib
                 {
                     if (neighbour.soc is Soc_Dwarves dwarf)
                     {
-                        if (!neighbouringDwarfs.Contains(dwarf))
+                        if (!neighbouringDwarfs.Contains(dwarf) && expansionLocationsBySociety.ContainsKey(dwarf))
                         {
                             neighbouringDwarfs.Add(dwarf);
                         }
@@ -9772,6 +9782,11 @@ namespace CommunityLib
                     continue;
                 }
 
+                foreach (Soc_Dwarves dwarfSoc in neighbouringDwarfs)
+                {
+                    expansionLocationsBySociety[dwarfSoc].Remove(location);
+                }
+
                 Soc_Dwarves dwarfs;
                 if (neighbouringDwarfs.Count == 1)
                 {
@@ -9783,7 +9798,6 @@ namespace CommunityLib
                 }
 
                 location.soc = dwarfs;
-
                 //Console.WriteLine($"CommunityLib: Expanding {dwarfs.getName()} to {location.getName()} ({dwarvenLocations.Count}/{maxDwarvenSettlementCount} settlements placed)");
 
                 SettlementHuman humanSettlement;
@@ -9829,14 +9843,36 @@ namespace CommunityLib
                         continue;
                     }
 
-                    if (expansionsLocations.Contains(neighbour))
+                    if (expansionLocations.Contains(neighbour))
                     {
-                        expansionsLocations.UpdatePriority(neighbour, -priority);
+                        expansionLocations.UpdatePriority(neighbour, -priority);
                     }
                     else
                     {
                         expansionCount++;
-                        expansionsLocations.Enqueue(neighbour, -priority);
+                        expansionLocations.Enqueue(neighbour, -priority);
+                    }
+
+                    if (expansionLocationsBySociety[dwarfs].Contains(neighbour))
+                    {
+                        expansionLocationsBySociety[dwarfs].UpdatePriority(neighbour, -priority);
+                    }
+                    else
+                    {
+                        expansionCount++;
+                        expansionLocationsBySociety[dwarfs].Enqueue(neighbour, -priority);
+                    }
+                }
+
+                dwarvenSocietySizes[dwarfs]++;
+                if (dwarvenSocietySizes[dwarfs] >= (maxDwarvenSettlementCount / dwarvenSocietyCount) * 1.1)
+                {
+                    dwarvenSocietySizes.Remove(dwarfs);
+                    expansionLocations.Clear();
+
+                    foreach (KeyValuePair<Soc_Dwarves, PriorityQueue<Location, double>> kvp in expansionLocationsBySociety)
+                    {
+                        expansionLocations.EnqueueRange(kvp.Value, PriorityQueue<Location, double>.DuplicateHandlingMode.KeepLowest);
                     }
                 }
                 //Console.WriteLine($"CommunityLib: Added {expansionCount} locations to the expansion pool.");
@@ -9881,7 +9917,7 @@ namespace CommunityLib
 
             if (dwarvenNeighbourCount > 0)
             {
-                priority *= 3.0 * dwarvenNeighbourCount;
+                priority *= 2.0 * dwarvenNeighbourCount;
             }
 
             priority *= Eleven.random.NextDouble() + Eleven.random.NextDouble();
