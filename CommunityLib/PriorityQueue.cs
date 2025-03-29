@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Assets.Code;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +8,14 @@ namespace CommunityLib
 {
     public class PriorityQueue<TValue, TPriority> : IEnumerable<TValue>, IEnumerable<ValuePriorityPair<TValue, TPriority>> where TPriority : IComparable<TPriority>
     {
+        public enum DuplicateHandlingMode
+        {
+            AllowDuplicates,
+            DiscardIfExists,
+            UpdateIfExists,
+            KeepLowest
+        }
+
         private List<ValuePriorityPair<TValue, TPriority>> heap = new List<ValuePriorityPair<TValue, TPriority>>();
 
         public int Count => heap.Count;
@@ -22,9 +31,84 @@ namespace CommunityLib
             HeapifyUp(heap.Count - 1);
         }
 
-        public void Enqueue((TValue, TPriority) tuple)
+        public void EnqueueRange(IEnumerable<(TValue, TPriority)> tuples, DuplicateHandlingMode mode)
         {
-            Enqueue(new ValuePriorityPair<TValue, TPriority>(tuple.Item1, tuple.Item2));
+            foreach (var tuple in tuples)
+            {
+                switch (mode)
+                {
+                    case DuplicateHandlingMode.AllowDuplicates:
+                        heap.Add(tuple);
+                        break;
+                    case DuplicateHandlingMode.DiscardIfExists:
+                        if (!Contains(tuple.Item1))
+                        {
+                            heap.Add(tuple);
+                        }
+                        break;
+                    case DuplicateHandlingMode.UpdateIfExists:
+                        if (!UpdatePriority(tuple.Item1, tuple.Item2))
+                        {
+                            heap.Add(tuple);
+                        }
+                        break;
+                    case DuplicateHandlingMode.KeepLowest:
+                        int index = heap.FindIndex(pair => pair.Value.Equals(tuple.Item1));
+                        if (index != -1)
+                        {
+                            if (heap[index].Priority.CompareTo(tuple.Item2) > 0)
+                            {
+                                heap[index].Priority = tuple.Item2;
+                            }
+                        }
+                        else
+                        {
+                            heap.Add(tuple);
+                        }
+                        break;
+                }
+            }
+            Heapify(); // Rebuild heap in one pass
+        }
+
+        public void EnqueueRange(IEnumerable<ValuePriorityPair<TValue, TPriority>> priorityQueue, DuplicateHandlingMode mode)
+        {
+            foreach (var item in priorityQueue)
+            {
+                switch (mode)
+                {
+                    case DuplicateHandlingMode.AllowDuplicates:
+                        heap.Add(item);
+                        break;
+                    case DuplicateHandlingMode.DiscardIfExists:
+                        if (!Contains(item.Value))
+                        {
+                            heap.Add(item);
+                        }
+                        break;
+                    case DuplicateHandlingMode.UpdateIfExists:
+                        if (!UpdatePriority(item.Value, item.Priority))
+                        {
+                            heap.Add(item);
+                        }
+                        break;
+                    case DuplicateHandlingMode.KeepLowest:
+                        int index = heap.FindIndex(pair => pair.Value.Equals(item.Value));
+                        if (index != -1)
+                        {
+                            if (heap[index].Priority.CompareTo(item.Priority) > 0)
+                            {
+                                heap[index].Priority = item.Priority;
+                            }
+                        }
+                        else
+                        {
+                            heap.Add(item);
+                        }
+                        break;
+                }
+            }
+            Heapify(); // Rebuild heap in one pass
         }
 
         public TValue Dequeue()
@@ -225,6 +309,14 @@ namespace CommunityLib
 
                 Swap(index, smallestIndex);
                 index = smallestIndex;
+            }
+        }
+
+        private void Heapify()
+        {
+            for (int i = (heap.Count / 2) - 1; i >= 0; i--)
+            {
+                HeapifyDown(i);
             }
         }
 
