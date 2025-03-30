@@ -2365,7 +2365,7 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Ldloc_S, 4);
                             yield return new CodeInstruction(OpCodes.Ldarg_1);
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_MinionAttack);
-                            yield return new CodeInstruction(OpCodes.Stloc, 4);
+                            yield return new CodeInstruction(OpCodes.Stloc_S, 4);
                         }
                     }
                     else if (targetIndex == 2)
@@ -2391,7 +2391,7 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Ldloc_S, 19);
                             yield return new CodeInstruction(OpCodes.Ldarg_1);
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_MinionAttack);
-                            yield return new CodeInstruction(OpCodes.Stloc, 4);
+                            yield return new CodeInstruction(OpCodes.Stloc_S, 19);
                         }
                     }
                 }
@@ -2410,10 +2410,15 @@ namespace CommunityLib
         {
             if (me != null && me.minions[row] != null)
             {
-                UA other = battle.att;
+                //Console.WriteLine("CommunityLib: Minion about to attack");
+                UA other;
                 if (battle.att == me)
                 {
                     other = battle.def;
+                }
+                else
+                {
+                    other = battle.att;
                 }
 
                 foreach (var hook in ModCore.Get().HookRegistry.Delegate_onMinionAttackAboutToBePerformed)
