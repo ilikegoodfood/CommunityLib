@@ -3391,7 +3391,7 @@ namespace CommunityLib
 
                 foreach (var hook in ModCore.Get().HookRegistry.Delegate_onMinionAttackAboutToBePerformed)
                 {
-                    hook(me.minions[row], other, popup, battle, dmg, row);
+                    dmg = hook(me.minions[row], other, popup, battle, dmg, row);
                 }
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
