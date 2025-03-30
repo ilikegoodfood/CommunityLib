@@ -3452,7 +3452,7 @@ namespace CommunityLib
 
             foreach (var hook in ModCore.Get().HookRegistry.Delegate_onAgentBattle_ReceiveDamage)
             {
-                hook(popup, battle, defender, minion, dmg, row);
+                dmg = hook(popup, battle, defender, minion, dmg, row);
             }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
