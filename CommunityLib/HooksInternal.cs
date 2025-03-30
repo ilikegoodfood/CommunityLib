@@ -68,10 +68,13 @@ namespace CommunityLib
 
                 if (locations.Count > 0)
                 {
-                    target = locations[0];
-                    if (Location.indexCounter > 1)
+                    if (locations.Count > 1)
                     {
                         target = locations[Eleven.random.Next(locations.Count)];
+                    }
+                    else
+                    {
+                        target = locations[0];
                     }
                 }
 
@@ -102,10 +105,13 @@ namespace CommunityLib
 
                 if (locations.Count > 0)
                 {
-                    target = locations[0];
-                    if (Location.indexCounter > 1)
+                    if (locations.Count > 1)
                     {
                         target = locations[Eleven.random.Next(locations.Count)];
+                    }
+                    else
+                    {
+                        target = locations[0];
                     }
                 }
 
@@ -135,10 +141,13 @@ namespace CommunityLib
 
                 if (locations.Count > 0)
                 {
-                    target = locations[0];
-                    if (Location.indexCounter > 1)
+                    if (locations.Count > 1)
                     {
                         target = locations[Eleven.random.Next(locations.Count)];
+                    }
+                    else
+                    {
+                        target = locations[0];
                     }
                 }
 
