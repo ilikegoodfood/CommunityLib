@@ -1,6 +1,4 @@
 ﻿using Assets.Code;
-using DuloGames.UI;
-using FullSerializer;
 using HarmonyLib;
 using System;
 using System.Collections.Generic;
@@ -11,7 +9,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 using UnityEngine;
 using UnityEngine.UI;
-using static CommunityLib.AgentAI;
 
 namespace CommunityLib
 {
