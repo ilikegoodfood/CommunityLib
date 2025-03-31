@@ -194,6 +194,10 @@ namespace CommunityLib
                 }
             }
 
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onPopulatingPathfindingDelegates)
+            {
+                hook(locA, u, pathfindingDelegates);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onPopulatingPathfindingDelegates(locA, u, pathfindingDelegates);
@@ -250,6 +254,13 @@ namespace CommunityLib
                 }
 
                 bool allowPass = false;
+                foreach (var hook in ModCore.Get().HookRegistry.Delegate_onPathfinding_AllowSecondPass)
+                {
+                    if (hook(locA, u, pathfindingDelegates))
+                    {
+                        allowPass = true;
+                    }
+                }
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
                     if (hook.onPathfinding_AllowSecondPass(locA, u, pathfindingDelegates))
@@ -338,6 +349,10 @@ namespace CommunityLib
                 }
             }
 
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onPopulatingPathfindingDelegates)
+            {
+                hook(loc, u, pathfindingDelegates);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onPopulatingPathfindingDelegates(loc, u, pathfindingDelegates);
@@ -420,6 +435,13 @@ namespace CommunityLib
                 }
 
                 bool allowPass = false;
+                foreach (var hook in ModCore.Get().HookRegistry.Delegate_onPathfinding_AllowSecondPass)
+                {
+                    if (hook(loc, u, pathfindingDelegates))
+                    {
+                        allowPass = true;
+                    }
+                }
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
                     if (hook.onPathfinding_AllowSecondPass(loc, u, pathfindingDelegates))
@@ -501,6 +523,10 @@ namespace CommunityLib
                 }
             }
 
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onPopulatingPathfindingDelegates)
+            {
+                hook(loc, u, pathfindingDelegates);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onPopulatingPathfindingDelegates(loc, u, pathfindingDelegates);
@@ -593,6 +619,13 @@ namespace CommunityLib
                 }
 
                 bool allowPass = false;
+                foreach (var hook in ModCore.Get().HookRegistry.Delegate_onPathfinding_AllowSecondPass)
+                {
+                    if (hook(loc, u, pathfindingDelegates))
+                    {
+                        allowPass = true;
+                    }
+                }
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
                     if (hook.onPathfinding_AllowSecondPass(loc, u, pathfindingDelegates))
@@ -848,6 +881,10 @@ namespace CommunityLib
             // Location[] currentPath, Location location, int[] endPointMapLayers,, Location Start, return bool destinationValid
             List<Func<Location[], Location, bool>> destinationValidityDelegates = new List<Func<Location[], Location, bool>> { delegate_TRADEVALID_NODUPLICATES };
 
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onPopulatingTradeRoutePathfindingDelegates)
+            {
+                hook(start, pathfindingDelegates, destinationValidityDelegates);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onPopulatingTradeRoutePathfindingDelegates(start, pathfindingDelegates, destinationValidityDelegates);
@@ -918,6 +955,10 @@ namespace CommunityLib
                 }
 
                 bool allowPass = false;
+                foreach (var hook in ModCore.Get().HookRegistry.Delegate_onPathfindingTadeRoute_AllowSecondPass)
+                {
+                    hook(start, pathfindingDelegates, destinationValidityDelegates);
+                }
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
                     if (hook.onPathfindingTadeRoute_AllowSecondPass(start, pathfindingDelegates, destinationValidityDelegates))
@@ -999,6 +1040,10 @@ namespace CommunityLib
                 }
             }
 
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onPopulatingTradeRoutePathfindingDelegates)
+            {
+                hook(start, pathfindingDelegates, destinationValidityDelegates);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onPopulatingTradeRoutePathfindingDelegates(start, pathfindingDelegates, destinationValidityDelegates);
@@ -1097,6 +1142,10 @@ namespace CommunityLib
                 //World.Log($"CommunityLib: getTradeRouteFrom {start.getName()} failed after {i}/{5 * start.map.locations.Count} iterations.");
 
                 bool allowPass = false;
+                foreach (var hook in ModCore.Get().HookRegistry.Delegate_onPathfindingTadeRoute_AllowSecondPass)
+                {
+                    hook(start, pathfindingDelegates, destinationValidityDelegates);
+                }
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
                     if (hook.onPathfindingTadeRoute_AllowSecondPass(start, pathfindingDelegates, destinationValidityDelegates))

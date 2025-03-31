@@ -21,13 +21,15 @@ namespace CommunityLib
 
         public bool isClean = true;
 
+        #region InternalCaches
         private Dictionary<string, ModIntegrationData> modIntegrationData;
 
         private Dictionary<Culture, ModCultureData> modCultureData;
 
         private List<Func<Person, Location, UA>> reviveAgentCreationFunctons;
+        #endregion InternalCaches
 
-        // Collections
+        #region Collections
         private HashSet<Type> locusTypes;
 
         private HashSet<Type> magicTraitTypes;
@@ -37,7 +39,7 @@ namespace CommunityLib
         private HashSet<Type> naturalWonderTypes;
 
         private HashSet<Type> vampireTypes;
-        // end
+        #endregion Collections
 
         public bool isPlayerTurn = false;
 
@@ -303,6 +305,10 @@ namespace CommunityLib
                 if (_acceleratedTime)
                 {
                     _brokenMakerSleeps = true;
+                    foreach (var hook in ModCore.Get().HookRegistry.Delegate_onBrokenMakerSleeps_StartOfProcess)
+                    {
+                        hook(map);
+                    }
                     foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                     {
                         hook.onBrokenMakerSleeps_StartOfProcess(map);
@@ -313,6 +319,10 @@ namespace CommunityLib
             if (_brokenMakerSleeps)
             {
                 _brokenMakerSleepDuration--;
+                foreach (var hook in ModCore.Get().HookRegistry.Delegate_onBrokenMakerSleeps_TurnTick)
+                {
+                    hook(map);
+                }
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
                     hook.onBrokenMakerSleeps_TurnTick(map);
@@ -323,6 +333,10 @@ namespace CommunityLib
                     _brokenMakerSleeps = false;
                     _brokenMakerSleepDuration = 50;
 
+                    foreach (var hook in ModCore.Get().HookRegistry.Delegate_onBrokenMakerSleeps_EndOfProcess)
+                    {
+                        hook(map);
+                    }
                     foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                     {
                         hook.onBrokenMakerSleeps_EndOfProcess(map);

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -22,6 +23,10 @@ namespace CommunityLib
         {
             List<Location> endpoints = getTradeRouteEndPoints();
 
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onGetTradeRouteEndpoints)
+            {
+                hook(tradeManager.map, endpoints);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 hook.onGetTradeRouteEndpoints(tradeManager.map, endpoints);
@@ -51,6 +56,10 @@ namespace CommunityLib
                 {
                     hook.onBuildTradeNetwork_EndOfProcess(tradeManager.map, tradeManager, endpoints);
                 }
+                foreach (var hook in ModCore.Get().HookRegistry.Delegate_onBuildTradeNetwork_EndOfProcess)
+                {
+                    hook(tradeManager.map, tradeManager, endpoints);
+                }
 
                 tradeManager.tradeDensity = new List<TradeRoute>[tradeManager.map.locations.Count];
                 foreach (TradeRoute tradeRoute in tradeManager.routes)
@@ -74,7 +83,7 @@ namespace CommunityLib
 
         private void rebuildTradeRoutes(ManagerTrade tradeManager, List<Location> endpoints)
         {
-            ModCore.Get().hooks.densifyingTradeRoutes = false;
+            ModCore.Get().hooks.DensifyingTradeRoutes = false;
             if (endpoints == null || endpoints.Count < 2)
             {
                 endpoints = getTradeRouteEndPoints();
@@ -205,12 +214,20 @@ namespace CommunityLib
 
                     List<Func<Location[], Location, bool>> destinationValidityDelegates = new List<Func<Location[], Location, bool>> { Pathfinding.delegate_TRADEVALID_NODUPLICATES, Pathfinding.delegate_TRADEVALID_MERGEREGIONS };
 
+                    foreach (var hook in ModCore.Get().HookRegistry.Delegate_onPopulatingTradeRoutePathfindingDelegates)
+                    {
+                        hook(routePath[0], pathfindingDelegates, destinationValidityDelegates);
+                    }
                     foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                     {
                         hook.onPopulatingTradeRoutePathfindingDelegates(routePath[0], pathfindingDelegates, destinationValidityDelegates);
                     }
 
                     // Since a second pass may have been required by the pathfinding system, assumethat one has for the purposes of calculating the cost.
+                    foreach (var hook in ModCore.Get().HookRegistry.Delegate_onPathfindingTadeRoute_AllowSecondPass)
+                    {
+                        hook(routePath[0], pathfindingDelegates, destinationValidityDelegates);
+                    }
                     foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                     {
                         hook.onPathfindingTadeRoute_AllowSecondPass(routePath[0], pathfindingDelegates, destinationValidityDelegates);
@@ -267,7 +284,7 @@ namespace CommunityLib
             if (ModCore.opt_denseTradeRoutes)
             {
                 World.log($"CommunityLib: Desnifying trade network.");
-                ModCore.Get().hooks.densifyingTradeRoutes = true;
+                ModCore.Get().hooks.DensifyingTradeRoutes = true;
                 foreach (Location endpoint in endpoints)
                 {
                     Location[] routePath = Pathfinding.getTradeRouteFrom(endpoint, endpoints);
@@ -285,7 +302,7 @@ namespace CommunityLib
                     World.log($"CommunityLib: Densification trade route created from {endpoint.getName()} to {routePath[routePath.Length - 1].getName()}.");
                 }
             }
-            ModCore.Get().hooks.densifyingTradeRoutes = false;
+            ModCore.Get().hooks.DensifyingTradeRoutes = false;
         }
 
         private List<HashSet<int>> findAllConnectedSets(ManagerTrade tradeManager)
@@ -332,12 +349,12 @@ namespace CommunityLib
 
         internal List<Location> getTradeRouteEndPoints()
         {
-            List<Location> endPoints = new List<Location>();
+            List<Location> endpoints = new List<Location>();
             foreach (Location location in map.locations)
             {
                 if (map.overmind.god is God_Mammon && location.settlement is Set_TombOfGods)
                 {
-                    endPoints.Add(location);
+                    endpoints.Add(location);
                     continue;
                 }
 
@@ -345,18 +362,22 @@ namespace CommunityLib
                 {
                     if (location.settlement is Set_City)
                     {
-                        endPoints.Add(location);
+                        endpoints.Add(location);
                         continue;
                     }
                 }
             }
 
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onGetTradeRouteEndpoints)
+            {
+                hook(map, endpoints);
+            }
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
-                hook.onGetTradeRouteEndpoints(map, endPoints);
+                hook.onGetTradeRouteEndpoints(map, endpoints);
             }
 
-            return endPoints;
+            return endpoints;
         }
     }
 }
