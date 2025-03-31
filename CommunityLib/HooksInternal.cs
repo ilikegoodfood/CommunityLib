@@ -343,112 +343,6 @@ namespace CommunityLib
                             }
                         }
 
-        public override double onSettlementComputesShadowGain(Settlement set, List<ReasonMsg> msgs, double shadowGain)
-        {
-            if (msgs == null)
-            {
-                return shadowGain;
-            }
-
-            SettlementHuman humanSettlement = set as SettlementHuman;
-
-            Pr_Ward ward = null;
-            Pr_DeepOneCult deepOneCult = null;
-            Pr_Opha_Faith ophanimsFaith = null;
-            Pr_MalignCatch malignCatch = null;
-            foreach (Property property in set.location.properties)
-            {
-                if (ward == null && property is Pr_Ward shadowWard)
-                {
-                    ward = shadowWard;
-                }
-
-                if (deepOneCult == null && property is Pr_DeepOneCult deepOnes)
-                {
-                    if (property.charge > 100.0)
-                    {
-                        deepOneCult = deepOnes;
-                        continue;
-                    }
-                }
-
-                if (humanSettlement == null)
-                {
-                    continue;
-                }
-
-                if (ophanimsFaith == null && property is Pr_Opha_Faith ophaFaith)
-                {
-                    ophanimsFaith = ophaFaith;
-                    continue;
-                }
-                if (malignCatch == null && property is Pr_MalignCatch malign)
-                {
-                    malignCatch = malign;
-                    continue;
-                }
-            }
-
-            if (deepOneCult != null)
-            {
-                double delta = map.param.prop_deepOneShadow * (deepOneCult.charge / 300.0);
-                msgs.Add(new ReasonMsg("Deep One Cult", delta));
-                shadowGain += delta;
-            }
-
-            if (humanSettlement != null)
-            {
-                Society society = set.location.soc as Society;
-
-                if (ophanimsFaith != null)
-                {
-                    double delta = -ophanimsFaith.charge / 500.0;
-                    msgs.Add(new ReasonMsg("Ophanim's Faith", delta));
-                    shadowGain += delta;
-                }
-
-                if (malignCatch != null)
-                {
-                    double delta = map.param.ch_malignCatchShadow;
-                    msgs.Add(new ReasonMsg("Malign Catch", delta));
-                    shadowGain += delta;
-                }
-
-                int T_DyingLight_Count = 0;
-                int T_SettingSun_Count = 0;
-                int T_TheyWillObey_Count = 0;
-                int I_Darkstone_Count = 0;
-                List<UAEN_Ghast> enshadowingGhasts = new List<UAEN_Ghast>();
-                foreach (Unit unit in set.location.units)
-                {
-                    if (unit.person != null)
-                    {
-                        foreach (Item item in unit.person.items)
-                        {
-                            if (item is I_DarkStone)
-                            {
-                                I_Darkstone_Count++;
-                            }
-                        }
-
-                        foreach (Trait trait in unit.person.traits)
-                        {
-                            if (trait is T_Snake_Enshadower)
-                            {
-                                T_DyingLight_Count++;
-                                continue;
-                            }
-                            if (trait is T_TheSettingSun)
-                            {
-                                T_SettingSun_Count++;
-                                continue;
-                            }
-                            if (trait is T_TheyWillObey)
-                            {
-                                T_TheyWillObey_Count++;
-                            }
-                        }
-
                         if (unit is UAEN_Ghast ghast)
                         {
                             if (ghast.task is Task_PerformChallenge challengeTask && challengeTask.challenge is Rt_GhastEnshadow && (ward == null || ward.charge <= 0.9))
@@ -472,17 +366,17 @@ namespace CommunityLib
                 }
                 if (T_SettingSun_Count > 0)
                 {
-                    msgs.Add(new ReasonMsg("The Setting Sun", map.param.trait_settingSunShadowPerTurn * T_SettingSun_Count));
+                    msgs.Add(new ReasonMsg("The Setting Sun", _map.param.trait_settingSunShadowPerTurn * T_SettingSun_Count));
                     shadowGain += 0.01;
                 }
                 if (T_TheyWillObey_Count > 0 && society != null && society.isDarkEmpire)
                 {
-                    msgs.Add(new ReasonMsg("They Will Obey", map.param.trait_theyWillObeyShadowPerTurn * T_SettingSun_Count));
+                    msgs.Add(new ReasonMsg("They Will Obey", _map.param.trait_theyWillObeyShadowPerTurn * T_SettingSun_Count));
                     shadowGain += 0.01;
                 }
                 foreach (UAEN_Ghast ghast in enshadowingGhasts)
                 {
-                    double delta = map.param.ch_ghastShadowPerTurnPerLore * ghast.getStatLore() * Math.Max(0.0, 1.0 - (ward?.charge ?? 0.0));
+                    double delta = _map.param.ch_ghastShadowPerTurnPerLore * ghast.getStatLore() * Math.Max(0.0, 1.0 - (ward?.charge ?? 0.0));
                     msgs.Add(new ReasonMsg($"Being Enshadowed by {ghast.getName()}", delta));
                     shadowGain += delta;
                 }
@@ -494,10 +388,10 @@ namespace CommunityLib
                     shadowGain += 0.01;
                 }
 
-                if (map.tradeManager.tradeDensity[set.location.index] != null)
+                if (_map.tradeManager.tradeDensity[set.location.index] != null)
                 {
                     int snakeTradeRouteCount = 0;
-                    foreach (TradeRoute route in map.tradeManager.tradeDensity[set.location.index])
+                    foreach (TradeRoute route in _map.tradeManager.tradeDensity[set.location.index])
                     {
                         if (route.snake > 0)
                         {
@@ -507,7 +401,7 @@ namespace CommunityLib
 
                     if (snakeTradeRouteCount > 0)
                     {
-                        msgs.Add(new ReasonMsg("Serpent's Coils", Math.Max(0.0, 100 - (ward?.charge ?? 0.0)) * 0.01 * map.param.power_serpentsCoilsShadowGain * snakeTradeRouteCount));
+                        msgs.Add(new ReasonMsg("Serpent's Coils", Math.Max(0.0, 100 - (ward?.charge ?? 0.0)) * 0.01 * _map.param.power_serpentsCoilsShadowGain * snakeTradeRouteCount));
                         shadowGain += 0.01;
                     }
                 }
@@ -516,7 +410,7 @@ namespace CommunityLib
             return shadowGain;
         }
 
-        public override void onSettlementFallIntoRuin_StartOfProcess(Settlement set, string v, object killer = null)
+        public void onSettlementFallIntoRuin_StartOfProcess(Settlement set, string v, object killer = null)
         {
             if (ModCore.opt_forceShipwrecks || ModCore.opt_spawnShipwrecks)
             {
@@ -572,7 +466,7 @@ namespace CommunityLib
 
         public void onBrokenMakerSleeps_TurnTick(Map map)
         {
-            foreach (Unit unit in map.units)
+            foreach (Unit unit in _map.units)
             {
                 if (unit is UM_RavenousDead || unit is UM_UntamedDead || unit is UM_Cthonians)
                 {
@@ -581,18 +475,7 @@ namespace CommunityLib
             }
         }
 
-        public override void onBrokenMakerSleeps_TurnTick(Map map)
-        {
-            foreach (Unit unit in map.units)
-            {
-                if (unit is UM_RavenousDead || unit is UM_UntamedDead || unit is UM_Cthonians)
-                {
-                    unit.die(map, "Gone");
-                }
-            }
-        }
-
-        public override HolyOrder onLocationViewFaithButton_GetHolyOrder(Location loc)
+        public HolyOrder onLocationViewFaithButton_GetHolyOrder(Location loc)
         {
             if (ModCore.opt_ophanimFaithTomb)
             {
@@ -881,7 +764,7 @@ namespace CommunityLib
 
         public void onBuildTradeNetwork_EndOfProcess(Map map, ManagerTrade tradeManager, List<Location> endpoints)
         {
-            if (map.overmind.god is God_Mammon)
+            if (_map.overmind.god is God_Mammon)
             {
                 Location tomb = endpoints.FirstOrDefault(l => l.settlement is Set_TombOfGods);
                 if (tomb != null)
