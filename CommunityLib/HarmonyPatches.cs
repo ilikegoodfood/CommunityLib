@@ -252,6 +252,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(I_DarkStone), nameof(I_DarkStone.getShortDesc), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(I_DarkStone_getShortDesc_Postfix)));
 
             // Local Action Fixes
+            harmony.Patch(original: AccessTools.Method(typeof(SettlementHuman), nameof(SettlementHuman.getLocalActions), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(SettlementHuman_getLocalActions_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(Act_FundOutpost), nameof(Act_FundOutpost.valid), new Type[] { typeof(Person), typeof(SettlementHuman) }), postfix: new HarmonyMethod(patchType, nameof(Act_FundOutpost_valid_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(Act_E_Expand), nameof(Act_E_Expand.valid), new Type[] { typeof(Person), typeof(SettlementHuman) }), transpiler: new HarmonyMethod(patchType, nameof(Act_E_Expand_valid_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Act_E_Expand), nameof(Act_E_Expand.complete), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Act_E_Expand_complete_Transpiler)));
@@ -2309,6 +2310,52 @@ namespace CommunityLib
         }
 
         // Local Action Fixes
+        private static void SettlementHuman_getLocalActions_Postfix(SettlementHuman __instance, ref List<Assets.Code.Action> __result)
+        {
+            if (__instance.map.awarenessOfUnderground >= 1.0)
+            {
+                return;
+            }
+
+            HashSet<int> layerOccupation = new HashSet<int>();
+            if (__instance.location.soc == null)
+            {
+                layerOccupation.Add(__instance.location.hex.z);
+            }
+            else
+            {
+                foreach (Location location in __instance.location.soc.lastTurnLocs)
+                {
+                    if (location.soc == __instance.location.soc)
+                    {
+                        layerOccupation.Add(location.hex.z);
+                    }
+                }
+            }
+            
+            List<Assets.Code.Action> actionsToRemove = new List<Assets.Code.Action>();
+            foreach (Assets.Code.Action action in __result)
+            {
+                if (action is Act_AttackAgent attackAgent && !layerOccupation.Contains(attackAgent.location.hex.z))
+                {
+                    actionsToRemove.Add(action);
+                }
+                else if (action is Act_AttackArmy attackArmy && !layerOccupation.Contains(attackArmy.target.location.hex.z))
+                {
+                    actionsToRemove.Add(action);
+                }
+                else if (action is Act_FundHero fundHero && !layerOccupation.Contains(fundHero.hero().getLocation().hex.z) && (fundHero.hero().unit == null || __instance.map.locations[fundHero.hero().unit.homeLocation] != __instance.location))
+                {
+                    actionsToRemove.Add(action);
+                }
+            }
+
+            foreach (Assets.Code.Action action in actionsToRemove)
+            {
+                __result.Remove(action);
+            }
+        }
+
         private static void Act_FundOutpost_valid_Postfix(Act_FundOutpost __instance, ref bool __result, Person ruler, SettlementHuman settlementHuman)
         {
             if (__result && __instance.map.awarenessOfUnderground < 1d)
