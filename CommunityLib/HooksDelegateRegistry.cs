@@ -93,10 +93,7 @@ namespace CommunityLib
         // onPopulatingPathfindingDelegates
         
         private List<Action<Location, Unit, List<int>, List<Func<Location[], Location, Unit, List<int>, double>>>> _delegate_onPopulatingPathfindingDelegates = new List<Action<Location, Unit, List<int>, List<Func<Location[], Location, Unit, List<int>, double>>>>();
-        public List<Action<Location, Unit, List<int>, List<Func<Location[], Location, Unit, List<int>, double>>>> Delegate_onPopulatingPathfindingDelegates
-        {
-            get { return _delegate_onPopulatingPathfindingDelegates; }
-        }
+        public List<Action<Location, Unit, List<int>, List<Func<Location[], Location, Unit, List<int>, double>>>> Delegate_onPopulatingPathfindingDelegates { get { return _delegate_onPopulatingPathfindingDelegates; } }
         public bool RegisterHook_onPopulatingPathfindingDelegates(Action<Location, Unit, List<int>, List<Func<Location[], Location, Unit, List<int>, double>>> hook)
         {
             if (hook == null)
@@ -110,10 +107,7 @@ namespace CommunityLib
         // onPathfinding_AllowSecondPass
         
         private List<Func<Location, Unit, List<int>, List<Func<Location[], Location, Unit, List<int>, double>>, bool>> _delegate_onPathfinding_AllowSecondPass = new List<Func<Location, Unit, List<int>, List<Func<Location[], Location, Unit, List<int>, double>>, bool>>();
-        public List<Func<Location, Unit, List<int>, List<Func<Location[], Location, Unit, List<int>, double>>, bool>> Delegate_onPathfinding_AllowSecondPass
-        {
-            get { return _delegate_onPathfinding_AllowSecondPass; }
-        }
+        public List<Func<Location, Unit, List<int>, List<Func<Location[], Location, Unit, List<int>, double>>, bool>> Delegate_onPathfinding_AllowSecondPass { get { return _delegate_onPathfinding_AllowSecondPass; } }
         public bool RegisterHook_onPathfinding_AllowSecondPass(Func<Location, Unit, List<int>, List<Func<Location[], Location, Unit, List<int>, double>>, bool> hook)
         {
             if (hook == null)
@@ -155,10 +149,7 @@ namespace CommunityLib
         // onPopulatingTradeRoutePathfindingDelegates
         
         private List<Action<Location, List<int>, List<Func<Location[], Location, List<int>, double>>, List<Func<Location[], Location, List<int>, bool>>>> _delegate_onPopulatingTradeRoutePathfindingDelegates = new List<Action<Location, List<int>, List<Func<Location[], Location, List<int>, double>>, List<Func<Location[], Location, List<int>, bool>>>>();
-        public List<Action<Location, List<int>, List<Func<Location[], Location, List<int>, double>>, List<Func<Location[], Location, List<int>, bool>>>> Delegate_onPopulatingTradeRoutePathfindingDelegates
-        {
-            get { return _delegate_onPopulatingTradeRoutePathfindingDelegates; }
-        }
+        public List<Action<Location, List<int>, List<Func<Location[], Location, List<int>, double>>, List<Func<Location[], Location, List<int>, bool>>>> Delegate_onPopulatingTradeRoutePathfindingDelegates { get { return _delegate_onPopulatingTradeRoutePathfindingDelegates; } }
         public bool RegisterHook_onPopulatingTradeRoutePathfindingDelegates(
             Action<Location, List<int>, List<Func<Location[], Location, List<int>, double>>, List<Func<Location[], Location, List<int>, bool>>> hook)
         {
@@ -173,10 +164,7 @@ namespace CommunityLib
         // onPathfindingTadeRoute_AllowSecondPass
         
         private List<Func<Location, List<int>, List<Func<Location[], Location, List<int>, double>>, List<Func<Location[], Location, List<int>, bool>>, bool>> _delegate_onPathfindingTadeRoute_AllowSecondPass = new List<Func<Location, List<int>, List<Func<Location[], Location, List<int>, double>>, List<Func<Location[], Location, List<int>, bool>>, bool>>();
-        public List<Func<Location, List<int>, List<Func<Location[], Location, List<int>, double>>, List<Func<Location[], Location, List<int>, bool>>, bool>> Delegate_onPathfindingTadeRoute_AllowSecondPass
-        {
-            get { return _delegate_onPathfindingTadeRoute_AllowSecondPass; }
-        }
+        public List<Func<Location, List<int>, List<Func<Location[], Location, List<int>, double>>, List<Func<Location[], Location, List<int>, bool>>, bool>> Delegate_onPathfindingTadeRoute_AllowSecondPass { get { return _delegate_onPathfindingTadeRoute_AllowSecondPass; } }
         public bool RegisterHook_onPathfindingTadeRoute_AllowSecondPass(
             Func<Location, List<int>, List<Func<Location[], Location, List<int>, double>>, List<Func<Location[], Location, List<int>, bool>>, bool> hook)
         {
@@ -315,7 +303,6 @@ namespace CommunityLib
         }
 
         // onArmyBattleCycle_StartOfProcess
-        
         private List<Action<BattleArmy>> _delegate_onArmyBattleCycle_StartOfProcess = new List<Action<BattleArmy>>();
         public List<Action<BattleArmy>> Delegate_onArmyBattleCycle_StartOfProcess { get { return _delegate_onArmyBattleCycle_StartOfProcess; } }
         public bool RegisterHook_onArmyBattleCycle_StartOfProcess(Action<BattleArmy> hook)
@@ -757,7 +744,7 @@ namespace CommunityLib
 
         // onBorkenMakerSleeps
         private List<Action<Map>> _delegate_onBrokenMakerSleeps_StartOfProcess = new List<Action<Map>>();
-        public List<Action<Map>> Delegate_onBrokenMakerSleeps_StartOfProcess { get { return Delegate_onBrokenMakerSleeps_StartOfProcess; } }
+        public List<Action<Map>> Delegate_onBrokenMakerSleeps_StartOfProcess { get { return _delegate_onBrokenMakerSleeps_StartOfProcess; } }
         public bool RegisterHook_onBrokenMakerSleeps_StartOfProcess(Action<Map> hook)
         {
             if (hook == null)
@@ -769,7 +756,7 @@ namespace CommunityLib
         }
 
         private List<Action<Map>> _delegate_onBrokenMakerSleeps_TurnTick = new List<Action<Map>>();
-        public List<Action<Map>> Delegate_onBrokenMakerSleeps_TurnTick { get { return Delegate_onBrokenMakerSleeps_TurnTick; } }
+        public List<Action<Map>> Delegate_onBrokenMakerSleeps_TurnTick { get { return _delegate_onBrokenMakerSleeps_TurnTick; } }
         public bool RegisterHook_onBrokenMakerSleeps_TurnTick(Action<Map> hook)
         {
             if (hook == null)
@@ -781,7 +768,7 @@ namespace CommunityLib
         }
 
         private List<Action<Map>> _delegate_onBrokenMakerSleeps_EndOfProcess = new List<Action<Map>>();
-        public List<Action<Map>> Delegate_onBrokenMakerSleeps_EndOfProcess { get { return Delegate_onBrokenMakerSleeps_EndOfProcess; } }
+        public List<Action<Map>> Delegate_onBrokenMakerSleeps_EndOfProcess { get { return _delegate_onBrokenMakerSleeps_EndOfProcess; } }
         public bool RegisterHook_onBrokenMakerSleeps_EndOfProcess(Action<Map> hook)
         {
             if (hook == null)

@@ -29,7 +29,7 @@ namespace CommunityLib
         private List<Func<Person, Location, UA>> reviveAgentCreationFunctons;
 
         private Dictionary<Soc_Dwarves, int> dwarfExpansionCooldowns;
-        #endregion InternalCaches
+        #endregion
 
         #region Collections
         private HashSet<Type> locusTypes;
@@ -41,7 +41,7 @@ namespace CommunityLib
         private HashSet<Type> naturalWonderTypes;
 
         private HashSet<Type> vampireTypes;
-        #endregion Collections
+        #endregion
 
         public bool isPlayerTurn = false;
 
@@ -53,7 +53,7 @@ namespace CommunityLib
 
         private bool _brokenMakerSleeps = false;
 
-        private int _brokenMakerSleepDuration = 50;
+        public int BrokenMakerSleepDuration = 50;
 
         public ModData()
         {
@@ -296,7 +296,7 @@ namespace CommunityLib
             // Broken Maker Handling
             _acceleratedTime = map.acceleratedTime;
             _brokenMakerSleeps = false;
-            _brokenMakerSleepDuration = 50;
+            BrokenMakerSleepDuration = 50;
         }
 
         public void onTurnStart(Map map)
@@ -313,17 +313,22 @@ namespace CommunityLib
 
             if (dwarfExpansionCooldowns.Count > 0)
             {
-                Dictionary<Soc_Dwarves, int> mutableDict = new Dictionary<Soc_Dwarves, int>(dwarfExpansionCooldowns);
-                foreach (KeyValuePair<Soc_Dwarves, int> kvp in mutableDict)
+                List<Soc_Dwarves> keysToRemove = new List<Soc_Dwarves>();
+                foreach (KeyValuePair<Soc_Dwarves, int> kvp in dwarfExpansionCooldowns)
                 {
                     if (kvp.Value - 1 <= 0)
                     {
-                        dwarfExpansionCooldowns.Remove(kvp.Key);
+                        keysToRemove.Add(kvp.Key);
                     }
                     else
                     {
                         dwarfExpansionCooldowns[kvp.Key] = kvp.Value - 1;
                     }
+                }
+
+                foreach (Soc_Dwarves key in keysToRemove)
+                {
+                    dwarfExpansionCooldowns.Remove(key);
                 }
             }
 
@@ -333,6 +338,7 @@ namespace CommunityLib
 
                 if (_acceleratedTime)
                 {
+                    World.Log($"CommunityLib: Transition to accelerated time detected on turn {map.turn}.");
                     _brokenMakerSleeps = true;
                     foreach (var hook in ModCore.Get().HookRegistry.Delegate_onBrokenMakerSleeps_StartOfProcess)
                     {
@@ -343,11 +349,15 @@ namespace CommunityLib
                         hook.onBrokenMakerSleeps_StartOfProcess(map);
                     }
                 }
+                else
+                {
+                    World.Log($"CommunityLib: Transition from accelerated time detected on turn {map.turn}.");
+                }
             }
 
             if (_brokenMakerSleeps)
             {
-                _brokenMakerSleepDuration--;
+                BrokenMakerSleepDuration--;
                 foreach (var hook in ModCore.Get().HookRegistry.Delegate_onBrokenMakerSleeps_TurnTick)
                 {
                     hook(map);
@@ -357,10 +367,11 @@ namespace CommunityLib
                     hook.onBrokenMakerSleeps_TurnTick(map);
                 }
 
-                if (_brokenMakerSleepDuration == 0)
+                if (BrokenMakerSleepDuration <= 0)
                 {
+                    World.Log($"CommunityLib: End of BrokenMaker sleep cycle detected on turn {map.turn}.");
                     _brokenMakerSleeps = false;
-                    _brokenMakerSleepDuration = 50;
+                    BrokenMakerSleepDuration = 50;
 
                     foreach (var hook in ModCore.Get().HookRegistry.Delegate_onBrokenMakerSleeps_EndOfProcess)
                     {

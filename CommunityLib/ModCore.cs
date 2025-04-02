@@ -280,7 +280,7 @@ namespace CommunityLib
             overrideAI = new UAENOverrideAI(map);
             conditionalOverrideAI = new ConditionalUAENOverrideAI(map);
 
-            hooks = new HooksInternal(map, this);
+            hooks = new HooksInternal(map);
 
             orcExpansionDefaults();
             eventModifications();
@@ -315,7 +315,7 @@ namespace CommunityLib
             overrideAI = new UAENOverrideAI(map);
             conditionalOverrideAI = new ConditionalUAENOverrideAI(map);
 
-            hooks = new HooksInternal(map, this);
+            hooks = new HooksInternal(map);
 
             settlementTypesForOrcExpansion = new Dictionary<Type, HashSet<Type>>();
             orcExpansionDefaults();
@@ -1727,6 +1727,11 @@ namespace CommunityLib
             if (tradeRouteManager == null)
             {
                 tradeRouteManager = new ManagerTradeRoutes(map);
+            }
+
+            if (data.BrokenMakerSleepDuration != 50)
+            {
+                data.BrokenMakerSleepDuration = 50;
             }
         }
 
