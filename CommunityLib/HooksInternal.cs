@@ -9,18 +9,15 @@ namespace CommunityLib
 {
     internal class HooksInternal
     {
-        private ModCore _modCore;
-
         private Map _map;
 
         internal bool DensifyingTradeRoutes = false;
 
-        internal HooksInternal(Map map, ModCore core)
+        internal HooksInternal(Map map)
         {
             _map = map;
-            _modCore = core;
 
-            HooksDelegateRegistry registry = core.HookRegistry;
+            HooksDelegateRegistry registry = ModCore.Get().HookRegistry;
             registry.RegisterHook_onMapGen_PlaceWonders_1(onMapGen_PlaceWonders);
             registry.RegisterHook_onMapGen_PlaceWonders_2(onMapGen_PlaceWonders);
             registry.RegisterHook_isUnitSubsumed(isUnitSubsumed);
@@ -462,12 +459,18 @@ namespace CommunityLib
 
         public void onBrokenMakerSleeps_TurnTick(Map map)
         {
-            foreach (Unit unit in map.units)
+            List<Unit> unitsToKill = new List<Unit>();
+            foreach (Unit unit in _map.units)
             {
                 if (unit is UM_RavenousDead || unit is UM_UntamedDead)
                 {
-                    unit.die(map, "Gone");
+                    unitsToKill.Add(unit);
                 }
+            }
+
+            foreach (Unit unit in unitsToKill)
+            {
+                unit.die(map, "Gone");
             }
         }
 

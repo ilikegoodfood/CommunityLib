@@ -27,7 +27,7 @@ namespace CommunityLib
         private Dictionary<Culture, ModCultureData> modCultureData;
 
         private List<Func<Person, Location, UA>> reviveAgentCreationFunctons;
-        #endregion InternalCaches
+        #endregion
 
         #region Collections
         private HashSet<Type> locusTypes;
@@ -39,7 +39,7 @@ namespace CommunityLib
         private HashSet<Type> naturalWonderTypes;
 
         private HashSet<Type> vampireTypes;
-        #endregion Collections
+        #endregion
 
         public bool isPlayerTurn = false;
 
@@ -51,7 +51,7 @@ namespace CommunityLib
 
         private bool _brokenMakerSleeps = false;
 
-        private int _brokenMakerSleepDuration = 50;
+        public int BrokenMakerSleepDuration = 50;
 
         public ModData()
         {
@@ -283,7 +283,7 @@ namespace CommunityLib
             // Broken Maker Handling
             _acceleratedTime = map.acceleratedTime;
             _brokenMakerSleeps = false;
-            _brokenMakerSleepDuration = 50;
+            BrokenMakerSleepDuration = 50;
         }
 
         public void onTurnStart(Map map)
@@ -304,6 +304,7 @@ namespace CommunityLib
 
                 if (_acceleratedTime)
                 {
+                    World.Log($"CommunityLib: Transition to accelerated time detected on turn {map.turn}.");
                     _brokenMakerSleeps = true;
                     foreach (var hook in ModCore.Get().HookRegistry.Delegate_onBrokenMakerSleeps_StartOfProcess)
                     {
@@ -314,11 +315,15 @@ namespace CommunityLib
                         hook.onBrokenMakerSleeps_StartOfProcess(map);
                     }
                 }
+                else
+                {
+                    World.Log($"CommunityLib: Transition from accelerated time detected on turn {map.turn}.");
+                }
             }
 
             if (_brokenMakerSleeps)
             {
-                _brokenMakerSleepDuration--;
+                BrokenMakerSleepDuration--;
                 foreach (var hook in ModCore.Get().HookRegistry.Delegate_onBrokenMakerSleeps_TurnTick)
                 {
                     hook(map);
@@ -328,10 +333,11 @@ namespace CommunityLib
                     hook.onBrokenMakerSleeps_TurnTick(map);
                 }
 
-                if (_brokenMakerSleepDuration == 0)
+                if (BrokenMakerSleepDuration <= 0)
                 {
+                    World.Log($"CommunityLib: End of BrokenMaker sleep cycle detected on turn {map.turn}.");
                     _brokenMakerSleeps = false;
-                    _brokenMakerSleepDuration = 50;
+                    BrokenMakerSleepDuration = 50;
 
                     foreach (var hook in ModCore.Get().HookRegistry.Delegate_onBrokenMakerSleeps_EndOfProcess)
                     {
