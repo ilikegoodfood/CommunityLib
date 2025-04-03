@@ -1,0 +1,293 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\communitylib\\harmonypatches.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|solutionrelative:communitylib\\harmonypatches.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\HarmonyPatches_Conditional.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|solutionrelative:CommunityLib\\HarmonyPatches_Conditional.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\ModCore.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|solutionrelative:CommunityLib\\ModCore.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\Hooks.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|solutionrelative:CommunityLib\\Hooks.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|c:\\users\\ilike_000\\documents\\my documents\\shadows of forbidden gods\\my mods\\communitylib\\communitylib\\hooksdelegateregistry.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|solutionrelative:communitylib\\hooksdelegateregistry.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\HooksInternal.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|solutionrelative:CommunityLib\\HooksInternal.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\ModData.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|solutionrelative:CommunityLib\\ModData.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\PriorityQueue.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|solutionrelative:CommunityLib\\PriorityQueue.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\HexGridUtils.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|solutionrelative:CommunityLib\\HexGridUtils.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\UAENOverrideAI.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|solutionrelative:CommunityLib\\UAENOverrideAI.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\DebugHelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|solutionrelative:CommunityLib\\DebugHelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\ManagerTradeRoutes.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|solutionrelative:CommunityLib\\ManagerTradeRoutes.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\Pathfinding.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|solutionrelative:CommunityLib\\Pathfinding.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\T_MagicMastery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|solutionrelative:CommunityLib\\T_MagicMastery.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\ConsoleCommands.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|solutionrelative:CommunityLib\\ConsoleCommands.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\ConsoleCommandOverrides.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1D5D6636-2382-4F73-9E32-5B9A29DECAF7}|CommunityLib\\CommunityLib.csproj|solutionrelative:CommunityLib\\ConsoleCommandOverrides.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 16,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:129:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "PriorityQueue.cs",
+              "DocumentMoniker": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\PriorityQueue.cs",
+              "RelativeDocumentMoniker": "CommunityLib\\PriorityQueue.cs",
+              "ToolTip": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\PriorityQueue.cs",
+              "RelativeToolTip": "CommunityLib\\PriorityQueue.cs",
+              "ViewState": "AgIAABYAAAAAAAAAAAAxwCEAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-29T22:09:33.549Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "HexGridUtils.cs",
+              "DocumentMoniker": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\HexGridUtils.cs",
+              "RelativeDocumentMoniker": "CommunityLib\\HexGridUtils.cs",
+              "ToolTip": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\HexGridUtils.cs",
+              "RelativeToolTip": "CommunityLib\\HexGridUtils.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAANsCAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-25T10:58:02.794Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "UAENOverrideAI.cs",
+              "DocumentMoniker": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\UAENOverrideAI.cs",
+              "RelativeDocumentMoniker": "CommunityLib\\UAENOverrideAI.cs",
+              "ToolTip": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\UAENOverrideAI.cs",
+              "RelativeToolTip": "CommunityLib\\UAENOverrideAI.cs",
+              "ViewState": "AgIAAAsBAAAAAAAAAAAuwDUBAAA2AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-21T12:00:18.865Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "DebugHelper.cs",
+              "DocumentMoniker": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\DebugHelper.cs",
+              "RelativeDocumentMoniker": "CommunityLib\\DebugHelper.cs",
+              "ToolTip": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\DebugHelper.cs",
+              "RelativeToolTip": "CommunityLib\\DebugHelper.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAABDAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-19T13:02:22.44Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "ManagerTradeRoutes.cs",
+              "DocumentMoniker": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\ManagerTradeRoutes.cs",
+              "RelativeDocumentMoniker": "CommunityLib\\ManagerTradeRoutes.cs",
+              "ToolTip": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\ManagerTradeRoutes.cs",
+              "RelativeToolTip": "CommunityLib\\ManagerTradeRoutes.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAAB0AAAAmAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-16T12:38:54.876Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "Pathfinding.cs",
+              "DocumentMoniker": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\Pathfinding.cs",
+              "RelativeDocumentMoniker": "CommunityLib\\Pathfinding.cs",
+              "ToolTip": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\Pathfinding.cs",
+              "RelativeToolTip": "CommunityLib\\Pathfinding.cs",
+              "ViewState": "AgIAAFYDAAAAAAAAAAAEwHUDAAAQAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-16T12:14:25.548Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "T_MagicMastery.cs",
+              "DocumentMoniker": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\T_MagicMastery.cs",
+              "RelativeDocumentMoniker": "CommunityLib\\T_MagicMastery.cs",
+              "ToolTip": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\T_MagicMastery.cs",
+              "RelativeToolTip": "CommunityLib\\T_MagicMastery.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-02-01T08:31:00.862Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "ConsoleCommands.cs",
+              "DocumentMoniker": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\ConsoleCommands.cs",
+              "RelativeDocumentMoniker": "CommunityLib\\ConsoleCommands.cs",
+              "ToolTip": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\ConsoleCommands.cs",
+              "RelativeToolTip": "CommunityLib\\ConsoleCommands.cs",
+              "ViewState": "AgIAAJQAAAAAAAAAAAAUwL4AAAAvAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-01-20T10:48:51.966Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "ConsoleCommandOverrides.cs",
+              "DocumentMoniker": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\ConsoleCommandOverrides.cs",
+              "RelativeDocumentMoniker": "CommunityLib\\ConsoleCommandOverrides.cs",
+              "ToolTip": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\ConsoleCommandOverrides.cs",
+              "RelativeToolTip": "CommunityLib\\ConsoleCommandOverrides.cs",
+              "ViewState": "AgIAAEAAAAAAAAAAAAAgwGcAAAAeAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-01-10T13:00:52.044Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "HooksInternal.cs",
+              "DocumentMoniker": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\HooksInternal.cs",
+              "RelativeDocumentMoniker": "CommunityLib\\HooksInternal.cs",
+              "ToolTip": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\HooksInternal.cs",
+              "RelativeToolTip": "CommunityLib\\HooksInternal.cs",
+              "ViewState": "AgIAALgBAAAAAAAAAADwv98BAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-02-17T23:12:28.294Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "HooksDelegateRegistry.cs",
+              "DocumentMoniker": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\HooksDelegateRegistry.cs",
+              "RelativeDocumentMoniker": "CommunityLib\\HooksDelegateRegistry.cs",
+              "ToolTip": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\HooksDelegateRegistry.cs",
+              "RelativeToolTip": "CommunityLib\\HooksDelegateRegistry.cs",
+              "ViewState": "AgIAAM4CAAAAAAAAAAAswOUCAAAYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-23T23:48:46.107Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Hooks.cs",
+              "DocumentMoniker": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\Hooks.cs",
+              "RelativeDocumentMoniker": "CommunityLib\\Hooks.cs",
+              "ToolTip": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\Hooks.cs",
+              "RelativeToolTip": "CommunityLib\\Hooks.cs",
+              "ViewState": "AgIAAJgBAAAAAAAAAAAqwL4BAAA7AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-02-17T23:38:40.696Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "HarmonyPatches_Conditional.cs",
+              "DocumentMoniker": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\HarmonyPatches_Conditional.cs",
+              "RelativeDocumentMoniker": "CommunityLib\\HarmonyPatches_Conditional.cs",
+              "ToolTip": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\HarmonyPatches_Conditional.cs",
+              "RelativeToolTip": "CommunityLib\\HarmonyPatches_Conditional.cs",
+              "ViewState": "AgIAAM4AAAAAAAAAAAArwO8AAAAXAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-04-16T11:19:43.272Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "HarmonyPatches.cs",
+              "DocumentMoniker": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\HarmonyPatches.cs",
+              "RelativeDocumentMoniker": "CommunityLib\\HarmonyPatches.cs",
+              "ToolTip": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\HarmonyPatches.cs",
+              "RelativeToolTip": "CommunityLib\\HarmonyPatches.cs",
+              "ViewState": "AgIAAN8CAAAAAAAAAAAkwPcCAABaAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-02-15T19:52:31.68Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "ModData.cs",
+              "DocumentMoniker": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\ModData.cs",
+              "RelativeDocumentMoniker": "CommunityLib\\ModData.cs",
+              "ToolTip": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\ModData.cs",
+              "RelativeToolTip": "CommunityLib\\ModData.cs",
+              "ViewState": "AgIAADgBAAAAAAAAAAAgwFYBAABwAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-02-15T19:52:31.695Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "ModCore.cs",
+              "DocumentMoniker": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\ModCore.cs",
+              "RelativeDocumentMoniker": "CommunityLib\\ModCore.cs",
+              "ToolTip": "C:\\Users\\ilike_000\\Documents\\My Documents\\Shadows of Forbidden Gods\\My Mods\\CommunityLib\\CommunityLib\\ModCore.cs",
+              "RelativeToolTip": "CommunityLib\\ModCore.cs",
+              "ViewState": "AgIAABoBAAAAAAAAAAAAAMUGAAAzAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-02-15T19:52:31.703Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

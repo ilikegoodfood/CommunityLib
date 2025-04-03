@@ -776,7 +776,6 @@ namespace CommunityLib
         }
 
         // onAgentAI
-
         private List<Func<UA, AgentAI.AIData, List<AgentAI.ChallengeData>, List<AgentAI.TaskData>, List<Unit>, bool>> _delegate_interceptAgentAI = new List<Func<UA, AgentAI.AIData, List<AgentAI.ChallengeData>, List<AgentAI.TaskData>, List<Unit>, bool>>();
         public List<Func<UA, AgentAI.AIData, List<AgentAI.ChallengeData>, List<AgentAI.TaskData>, List<Unit>, bool>> Delegate_interceptAgentAI { get { return _delegate_interceptAgentAI; } }
         public bool RegisterHook_interceptAgentAI(Func<UA, AgentAI.AIData, List<AgentAI.ChallengeData>, List<AgentAI.TaskData>, List<Unit>, bool> hook)
@@ -790,7 +789,6 @@ namespace CommunityLib
         }
 
         // onAgentAI_StartOfProcess
-        
         private List<Action<UA, AgentAI.AIData, List<AgentAI.ChallengeData>, List<AgentAI.TaskData>, List<Unit>>> _delegate_onAgentAI_StartOfProcess = new List<Action<UA, AgentAI.AIData, List<AgentAI.ChallengeData>, List<AgentAI.TaskData>, List<Unit>>>();
         public List<Action<UA, AgentAI.AIData, List<AgentAI.ChallengeData>, List<AgentAI.TaskData>, List<Unit>>> Delegate_onAgentAI_StartOfProcess { get { return _delegate_onAgentAI_StartOfProcess; } }
         public bool RegisterHook_onAgentAI_StartOfProcess(Action<UA, AgentAI.AIData, List<AgentAI.ChallengeData>, List<AgentAI.TaskData>, List<Unit>> hook)
@@ -804,7 +802,6 @@ namespace CommunityLib
         }
 
         // onAgentAI_EndOfProcess
-        
         private List<Action<UA, AgentAI.AIData, List<AgentAI.ChallengeData>, List<AgentAI.TaskData>, List<Unit>>> _delegate_onAgentAI_EndOfProcess = new List<Action<UA, AgentAI.AIData, List<AgentAI.ChallengeData>, List<AgentAI.TaskData>, List<Unit>>>();
         public List<Action<UA, AgentAI.AIData, List<AgentAI.ChallengeData>, List<AgentAI.TaskData>, List<Unit>>> Delegate_onAgentAI_EndOfProcess { get { return _delegate_onAgentAI_EndOfProcess; } }
         public bool RegisterHook_onAgentAI_EndOfProcess(Action<UA, AgentAI.AIData, List<AgentAI.ChallengeData>, List<AgentAI.TaskData>, List<Unit>> hook)
@@ -818,7 +815,6 @@ namespace CommunityLib
         }
 
         // interceptAgentAI_GetChallengeUtility
-        
         private List<InterceptAgentAI_GetChallengeUtilityDelegate> _delegate_interceptAgentAI_GetChallengeUtility = new List<InterceptAgentAI_GetChallengeUtilityDelegate>();
         public List<InterceptAgentAI_GetChallengeUtilityDelegate> Delegate_interceptAgentAI_GetChallengeUtility { get { return _delegate_interceptAgentAI_GetChallengeUtility; } }
         public bool RegisterHook_interceptAgentAI_GetChallengeUtility(InterceptAgentAI_GetChallengeUtilityDelegate hook)
@@ -832,7 +828,6 @@ namespace CommunityLib
         }
 
         // onAgentAI_GetChallengeUtility
-        
         private List<Func<UA, AgentAI.AIData, AgentAI.ChallengeData, double, List<ReasonMsg>, double>> _delegate_onAgentAI_GetChallengeUtility = new List<Func<UA, AgentAI.AIData, AgentAI.ChallengeData, double, List<ReasonMsg>, double>>();
         public List<Func<UA, AgentAI.AIData, AgentAI.ChallengeData, double, List<ReasonMsg>, double>> Delegate_onAgentAI_GetChallengeUtility { get { return _delegate_onAgentAI_GetChallengeUtility; } }
         public bool RegisterHook_onAgentAI_GetChallengeUtility(Func<UA, AgentAI.AIData, AgentAI.ChallengeData, double, List<ReasonMsg>, double> hook)
@@ -846,7 +841,6 @@ namespace CommunityLib
         }
 
         // interceptAgentAI_GetTaskUtility
-        
         private List<InterceptAgentAI_GetTaskUtilityDelegate> _delegate_interceptAgentAI_GetTaskUtility = new List<InterceptAgentAI_GetTaskUtilityDelegate>();
         public List<InterceptAgentAI_GetTaskUtilityDelegate> Delegate_interceptAgentAI_GetTaskUtility { get { return _delegate_interceptAgentAI_GetTaskUtility; } }
         public bool RegisterHook_interceptAgentAI_GetTaskUtility(InterceptAgentAI_GetTaskUtilityDelegate hook)
@@ -860,7 +854,6 @@ namespace CommunityLib
         }
 
         // onAgentAI_GetTaskUtility
-        
         private List<Func<UA, AgentAI.AIData, AgentAI.TaskData, double, List<ReasonMsg>, double>> _delegate_onAgentAI_GetTaskUtility = new List<Func<UA, AgentAI.AIData, AgentAI.TaskData, double, List<ReasonMsg>, double>>();
         public List<Func<UA, AgentAI.AIData, AgentAI.TaskData, double, List<ReasonMsg>, double>> Delegate_onAgentAI_GetTaskUtility { get { return _delegate_onAgentAI_GetTaskUtility; } }
         public bool RegisterHook_onAgentAI_GetTaskUtility(Func<UA, AgentAI.AIData, AgentAI.TaskData, double, List<ReasonMsg>, double> hook)
@@ -874,7 +867,6 @@ namespace CommunityLib
         }
 
         // onAgentLevelup_GetTraits
-        
         private List<Action<UA, List<Trait>, bool>> _delegate_onAgentLevelup_GetTraits = new List<Action<UA, List<Trait>, bool>>();
         public List<Action<UA, List<Trait>, bool>> Delegate_onAgentLevelup_GetTraits { get { return _delegate_onAgentLevelup_GetTraits; } }
         public bool RegisterHook_onAgentLevelup_GetTraits(Action<UA, List<Trait>, bool> hook)
@@ -888,7 +880,6 @@ namespace CommunityLib
         }
 
         // interceptGetVisibleUnits
-        
         private List<Func<UA, List<Unit>, bool>> _delegate_interceptGetVisibleUnits = new List<Func<UA, List<Unit>, bool>>();
         public List<Func<UA, List<Unit>, bool>> Delegate_interceptGetVisibleUnits { get { return _delegate_interceptGetVisibleUnits; } }
         public bool RegisterHook_interceptGetVisibleUnits(Func<UA, List<Unit>, bool> hook)

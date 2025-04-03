@@ -158,6 +158,7 @@ namespace CommunityLib
             // Map Fixes
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.gen), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Map_gen_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.placeTomb), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Map_placeTomb_transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.processPeople), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Map_processPeople_Transpiler)));
 
             // AI Fixes
             harmony.Patch(original: AccessTools.Method(typeof(UM_HumanArmy), nameof(UM_HumanArmy.turnTickAI), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UM_HumanArmy_turnTickAI_Transpiler)));
@@ -599,6 +600,40 @@ namespace CommunityLib
             }
 
             Console.WriteLine("CommunityLib: Completed Map_placeTomb_transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+        
+
+        private static IEnumerable<CodeInstruction> Map_processPeople_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_ToList = AccessTools.Method(typeof(Enumerable), "ToList").MakeGenericMethod(typeof(Person));
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Callvirt)
+                        {
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_ToList);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+
+            }
+
+            Console.WriteLine("CommunityLib: Completed Map_processPeople_Transpiler");
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
