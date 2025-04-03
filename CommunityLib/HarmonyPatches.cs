@@ -9849,9 +9849,9 @@ namespace CommunityLib
             Dictionary<Soc_Dwarves, int> dwarvenSocietySizes = new Dictionary<Soc_Dwarves, int>();
             PriorityQueue<Location, double> priorityLocationsLocal = priorityLocations.ToPriorityQueue();
             int seperationDistance = 3;
-            while (seperationDistance > 0 && dwarvenLocations.Count < i && priorityLocationsLocal.Count > 0)
+            while (seperationDistance > 0 && dwarvenSocietyCount < i && priorityLocationsLocal.Count > 0)
             {
-                while (dwarvenLocations.Count < i && priorityLocationsLocal.Count > 0)
+                while (dwarvenSocietyCount < i && priorityLocationsLocal.Count > 0)
                 {
                     Location location = priorityLocationsLocal.Dequeue();
                     bool tooClose = false;
@@ -9895,13 +9895,13 @@ namespace CommunityLib
 
                     //Console.WriteLine($"CommunityLib: Placing {dwarfs.getName()} at {location.getName()} ({dwarvenLocations.Count}/{i} civilizations placed).");
 
-                    SettlementHuman humanSettlement = new Set_DwarvenCity(location);
-                    location.settlement = humanSettlement;
-                    humanSettlement.population = humanSettlement.getFoodGenerated();
-                    humanSettlement.defences = humanSettlement.getMaxDefence();
+                    Set_DwarvenCity capitolCity = new Set_DwarvenCity(location);
+                    location.settlement = capitolCity;
+                    capitolCity.population = capitolCity.getFoodGenerated();
+                    capitolCity.defences = capitolCity.getMaxDefence();
 
                     Person ruler = new Person(dwarfs);
-                    humanSettlement.ruler = ruler;
+                    capitolCity.ruler = ruler;
                     ruler.rulerOf = location.index;
                     ruler.society.people.Add(ruler.index);
                     ruler.species = location.map.species_dwarf;
@@ -9913,6 +9913,7 @@ namespace CommunityLib
                     army.hp = army.maxHp;
                     location.units.Add(army);
                     location.map.units.Add(army);
+                    capitolCity.supportedMilitary = army;
                     //Console.WriteLine($"CommunityLib: Added {expansionCount} locations to the expansion pool.");
 
                     expansionLocationsBySociety.Add(dwarfs, expansionOptions);
@@ -10009,11 +10010,15 @@ namespace CommunityLib
                 ruler.species = location.map.species_dwarf;
                 ruler.embedIntoSociety();
 
-                UM_HumanArmy army = new UM_HumanArmy(location, dwarfs);
-                army.maxHp = army.recomputeMaxHP();
-                army.hp = army.maxHp;
-                location.units.Add(army);
-                location.map.units.Add(army);
+                if (location.isMajor && location.settlement is Set_DwarvenCity)
+                {
+                    UM_HumanArmy army = new UM_HumanArmy(location, dwarfs);
+                    army.maxHp = army.recomputeMaxHP();
+                    army.hp = army.maxHp;
+                    location.units.Add(army);
+                    location.map.units.Add(army);
+                    humanSettlement.supportedMilitary = army;
+                }
 
                 int expansionCount = 0;
                 foreach (Location neighbour in location.getNeighbours())
