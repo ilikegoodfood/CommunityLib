@@ -313,22 +313,16 @@ namespace CommunityLib
 
             if (dwarfExpansionCooldowns.Count > 0)
             {
-                List<Soc_Dwarves> keysToRemove = new List<Soc_Dwarves>();
-                foreach (KeyValuePair<Soc_Dwarves, int> kvp in dwarfExpansionCooldowns)
+                foreach (KeyValuePair<Soc_Dwarves, int> kvp in dwarfExpansionCooldowns.ToList())
                 {
                     if (kvp.Value - 1 <= 0)
                     {
-                        keysToRemove.Add(kvp.Key);
+                        dwarfExpansionCooldowns.Remove(kvp.Key);
                     }
                     else
                     {
                         dwarfExpansionCooldowns[kvp.Key] = kvp.Value - 1;
                     }
-                }
-
-                foreach (Soc_Dwarves key in keysToRemove)
-                {
-                    dwarfExpansionCooldowns.Remove(key);
                 }
             }
 
