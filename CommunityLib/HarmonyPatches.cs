@@ -182,6 +182,9 @@ namespace CommunityLib
             // Agent Fixes
             harmony.Patch(original: AccessTools.Method(typeof(UAE_Abstraction), nameof(UAE_Abstraction.validTarget), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(UAE_Abstraction_validTarget_transpiler)));
 
+            // PortraitForeground Fixes
+            harmony.Patch(original: AccessTools.Method(typeof(UM_HumanArmy), nameof(UM_HumanArmy.getPortraitForeground), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UM_HumanArmy_getPortraitForeground_Transpiler)));
+
             // AI Fixes
             harmony.Patch(original: AccessTools.Method(typeof(UM_HumanArmy), nameof(UM_HumanArmy.turnTickAI), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UM_HumanArmy_turnTickAI_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(UM_Refugees), nameof(UM_Refugees.turnTickAI), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UM_Refugees_turnTickAI_Transpiler)));
@@ -898,6 +901,57 @@ namespace CommunityLib
             }
 
             Console.WriteLine("CommunityLib: Completed UAE_Abstraction_validTarget_transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> UM_HumanArmy_getPortraitForeground_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            Label falseLabel = ilg.DefineLabel();
+            Label trueLabel = ilg.DefineLabel();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Isinst && (Type)instructionList[i].operand == typeof(Set_DwarvenCity))
+                        {
+                            yield return new CodeInstruction(OpCodes.Dup);
+                            yield return new CodeInstruction(OpCodes.Isinst, typeof(Set_DwarvenOutpost));
+                            yield return new CodeInstruction(OpCodes.Ldnull);
+                            yield return new CodeInstruction(OpCodes.Cgt_Un);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S);
+                            yield return new CodeInstruction(OpCodes.Pop);
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_1);
+                            yield return new CodeInstruction(OpCodes.Br_S, trueLabel);
+
+                            instructionList[i].labels.Add(falseLabel);
+
+                            targetIndex++;
+                        }
+                    }
+                    if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Stloc_S)
+                        {
+                            instructionList[i].labels.Add(trueLabel);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed UM_HumanArmy_getPortraitForeground_Transpiler");
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
