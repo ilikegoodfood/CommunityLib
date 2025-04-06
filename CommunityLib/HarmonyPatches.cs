@@ -2472,7 +2472,7 @@ namespace CommunityLib
             List<Assets.Code.Action> actionsToRemove = new List<Assets.Code.Action>();
             foreach (Assets.Code.Action action in __result)
             {
-                if (action is Act_AttackAgent attackAgent && !layerOccupation.Contains(attackAgent.location.hex.z))
+                if (action is Act_AttackAgent attackAgent && !layerOccupation.Contains(attackAgent.target.location.hex.z))
                 {
                     actionsToRemove.Add(action);
                 }

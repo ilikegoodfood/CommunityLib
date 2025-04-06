@@ -301,6 +301,10 @@ namespace CommunityLib
                 Get().data = new ModData();
             }
             Get().data.onLoad(map);
+            if (HookRegistry == null)
+            {
+                HookRegistry = new HooksDelegateRegistry();
+            }
             getModKernels(map);
             HarmonyPatches_Conditional.PatchingInit(map);
 
