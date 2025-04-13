@@ -28,7 +28,7 @@ namespace CommunityLib
 
         public override string getDesc()
         {
-            return $"This person is the prophet of the {order.getName()}. Their revered status grants them great influence over the order.";
+            return $"This person is the prophet of the {order.getName()} holy order. Their revered status grants them great influence over it.";
         }
 
         public override void turnTick(Person p)
