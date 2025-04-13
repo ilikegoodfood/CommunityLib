@@ -101,6 +101,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(UIE_HolyTenet), nameof(UIE_HolyTenet.bInfluencePositively), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(UIE_HolyTenet_bInfluence_Postfix)));
 
             // Religion Hooks
+            harmony.Patch(original: AccessTools.Method(typeof(HolyOrder), nameof(HolyOrder.updateData), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(HolyOrder_updateData_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(HolyOrder), nameof(HolyOrder.computeInfluenceDark), new Type[] { typeof(List<ReasonMsg>) }), transpiler: new HarmonyMethod(patchType, nameof(HolyOrder_computeInfluenceDark_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(HolyOrder), nameof(HolyOrder.computeInfluenceHuman), new Type[] { typeof(List<ReasonMsg>) }), transpiler: new HarmonyMethod(patchType, nameof(HolyOrder_computeInfluenceHuman_Transpiler)));
 
@@ -3285,6 +3286,19 @@ namespace CommunityLib
         }
 
         // Religion Hooks
+        private static void HolyOrder_updateData_Postfix(HolyOrder __instance)
+        {
+            if (!ModCore.opt_prophetTrait)
+            {
+                return;
+            }
+
+            if (__instance.prophet != null && !__instance.prophet.person.traits.Any(t => t is T_Prophet prophetTrait && prophetTrait.order == __instance))
+            {
+                __instance.prophet.person.receiveTrait(new T_Prophet(__instance));
+            }
+        }
+
         private static IEnumerable<CodeInstruction> HolyOrder_computeInfluenceDark_Transpiler(IEnumerable<CodeInstruction> instructions)
         {
             List<CodeInstruction> instructionList = instructions.ToList();
