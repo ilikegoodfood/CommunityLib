@@ -497,6 +497,8 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
+            MethodInfo MI_TranspilerBody_RecruitmentPoints = AccessTools.Method(patchType, nameof(UITopLeft_raycastResultsIn_TranspilerBody_RecruitmentPoints), new Type[] { typeof(UITopLeft) });
+
             bool returnCode = true;
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
@@ -505,15 +507,35 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (i > 3 && instructionList[i].opcode == OpCodes.Nop && instructionList[i-1].opcode == OpCodes.Callvirt && instructionList[i-2].opcode == OpCodes.Callvirt)
+                        if (instructionList[i].opcode == OpCodes.Callvirt && instructionList[i - 1].opcode == OpCodes.Ldstr && instructionList[i - 2].opcode == OpCodes.Ldfld)
                         {
+                            yield return instructionList[i];
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_RecruitmentPoints);
+
                             returnCode = false;
                             targetIndex++;
                         }
                     }
                     else if (targetIndex == 2)
                     {
-                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i-1].opcode == OpCodes.Nop)
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i - 1].opcode == OpCodes.Nop)
+                        {
+                            returnCode = true;
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i - 1].opcode == OpCodes.Callvirt && instructionList[i - 2].opcode == OpCodes.Callvirt)
+                        {
+                            returnCode = false;
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 4)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i - 1].opcode == OpCodes.Nop)
                         {
                             returnCode = true;
                             targetIndex = 0;
@@ -533,6 +555,22 @@ namespace CommunityLib
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
+        }
+
+        private static void UITopLeft_raycastResultsIn_TranspilerBody_RecruitmentPoints(UITopLeft instance)
+        {
+            int period = (World.staticMap.turn - World.staticMap.param.mapGen_burnInSteps) % World.staticMap.param.overmind_enthrallmentUseRegainPeriod;
+            int time = 0;
+            if (period < 0)
+            {
+                time = period * -1;
+            }
+            else
+            {
+                time = World.staticMap.param.overmind_enthrallmentUseRegainPeriod - (World.staticMap.turn - World.staticMap.param.mapGen_burnInSteps) % World.staticMap.param.overmind_enthrallmentUseRegainPeriod;
+            }
+
+            instance.smallDescText.text = $"You can only recruit agents if you have a free slot and have at least one recruitment point available. You gain recruitment points over time, at a rate of one every {World.staticMap.param.overmind_enthrallmentUseRegainPeriod} turns.\n\nNext recruitment point in {time} turns.";
         }
 
         // Map Fixes
