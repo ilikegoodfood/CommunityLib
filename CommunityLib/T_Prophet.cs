@@ -33,7 +33,7 @@ namespace CommunityLib
 
         public override void turnTick(Person p)
         {
-            if (!(p.unit is UA) || order == null || order.isGone() || order.prophet != p.unit)
+            if (!(p.unit is UA) || order == null || order.prophet != p.unit)
             {
                 p.traits.Remove(this);
             }
