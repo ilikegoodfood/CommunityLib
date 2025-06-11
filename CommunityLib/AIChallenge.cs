@@ -84,7 +84,42 @@ namespace CommunityLib
         /// <param name="safeMove"></param>
         /// <param name="ignoreDistance"></param>
         /// <exception cref="ArgumentException"></exception>
-        public AIChallenge(Type challengeType, double profile, List<ChallengeTags> tags = null, bool safeMove = false, bool supportSubtypes = false)
+        public AIChallenge(Type challengeType, double profile = 0.0, List<ChallengeTags> tags = null, bool safeMove = false)
+        {
+            if (!challengeType.IsSubclassOf(typeof(Challenge)))
+            {
+                throw new ArgumentException("CommunityLib: challengeType " + challengeType + " is not subclass of Challenge");
+            }
+
+            this.challengeType = challengeType;
+            this.profile = profile;
+            this.safeMove = safeMove;
+            this.supportSubtypes = false;
+
+            if (tags == null)
+            {
+                tags = new List<ChallengeTags>();
+            }
+            this.tags = tags;
+
+            delegates_Profile = new List<Func<AgentAI.ChallengeData, UA,  double, double>>();
+            delegates_Valid = new List<Func<AgentAI.ChallengeData,  bool>>();
+            delegates_ValidFor = new List<Func<AgentAI.ChallengeData, UA, bool>>();
+            delegates_Utility = new List<Func<AgentAI.ChallengeData, UA, double, List<ReasonMsg>, double>>();
+
+            isRitual = challengeType.IsSubclassOf(typeof(Ritual));
+        }
+
+        /// <summary>
+        /// The constructor for AIChallnges. Delegates must be assigned after initialization.
+        /// </summary>
+        /// <param name="challengeType"></param>
+        /// <param name="tags"></param>
+        /// <param name="profile"></param>
+        /// <param name="safeMove"></param>
+        /// <param name="ignoreDistance"></param>
+        /// <exception cref="ArgumentException"></exception>
+        public AIChallenge(Type challengeType, double profile, List<ChallengeTags> tags, bool safeMove, bool supportSubtypes)
         {
             if (!challengeType.IsSubclassOf(typeof(Challenge)))
             {
@@ -102,8 +137,8 @@ namespace CommunityLib
             }
             this.tags = tags;
 
-            delegates_Profile = new List<Func<AgentAI.ChallengeData, UA,  double, double>>();
-            delegates_Valid = new List<Func<AgentAI.ChallengeData,  bool>>();
+            delegates_Profile = new List<Func<AgentAI.ChallengeData, UA, double, double>>();
+            delegates_Valid = new List<Func<AgentAI.ChallengeData, bool>>();
             delegates_ValidFor = new List<Func<AgentAI.ChallengeData, UA, bool>>();
             delegates_Utility = new List<Func<AgentAI.ChallengeData, UA, double, List<ReasonMsg>, double>>();
 
