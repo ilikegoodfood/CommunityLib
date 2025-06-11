@@ -72,6 +72,8 @@ namespace CommunityLib
 
         public List<Func<AgentAI.ChallengeData, UA, double, List<ReasonMsg>, double>> delegates_Utility;
 
+        public bool supportSubtypes;
+
         private AgentAI.DebugProperties debugInternal = new AgentAI.DebugProperties();
 
         /// <summary>
@@ -83,7 +85,7 @@ namespace CommunityLib
         /// <param name="safeMove"></param>
         /// <param name="ignoreDistance"></param>
         /// <exception cref="ArgumentException"></exception>
-        public AIChallenge(Type challengeType, double profile, List<ChallengeTags> tags = null, bool safeMove = false)
+        public AIChallenge(Type challengeType, double profile, List<ChallengeTags> tags = null, bool safeMove = false, bool supportSubtypes = false)
         {
             if (!challengeType.IsSubclassOf(typeof(Challenge)))
             {
@@ -93,6 +95,7 @@ namespace CommunityLib
             this.challengeType = challengeType;
             this.profile = profile;
             this.safeMove = safeMove;
+            this.supportSubtypes = supportSubtypes;
 
             if (tags == null)
             {
@@ -110,7 +113,7 @@ namespace CommunityLib
 
         public double checkChallengeProfile(AgentAI.ChallengeData challengeData, UA ua, AgentAI.ControlParameters controlParams)
         {
-            if (challengeData.challenge.GetType() != challengeType)
+            if (challengeData.challenge.GetType() != challengeType && (!challengeData.aiChallenge.supportSubtypes || !challengeData.challenge.GetType().IsSubclassOf(challengeData.aiChallenge.challengeType)))
             {
                 Console.WriteLine("CommunityLib: ERROR: Challenge is not of Type " + challengeType);
                 return -1;
@@ -149,7 +152,7 @@ namespace CommunityLib
 
         public bool checkChallengeVisibility(AgentAI.ChallengeData challengeData, UA ua, AgentAI.ControlParameters controlParams)
         {
-            if (challengeData.challenge.GetType() != challengeType)
+            if (challengeData.challenge.GetType() != challengeType && (!challengeData.aiChallenge.supportSubtypes || !challengeData.challenge.GetType().IsSubclassOf(challengeData.aiChallenge.challengeType)))
             {
                 Console.WriteLine("CommunityLib: ERROR: Challenge is not of Type " + challengeType);
                 return false;
@@ -185,7 +188,7 @@ namespace CommunityLib
 
         public bool checkChallengeIsValid(AgentAI.ChallengeData challengeData, UA ua, AgentAI.ControlParameters controlParams)
         {
-            if (challengeData.challenge.GetType() != challengeType)
+            if (challengeData.challenge.GetType() != challengeType && (!challengeData.aiChallenge.supportSubtypes || !challengeData.challenge.GetType().IsSubclassOf(challengeData.aiChallenge.challengeType)))
             {
                 Console.WriteLine("CommunityLib: ERROR: Challenge is not of Type " + challengeType);
                 return false;
@@ -708,7 +711,7 @@ namespace CommunityLib
         {
             double result = 0.0;
 
-            if (challengeData.challenge.GetType() != challengeType)
+            if (challengeData.challenge.GetType() != challengeType && (!challengeData.aiChallenge.supportSubtypes || !challengeData.challenge.GetType().IsSubclassOf(challengeData.aiChallenge.challengeType)))
             {
                 reasonMsgs?.Add(new ReasonMsg("ERROR: Challenge " + challengeData.challenge.getName() + " is not subtype of " + challengeType, -10000.0));
                 return -10000.0;
