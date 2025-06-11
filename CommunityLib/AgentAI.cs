@@ -682,7 +682,25 @@ namespace CommunityLib
         {
             if (TryGetAgentType(tAgent, out AIData aiData) && aiData != null)
             {
-                return aiData.aiChallenges.FirstOrDefault(aiC => aiC.challengeType == tChallenge);
+                AIChallenge result = aiData.aiChallenges.FirstOrDefault(aiC => aiC.challengeType == tChallenge);
+
+                if (result == null)
+                {
+                    foreach (AIChallenge aiChallenge in aiData.aiChallenges)
+                    {
+                        if (!aiChallenge.supportSubtypes)
+                        {
+                            continue;
+                        }
+
+                        if (tChallenge.IsSubclassOf(aiChallenge.challengeType) && (result == null || aiChallenge.challengeType.IsSubclassOf(result.challengeType)))
+                        {
+                            result = aiChallenge;
+                        }
+                    }
+                }
+
+                return result;
             }
 
             return null;
@@ -1502,22 +1520,65 @@ namespace CommunityLib
                             ritualData.Add(d);
                         }
                     }
-                    else if (aiData.controlParameters.considerAllRituals)
+                    else
                     {
-                        ChallengeData d = new ChallengeData
+                        aiChallenge = null;
+                        foreach (AIChallenge aiChallengeSub in aiData.aiChallenges)
                         {
-                            aiChallenge = null,
-                            challenge = ritual,
-                            location = ua.location,
-                            universalDelegates_Profile = aiData.aiChallenges_UniversalDelegates_Profile,
-                            universalDelegates_Valid = aiData.aiChallenges_UniversalDelegates_Valid,
-                            universalDelegates_ValidFor = aiData.aiChallenges_UniversalDelegates_ValidFor,
-                            universalDelegates_Utility = aiData.aiChallenges_UniversalDelegates_Utility
-                        };
+                            if (!aiChallengeSub.supportSubtypes)
+                            {
+                                continue;
+                            }
 
-                        if (getChallengeIsValid(ua, d, aiData.controlParameters))
+                            if (ritual.GetType().IsSubclassOf(aiChallengeSub.challengeType) && (aiChallenge == null || aiChallengeSub.challengeType.IsSubclassOf(aiChallenge.challengeType)))
+                            {
+                                aiChallenge = aiChallengeSub;
+                            }
+                        }
+
+                        if (aiChallenge != null)
                         {
-                            result.Add(d);
+                            ChallengeData d = new ChallengeData
+                            {
+                                aiChallenge = aiChallenge,
+                                challenge = ritual,
+                                universalDelegates_Profile = aiData.aiChallenges_UniversalDelegates_Profile,
+                                universalDelegates_Valid = aiData.aiChallenges_UniversalDelegates_Valid,
+                                universalDelegates_ValidFor = aiData.aiChallenges_UniversalDelegates_ValidFor,
+                                universalDelegates_Utility = aiData.aiChallenges_UniversalDelegates_Utility
+                            };
+
+                            if (aiChallenge.tags.Contains(AIChallenge.ChallengeTags.RequireLocal))
+                            {
+                                d.location = ua.location;
+
+                                if (getChallengeIsValid(ua, d, aiData.controlParameters))
+                                {
+                                    result.Add(d);
+                                }
+                            }
+                            else
+                            {
+                                ritualData.Add(d);
+                            }
+                        }
+                        else if (aiData.controlParameters.considerAllRituals)
+                        {
+                            ChallengeData d = new ChallengeData
+                            {
+                                aiChallenge = null,
+                                challenge = ritual,
+                                location = ua.location,
+                                universalDelegates_Profile = aiData.aiChallenges_UniversalDelegates_Profile,
+                                universalDelegates_Valid = aiData.aiChallenges_UniversalDelegates_Valid,
+                                universalDelegates_ValidFor = aiData.aiChallenges_UniversalDelegates_ValidFor,
+                                universalDelegates_Utility = aiData.aiChallenges_UniversalDelegates_Utility
+                            };
+
+                            if (getChallengeIsValid(ua, d, aiData.controlParameters))
+                            {
+                                result.Add(d);
+                            }
                         }
                     }
                 }
@@ -1559,21 +1620,61 @@ namespace CommunityLib
                                 result.Add(d);
                             }
                         }
-                        else if (aiData.controlParameters.considerAllChallenges)
+                        else
                         {
-                            ChallengeData d = new ChallengeData
+                            aiChallenge = null;
+                            foreach (AIChallenge aiChallengeSub in aiData.aiChallenges)
                             {
-                                aiChallenge = null,
-                                challenge = challenge,
-                                location = location,
-                                universalDelegates_Profile = aiData.aiChallenges_UniversalDelegates_Profile,
-                                universalDelegates_Valid = aiData.aiChallenges_UniversalDelegates_Valid,
-                                universalDelegates_ValidFor = aiData.aiChallenges_UniversalDelegates_ValidFor,
-                                universalDelegates_Utility = aiData.aiChallenges_UniversalDelegates_Utility
-                            };
-                            if (getChallengeIsValid(ua, d, aiData.controlParameters))
+                                if (!aiChallengeSub.supportSubtypes)
+                                {
+                                    continue;
+                                }
+
+                                if (challenge.GetType().IsSubclassOf(aiChallengeSub.challengeType) && (aiChallenge == null || aiChallengeSub.challengeType.IsSubclassOf(aiChallenge.challengeType)))
+                                {
+                                    aiChallenge = aiChallengeSub;
+                                }
+                            }
+
+                            if (aiChallenge != null)
                             {
-                                result.Add(d);
+                                if (aiChallenge.tags.Contains(AIChallenge.ChallengeTags.RequireLocal) && location != ua.location)
+                                {
+                                    continue;
+                                }
+
+                                ChallengeData d = new ChallengeData
+                                {
+                                    aiChallenge = aiChallenge,
+                                    challenge = challenge,
+                                    location = location,
+                                    universalDelegates_Profile = aiData.aiChallenges_UniversalDelegates_Profile,
+                                    universalDelegates_Valid = aiData.aiChallenges_UniversalDelegates_Valid,
+                                    universalDelegates_ValidFor = aiData.aiChallenges_UniversalDelegates_ValidFor,
+                                    universalDelegates_Utility = aiData.aiChallenges_UniversalDelegates_Utility
+                                };
+
+                                if (getChallengeIsValid(ua, d, aiData.controlParameters))
+                                {
+                                    result.Add(d);
+                                }
+                            }
+                            else if (aiData.controlParameters.considerAllChallenges)
+                            {
+                                ChallengeData d = new ChallengeData
+                                {
+                                    aiChallenge = null,
+                                    challenge = challenge,
+                                    location = location,
+                                    universalDelegates_Profile = aiData.aiChallenges_UniversalDelegates_Profile,
+                                    universalDelegates_Valid = aiData.aiChallenges_UniversalDelegates_Valid,
+                                    universalDelegates_ValidFor = aiData.aiChallenges_UniversalDelegates_ValidFor,
+                                    universalDelegates_Utility = aiData.aiChallenges_UniversalDelegates_Utility
+                                };
+                                if (getChallengeIsValid(ua, d, aiData.controlParameters))
+                                {
+                                    result.Add(d);
+                                }
                             }
                         }
                     }
@@ -1600,9 +1701,10 @@ namespace CommunityLib
                 return false;
             }
 
-            if (ModCore.Get().GetAgentAI().TryGetAgentType(ua.GetType(), out AIData aiData) && aiData != null)
+            if (TryGetAgentType(ua.GetType(), out AIData aiData) && aiData != null)
             {
-                AIChallenge aiChallenge = ModCore.Get().GetAgentAI().GetAIChallengeFromAgentType(ua.GetType(), challenge.GetType());
+                AIChallenge aiChallenge = GetAIChallengeFromAgentType(ua.GetType(), challenge.GetType());
+
                 ChallengeData challengeData = new ChallengeData
                 {
                     aiChallenge = aiChallenge,
@@ -1650,7 +1752,7 @@ namespace CommunityLib
                 || (challengeData.aiChallenge != null && challengeData.aiChallenge.checkChallengeVisibility(challengeData, ua, controlParams))
                 || (challengeData.aiChallenge == null && controlParams.considerAllChallenges && ua.map.getStepDist(ua.location, challengeData.location) <= (challengeData.challenge.getProfile() / 10)))
             {
-                if (!controlParams.respectChallengeAlignment || !(challengeData.challenge.isGoodTernary() == -1 && (ua is UAG || ua is UAA) && !ua.corrupted))
+                if (!controlParams.respectChallengeAlignment || !(challengeData.challenge.isGoodTernary() == -1 && (ua is UAG || ua is UAA) && !ua.isCommandable()))
                 {
                     if (!controlParams.respectChallengeAlignment || !(challengeData.challenge.isGoodTernary() == 1 && (ua is UAE || ua.corrupted)))
                     {
@@ -1695,13 +1797,13 @@ namespace CommunityLib
                 return -1.0;
             }
 
-            if (ModCore.Get().GetAgentAI().TryGetAgentType(ua.GetType(), out AgentAI.AIData aiData) && aiData != null)
+            if (TryGetAgentType(ua.GetType(), out AIData aiData) && aiData != null)
             {
-                AIChallenge aiChallenge = ModCore.Get().GetAgentAI().GetAIChallengeFromAgentType(ua.GetType(), challenge.GetType());
+                AIChallenge aiChallenge = GetAIChallengeFromAgentType(ua.GetType(), challenge.GetType());
 
                 if (aiChallenge != null)
                 {
-                    AgentAI.ChallengeData cData = new AgentAI.ChallengeData
+                    ChallengeData cData = new ChallengeData
                     {
                         aiChallenge = aiChallenge,
                         challenge = challenge,
@@ -1720,7 +1822,7 @@ namespace CommunityLib
                         }
                     }
 
-                    utility = ModCore.Get().GetAgentAI().getChallengeUtility(cData, ua, aiData, aiData.controlParameters, reasonMsgs);
+                    utility = getChallengeUtility(cData, ua, aiData, aiData.controlParameters, reasonMsgs);
                 }
                 else if (challenge is Ritual)
                 {
@@ -1882,8 +1984,9 @@ namespace CommunityLib
 
             if (controlParams.valueTimeCost)
             {
-                //Console.WriteLine("CommunityLib: distance Divisor is " + getDistanceDivisor(challengeData, ua).ToString());
-                utility /= getDistanceDivisor(challengeData, aiData, ua);
+                double distance = getDistanceDivisor(challengeData, aiData, ua);
+                int duration = Math.Max(1, (int)Math.Ceiling(challenge.getCompletionMenaceAfterDifficulty() / challenge.getProgressPerTurn(ua, null)));
+                int timeCost = (int)Math.Ceiling((ua.map.param.ua_flatTimeCostUtility + distance + duration) / 10.0);
             }
 
             foreach (var hook in ModCore.Get().HookRegistry.Delegate_onAgentAI_GetChallengeUtility)
