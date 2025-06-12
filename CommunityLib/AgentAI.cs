@@ -1493,7 +1493,26 @@ namespace CommunityLib
 
                 foreach (Challenge ritual in uaRituals)
                 {
-                    if (aiRituals.TryGetValue(ritual.GetType(), out AIChallenge aiChallenge))
+                    aiRituals.TryGetValue(ritual.GetType(), out AIChallenge aiChallenge);
+
+                    if (aiChallenge == null)
+                    {
+                        Type ritualType = ritual.GetType();
+                        foreach (AIChallenge aiChallengeSub in aiData.aiChallenges)
+                        {
+                            if (!aiChallengeSub.supportSubtypes)
+                            {
+                                continue;
+                            }
+
+                            if (ritualType.IsSubclassOf(aiChallengeSub.challengeType) && (aiChallenge == null || aiChallengeSub.challengeType.IsSubclassOf(aiChallenge.challengeType)))
+                            {
+                                aiChallenge = aiChallengeSub;
+                            }
+                        }
+                    }
+
+                    if (aiChallenge != null)
                     {
                         //Console.WriteLine("CommunityLib: Found ritual " + ritual.getName());
                         ChallengeData d = new ChallengeData
@@ -1520,65 +1539,22 @@ namespace CommunityLib
                             ritualData.Add(d);
                         }
                     }
-                    else
+                    else if (aiData.controlParameters.considerAllRituals)
                     {
-                        aiChallenge = null;
-                        foreach (AIChallenge aiChallengeSub in aiData.aiChallenges)
+                        ChallengeData d = new ChallengeData
                         {
-                            if (!aiChallengeSub.supportSubtypes)
-                            {
-                                continue;
-                            }
+                            aiChallenge = null,
+                            challenge = ritual,
+                            location = ua.location,
+                            universalDelegates_Profile = aiData.aiChallenges_UniversalDelegates_Profile,
+                            universalDelegates_Valid = aiData.aiChallenges_UniversalDelegates_Valid,
+                            universalDelegates_ValidFor = aiData.aiChallenges_UniversalDelegates_ValidFor,
+                            universalDelegates_Utility = aiData.aiChallenges_UniversalDelegates_Utility
+                        };
 
-                            if (ritual.GetType().IsSubclassOf(aiChallengeSub.challengeType) && (aiChallenge == null || aiChallengeSub.challengeType.IsSubclassOf(aiChallenge.challengeType)))
-                            {
-                                aiChallenge = aiChallengeSub;
-                            }
-                        }
-
-                        if (aiChallenge != null)
+                        if (getChallengeIsValid(ua, d, aiData.controlParameters))
                         {
-                            ChallengeData d = new ChallengeData
-                            {
-                                aiChallenge = aiChallenge,
-                                challenge = ritual,
-                                universalDelegates_Profile = aiData.aiChallenges_UniversalDelegates_Profile,
-                                universalDelegates_Valid = aiData.aiChallenges_UniversalDelegates_Valid,
-                                universalDelegates_ValidFor = aiData.aiChallenges_UniversalDelegates_ValidFor,
-                                universalDelegates_Utility = aiData.aiChallenges_UniversalDelegates_Utility
-                            };
-
-                            if (aiChallenge.tags.Contains(AIChallenge.ChallengeTags.RequireLocal))
-                            {
-                                d.location = ua.location;
-
-                                if (getChallengeIsValid(ua, d, aiData.controlParameters))
-                                {
-                                    result.Add(d);
-                                }
-                            }
-                            else
-                            {
-                                ritualData.Add(d);
-                            }
-                        }
-                        else if (aiData.controlParameters.considerAllRituals)
-                        {
-                            ChallengeData d = new ChallengeData
-                            {
-                                aiChallenge = null,
-                                challenge = ritual,
-                                location = ua.location,
-                                universalDelegates_Profile = aiData.aiChallenges_UniversalDelegates_Profile,
-                                universalDelegates_Valid = aiData.aiChallenges_UniversalDelegates_Valid,
-                                universalDelegates_ValidFor = aiData.aiChallenges_UniversalDelegates_ValidFor,
-                                universalDelegates_Utility = aiData.aiChallenges_UniversalDelegates_Utility
-                            };
-
-                            if (getChallengeIsValid(ua, d, aiData.controlParameters))
-                            {
-                                result.Add(d);
-                            }
+                            result.Add(d);
                         }
                     }
                 }
@@ -1597,7 +1573,26 @@ namespace CommunityLib
                             continue;
                         }
 
-                        if (aiChallenges.TryGetValue(challenge.GetType(), out AIChallenge aiChallenge))
+                        aiChallenges.TryGetValue(challenge.GetType(), out AIChallenge aiChallenge);
+
+                        if (aiChallenge == null)
+                        {
+                            Type challengeType = challenge.GetType();
+                            foreach (AIChallenge aiChallengeSub in aiData.aiChallenges)
+                            {
+                                if (!aiChallengeSub.supportSubtypes)
+                                {
+                                    continue;
+                                }
+
+                                if (challengeType.IsSubclassOf(aiChallengeSub.challengeType) && (aiChallenge == null || aiChallengeSub.challengeType.IsSubclassOf(aiChallenge.challengeType)))
+                                {
+                                    aiChallenge = aiChallengeSub;
+                                }
+                            }
+                        }
+
+                        if (aiChallenge != null)
                         {
                             if (aiChallenge.tags.Contains(AIChallenge.ChallengeTags.RequireLocal) && location != ua.location)
                             {
@@ -1623,18 +1618,7 @@ namespace CommunityLib
                         else
                         {
                             aiChallenge = null;
-                            foreach (AIChallenge aiChallengeSub in aiData.aiChallenges)
-                            {
-                                if (!aiChallengeSub.supportSubtypes)
-                                {
-                                    continue;
-                                }
-
-                                if (challenge.GetType().IsSubclassOf(aiChallengeSub.challengeType) && (aiChallenge == null || aiChallengeSub.challengeType.IsSubclassOf(aiChallenge.challengeType)))
-                                {
-                                    aiChallenge = aiChallengeSub;
-                                }
-                            }
+                            
 
                             if (aiChallenge != null)
                             {
