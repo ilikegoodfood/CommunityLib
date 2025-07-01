@@ -75,6 +75,8 @@ namespace CommunityLib
 
         public static bool opt_godSort_Alphabetise = false;
 
+        public static bool opt_godSort_Random = false;
+
         public static bool opt_godSort_swwfFirst = true;
 
         public static bool opt_godSort_splitModded = true;
@@ -171,6 +173,9 @@ namespace CommunityLib
                     break;
                 case "God Sort: Alphabetise":
                     opt_godSort_Alphabetise = value;
+                    break;
+                case "God Sort: Random":
+                    opt_godSort_Random = value;
                     break;
                 case "God Sort: Keep SWWF First":
                     opt_godSort_swwfFirst = value;
