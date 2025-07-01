@@ -9527,6 +9527,12 @@ namespace CommunityLib
 
                 // Process god names based on sorting options
                 godData.ProcessName();
+
+                if (ModCore.opt_godSort_Random)
+                {
+                    godData.randomOrderKey = Eleven.random.Next();
+                }
+
                 godSortData[i] = godData;
             }
 

@@ -24,6 +24,8 @@ namespace CommunityLib
 
         public bool isSWWF = false;
 
+        public int randomOrderKey = -1;
+
         public GodSortData()
         {
 
@@ -104,6 +106,11 @@ namespace CommunityLib
             {
                 if (isBonusGod && !other.isBonusGod) return 1;
                 if (!isBonusGod && other.isBonusGod) return -1;
+            }
+
+            if (ModCore.opt_godSort_Random && randomOrderKey >= 0 && other.randomOrderKey >= 0)
+            {
+                return randomOrderKey.CompareTo(other.randomOrderKey);
             }
 
             // Finally, compare alphabetically
