@@ -215,6 +215,7 @@ namespace CommunityLib
 
             // Item Fixes
             harmony.Patch(original: AccessTools.Method(typeof(I_DarkStone), nameof(I_DarkStone.getShortDesc), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(I_DarkStone_getShortDesc_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(I_Deathstone), nameof(I_Deathstone.onDeath), new Type[] { typeof(Person) }), postfix: new HarmonyMethod(patchType, nameof(I_Deathstone_onDeath_Postfix)));
 
             // AddProperty fix
             harmony.Patch(original: AccessTools.Method(typeof(Property), nameof(Property.addProperty), new Type[] { typeof(Map), typeof(Location), typeof(Property) }), prefix: new HarmonyMethod(patchType, nameof(Property_addProperty_Prefix)));
@@ -1720,6 +1721,18 @@ namespace CommunityLib
         private static void I_DarkStone_getShortDesc_Postfix(ref string __result)
         {
             __result = "The sun shines less brightly on whoever carries this stone. Increases the shadow in any human or elven settlement this person is in by 1% every turn (works on heroes, rulers and agents)";
+        }
+
+        private static void I_Deathstone_onDeath_Postfix(I_Deathstone __instance, Person p)
+        {
+            for (int i = 0; i < p.items.Length; i++)
+            {
+                if (p.items[i] == __instance)
+                {
+                    p.items[i] = null;
+                    break;
+                }
+            }
         }
 
         // Unit death hooks
