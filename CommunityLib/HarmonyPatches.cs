@@ -275,7 +275,7 @@ namespace CommunityLib
 
             // Victory Message Fixes
             //harmony.Patch(original: AccessTools.Method(typeof(God_Cards), nameof(God_Cards.getVictoryMessage)), postfix: new HarmonyMethod(patchType, nameof(God_Cards_getVictoryMessage_Postfix)));
-            //harmony.Patch(original: AccessTools.Method(typeof(God_Eternity), nameof(God_Eternity.getVictoryMessage)), postfix: new HarmonyMethod(patchType, nameof(God_Eternity_getVictoryMessage_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(God_Eternity), nameof(God_Eternity.getVictoryMessage)), postfix: new HarmonyMethod(patchType, nameof(God_Eternity_getVictoryMessage_Postfix)));
             //harmony.Patch(original: AccessTools.Method(typeof(God_LaughingKing), nameof(God_LaughingKing.getVictoryMessage)), postfix: new HarmonyMethod(patchType, nameof(God_LaughingKing_getVictoryMessage_Postfix)));
             //harmony.Patch(original: AccessTools.Method(typeof(God_Mammon), nameof(God_Mammon.getVictoryMessage)), postfix: new HarmonyMethod(patchType, nameof(God_Mammon_getVictoryMessage_Postfix)));
             //harmony.Patch(original: AccessTools.Method(typeof(God_Ophanim), nameof(God_Ophanim.getVictoryMessage)), postfix: new HarmonyMethod(patchType, nameof(God_Ophanim_getVictoryMessage_Postfix)));
@@ -5249,7 +5249,50 @@ namespace CommunityLib
             }
         }
 
-        // Victory Message Fixes
+
+        /* === Victory Message Fixes ===
+         * Fixes wording and spelling issues within victory messages.
+         * Adds new victory messages for gods that do not have them (The Broken Maker and The Evil Beneath).
+         * 
+         * Maps `int victoryMode` to victory types:
+         * 
+         * 0 - Shadow
+         * 1 - Madness
+         * 2 - Dark Empire
+         * 3 - Devastation
+         * 4 - Death of the Sun
+         * 5 - Deep Ones
+         * 6 - God-Specific
+         * 
+         * Note: Only Vinerva has a God-specific victory message.
+         */
+        private static void God_Eternity_getVictoryMessage_Postfix(int victoryMode, ref string __result)
+        {
+            switch (victoryMode)
+            {
+                case 0:
+                    __result = "Apathy and despair consume the hearts of men. Stagnation will be forced upon them. Their great civilizations will crumble into ruin, only to be built anew. Perhaps this time they will follow the path their maker set out for them.";
+                    break;
+                case 1:
+                    __result = "Since time immemorial they stared upwards at the sky seeking meaning and purpose. Now they know the truth and their minds cannot help but shatter under the realization. Their god is real, and it holds nothing but disappointment in its heart for them.";
+                    break;
+                case 2:
+                    __result = "The creator called for ruin and rebirth. The loyal answered. A great host amassed to tear down the old and make way for the new. The disloyal and disappointing were cast aside in favour of the creator's chosen.";
+                    break;
+                case 3:
+                    __result = "There was nothing in this world worth saving, just disappointing creatures shambling through pointless lives. The earth heaves with unfathomable ferocity, and the great chalkboard is wiped clean.";
+                    break;
+                case 4:
+                    __result = "Long has humanity enjoyed basking in the warmth of the Maker's great kiln. Now it is time to take the heat away and see if they can stand on their own. Perhaps the cold will take them all, but it is no matter. Time is a flat circle, the kiln can be relit and the story can start again.";
+                    break;
+                case 5:
+                    __result = "Life itself has grown stagnant, humanity's advancement slowing to a crawl. Let the waves churn as new forms emerge, the primordial cauldron once again spews forth. Humanity shall have reason to finally improve.";
+                    break;
+                default:
+                    break;
+            }
+        }
+
         private static void God_Snake_getVictoryMessage_Postfix(int victoryMode, ref string __result)
         {
             if (victoryMode == 2)
