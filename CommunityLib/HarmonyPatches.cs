@@ -218,6 +218,8 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Infiltrate), nameof (Ch_Infiltrate.getComplexity), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Ch_Infiltrate_getComplexity_Transpiler)));
             // Buy Item
             harmony.Patch(original: AccessTools.Method(typeof(Ch_BuyItem), nameof(Ch_BuyItem.complete), new Type[] { typeof(UA) }), prefix: new HarmonyMethod(patchType, nameof(Ch_BuyItem_complete_Prefix)), postfix: new HarmonyMethod(patchType, nameof(Ch_BuyItem_complete_Postfix)));
+            // Dark Empire
+            harmony.Patch(original: AccessTools.Method(typeof(Rt_DarkEmpire), nameof(Rt_DarkEmpire.getDesc), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(Rt_DarkEmpire_getDesc_Postfix)));
             // Death of The Dun
             harmony.Patch(original: AccessTools.Method(typeof(Mg_DeathOfTheSun), nameof(Mg_DeathOfTheSun.turnTick), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Mg_DeathOfTheSun_turnTick_Transpiler)));
             // Disrupt Conclave
@@ -269,6 +271,9 @@ namespace CommunityLib
             // Relationship Interaction Fixes
             harmony.Patch(original: AccessTools.Method(typeof(Society), nameof(Society.populateActions), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Society_populateActions_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(SG_Orc), nameof(SG_Orc.getActions), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(SG_Orc_getActions_Transpiler)));
+
+            // Power Foxes
+            harmony.Patch(original: AccessTools.Method(typeof(P_Opha_TakeControl), nameof(P_Opha_TakeControl.getDesc), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(P_Opha_TakeControl_getDesc_Postfix)));
 
             // AddProperty fix
             harmony.Patch(original: AccessTools.Method(typeof(Property), nameof(Property.addProperty), new Type[] { typeof(Map), typeof(Location), typeof(Property) }), prefix: new HarmonyMethod(patchType, nameof(Property_addProperty_Prefix)));
@@ -1656,6 +1661,13 @@ namespace CommunityLib
             }
         }
 
+        // Dark Empire
+        private static void Rt_DarkEmpire_getDesc_Postfix(ref string __result)
+        {
+            __result = "Converts a human, elven, or dwarven nation into the Dark Empire, the focal point for enshadowed corrupted nations. It can be called to war against other human nations, and all nobles will gain shadow over time. All rulers of human cities with personal and location shadow below 90% will immediately rebel.";
+        }
+
+        // Death of the Sun
         private static IEnumerable<CodeInstruction> Mg_DeathOfTheSun_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
@@ -5806,6 +5818,14 @@ namespace CommunityLib
             }
 
             return true;
+        }
+
+        // Power Fixes
+        // Ophanim
+        // Theocracy
+        private static void P_Opha_TakeControl_getDesc_Postfix(P_Opha_TakeControl __instance, string __result)
+        {
+            __result = $"Causes the faithful to rise up and take control of their society. All rulers of human cities where Ophanim's Faith has less than 100 charge will immediately rebel. Once under your control faith will grow faster, and you can command the society to attack others to spread your faith. Adds {__instance.map.param.power_opha_takeControlTemporaryPanic.ToString()}% temporary world panic.";
         }
 
         // Property.addProperty fix
