@@ -75,7 +75,9 @@
     <Compile Include="HexGridUtils.cs" />
     <Compile Include="Pair.cs" />
     <Compile Include="PowerDelayed.cs" />
+    <Compile Include="Rt_TemptRuler.cs" />
     <Compile Include="T_Prophet.cs" />
+    <Compile Include="T_VinervaSeed.cs" />
     <Compile Include="ValuePriorityPair.cs" />
     <Compile Include="I_TestItem_Blank.cs" />
     <Compile Include="I_Test_DeathSave.cs" />

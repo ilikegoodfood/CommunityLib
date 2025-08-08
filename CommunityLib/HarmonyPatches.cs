@@ -175,6 +175,9 @@ namespace CommunityLib
             // Auto Relaunch
             harmony.Patch(original: AccessTools.Method(typeof(PopupModConfig), nameof(PopupModConfig.dismiss), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(PopupModConfig_dismiss_transpiler)));
 
+            // Event Fixes
+            harmony.Patch(original: AccessTools.Method(typeof(EventManager), "chooseContext", new Type[] { typeof(EventManager.ActiveEvent), typeof(IEnumerable<EventContext>) }), transpiler: new HarmonyMethod(patchType, nameof(EventManager_chooseContext_Transpiler)));
+
             // UI Fixes
             harmony.Patch(original: AccessTools.Method(typeof(UITopLeft), nameof(UITopLeft.raycastResultsIn)), transpiler: new HarmonyMethod(patchType, nameof(UITopLeft_raycastResultsIn_Transpiler)));
 
@@ -185,6 +188,8 @@ namespace CommunityLib
 
             // Agent Fixes
             harmony.Patch(original: AccessTools.Method(typeof(UAE_Abstraction), nameof(UAE_Abstraction.validTarget), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(UAE_Abstraction_validTarget_transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getVisibleChallenges), new Type[] { typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(UA_getVisibleChallenges_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getAllValidChallenges), new Type[] { typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(UA_getAllValidChallenges_Transpiler)));
 
             // PortraitForeground Fixes
             harmony.Patch(original: AccessTools.Method(typeof(UM_HumanArmy), nameof(UM_HumanArmy.getPortraitForeground), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UM_HumanArmy_getPortraitForeground_Transpiler)));
@@ -605,6 +610,39 @@ namespace CommunityLib
             }
         }
 
+        // Event system fixes
+        private static IEnumerable<CodeInstruction> EventManager_chooseContext_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldc_I4_0)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_1);
+                            i++;
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed EventManager_chooseContext_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        // UI Fixes
         private static bool PopupModConfig_dismiss_transpilerBody(PopupModConfig __instance)
         {
             PopupModConfig.loadModConfigFromFile(__instance.modsSeen, true);
@@ -952,7 +990,7 @@ namespace CommunityLib
             return targetLocation;
         }
 
-        // AGent Fixes
+        // Agent Fixes
         private static IEnumerable<CodeInstruction> UAE_Abstraction_validTarget_transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
@@ -992,6 +1030,72 @@ namespace CommunityLib
             }
 
             Console.WriteLine("CommunityLib: Completed UAE_Abstraction_validTarget_transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> UA_getVisibleChallenges_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_ToList = AccessTools.Method(typeof(Enumerable), "ToList").MakeGenericMethod(typeof(Challenge));
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Callvirt && instructionList[i - 1].opcode == OpCodes.Ldfld && instructionList[i - 2].opcode == OpCodes.Ldarg_0)
+                        {
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_ToList);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+
+            }
+
+            Console.WriteLine("CommunityLib: Completed UA_getVisibleChallenges_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> UA_getAllValidChallenges_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_ToList = AccessTools.Method(typeof(Enumerable), "ToList").MakeGenericMethod(typeof(Challenge));
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Callvirt && instructionList[i-1].opcode == OpCodes.Ldfld && instructionList[i-2].opcode == OpCodes.Ldarg_0)
+                        {
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_ToList);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+
+            }
+
+            Console.WriteLine("CommunityLib: Completed UA_getAllValidChallenges_Transpiler");
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
@@ -4508,9 +4612,26 @@ namespace CommunityLib
                 return;
             }
 
-            if (__instance.prophet != null && !__instance.prophet.person.traits.Any(t => t is T_Prophet prophetTrait && prophetTrait.order == __instance))
+            if (__instance.prophet != null && __instance.prophet.person != null && (!__instance.prophet.isDead || ModCore.Get().checkIsUnitSubsumed(__instance.prophet)))
             {
-                __instance.prophet.person.receiveTrait(new T_Prophet(__instance));
+                T_Prophet prophetTrait = (T_Prophet)__instance.prophet.person.traits.FirstOrDefault(t => t is T_Prophet);
+                if (prophetTrait == null)
+                {
+                    prophetTrait = new T_Prophet(__instance);
+                    __instance.prophet.person.receiveTrait(prophetTrait);
+                }
+                else
+                {
+                    if (prophetTrait.Orders == null)
+                    {
+                        prophetTrait.Orders = new List<HolyOrder>();
+                    }
+
+                    if (!prophetTrait.Orders.Contains(__instance))
+                    {
+                        prophetTrait.Orders.Add(__instance);
+                    }
+                }
             }
         }
 

@@ -1570,6 +1570,7 @@ namespace CommunityLib
                 fields.Add("other_kills", new EventRuntime.TypedField<int>((EventContext c) => c._person2 != null ? c._person2.statistic_kills : 0));
             }
 
+            // Replace Teleport to elder tomb
             if (properties.ContainsKey("TELEPORT_TO_ELDER_TOMB"))
             {
                 properties["TELEPORT_TO_ELDER_TOMB"] = new EventRuntime.TypedProperty<string>(delegate (EventContext c, string v)
@@ -1615,6 +1616,53 @@ namespace CommunityLib
                 });
             }
 
+            if (!properties.ContainsKey("GAIN_VINERVA_SEED"))
+            {
+                properties.Add(
+                    "GAIN_VINERVA_SEED",
+                    new EventRuntime.TypedProperty<string>(delegate (EventContext c, string _)
+                    {
+                        if (c.unit != null && c.unit.person != null)
+                        {
+                            T_VinervaSeed seed = (T_VinervaSeed)c.unit.person.traits.FirstOrDefault(t => t is T_VinervaSeed);
+                            if (seed == null)
+                            {
+                                seed = new T_VinervaSeed();
+                                c.unit.person.receiveTrait(seed);
+                            }
+                            else
+                            {
+                                seed.level++;
+                            }
+                        }
+                    })
+                );
+            }
+
+            if (!properties.ContainsKey("LOSE_VINERVA_SEED"))
+            {
+                properties.Add(
+                    "LOSE_VINERVA_SEED",
+                    new EventRuntime.TypedProperty<string>(delegate (EventContext c, string _)
+                    {
+                        if (c.unit != null && c.unit.person != null)
+                        {
+                            T_VinervaSeed seed = (T_VinervaSeed)c.unit.person.traits.FirstOrDefault(t => t is T_VinervaSeed);
+                            if (seed != null)
+                            {
+                                seed.level--;
+                                if (seed.level <= 0)
+                                {
+                                    c.unit.rituals.Remove(seed.TemptRulerChallenge);
+                                    c.unit.person.traits.Remove(seed);
+                                }
+                            }
+                        }
+                    })
+                );
+            }
+
+            // SHipwreck additions
             if (!properties.ContainsKey("CREATE_SHIPWRECK"))
             {
                 properties.Add(
@@ -1746,6 +1794,61 @@ namespace CommunityLib
             if (data.BrokenMakerSleepDuration != 50)
             {
                 data.BrokenMakerSleepDuration = 50;
+            }
+
+            HashSet<Person> processedProphets = new HashSet<Person>();
+            foreach (SocialGroup sg in map.socialGroups)
+            {
+                if (sg is HolyOrder order && order.prophet != null && order.prophet.person != null)
+                {
+                    processedProphets.Add(order.prophet.person);
+                    T_Prophet prophetTrait = null;
+                    int previousTraitIndex = -1;
+                    for (int i = order.prophet.person.traits.Count - 1; i >= 0; i--)
+                    {
+                        if (order.prophet.person.traits[i] is T_Prophet prophetTrait2)
+                        {
+                            prophetTrait = prophetTrait2;
+                            if (previousTraitIndex != -1)
+                            {
+                                order.prophet.person.traits.RemoveAt(previousTraitIndex);
+                            }
+                            previousTraitIndex = i;
+                        }
+                    }
+
+                    if (prophetTrait == null)
+                    {
+                        prophetTrait = new T_Prophet(order);
+                        order.prophet.person.receiveTrait(prophetTrait);
+                        continue;
+                    }
+
+                    if (prophetTrait.Orders == null)
+                    {
+                        prophetTrait.Orders = new List<HolyOrder> { order };
+                    }
+                    else if (!prophetTrait.Orders.Contains(order))
+                    {
+                        prophetTrait.Orders.Add(order);
+                    }
+                }
+            }
+
+            foreach (Person p in map.persons)
+            {
+                if (processedProphets.Contains(p))
+                {
+                    continue;
+                }
+
+                for (int i = p.traits.Count - 1; i >= 0; i--)
+                {
+                    if (p.traits[i] is T_Prophet prophet && (prophet.Orders == null || prophet.Orders.Count == 0))
+                    {
+                        p.traits.RemoveAt(i);
+                    }
+                }
             }
         }
 

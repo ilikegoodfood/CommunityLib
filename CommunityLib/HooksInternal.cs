@@ -308,7 +308,7 @@ namespace CommunityLib
                 int T_DyingLight_Count = 0;
                 int T_SettingSun_Count = 0;
                 int T_TheyWillObey_Count = 0;
-                int I_Darkstone_Count = 0;
+                int I_DarkStone_Count = 0;
                 List<UAEN_Ghast> enshadowingGhasts = new List<UAEN_Ghast>();
                 foreach (Unit unit in set.location.units)
                 {
@@ -318,7 +318,7 @@ namespace CommunityLib
                         {
                             if (item is I_DarkStone)
                             {
-                                I_Darkstone_Count++;
+                                I_DarkStone_Count++;
                             }
                         }
 
@@ -351,9 +351,9 @@ namespace CommunityLib
                     }
                 }
 
-                if (I_Darkstone_Count > 0)
+                if (I_DarkStone_Count > 0)
                 {
-                    msgs.Add(new ReasonMsg("Darktones", 0.01 * I_Darkstone_Count));
+                    msgs.Add(new ReasonMsg($"{(I_DarkStone_Count == 1 ? "Dark Stone" : "Dark Stones")}", 0.01 * I_DarkStone_Count));
                     shadowGain += 0.01;
                 }
                 if (T_DyingLight_Count > 0)
@@ -371,6 +371,7 @@ namespace CommunityLib
                     msgs.Add(new ReasonMsg("They Will Obey", _map.param.trait_theyWillObeyShadowPerTurn * T_SettingSun_Count));
                     shadowGain += 0.01;
                 }
+
                 foreach (UAEN_Ghast ghast in enshadowingGhasts)
                 {
                     double delta = _map.param.ch_ghastShadowPerTurnPerLore * ghast.getStatLore() * Math.Max(0.0, 1.0 - (ward?.charge ?? 0.0));
