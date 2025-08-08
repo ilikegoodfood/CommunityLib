@@ -156,6 +156,9 @@ namespace CommunityLib
             // Auto Relaunch
             harmony.Patch(original: AccessTools.Method(typeof(PopupModConfig), nameof(PopupModConfig.dismiss), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(PopupModConfig_dismiss_transpiler)));
 
+            // Event Fixes
+            harmony.Patch(original: AccessTools.Method(typeof(EventManager), "chooseContext", new Type[] { typeof(EventManager.ActiveEvent), typeof(IEnumerable<EventContext>) }), transpiler: new HarmonyMethod(patchType, nameof(EventManager_chooseContext_Transpiler)));
+
             // UI Fixes
             harmony.Patch(original: AccessTools.Method(typeof(UITopLeft), nameof(UITopLeft.raycastResultsIn)), transpiler: new HarmonyMethod(patchType, nameof(UITopLeft_raycastResultsIn_Transpiler)));
 
@@ -467,6 +470,39 @@ namespace CommunityLib
             }
         }
 
+        // Event system fixes
+        private static IEnumerable<CodeInstruction> EventManager_chooseContext_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldc_I4_0)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_1);
+                            i++;
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed EventManager_chooseContext_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        // UI Fixes
         private static bool PopupModConfig_dismiss_transpilerBody(PopupModConfig __instance)
         {
             PopupModConfig.loadModConfigFromFile(__instance.modsSeen, true);
@@ -3355,9 +3391,26 @@ namespace CommunityLib
                 return;
             }
 
-            if (__instance.prophet != null && !__instance.prophet.person.traits.Any(t => t is T_Prophet prophetTrait && prophetTrait.order == __instance))
+            if (__instance.prophet != null && __instance.prophet.person != null && (!__instance.prophet.isDead || ModCore.Get().checkIsUnitSubsumed(__instance.prophet)))
             {
-                __instance.prophet.person.receiveTrait(new T_Prophet(__instance));
+                T_Prophet prophetTrait = (T_Prophet)__instance.prophet.person.traits.FirstOrDefault(t => t is T_Prophet);
+                if (prophetTrait == null)
+                {
+                    prophetTrait = new T_Prophet(__instance);
+                    __instance.prophet.person.receiveTrait(prophetTrait);
+                }
+                else
+                {
+                    if (prophetTrait.Orders == null)
+                    {
+                        prophetTrait.Orders = new List<HolyOrder>();
+                    }
+
+                    if (!prophetTrait.Orders.Contains(__instance))
+                    {
+                        prophetTrait.Orders.Add(__instance);
+                    }
+                }
             }
         }
 

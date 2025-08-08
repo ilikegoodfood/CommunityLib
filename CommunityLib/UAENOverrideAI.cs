@@ -204,7 +204,7 @@ namespace CommunityLib
                     return false;
                 }
 
-                if (challengeData.location.properties.FirstOrDefault(pr => pr is Pr_Opha_Faith) != null)
+                if (challengeData.location.properties.Any(pr => pr is Pr_Opha_Faith))
                 {
                     return false;
                 }
@@ -216,7 +216,7 @@ namespace CommunityLib
                 }
 
                 Pr_Ward ward = (Pr_Ward)challengeData.location.properties.FirstOrDefault(pr => pr is Pr_Ward);
-                if (ward != null && ward.charge > 0.9)
+                if (ward != null && ward.charge > 0.99)
                 {
                     return false;
                 }
