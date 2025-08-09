@@ -129,6 +129,9 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(UILeftLocation), nameof(UILeftLocation.bViewFaith), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UILeftLocation_bViewFaith_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(UILeftLocation), nameof(UILeftLocation.bHeroesHome), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UILeftLocation_bHeroesHome_Transpiler)));
 
+            // UILeft Unit Modifications
+            harmony.Patch(original: AccessTools.Method(typeof(UILeftUnit), nameof(UILeftUnit.setTo), new Type[] { typeof(Unit) }), postfix: new HarmonyMethod(patchType, nameof(UILeftUnit_setTo_Postfix)));
+
             // LevelUp Traits Hook
             harmony.Patch(original: AccessTools.Method(typeof(Trait), nameof(Trait.getAvailableTraits), new Type[] { typeof(UA) }), prefix: new HarmonyMethod(patchType, nameof(Trait_getAvailableTraits_Prefix)), postfix: new HarmonyMethod(patchType, nameof(Trait_getAvailableTraits_Postfix)));
 
@@ -4484,6 +4487,10 @@ namespace CommunityLib
 
             }
 
+            //UIShortLog.DumpPanelSummary(__instance.transform);
+            UIScrollWrap.WrapPanelAtRawPath(__instance.transform, "Subsettlements", true, false, true, false, 0, 0);
+            // Subsettlement panel:   UILocation[0]/Subsettlements[0]  children=2  [VLG]
+
             Transform buttonTransform = UIUtils.GetChildStrict(__instance, "bHeroesHere");
             if (buttonTransform != null)
             {
@@ -4535,6 +4542,13 @@ namespace CommunityLib
                     }
                 }
             }
+        }
+
+        private static void UILeftUnit_setTo_Postfix(UILeftUnit __instance)
+        {
+            //UIShortLog.DumpPanelSummary(__instance.transform);
+            UIScrollWrap.WrapPanelAtRawPath(__instance.transform, "TraitGrid", true, false, true, false, 0, 0);
+            // Subsettlement panel:   UIUnit[0]/TraitGrid[0]  children=2  [VLG]
         }
 
         private static IEnumerable<CodeInstruction> UILeftLocation_bViewFaith_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator ilg)
