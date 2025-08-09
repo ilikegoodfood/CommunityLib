@@ -539,6 +539,7 @@ namespace CommunityLib
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
             MethodInfo MI_TranspilerBody_RecruitmentPoints = AccessTools.Method(patchType, nameof(UITopLeft_raycastResultsIn_TranspilerBody_RecruitmentPoints), new Type[] { typeof(UITopLeft) });
+            MethodInfo MI_TranspilerBody_PowerTurns = AccessTools.Method(patchType, nameof(UITopLeft_raycastResultsIn_TranspilerBody_PowerTurns), new Type[] { typeof(int) });
 
             bool returnCode = true;
             int targetIndex = 1;
@@ -579,6 +580,16 @@ namespace CommunityLib
                         if (instructionList[i].opcode == OpCodes.Nop && instructionList[i - 1].opcode == OpCodes.Nop)
                         {
                             returnCode = true;
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 5)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldstr && instructionList[i-1].opcode == OpCodes.Call && instructionList[i-2].opcode == OpCodes.Ldloca_S)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 19);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_PowerTurns);
+                            i++;
                             targetIndex = 0;
                         }
                     }
@@ -611,7 +622,17 @@ namespace CommunityLib
                 time = World.staticMap.param.overmind_enthrallmentUseRegainPeriod - (World.staticMap.turn - World.staticMap.param.mapGen_burnInSteps) % World.staticMap.param.overmind_enthrallmentUseRegainPeriod;
             }
 
-            instance.smallDescText.text = $"You can only recruit agents if you have a free slot and have at least one recruitment point available. You gain recruitment points over time, at a rate of one every {World.staticMap.param.overmind_enthrallmentUseRegainPeriod} turns.\n\nNext recruitment point in {time} turns.";
+            instance.smallDescText.text = $"You can only recruit agents if you have a free slot and have at least one recruitment point available. You gain recruitment points over time, at a rate of one every {World.staticMap.param.overmind_enthrallmentUseRegainPeriod} turns.\n\nNext recruitment point in {time} {(time > 1 ? "turns" : "turn")}.";
+        }
+
+        private static string UITopLeft_raycastResultsIn_TranspilerBody_PowerTurns(int turns)
+        {
+            if (turns == 1)
+            {
+                return " turn.";
+            }
+
+            return " turns.";
         }
 
         // Map Fixes
