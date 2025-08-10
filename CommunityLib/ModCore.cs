@@ -152,11 +152,11 @@ namespace CommunityLib
                 case "Show Ophanim's Faith at Elder Tomb":
                     opt_ophanimFaithTomb = value;
                     break;
+                case "Ophanim Perfection Event To Message":
+                    opt_ophanimEventMessageSwap = value;
+                    break;
                 case "Prophet Trait":
                     opt_prophetTrait = value;
-                    break;
-                case "Ophanim Perfection Even To Message":
-                    opt_ophanimEventMessageSwap = value;
                     break;
                 case "Chosen One Death Message":
                     opt_chosenOneDeathMessage = value;
