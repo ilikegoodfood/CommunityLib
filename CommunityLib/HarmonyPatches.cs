@@ -370,6 +370,9 @@ namespace CommunityLib
             // Patches for Map
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.placeWonders), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Map_placeWonders_Transpiler)));
 
+            // Ophanim Perfection Event to Message Swap
+            harmony.Patch(original: AccessTools.Method(typeof(Pr_Opha_Faith), nameof(Pr_Opha_Faith.turnTick), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Pr_Opha_Faith_turnTick_Transpiler)));
+
             // Template Patch
             // harmony.Patch(original: AccessTools.Method(typeof(), nameof(), new Type[] { typeof() }), postfix: new HarmonyMethod(patchType, nameof()));
         }
@@ -7969,6 +7972,63 @@ namespace CommunityLib
                     i--;
                 }
             }
+        }
+
+        // Pr_Opha_Faith_turnTick_Transpiler
+        private static IEnumerable<CodeInstruction> Pr_Opha_Faith_turnTick_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = instructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Pr_Opha_Faith_turnTick_TranspilerBody), new Type[] { typeof(Pr_Opha_Faith) });
+
+            FieldInfo FIS_Opt = AccessTools.Field(typeof(ModCore), nameof(ModCore.opt_ophanimEventMessageSwap));
+
+            int targetIndex = 1;
+
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (i > 1)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i - 1].opcode == OpCodes.Brfalse_S && instructionList[i - 2].opcode == OpCodes.Ldloc_S)
+                        {
+                            Label skipOriginal = (Label)instructionList[i - 1].operand;
+                            Label skipMessage = ilg.DefineLabel();
+
+                            yield return new CodeInstruction(OpCodes.Nop);
+                            yield return new CodeInstruction(OpCodes.Ldsfld, FIS_Opt);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, skipMessage);
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                            yield return new CodeInstruction(OpCodes.Br, skipOriginal);
+
+                            instructionList[i].labels.Add(skipMessage);
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Pr_Opha_Faith_turnTick_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static void Pr_Opha_Faith_turnTick_TranspilerBody(Pr_Opha_Faith faith)
+        {
+            faith.map.addUnifiedMessage(faith.location, null, "Perfection Achieved", $"Ophanim's Faith in {faith.location.getName()} has finally reached the point of perfection. The place can now become as it should be. All buildings are remade in the new design, and all the humans are brought into Ophanim's light. They are now as they should be, perfectly devoted to the faith. They do not waste time in laughter; the children do not play. They sleep when it is time to sleep, and they work until either their bodies fail or Ophanim calls them to become purer still, ascended into crystal so that they might fight the enemies of The Inescapable Truth.\n\nArmies of cities which Ophanim has perfected are stronger than normal human armies, and Ophanim's power can allow them to fight longer and harder than their former flesh would allow.", "Perfection Achieved");
         }
     }
 }
