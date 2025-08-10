@@ -12,7 +12,7 @@ namespace CommunityLib
 
         private static int _frameSeen = -1;
 
-        private static readonly List<string> _wrappedThisFrame = new List<string>();
+        private static readonly List<string> _wrapped = new List<string>();
 
         /// <summary>
         /// Wraps an existing panel (e.g., "Subsettlements") in a ScrollView *without* changing its GameObject.
@@ -26,8 +26,8 @@ namespace CommunityLib
             bool horizontal = false,
             bool copyBackgroundToWrapper = false,     // if true, moves Image from content to wrapper so it doesn't scroll
             bool preferFlexibleHeight = false,        // if true, wrapper gets flexibleHeight=1 instead of locking preferredHeight
-            float scrollbarWidth = 12f,
-            float scrollbarMargin = 2f)
+            float scrollbarWidth = 0f,
+            float scrollbarMargin = 0f)
         {
             if (!screenRoot)
             {
@@ -41,9 +41,9 @@ namespace CommunityLib
                 _wrappedThisFrame.Clear();
                 _frameSeen = frameCount;
             }
-            else*/ if (_wrappedThisFrame.Contains($"{screenRoot.GetInstanceID()}|rawPath"))
+            else*/ if (_wrapped.Contains($"{screenRoot.GetInstanceID()}|rawPath"))
             {
-                Console.WriteLine("[UIScrollWrap] Re-entry suppressed.");
+                Console.WriteLine($"[UIScrollWrap] '{screenRoot.GetInstanceID()}|rawPath' is alrady wrapped. SKippping.");
                 return false;
             }
 
@@ -58,14 +58,15 @@ namespace CommunityLib
             var parentSR = target.parent ? target.parent.GetComponent<ScrollRect>() : null;
             if (parentSR && parentSR.GetComponent<WrappedScrollMarker>())
             {
-                Console.WriteLine("[UIScrollWrap] already wrapped, skipping.");
+                _wrapped.Add($"{screenRoot.GetInstanceID()}|rawPath");
+                Console.WriteLine($"[UIScrollWrap] '{screenRoot.GetInstanceID()}|rawPath' is alrady wrapped. Skipping.");
                 return true;
             }
 
             try
             {
-                _wrappedThisFrame.Add($"{screenRoot.GetInstanceID()}|rawPath");
-                DoWrap(target, vertical, horizontal, copyBackgroundToWrapper, preferFlexibleHeight, scrollbarWidth, scrollbarMargin);
+                _wrapped.Add($"{screenRoot.GetInstanceID()}|rawPath");
+                PerformWrapping(target, vertical, horizontal, copyBackgroundToWrapper, preferFlexibleHeight, scrollbarWidth, scrollbarMargin);
                 Console.WriteLine($"[UIScrollWrap] wrapped: {rawPath}");
                 return true;
             }
@@ -76,7 +77,7 @@ namespace CommunityLib
             }
         }
 
-        private static void DoWrap(
+        private static void PerformWrapping(
             RectTransform contentPanel,
             bool vertical,
             bool horizontal,
@@ -119,13 +120,6 @@ namespace CommunityLib
             scrollRect.movementType = ScrollRect.MovementType.Clamped;
             scrollRect.inertia = true;
             scrollRect.scrollSensitivity = 30f;
-
-            scrollRect.horizontalScrollbar = null;
-            scrollRect.verticalScrollbar = null;
-            foreach (var sb in wrapper.GetComponentsInChildren<Scrollbar>(true))
-            {
-                UnityEngine.Object.Destroy(sb.gameObject);
-            }
 
             // 4) LayoutElement on wrapper so parent LayoutGroup sizes it as before
             var le = wrapper.gameObject.AddComponent<LayoutElement>();
@@ -170,7 +164,12 @@ namespace CommunityLib
             contentPanel.anchoredPosition = Vector2.zero;
             contentPanel.sizeDelta = Vector2.zero;
 
-            EnsureContentAutoSize(contentPanel);
+            //var vlg = contentPanel.GetComponent<VerticalLayoutGroup>() ?? contentPanel.gameObject.AddComponent<VerticalLayoutGroup>();
+            // Keep whatever spacing/padding/alignment it already had; we’re not touching those.
+
+            var fitter = contentPanel.GetComponent<ContentSizeFitter>() ?? contentPanel.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
             scrollRect.viewport = viewport;
             scrollRect.content = contentPanel;
@@ -191,13 +190,25 @@ namespace CommunityLib
             }
 
             // 8) Add vertical scrollbar (optional) that auto-hides and shrinks viewport when visible
-            if (vertical)
+            /*if (ModCore.opt_displayScrollbars)
             {
-                var sb = CreateScrollbar(wrapper, sbWidth, sbMargin);
-                scrollRect.verticalScrollbar = sb;
-                scrollRect.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHideAndExpandViewport;
-                scrollRect.verticalScrollbarSpacing = sbMargin;
-            }
+                if (vertical)
+                {
+                    var sb = CreateScrollbar(wrapper, sbWidth, sbMargin);
+                    scrollRect.verticalScrollbar = sb;
+                    scrollRect.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHideAndExpandViewport;
+                    scrollRect.verticalScrollbarSpacing = sbMargin;
+                }
+
+                if (horizontal)
+                {
+                    var sb = CreateScrollbar(wrapper, sbWidth, sbMargin);
+                    scrollRect.horizontalScrollbar = sb;
+                    scrollRect.horizontalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHideAndExpandViewport;
+                    scrollRect.horizontalScrollbarSpacing = sbMargin;
+                }
+            }*/
+            
 
             // 9) Final rebuild so sizes are valid immediately
             LayoutRebuilder.ForceRebuildLayoutImmediate(wrapper);
@@ -267,17 +278,5 @@ namespace CommunityLib
             sb.handleRect = hrt;
             return sb;
         }
-
-        private static void EnsureContentAutoSize(RectTransform content)
-        {
-            // Ensure a VerticalLayoutGroup exists (you already had one)
-            var vlg = content.GetComponent<VerticalLayoutGroup>() ?? content.gameObject.AddComponent<VerticalLayoutGroup>();
-            // Keep whatever spacing/padding/alignment it already had; we’re not touching those.
-
-            var fitter = content.GetComponent<ContentSizeFitter>() ?? content.gameObject.AddComponent<ContentSizeFitter>();
-            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
-            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-        }
-
     }
 }

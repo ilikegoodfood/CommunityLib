@@ -4547,7 +4547,7 @@ namespace CommunityLib
         private static void UILeftUnit_setTo_Postfix(UILeftUnit __instance)
         {
             //UIShortLog.DumpPanelSummary(__instance.transform);
-            UIScrollWrap.WrapPanelAtRawPath(__instance.transform, "TraitGrid", true, false, true, false, 0, 0);
+            UIScrollWrap.WrapPanelAtRawPath(__instance.transform, "TraitGrid", true, false, true, false);
             // Subsettlement panel:   UIUnit[0]/TraitGrid[0]  children=2  [VLG]
         }
 
