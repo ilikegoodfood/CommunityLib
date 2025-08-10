@@ -51,6 +51,8 @@ namespace CommunityLib
 
         public static bool opt_ophanimFaithTomb = true;
 
+        public static bool opt_ophanimEventMessageSwap = false;
+
         public static bool opt_prophetTrait = false;
 
         public static bool opt_chosenOneDeathMessage = true;
@@ -179,6 +181,9 @@ namespace CommunityLib
                     break;
                 case "Prophet Trait":
                     opt_prophetTrait = value;
+                    break;
+                case "Ophanim Perfection Even To Message":
+                    opt_ophanimEventMessageSwap = value;
                     break;
                 case "Chosen One Death Message":
                     opt_chosenOneDeathMessage = value;
