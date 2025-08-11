@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace CommunityLib
 {
@@ -1853,6 +1854,32 @@ namespace CommunityLib
                     {
                         p.traits.RemoveAt(i);
                     }
+                }
+            }
+        }
+
+        public override void onUIFullscreenBlockerUpdate(GameObject blocker)
+        {
+            if (blocker == null)
+            {
+                return;
+            }
+
+            PopupEvent component = blocker.GetComponent<PopupEvent>();
+            if (component != null)
+            {
+                if (Get().data.tryGetEventPopupData(component, out EventData data, out EventContext ctx, out string msgOverride))
+                {
+                    if (!EventManager.events.TryGetValue(data.id, out EventManager.ActiveEvent e) || !e.willTrigger(ctx))
+                    {
+                        blocker.gameObject.SetActive(false);
+                        map.world.ui.blocker = null;
+                        map.world.ui.checkBlockerQueue();
+                        UnityEngine.Object.Destroy(blocker);
+                        return;
+                    }
+
+                    component.populate(data, ctx, map, msgOverride);
                 }
             }
         }

@@ -180,6 +180,7 @@ namespace CommunityLib
 
             // Event Fixes
             harmony.Patch(original: AccessTools.Method(typeof(EventManager), "chooseContext", new Type[] { typeof(EventManager.ActiveEvent), typeof(IEnumerable<EventContext>) }), transpiler: new HarmonyMethod(patchType, nameof(EventManager_chooseContext_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(PrefabStore), nameof(PrefabStore.popEvent), new Type[] { typeof(EventData), typeof(EventContext), typeof(string), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(PrefabStore_popEvent_Transpiler)));
 
             // UI Fixes
             harmony.Patch(original: AccessTools.Method(typeof(UITopLeft), nameof(UITopLeft.raycastResultsIn)), transpiler: new HarmonyMethod(patchType, nameof(UITopLeft_raycastResultsIn_Transpiler)));
@@ -646,6 +647,64 @@ namespace CommunityLib
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
+        }
+
+        private static IEnumerable<CodeInstruction> PrefabStore_popEvent_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(PrefabStore_popEvent_TranspilerBody));
+
+            int targetIndex = 1;
+            bool returnCode = true;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (i > 2)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i-1].opcode == OpCodes.Ldarg_2 && instructionList[i-2].opcode == OpCodes.Ldarg_1)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldarg_3);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+
+                            returnCode = false;
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop)
+                        {
+                            returnCode = true;
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
+            }
+
+            Console.WriteLine("CommunityLib: Completed PrefabStore_popEvent_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static void PrefabStore_popEvent_TranspilerBody(PopupEvent popup, EventData d, EventContext ctx, string forceMsg)
+        {
+            ModCore.Get().data.addEventPopupData(popup, d, ctx, forceMsg);
         }
 
         // UI Fixes

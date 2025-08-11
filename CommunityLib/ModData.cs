@@ -29,6 +29,8 @@ namespace CommunityLib
         private List<Func<Person, Location, UA>> reviveAgentCreationFunctons;
 
         private Dictionary<Soc_Dwarves, int> dwarfExpansionCooldowns;
+
+        private Dictionary<PopupEvent, Tuple<EventData, EventContext, string>> eventPopupData;
         #endregion
 
         #region Collections
@@ -61,6 +63,7 @@ namespace CommunityLib
             initialiseModCultureData();
             initialiseReviveAgentCreationFunctions();
             initialiseDwarfExpansionCooldowns();
+            initialiseEventPopupData();
 
             // Colections
             initialiseLocusTypes();
@@ -73,6 +76,7 @@ namespace CommunityLib
             initialiseInfluenceGain();
         }
 
+        #region Individual Initialisers
         private void initialiseModIntegrationData()
         {
             if (modIntegrationData == null)
@@ -102,6 +106,14 @@ namespace CommunityLib
             if (dwarfExpansionCooldowns == null)
             {
                 dwarfExpansionCooldowns = new Dictionary<Soc_Dwarves, int>();
+            }
+        }
+
+        private void initialiseEventPopupData()
+        {
+            if (eventPopupData == null)
+            {
+                eventPopupData = new Dictionary<PopupEvent, Tuple<EventData, EventContext, string>>();
             }
         }
 
@@ -181,6 +193,7 @@ namespace CommunityLib
                 hiddenThoughts = new Rt_HiddenThoughts(map.locations[0]);
             }
         }
+        #endregion
 
         public void clean()
         {
@@ -194,6 +207,7 @@ namespace CommunityLib
             modCultureData?.Clear();
             reviveAgentCreationFunctons?.Clear();
             dwarfExpansionCooldowns?.Clear();
+            eventPopupData?.Clear();
 
             // COllections
             locusTypes?.Clear();
@@ -310,6 +324,7 @@ namespace CommunityLib
 
             influenceGainElder.Clear();
             influenceGainHuman.Clear();
+            eventPopupData.Clear();
 
             if (dwarfExpansionCooldowns.Count > 0)
             {
@@ -464,6 +479,33 @@ namespace CommunityLib
         internal bool tryGetDwarvenExpansionCooldown(Soc_Dwarves soc, out int cooldown)
         {
             return dwarfExpansionCooldowns.TryGetValue(soc, out cooldown);
+        }
+
+        internal void addEventPopupData(PopupEvent popup, EventData data, EventContext ctx, string forceMessage = null)
+        {
+            initialiseEventPopupData();
+            Tuple<EventData, EventContext, string> popupData = new Tuple<EventData, EventContext, string>(data, ctx, forceMessage);
+            if (!eventPopupData.ContainsKey(popup))
+            {
+                eventPopupData.Add(popup, popupData);
+            }
+        }
+
+        internal bool tryGetEventPopupData(PopupEvent popup, out EventData data, out EventContext ctx, out string forceMessage)
+        {
+            initialiseEventPopupData();
+            if (eventPopupData.TryGetValue(popup, out Tuple<EventData, EventContext, string> popupData))
+            {
+                data = popupData.Item1;
+                ctx = popupData.Item2;
+                forceMessage = popupData.Item3;
+                return true;
+            }
+
+            data = null;
+            ctx = default;
+            forceMessage = null;
+            return false;
         }
 
         internal void addLocusType(Type t)
