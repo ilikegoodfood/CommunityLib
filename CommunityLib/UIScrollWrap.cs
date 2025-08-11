@@ -41,9 +41,9 @@ namespace CommunityLib
                 _wrappedThisFrame.Clear();
                 _frameSeen = frameCount;
             }
-            else*/ if (_wrappedThisFrame.Contains($"{screenRoot.GetInstanceID()}|rawPath"))
+            else*/ if (_wrapped.Contains($"{screenRoot.GetInstanceID()}|{rawPath}"))
             {
-                Console.WriteLine("[UIScrollWrap] Re-entry suppressed.");
+                Console.WriteLine($"[UIScrollWrap] '{screenRoot.GetInstanceID()}|{rawPath}' is alrady wrapped. Skipping.");
                 return false;
             }
 
@@ -58,20 +58,21 @@ namespace CommunityLib
             var parentSR = target.parent ? target.parent.GetComponent<ScrollRect>() : null;
             if (parentSR && parentSR.GetComponent<WrappedScrollMarker>())
             {
-                Console.WriteLine("[UIScrollWrap] already wrapped, skipping.");
+                _wrapped.Add($"{screenRoot.GetInstanceID()}|{rawPath}");
+                Console.WriteLine($"[UIScrollWrap] '{screenRoot.GetInstanceID()}|{rawPath}' is alrady wrapped. Skipping.");
                 return true;
             }
 
             try
             {
-                _wrappedThisFrame.Add($"{screenRoot.GetInstanceID()}|rawPath");
-                DoWrap(target, vertical, horizontal, copyBackgroundToWrapper, preferFlexibleHeight, scrollbarWidth, scrollbarMargin);
+                _wrapped.Add($"{screenRoot.GetInstanceID()}|{rawPath}");
+                PerformWrapping(target, vertical, horizontal, copyBackgroundToWrapper, preferFlexibleHeight, scrollbarWidth, scrollbarMargin);
                 Console.WriteLine($"[UIScrollWrap] wrapped: {rawPath}");
                 return true;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[UIScrollWrap] ERROR wrapping {rawPath}: {ex}");
+                Console.WriteLine($"[UIScrollWrap] ERROR wrapping {screenRoot.GetInstanceID()}|{rawPath}: {ex}");
                 return false;
             }
         }
