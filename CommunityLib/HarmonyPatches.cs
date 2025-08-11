@@ -656,7 +656,6 @@ namespace CommunityLib
             MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(PrefabStore_popEvent_TranspilerBody));
 
             int targetIndex = 1;
-            bool returnCode = true;
             for (int i = 0; i < instructionList.Count; i++)
             {
                 if (targetIndex > 0)
@@ -672,10 +671,6 @@ namespace CommunityLib
                     {
                         if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i-1].opcode == OpCodes.Ldarg_2 && instructionList[i-2].opcode == OpCodes.Ldarg_1)
                         {
-                            yield return new CodeInstruction(OpCodes.Ldarg_3);
-                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
-
-                            returnCode = false;
                             targetIndex++;
                         }
                     }
@@ -683,16 +678,18 @@ namespace CommunityLib
                     {
                         if (instructionList[i].opcode == OpCodes.Nop)
                         {
-                            returnCode = true;
+                            yield return new CodeInstruction(OpCodes.Ldloc_1);
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Ldarg_2);
+                            yield return new CodeInstruction(OpCodes.Ldarg_3);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+
                             targetIndex = 0;
                         }
                     }
                 }
 
-                if (returnCode)
-                {
-                    yield return instructionList[i];
-                }
+                yield return instructionList[i];
             }
 
             Console.WriteLine("CommunityLib: Completed PrefabStore_popEvent_Transpiler");
