@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
+using static SortedDictionaryProvider;
 
 namespace CommunityLib
 {
@@ -1844,7 +1845,50 @@ namespace CommunityLib
                         return;
                     }
 
-                    component.populate(data, ctx, map, msgOverride);
+                    for (int i = 0; i < data.choices.Count; i++)
+                    {
+                        EventData.Choice c = data.choices[i];
+                        bool valid = true;
+                        try
+                        {
+                            if (c.condition != null)
+                            {
+                                valid = EventRuntime.evaluate(EventParser.parse(EventParser.tokenize(c.condition)), ctx);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"CommunityLib: ERROR: Exception while parsing event option conditions: {ex}");
+                        }
+
+                        if (!valid)
+                        {
+                            if (component.options[i].interactable == true)
+                            {
+                                Image img = component.options[i].GetComponent<Image>();
+                                if (img != null)
+                                {
+                                    img.color = new Color(0f, 0f, 0f, 0.5f);
+                                }
+                                component.options[i].onClick.RemoveAllListeners();
+                                component.options[i].interactable = false;
+                            }
+                        }
+                        else
+                        {
+                            if (component.options[i].interactable == false)
+                            {
+                                Image img = component.options[i].GetComponent<Image>();
+                                if (img != null)
+                                {
+                                    img.color = new Color(1f, 0.388f, 0.388f, 1f);
+                                }
+                                component.options[i].onClick.RemoveAllListeners();
+                                component.options[i].onClick.AddListener(delegate () { component.dismiss(c, ctx); });
+                                component.options[i].interactable = true;
+                            }
+                        }
+                    }
                 }
             }
         }
