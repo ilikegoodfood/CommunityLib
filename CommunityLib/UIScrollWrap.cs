@@ -10,9 +10,7 @@ namespace CommunityLib
         // marker so we don’t double-wrap
         private sealed class WrappedScrollMarker : MonoBehaviour { }
 
-        private static int _frameSeen = -1;
-
-        private static readonly List<string> _wrappedThisFrame = new List<string>();
+        private static readonly List<string> _wrapped = new List<string>();
 
         /// <summary>
         /// Wraps an existing panel (e.g., "Subsettlements") in a ScrollView *without* changing its GameObject.
@@ -77,7 +75,7 @@ namespace CommunityLib
             }
         }
 
-        private static void DoWrap(
+        private static void PerformWrapping(
             RectTransform contentPanel,
             bool vertical,
             bool horizontal,

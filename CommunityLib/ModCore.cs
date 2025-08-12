@@ -1838,6 +1838,7 @@ namespace CommunityLib
                 {
                     if (!EventManager.events.TryGetValue(data.id, out EventManager.ActiveEvent e) || !e.willTrigger(ctx))
                     {
+                        blocker.SetActive(false);
                         map.world.ui.removeBlocker(blocker);
                         return;
                     }
