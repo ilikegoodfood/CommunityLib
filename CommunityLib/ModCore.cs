@@ -65,6 +65,8 @@ namespace CommunityLib
 
         public static bool opt_darkProphets = false;
 
+        public static bool opt_defeatableVinerva = true;
+
         public static bool opt_DynamicOrcCount = false;
 
         public static int opt_targetOrcCount = 2;
@@ -141,6 +143,9 @@ namespace CommunityLib
                     break;
                 case "Dark Prophets":
                     opt_darkProphets = value;
+                    break;
+                case "Defeatable Vinerva":
+                    opt_defeatableVinerva = value;
                     break;
                 case "Enshadow in Dwarven Cities":
                     opt_dwarven_enshadow = value;
