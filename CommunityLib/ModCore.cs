@@ -1873,10 +1873,7 @@ namespace CommunityLib
                 {
                     if (!EventManager.events.TryGetValue(data.id, out EventManager.ActiveEvent e) || !e.willTrigger(ctx))
                     {
-                        blocker.gameObject.SetActive(false);
-                        map.world.ui.blocker = null;
-                        map.world.ui.checkBlockerQueue();
-                        UnityEngine.Object.Destroy(blocker);
+                        map.world.ui.removeBlocker(blocker);
                         return;
                     }
 

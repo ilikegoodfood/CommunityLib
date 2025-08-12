@@ -184,6 +184,7 @@ namespace CommunityLib
 
             // UI Fixes
             harmony.Patch(original: AccessTools.Method(typeof(UITopLeft), nameof(UITopLeft.raycastResultsIn)), transpiler: new HarmonyMethod(patchType, nameof(UITopLeft_raycastResultsIn_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIMaster), nameof(UIMaster.removeBlocker), new Type[] { typeof(GameObject) }), transpiler: new HarmonyMethod(patchType, nameof(UIMaster_removeBlocker_Transpiler)));
 
             // Map Fixes
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.gen), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Map_gen_Transpiler)));
@@ -835,6 +836,54 @@ namespace CommunityLib
             }
 
             return " turns.";
+        }
+
+        private static IEnumerable<CodeInstruction> UIMaster_removeBlocker_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_GameObject_SetActive = AccessTools.Method(typeof(GameObject), nameof(GameObject.SetActive), new Type[] { typeof(bool) });
+            MethodInfo MI_UnityObject_DestroyImmediately = AccessTools.Method(typeof(UnityEngine.Object), nameof(UnityEngine.Object.DestroyImmediate), new Type[] { typeof(UnityEngine.Object) });
+            MethodInfo MI_Unity_Object_Destroy = AccessTools.Method(typeof(UnityEngine.Object), nameof(UnityEngine.Object.Destroy), new Type[] { typeof(UnityEngine.Object) });
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_0);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_GameObject_SetActive);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex <= 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Call && (MethodInfo)instructionList[i].operand == MI_UnityObject_DestroyImmediately)
+                        {
+                            instructionList[i].operand = MI_Unity_Object_Destroy;
+                            targetIndex++;
+                        }
+                    }
+                    if (targetIndex == 4)
+                    {
+                        targetIndex = 0;
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed UIMaster_removeBlocker_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
         }
 
         // Map Fixes
