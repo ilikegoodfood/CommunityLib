@@ -55,6 +55,8 @@ namespace CommunityLib
 
         public int BrokenMakerSleepDuration = 50;
 
+        public bool VinervaDefeatable = false;
+
         public ModData()
         {
             initialiseModIntegrationData();
