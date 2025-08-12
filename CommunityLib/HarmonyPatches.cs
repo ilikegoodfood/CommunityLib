@@ -842,7 +842,6 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_GameObject_SetActive = AccessTools.Method(typeof(GameObject), nameof(GameObject.SetActive), new Type[] { typeof(bool) });
             MethodInfo MI_UnityObject_DestroyImmediately = AccessTools.Method(typeof(UnityEngine.Object), nameof(UnityEngine.Object.DestroyImmediate), new Type[] { typeof(UnityEngine.Object) });
             MethodInfo MI_Unity_Object_Destroy = AccessTools.Method(typeof(UnityEngine.Object), nameof(UnityEngine.Object.Destroy), new Type[] { typeof(UnityEngine.Object) });
 
@@ -851,18 +850,7 @@ namespace CommunityLib
             {
                 if (targetIndex > 0)
                 {
-                    if (targetIndex == 1)
-                    {
-                        if (instructionList[i].opcode == OpCodes.Ldarg_0)
-                        {
-                            yield return new CodeInstruction(OpCodes.Ldarg_1);
-                            yield return new CodeInstruction(OpCodes.Ldc_I4_0);
-                            yield return new CodeInstruction(OpCodes.Callvirt, MI_GameObject_SetActive);
-
-                            targetIndex++;
-                        }
-                    }
-                    else if (targetIndex <= 3)
+                    if (targetIndex <= 2)
                     {
                         if (instructionList[i].opcode == OpCodes.Call && (MethodInfo)instructionList[i].operand == MI_UnityObject_DestroyImmediately)
                         {
@@ -870,7 +858,7 @@ namespace CommunityLib
                             targetIndex++;
                         }
                     }
-                    if (targetIndex == 4)
+                    if (targetIndex == 3)
                     {
                         targetIndex = 0;
                     }
