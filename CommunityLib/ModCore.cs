@@ -1227,6 +1227,72 @@ namespace CommunityLib
                 fields["is_city_ruins"] = new EventRuntime.TypedField<bool>((EventContext c) => c.location != null && c.location.settlement != null && c.location.settlement is Set_CityRuins && !(c.location.settlement is Set_Shipwreck));
             }
 
+            if (properties.ContainsKey("ADD_MODIFIER"))
+            {
+                properties["ADD_MODIFIER"] = new EventRuntime.TypedProperty<string>(delegate (EventContext c, string v)
+                {
+                    string[] components = v.Split(';');
+                    if (components.Length < 3)
+                    {
+                        throw new InvalidOperationException("CommunityLib: ERROR: ADD_MODIFIER called with too few arguments. The command's value needs to be a semi-colon ';' seperated list, containing; the property name, property image key, and property description, in that order. Optionally, a Property.stackStyle enum key can be provided to control property stacking.");
+                    }
+
+                    if (components.Length == 3 || components[3] == "NONE")
+                    {
+                        Pr_EventCustom customProperty = new Pr_EventCustom(c.location);
+                        customProperty.customName = components[0];
+                        customProperty.imageKey = components[1];
+                        customProperty.customDesc = components[2];
+                        c.location.properties.Add(customProperty);
+                    }
+                    else
+                    {
+                        switch(components[3])
+                        {
+                            case "NONE":
+                                Pr_EventCustom customProperty = new Pr_EventCustom(c.location);
+                                customProperty.customName = components[0];
+                                customProperty.imageKey = components[1];
+                                customProperty.customDesc = components[2];
+                                c.location.properties.Add(customProperty);
+                                break;
+                            case "TO_MAX_CHARGE":
+                                customProperty = (Pr_EventCustom)c.location.properties.FirstOrDefault(pr => pr is Pr_EventCustom custom && custom.customName == components[0] && custom.imageKey == components[1] && custom.customDesc == components[2]);
+                                if (customProperty == null)
+                                {
+                                    customProperty = new Pr_EventCustom(c.location);
+                                    customProperty.customName = components[0];
+                                    customProperty.imageKey = components[1];
+                                    customProperty.customDesc = components[2];
+                                    c.location.properties.Add(customProperty);
+                                }
+                                else
+                                {
+                                    customProperty.charge = Math.Min(customProperty.charge + 50.0, 100.0);
+                                }
+                                break;
+                            case "ADD_CHARGE":
+                                customProperty = (Pr_EventCustom)c.location.properties.FirstOrDefault(pr => pr is Pr_EventCustom custom && custom.customName == components[0] && custom.imageKey == components[1] && custom.customDesc == components[2]);
+                                if (customProperty == null)
+                                {
+                                    customProperty = new Pr_EventCustom(c.location);
+                                    customProperty.customName = components[0];
+                                    customProperty.imageKey = components[1];
+                                    customProperty.customDesc = components[2];
+                                    c.location.properties.Add(customProperty);
+                                }
+                                else
+                                {
+                                    customProperty.charge = customProperty.charge + 50.0;
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                });
+            }
+
             if (properties.ContainsKey("CANCEL_ALL_ATTACKS"))
             {
                 properties["CANCEL_ALL_ATTACKS"] = new EventRuntime.TypedProperty<string>(delegate (EventContext c, string v)
