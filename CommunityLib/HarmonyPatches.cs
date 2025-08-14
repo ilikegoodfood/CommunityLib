@@ -192,11 +192,13 @@ namespace CommunityLib
             // Challenge fixes //
             // Cultivate Vinerva's Gifts
             harmony.Patch(original: AccessTools.Method(typeof(Ch_H_CultivateHerGifts), nameof(Ch_H_CultivateHerGifts.validFor), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_H_CultivateHerGifts_validFor_Transpiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(Ch_H_CultivateHerGifts), nameof(Ch_H_CultivateHerGifts.complete), new Type[] { typeof (UA) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_H_CultivateHerGifts_complete_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_H_CultivateHerGifts), nameof(Ch_H_CultivateHerGifts.complete), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_H_CultivateHerGifts_complete_Transpiler)));
             // Infiltrate
-            harmony.Patch(original: AccessTools.Method(typeof(Ch_Infiltrate), nameof (Ch_Infiltrate.getComplexity), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Ch_Infiltrate_getComplexity_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_Infiltrate), nameof(Ch_Infiltrate.getComplexity), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Ch_Infiltrate_getComplexity_Transpiler)));
             // Buy Item
             harmony.Patch(original: AccessTools.Method(typeof(Ch_BuyItem), nameof(Ch_BuyItem.complete), new Type[] { typeof(UA) }), prefix: new HarmonyMethod(patchType, nameof(Ch_BuyItem_complete_Prefix)), postfix: new HarmonyMethod(patchType, nameof(Ch_BuyItem_complete_Postfix)));
+            // Corrupt Elfstone
+            harmony.Patch(original: AccessTools.Method(typeof(Rti_CorruptElfstone), nameof(Rti_CorruptElfstone.validFor), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Rti_CorruptElfstone_validFor_Postfix)));
             // Dark Empire
             harmony.Patch(original: AccessTools.Method(typeof(Rt_DarkEmpire), nameof(Rt_DarkEmpire.getDesc), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(Rt_DarkEmpire_getDesc_Postfix)));
             // Death of The Dun
@@ -1524,6 +1526,20 @@ namespace CommunityLib
             {
                 __instance.msgString += " " + __instance.onSale.getName();
             }
+        }
+
+        // Corrupt Elfstone
+        private static void Rti_CorruptElfstone_validFor_Postfix(Rti_CorruptElfstone __instance, UA ua, ref bool __result)
+        {
+            for (int i = 0; i < ua.person.items.Length; i++)
+            {
+                if (ua.person.items[i] == __instance.caster)
+                {
+                    return;
+                }
+            }
+
+            __result = false;
         }
 
         // Dark Empire
