@@ -233,6 +233,8 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(I_DarkStone), nameof(I_DarkStone.getShortDesc), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(I_DarkStone_getShortDesc_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(I_Deathstone), nameof(I_Deathstone.onDeath), new Type[] { typeof(Person) }), postfix: new HarmonyMethod(patchType, nameof(I_Deathstone_onDeath_Postfix)));
 
+            // Local Action Fixes
+            harmony.Patch(original: AccessTools.Method(typeof(Assets.Code.Action), nameof(Assets.Code.Action.valid), new Type[] { typeof(Person), typeof(SettlementHuman) }), new HarmonyMethod(patchType, nameof(Action_valid_Postfix)));
             // Power Fixes
             harmony.Patch(original: AccessTools.Method(typeof(P_Opha_TakeControl), nameof(P_Opha_TakeControl.getDesc), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(P_Opha_TakeControl_getDesc_Postfix)));
 
@@ -381,6 +383,10 @@ namespace CommunityLib
             // Defeatable Vinerva
             harmony.Patch(original: AccessTools.Method(typeof(P_Vinerva_HeartOfForest), nameof(P_Vinerva_HeartOfForest.cast), new Type[] { typeof(Location) }), postfix: new HarmonyMethod(patchType, nameof(P_Vinerva_HeartOfForest_cast_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(God_Vinerva), nameof(God_Vinerva.turnTick), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(God_Vinerva_turnTick_Postfix)));
+
+            // Ruler Traits Effct Armies
+            harmony.Patch(original: AccessTools.Method(typeof(UM_HumanArmy), nameof(UM_HumanArmy.recomputeMaxHP), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(UM_HumanArmy_recomputerMaxHP_Postfix)));
+
             // Ophanim Perfection Event to Message Swap
             harmony.Patch(original: AccessTools.Method(typeof(Pr_Opha_Faith), nameof(Pr_Opha_Faith.turnTick), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Pr_Opha_Faith_turnTick_Transpiler)));
 
@@ -2023,6 +2029,47 @@ namespace CommunityLib
                 {
                     p.items[i] = null;
                     break;
+                }
+            }
+        }
+
+        // Local Action Fixes
+        private static void Action_valid_Postfix(Assets.Code.Action __instance, Person ruler, SettlementHuman settlementHuman, ref bool __result)
+        {
+            if (__result)
+            {
+                if (__instance.GetType() == typeof(Act_RaiseArmy))
+                {
+                    int maxHP = (int)(settlementHuman.prosperity * settlementHuman.population);
+                    if (settlementHuman.location.soc is Society society)
+                    {
+                        if (society.isAlliance)
+                        {
+                            maxHP = (int)(maxHP * (1.0 + settlementHuman.map.param.society_allianceHPBoost * settlementHuman.map.difficultyMult_growWithDifficulty));
+                        }
+                        else if (society.isOphanimControlled)
+                        {
+                            maxHP = (int)(maxHP * (1.0 + settlementHuman.map.param.society_OphanimHPBoost));
+                        }
+                    }
+
+                    foreach (Property property in settlementHuman.location.properties)
+                    {
+                        if (property is Pr_MilitaryFervor)
+                        {
+                            maxHP = (int)(maxHP * (1.0 + (Math.Min(100.0, property.charge) / 100)));
+                        }
+                    }
+
+                    if (ModCore.opt_rulerTraitsEffectArmies && settlementHuman.ruler != null)
+                    {
+                        maxHP = (int)(maxHP * 0.5 * settlementHuman.ruler.getStatCommand());
+                    }
+
+                    if (maxHP < 1)
+                    {
+                        __result = false;
+                    }
                 }
             }
         }
@@ -5961,7 +6008,7 @@ namespace CommunityLib
         // Orc REaiders Max HP fix
         private static void UM_OrcRaiders_assignMaxHP_Postfix(UM_OrcRaiders __instance)
         {
-            if (__instance.person != null)
+            if (__instance.person != null && __instance.person.unit == __instance)
             {
                 __instance.maxHp = 5 + __instance.person.getStatCommand() * __instance.map.param.um_orcRaidersHPPerCommandStat;
             }
@@ -8211,6 +8258,24 @@ namespace CommunityLib
             {
                 __instance.map.overmind.defeat("The last vestiges of your once mighty forests have been burned in the ever-hungering flames of human industry, ambition, and vengence. You are forced to subside... Until your seeds are once again sown in the natural world.");
             }
+        }
+
+        // Ruler Traits Effect Armies
+        private static void UM_HumanArmy_recomputerMaxHP_Postfix(UM_HumanArmy __instance, int __result)
+        {
+            if (ModCore.opt_rulerTraitsEffectArmies)
+            {
+                if (__instance.homeLocation > -1 && __instance.homeLocation < __instance.map.locations.Count)
+                {
+                    Location homeLocation = __instance.map.locations[__instance.homeLocation];
+                    if (homeLocation.settlement is SettlementHuman settlementHuman && settlementHuman.ruler != null)
+                    {
+                        __result = (int)(__result * 0.5 * settlementHuman.ruler.getStatCommand());
+                    }
+                }
+            }
+
+            __instance.maxHp = __result;
         }
 
         // Pr_Opha_Faith_turnTick_Transpiler
