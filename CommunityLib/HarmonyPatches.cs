@@ -279,6 +279,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(I_Deathstone), nameof(I_Deathstone.onDeath), new Type[] { typeof(Person) }), postfix: new HarmonyMethod(patchType, nameof(I_Deathstone_onDeath_Postfix)));
 
             // Local Action Fixes
+            harmony.Patch(original: AccessTools.Method(typeof(Assets.Code.Action), nameof(Assets.Code.Action.valid), new Type[] { typeof(Person), typeof(SettlementHuman) }), new HarmonyMethod(patchType, nameof(Action_valid_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(SettlementHuman), nameof(SettlementHuman.getLocalActions), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(SettlementHuman_getLocalActions_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(Act_FundOutpost), nameof(Act_FundOutpost.valid), new Type[] { typeof(Person), typeof(SettlementHuman) }), postfix: new HarmonyMethod(patchType, nameof(Act_FundOutpost_valid_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(Act_E_Expand), nameof(Act_E_Expand.valid), new Type[] { typeof(Person), typeof(SettlementHuman) }), transpiler: new HarmonyMethod(patchType, nameof(Act_E_Expand_valid_Transpiler)));
@@ -451,6 +452,9 @@ namespace CommunityLib
             // Defeatable Vinerva
             harmony.Patch(original: AccessTools.Method(typeof(P_Vinerva_HeartOfForest), nameof(P_Vinerva_HeartOfForest.cast), new Type[] { typeof(Location) }), postfix: new HarmonyMethod(patchType, nameof(P_Vinerva_HeartOfForest_cast_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(God_Vinerva), nameof(God_Vinerva.turnTick), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(God_Vinerva_turnTick_Postfix)));
+
+            // Ruler Traits Effct Armies
+            harmony.Patch(original: AccessTools.Method(typeof(UM_HumanArmy), nameof(UM_HumanArmy.recomputeMaxHP), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(UM_HumanArmy_recomputerMaxHP_Postfix)));
 
             // Dwarven Civilisation Count //
             // Patches for Map.placeDwarves
@@ -1232,6 +1236,7 @@ namespace CommunityLib
             }
         }
 
+        // Army Fixes
         private static IEnumerable<CodeInstruction> UM_HumanArmy_getPortraitForeground_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
@@ -2859,6 +2864,51 @@ namespace CommunityLib
         }
 
         // Local Action Fixes
+        private static void Action_valid_Postfix(Assets.Code.Action __instance, Person ruler, SettlementHuman settlementHuman, ref bool __result)
+        {
+            if (__result)
+            {
+                if (__instance.GetType() == typeof(Act_RaiseArmy))
+                {
+                    int maxHP = (int)(settlementHuman.prosperity * settlementHuman.population);
+                    if (settlementHuman.location.soc is Society society)
+                    {
+                        if (society.isAlliance)
+                        {
+                            maxHP = (int)(maxHP * (1.0 + settlementHuman.map.param.society_allianceHPBoost * settlementHuman.map.difficultyMult_growWithDifficulty));
+                        }
+                        else if (society.isOphanimControlled)
+                        {
+                            maxHP = (int)(maxHP * (1.0 + settlementHuman.map.param.society_OphanimHPBoost));
+                        }
+                    }
+
+                    foreach (Property property in settlementHuman.location.properties)
+                    {
+                        if (property is Pr_MilitaryFervor)
+                        {
+                            maxHP = (int)(maxHP * (1.0 + (Math.Min(100.0, property.charge) / 100)));
+                        }
+                    }
+
+                    if (settlementHuman is Set_DwarvenCity)
+                    {
+                        maxHP = (maxHP * 2) + 15;
+                    }
+
+                    if (ModCore.opt_rulerTraitsEffectArmies && settlementHuman.ruler != null)
+                    {
+                        maxHP = (int)(maxHP * 0.5 * settlementHuman.ruler.getStatCommand());
+                    }
+
+                    if (maxHP < 1)
+                    {
+                        __result = false;
+                    }
+                }
+            }
+        }
+
         private static void SettlementHuman_getLocalActions_Postfix(SettlementHuman __instance, ref List<Assets.Code.Action> __result)
         {
             if (__instance.map.awarenessOfUnderground >= 1.0)
@@ -7984,7 +8034,7 @@ namespace CommunityLib
         // Orc REaiders Max HP fix
         private static void UM_OrcRaiders_assignMaxHP_Postfix(UM_OrcRaiders __instance)
         {
-            if (__instance.person != null)
+            if (__instance.person != null && __instance.person.unit == __instance)
             {
                 __instance.maxHp = 5 + __instance.person.getStatCommand() * __instance.map.param.um_orcRaidersHPPerCommandStat;
             }
@@ -10301,6 +10351,24 @@ namespace CommunityLib
             {
                 __instance.map.overmind.defeat("The last vestiges of your once mighty forests have been burned in the ever-hungering flames of human industry, ambition, and vengence. You are forced to subside... Until your seeds are once again sown in the natural world.");
             }
+        }
+
+        // Ruler Traits Effect Armies
+        private static void UM_HumanArmy_recomputerMaxHP_Postfix(UM_HumanArmy __instance, int __result)
+        {
+            if (ModCore.opt_rulerTraitsEffectArmies)
+            {
+                if (__instance.homeLocation > -1 && __instance.homeLocation < __instance.map.locations.Count)
+                {
+                    Location homeLocation = __instance.map.locations[__instance.homeLocation];
+                    if (homeLocation.settlement is SettlementHuman settlementHuman && settlementHuman.ruler != null)
+                    {
+                        __result = (int)(__result * 0.5 * settlementHuman.ruler.getStatCommand());
+                    }
+                }
+            }
+
+            __instance.maxHp = __result;
         }
 
         // Dwarven Expansion Mechanics

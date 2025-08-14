@@ -67,6 +67,8 @@ namespace CommunityLib
 
         public static bool opt_defeatableVinerva = true;
 
+        public static bool opt_rulerTraitsEffectArmies = false;
+
         public static bool opt_DynamicOrcCount = false;
 
         public static int opt_targetOrcCount = 2;
@@ -146,6 +148,9 @@ namespace CommunityLib
                     break;
                 case "Defeatable Vinerva":
                     opt_defeatableVinerva = value;
+                    break;
+                case "Ruler Traits Effect Armies":
+                    opt_rulerTraitsEffectArmies = value;
                     break;
                 case "Enshadow in Dwarven Cities":
                     opt_dwarven_enshadow = value;
