@@ -262,7 +262,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Task_GoRazeSubsettlement), nameof(Task_GoRazeSubsettlement.turnTick), new Type[] { typeof(Unit) }), transpiler: new HarmonyMethod(patchType, nameof(Task_GoRazeSubsettlement_turnTick_Transpiler)));
 
             // Agent Trade Fix
-            harmony.Patch(original: AccessTools.Method(typeof(UA), "playedTriesToTrade", new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(UA_playerTriesToTrade_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(UA), "playerTriesToTrade", new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(UA_playerTriesToTrade_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(UA), "playerTriesToRob", new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(UA_playerTriesToRob_Transpiler)));
 
             // Dwarven Changes //
