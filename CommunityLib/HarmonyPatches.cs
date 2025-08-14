@@ -254,6 +254,8 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Rt_Orcs_RaidingParty), nameof(Rt_Orcs_RaidingParty.complete), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Rt_Orcs_RaidingParty_complete_Transpiler)));
             // Orc Funding
             harmony.Patch(original: AccessTools.Method(typeof(Rt_Orc_ReceiveFunding), nameof(Rt_Orc_ReceiveFunding.validFor), new Type[] { typeof(UA) }), prefix: new HarmonyMethod(patchType, nameof(Rt_Orc_ReceiveFunding_validFor_Prefix)));
+            // Root Out Doubters
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_RootOutDoubters), nameof(Ch_RootOutDoubters.getDesc), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(Ch_RootOutDoubters_getDesc_Postfix)));
 
             // Task Fixes
             // Follow
@@ -2360,6 +2362,12 @@ namespace CommunityLib
             }
 
             return true;
+        }
+
+        private static void Ch_RootOutDoubters_getDesc_Postfix(Ch_RootOutDoubters __instance, ref string __result)
+        {
+            int doubterAmount = __instance.map.param.ch_rootOutDoubtersAmount;
+            __result = __result.Replace($"by{doubterAmount}%", $"by {doubterAmount}%");
         }
 
         // Task Fixes //
