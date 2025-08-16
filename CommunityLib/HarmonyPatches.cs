@@ -1262,7 +1262,7 @@ namespace CommunityLib
             {
                 return;
             }
-
+            
             upstart.person.skillPoints--;
             T_StatMight might = null;
             T_StatCommand command = null;
@@ -1316,7 +1316,7 @@ namespace CommunityLib
                 {
                     might.level++;
                 }
-                World.log($"{upstart.person.getName()} levels up and gains trait {might.getName()}");
+                World.log($"{upstart.person.getName()} levels up and gains trait {might.getName()}.");
             }
             else
             {
@@ -1333,7 +1333,6 @@ namespace CommunityLib
                 World.log($"{upstart.person.getName()} levels up and gains trait {command.getName()}");
             }
         }
-
 
         // Army Fixes
         private static IEnumerable<CodeInstruction> UM_HumanArmy_getPortraitForeground_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
