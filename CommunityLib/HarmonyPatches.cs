@@ -7356,7 +7356,7 @@ namespace CommunityLib
                 yield return instructionList[i];
             }
 
-            Console.WriteLine("CommunityLib: Completed P_Vinerva_BlackForest_validTarget_Location_Transpiler");
+            Console.WriteLine("CommunityLib: Completed P_Vinerva_validTarget_Location_BulkTranspiler");
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
