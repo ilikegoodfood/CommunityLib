@@ -288,7 +288,6 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.getPathTo), new Type[] { typeof(Location), typeof(SocialGroup), typeof(Unit), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(Map_getPathTo_SocialGroup_Transpiler)));
 
             // Power Fixes
-            harmony.Patch(original: AccessTools.Method(typeof(P_Under_WithdrawAgent), nameof(P_Under_WithdrawAgent.validTarget), new Type[] { typeof(Unit) }), transpiler: new HarmonyMethod(patchType, nameof(P_Under_WithdrawAgent_validTraget_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(P_Vinerva_BlackForest), nameof(P_Vinerva_BlackForest.validTarget), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(P_Vinerva_validTarget_Location_BulkTranspiler)));
             harmony.Patch(original: AccessTools.Method(typeof(P_Vinerva_Manifestation), nameof(P_Vinerva_Manifestation.validTarget), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(P_Vinerva_validTarget_Location_BulkTranspiler)));
             harmony.Patch(original: AccessTools.Method(typeof(P_Vinerva_Neurotoxins), nameof(P_Vinerva_Neurotoxins.validTarget), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(P_Vinerva_validTarget_Location_BulkTranspiler)));
