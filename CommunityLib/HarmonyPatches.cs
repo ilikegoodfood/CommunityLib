@@ -227,10 +227,6 @@ namespace CommunityLib
             // Raze Subsettlement
             harmony.Patch(original: AccessTools.Method(typeof(Task_GoRazeSubsettlement), nameof(Task_GoRazeSubsettlement.turnTick), new Type[] { typeof(Unit) }), transpiler: new HarmonyMethod(patchType, nameof(Task_GoRazeSubsettlement_turnTick_Transpiler)));
 
-            // Agent Trade Fix
-            harmony.Patch(original: AccessTools.Method(typeof(UA), "playerTriesToTrade", new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(UA_playerTriesToTrade_Transpiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(UA), "playerTriesToRob", new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(UA_playerTriesToRob_Transpiler)));
-
             // Item Fixes
             harmony.Patch(original: AccessTools.Method(typeof(I_DarkStone), nameof(I_DarkStone.getShortDesc), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(I_DarkStone_getShortDesc_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(I_Deathstone), nameof(I_Deathstone.onDeath), new Type[] { typeof(Person) }), postfix: new HarmonyMethod(patchType, nameof(I_Deathstone_onDeath_Postfix)));
@@ -370,9 +366,9 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(UA), "playerTriesToAttack", new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(checkEngaging_BulkTranspiler)));
             harmony.Patch(original: AccessTools.Method(typeof(UA), "playerTriesToDisrupt", new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(checkEngaging_BulkTranspiler)));
             harmony.Patch(original: AccessTools.Method(typeof(UA), "playerTriesToFollow", new Type[] { typeof(Unit) }), transpiler: new HarmonyMethod(patchType, nameof(checkEngaging_BulkTranspiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(UA), "playerTriesToRob", new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(checkEngaging_BulkTranspiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(UA), "playerTriesToRob", new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(UA_playerTriesToRob_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(UA), "playerTriesToStartChallenge", new Type[] { typeof(Challenge) }), transpiler: new HarmonyMethod(patchType, nameof(checkEngaging_BulkTranspiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(UA), "playerTriesToTrade", new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(checkEngaging_BulkTranspiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(UA), "playerTriesToTrade", new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(UA_playerTriesToTrade_Transpiler)));
 
             harmony.Patch(original: AccessTools.Method(typeof(UIInputs), nameof(UIInputs.rightClickOnHex), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UIInput_rightClickOnHex_Transpiler)));
 
@@ -1926,116 +1922,6 @@ namespace CommunityLib
             }
 
             return false;
-        }
-
-        // Trade Fix
-        private static IEnumerable<CodeInstruction> UA_playerTriesToTrade_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
-        {
-            List<CodeInstruction> instructionList = codeInstructions.ToList();
-
-            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(UA_playerTriesToTrade_TranspilerBody), new Type[] { typeof(UA), typeof(UA) });
-
-            yield return new CodeInstruction(OpCodes.Nop);
-            yield return new CodeInstruction(OpCodes.Ldarg_0);
-            yield return new CodeInstruction(OpCodes.Ldarg_1);
-            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
-            yield return new CodeInstruction(OpCodes.Ret);
-
-            Console.WriteLine("CommunityLib: Completed complete function replacement transpiler UA_playerTriesToTrade_Transpiler");
-        }
-
-        public static void UA_playerTriesToTrade_TranspilerBody(UA me, UA other)
-        {
-            if (!UIInputs.mouseLockout() && me.isCommandable())
-            {
-                if (me.turnLastEngaged == me.map.turn)
-                {
-                    if (me.engagedBy != null)
-                    {
-                        me.map.world.prefabStore.popMsg(me.getName() + " is currently being attacked by " + me.engagedBy.getName() + " and must resolve this combat before taking action.", false, false);
-                        return;
-                    }
-                    else if (me.engaging != null)
-                    {
-                        me.map.world.prefabStore.popMsg(me.getName() + " is currently attacking " + me.engaging.getName() + " and must resolve this combat before taking action.", false, false);
-                        return;
-                    }
-                }
-                
-                if (other.turnLastEngaged == other.map.turn)
-                {
-                    if (other.engagedBy != null)
-                    {
-                        other.map.world.prefabStore.popMsg(other.getName() + " is currently being attacked by " + other.engagedBy.getName() + " and must resolve this combat before taking action.", false, false);
-                        return;
-                    }
-                    else if (other.engaging != null)
-                    {
-                        other.map.world.prefabStore.popMsg(other.getName() + " is currently attacking " + other.engaging.getName() + " and must resolve this combat before taking action.", false, false);
-                        return;
-                    }
-                }
-
-                me.map.world.prefabStore.popItemTrade(me.person, other.person, "Swap Items", -1, -1);
-            }
-        }
-
-        private static IEnumerable<CodeInstruction> UA_playerTriesToRob_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
-        {
-            List<CodeInstruction> instructionList = codeInstructions.ToList();
-
-            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(UA_playerTriesToRob_TranspilerBody), new Type[] { typeof(UA), typeof(UA) });
-
-            yield return new CodeInstruction(OpCodes.Nop);
-            yield return new CodeInstruction(OpCodes.Ldarg_0);
-            yield return new CodeInstruction(OpCodes.Ldarg_1);
-            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
-            yield return new CodeInstruction(OpCodes.Ret);
-
-            Console.WriteLine("CommunityLib: Completed complete function replacement transpiler UA_playerTriesToRob_Transpiler");
-        }
-
-        public static void UA_playerTriesToRob_TranspilerBody(UA me, UA other)
-        {
-            if (!UIInputs.mouseLockout() && me.isCommandable())
-            {
-                if (me.turnLastEngaged == me.map.turn)
-                {
-                    if (me.engagedBy != null)
-                    {
-                        me.map.world.prefabStore.popMsg(me.getName() + " is currently being attacked by " + me.engagedBy.getName() + " and must resolve this combat before taking action.", false, false);
-                        return;
-                    }
-                    else if (me.engaging != null)
-                    {
-                        me.map.world.prefabStore.popMsg(me.getName() + " is currently attacking " + me.engaging.getName() + " and must resolve this combat before taking action.", false, false);
-                        return;
-                    }
-                }
-
-                if (me.task is Task_Disrupted)
-                {
-                    me.map.world.prefabStore.popMsg(me.getName() + " is currently disrupted.", false, false);
-                    return;
-                }
-
-                if (other.person.level >= me.person.level)
-                {
-                    me.map.world.prefabStore.popMsg(me.getName() + " must be higher level than " + other.getName() + " to steal from them.", false, false);
-                    return;
-                }
-
-                if (me.map.turn - me.turnLastDidRobbery < 5 && me.turnLastDidRobbery != 0)
-                {
-                    me.map.world.prefabStore.popMsg(me.getName() + " has robbed another character recently. You must wait at least 5 turns between robberies.", false, false);
-                    return;
-                }
-
-                me.addProfile(me.map.param.ua_robProfileGain);
-                me.addMenace(me.map.param.ua_robMenaceGain);
-                me.turnLastDidRobbery = me.map.turn;
-                me.map.world.prefabStore.popItemTrade(me.person, other.person, "Stealing Items", -1, -1);
-            }
         }
 
         // Item Fixes
@@ -7991,6 +7877,115 @@ namespace CommunityLib
             }
 
             return "ERROR: " + u.getName() + " is neither being attacked by or attacking anyone.";
+        }
+
+        private static IEnumerable<CodeInstruction> UA_playerTriesToTrade_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(UA_playerTriesToTrade_TranspilerBody), new Type[] { typeof(UA), typeof(UA) });
+
+            yield return new CodeInstruction(OpCodes.Nop);
+            yield return new CodeInstruction(OpCodes.Ldarg_0);
+            yield return new CodeInstruction(OpCodes.Ldarg_1);
+            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+            yield return new CodeInstruction(OpCodes.Ret);
+
+            Console.WriteLine("CommunityLib: Completed complete function replacement transpiler UA_playerTriesToTrade_Transpiler");
+        }
+
+        public static void UA_playerTriesToTrade_TranspilerBody(UA me, UA other)
+        {
+            if (!UIInputs.mouseLockout() && me.isCommandable())
+            {
+                if (me.turnLastEngaged == me.map.turn)
+                {
+                    if (me.engagedBy != null)
+                    {
+                        me.map.world.prefabStore.popMsg(me.getName() + " is currently being attacked by " + me.engagedBy.getName() + " and must resolve this combat before taking action.", false, false);
+                        return;
+                    }
+                    else if (me.engaging != null)
+                    {
+                        me.map.world.prefabStore.popMsg(me.getName() + " is currently attacking " + me.engaging.getName() + " and must resolve this combat before taking action.", false, false);
+                        return;
+                    }
+                }
+
+                if (other.turnLastEngaged == other.map.turn)
+                {
+                    if (other.engagedBy != null)
+                    {
+                        other.map.world.prefabStore.popMsg(other.getName() + " is currently being attacked by " + other.engagedBy.getName() + " and must resolve this combat before taking action.", false, false);
+                        return;
+                    }
+                    else if (other.engaging != null)
+                    {
+                        other.map.world.prefabStore.popMsg(other.getName() + " is currently attacking " + other.engaging.getName() + " and must resolve this combat before taking action.", false, false);
+                        return;
+                    }
+                }
+
+                me.map.world.prefabStore.popItemTrade(me.person, other.person, "Swap Items", -1, -1);
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> UA_playerTriesToRob_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(UA_playerTriesToRob_TranspilerBody), new Type[] { typeof(UA), typeof(UA) });
+
+            yield return new CodeInstruction(OpCodes.Nop);
+            yield return new CodeInstruction(OpCodes.Ldarg_0);
+            yield return new CodeInstruction(OpCodes.Ldarg_1);
+            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+            yield return new CodeInstruction(OpCodes.Ret);
+
+            Console.WriteLine("CommunityLib: Completed complete function replacement transpiler UA_playerTriesToRob_Transpiler");
+        }
+
+        public static void UA_playerTriesToRob_TranspilerBody(UA me, UA other)
+        {
+            if (!UIInputs.mouseLockout() && me.isCommandable())
+            {
+                if (me.turnLastEngaged == me.map.turn)
+                {
+                    if (me.engagedBy != null)
+                    {
+                        me.map.world.prefabStore.popMsg(me.getName() + " is currently being attacked by " + me.engagedBy.getName() + " and must resolve this combat before taking action.", false, false);
+                        return;
+                    }
+                    else if (me.engaging != null)
+                    {
+                        me.map.world.prefabStore.popMsg(me.getName() + " is currently attacking " + me.engaging.getName() + " and must resolve this combat before taking action.", false, false);
+                        return;
+                    }
+                }
+
+                if (me.task is Task_Disrupted)
+                {
+                    me.map.world.prefabStore.popMsg(me.getName() + " is currently disrupted.", false, false);
+                    return;
+                }
+
+                if (other.person.level >= me.person.level)
+                {
+                    me.map.world.prefabStore.popMsg(me.getName() + " must be higher level than " + other.getName() + " to steal from them.", false, false);
+                    return;
+                }
+
+                if (me.map.turn - me.turnLastDidRobbery < 5 && me.turnLastDidRobbery != 0)
+                {
+                    me.map.world.prefabStore.popMsg(me.getName() + " has robbed another character recently. You must wait at least 5 turns between robberies.", false, false);
+                    return;
+                }
+
+                me.addProfile(me.map.param.ua_robProfileGain);
+                me.addMenace(me.map.param.ua_robMenaceGain);
+                me.turnLastDidRobbery = me.map.turn;
+                me.map.world.prefabStore.popItemTrade(me.person, other.person, "Stealing Items", -1, -1);
+            }
         }
 
         // UAEN_OverrideAI
