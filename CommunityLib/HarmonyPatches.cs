@@ -7363,7 +7363,7 @@ namespace CommunityLib
             }
         }
 
-        private static IEnumerable<CodeInstruction> P_Vinerva_SerpentineVines_validTarget_Location_BulkTranspiler(IEnumerable<CodeInstruction> codeInstructions)
+        private static IEnumerable<CodeInstruction> P_Vinerva_SerpentineVines_validTarget_Location_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
@@ -7393,7 +7393,7 @@ namespace CommunityLib
                 yield return instructionList[i];
             }
 
-            Console.WriteLine("CommunityLib: Completed P_Vinerva_SerpentineVines_validTarget_Location_BulkTranspiler");
+            Console.WriteLine("CommunityLib: Completed P_Vinerva_SerpentineVines_validTarget_Location_Transpiler");
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
