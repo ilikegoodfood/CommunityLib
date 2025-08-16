@@ -349,6 +349,11 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(P_Under_Sinkholes), nameof(P_Under_Sinkholes.lash), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(P_Under_Sinkholes_lash_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(P_Under_VileSecretions), nameof(P_Under_VileSecretions.validTarget), new Type[] { typeof(Location) }), postfix: new HarmonyMethod(patchType, nameof(P_Under_VileSecretions_validTarget_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(P_Under_WithdrawAgent), nameof(P_Under_WithdrawAgent.validTarget), new Type[] { typeof(Unit) }), transpiler: new HarmonyMethod(patchType, nameof(P_Under_WithdrawAgent_validTraget_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(P_Vinerva_BlackForest), nameof(P_Vinerva_BlackForest.validTarget), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(P_Vinerva_validTarget_Location_BulkTranspiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(P_Vinerva_Manifestation), nameof(P_Vinerva_Manifestation.validTarget), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(P_Vinerva_validTarget_Location_BulkTranspiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(P_Vinerva_Neurotoxins), nameof(P_Vinerva_Neurotoxins.validTarget), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(P_Vinerva_validTarget_Location_BulkTranspiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(P_Vinerva_ChokingSpores), nameof(P_Vinerva_ChokingSpores.validTarget), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(P_Vinerva_validTarget_Location_BulkTranspiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(P_Vinerva_SerpentineVines), nameof(P_Vinerva_SerpentineVines.validTarget), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(P_Vinerva_SerpentineVines_validTarget_Location_Transpiler)));
 
             // House Search Fix
             harmony.Patch(original: AccessTools.Method(typeof(UIScrollThreats), nameof(UIScrollThreats.checkData), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UIScrollThreats_checkData_Transpiler)));
@@ -7315,6 +7320,80 @@ namespace CommunityLib
             }
 
             Console.WriteLine("CommunityLib: Completed P_Under_WithdrawAgent_validTraget_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> P_Vinerva_validTarget_Location_BulkTranspiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_2 && instructionList[i+1].opcode == OpCodes.Ldfld)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Brfalse_S)
+                        {
+                            instructionList[i].opcode = OpCodes.Br_S;
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed P_Vinerva_BlackForest_validTarget_Location_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> P_Vinerva_SerpentineVines_validTarget_Location_BulkTranspiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_0 && instructionList[i + 1].opcode == OpCodes.Ldfld)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Brfalse_S)
+                        {
+                            instructionList[i].opcode = OpCodes.Br_S;
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed P_Vinerva_SerpentineVines_validTarget_Location_BulkTranspiler");
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
