@@ -172,6 +172,9 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.placeTomb), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Map_placeTomb_transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.processPeople), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Map_processPeople_Transpiler)));
 
+            // Agent Fixes
+            harmony.Patch(original: AccessTools.Method(typeof(UAEN_OrcUpstart), nameof(UAEN_OrcUpstart.spendSkillPoint), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UAEN_OrcUpstart_spendSkillPoint_Transpiler)));
+
             // AI Fixes
             harmony.Patch(original: AccessTools.Method(typeof(UM_HumanArmy), nameof(UM_HumanArmy.turnTickAI), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UM_HumanArmy_turnTickAI_Transpiler)));
 
@@ -985,6 +988,103 @@ namespace CommunityLib
 
             return targetLocation;
         }
+
+        // Agent Fixes
+
+        private static IEnumerable<CodeInstruction> UAEN_OrcUpstart_spendSkillPoint_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            {
+                List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+                MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(UAEN_OrcUpstart_spendSkillPoint_TranspilerBody), new Type[] { typeof(UAEN_OrcUpstart) });
+
+                yield return new CodeInstruction(OpCodes.Nop);
+                yield return new CodeInstruction(OpCodes.Ldarg_0);
+                yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                yield return new CodeInstruction(OpCodes.Ret);
+
+                Console.WriteLine("CommunityLib: Completed complete function replacement transpiler UAEN_OrcUpstart_spendSkillPoint_Transpiler");
+            }
+        }
+
+        private static void UAEN_OrcUpstart_spendSkillPoint_TranspilerBody(UAEN_OrcUpstart upstart)
+        {
+            if (upstart.person.skillPoints == 0)
+            {
+                return;
+            }
+
+            upstart.person.skillPoints--;
+            T_StatMight might = null;
+            T_StatCommand command = null;
+            foreach (Trait trait in upstart.person.traits)
+            {
+                if (trait is T_StatMight m)
+                {
+                    might = m;
+                }
+                else if (trait is T_StatCommand c)
+                {
+                    command = c;
+                }
+
+                if (might != null && command != null)
+                {
+                    break;
+                }
+            }
+
+            int roll = -1;
+            if (might != null && might.level >= might.getMaxLevel())
+            {
+                if (command == null || command.level < command.getMaxLevel())
+                {
+                    roll = 1;
+                }
+            }
+            else if (command != null && command.level >= command.getMaxLevel())
+            {
+                roll = 0;
+            }
+            else
+            {
+                roll = Eleven.random.Next(2);
+            }
+
+            if (roll == -1)
+            {
+                World.log($"{upstart.person.getName()} levels up, but was unable to gain a trait.");
+            }
+            else if (roll == 0)
+            {
+                if (might == null)
+                {
+                    might = new T_StatMight();
+                    might.level = 1;
+                    upstart.person.receiveTrait(might);
+                }
+                else if (might.level < might.getMaxLevel())
+                {
+                    might.level++;
+                }
+                World.log($"{upstart.person.getName()} levels up and gains trait {might.getName()}");
+            }
+            else
+            {
+                if (command == null)
+                {
+                    command = new T_StatCommand();
+                    command.level = 1;
+                    upstart.person.receiveTrait(command);
+                }
+                else if (command.level < command.getMaxLevel())
+                {
+                    command.level++;
+                }
+                World.log($"{upstart.person.getName()} levels up and gains trait {command.getName()}");
+            }
+        }
+
 
         // AI Fixes
         // Human Army
