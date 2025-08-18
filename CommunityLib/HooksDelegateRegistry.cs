@@ -1,4 +1,5 @@
 ﻿using Assets.Code;
+using Assets.Code.Modding;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -90,8 +91,38 @@ namespace CommunityLib
             return true;
         }
 
+        // mapMask_PopulatingThreats
+        private List<Action<UIScrollThreats, ModKernel, int, string, string, string>> _delegate_mapMask_PopulatingThreats = new List<Action<UIScrollThreats, ModKernel, int, string, string, string>>();
+        public List<Action<UIScrollThreats, ModKernel, int, string, string, string>> Delegate_mapMask_PopulatingThreats { get { return _delegate_mapMask_PopulatingThreats; } }
+        public bool RegisterHook_mapMask_PopulatingThreats(Action<UIScrollThreats, ModKernel, int, string, string, string> hook)
+        {
+            if (hook == null)
+                return false;
+            if (_delegate_mapMask_PopulatingThreats.Contains(hook))
+                return false;
+            _delegate_mapMask_PopulatingThreats.Add(hook);
+            return true;
+        }
+
+        private List<Action<UIScrollThreats, GameObject, ModKernel, int, string, string, string>> _delegate_mapMask_onThreatHovorOver = new List<Action<UIScrollThreats, GameObject, ModKernel, int, string, string, string>>();
+        public List<Action<UIScrollThreats, GameObject, ModKernel, int, string, string, string>> Delegate_mapMask_onThreatHovorOver { get { return _delegate_mapMask_onThreatHovorOver; } }
+        public bool RegisterHook_mapMask_onThreatHovorOver(Action<UIScrollThreats, GameObject, ModKernel, int, string, string, string> hook)
+        {
+            if (hook == null)
+                return false;
+            if (_delegate_mapMask_onThreatHovorOver.Contains(hook))
+                return false;
+            _delegate_mapMask_onThreatHovorOver.Add(hook);
+            return true;
+        }
+
+        public virtual List<object> mapMask_PopulatingThreats(ModKernel maskingMod, int maskID, string title, string buttonLabel, string description)
+        {
+            return null;
+        }
+
         // onPopulatingPathfindingDelegates
-        
+
         private List<Action<Location, Unit, List<int>, List<Func<Location[], Location, Unit, List<int>, double>>>> _delegate_onPopulatingPathfindingDelegates = new List<Action<Location, Unit, List<int>, List<Func<Location[], Location, Unit, List<int>, double>>>>();
         public List<Action<Location, Unit, List<int>, List<Func<Location[], Location, Unit, List<int>, double>>>> Delegate_onPopulatingPathfindingDelegates { get { return _delegate_onPopulatingPathfindingDelegates; } }
         public bool RegisterHook_onPopulatingPathfindingDelegates(Action<Location, Unit, List<int>, List<Func<Location[], Location, Unit, List<int>, double>>> hook)

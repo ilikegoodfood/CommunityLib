@@ -318,6 +318,10 @@ namespace CommunityLib
             Get().data.initialiseHidenThoughts();
         }
 
+        public int bachelorsMaskID = -1; // TEST ITEM
+
+        private Color dark = new Color(0f, 0f, 0f, 0.8f); // TEST ITEM
+
         public override void afterLoading(Map map)
         {
             core = this;
@@ -352,7 +356,78 @@ namespace CommunityLib
             orcExpansionDefaults();
             eventModifications();
 
-            updateSaveGameVersion(map);
+            Get().bachelorsMaskID = tryRegisterMapMask(Get(), "Bachelors", "Bachelors", "Rulers that can marry.");
+            if (bachelorsMaskID == -1)
+            {
+                Console.WriteLine($"CommunityLib: Failed to regsiter Bachelors map mask.");
+            }
+            else
+            {
+                Console.WriteLine($"CommunityLib: Registered Bachelors map mask to id '{bachelorsMaskID}'.");
+            }
+
+                updateSaveGameVersion(map);
+        }
+
+        public override string mapMask_getTitleText() // TEST ITEM
+        {
+            if (MapMaskManager.maskingMod == this && (int)map.masker.mask == bachelorsMaskID)
+            {
+                return "Bachelors";
+            }
+
+            return "";
+        }
+
+        public override bool mapMask_shouldApplyMask(Hex hex) // TEST ITEM
+        {
+            if (MapMaskManager.maskingMod == this && (int)map.masker.mask == bachelorsMaskID)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public override void mapMask_applyMaskNow(Unit unit, GraphicalUnit graphicalUnit) // TEST ITEM
+        {
+            graphicalUnit.portraitLayer.color = dark;
+            graphicalUnit.backgroundLayer.color = dark;
+            graphicalUnit.borderLayer1.color = dark;
+            graphicalUnit.borderLayer2.color = dark;
+            graphicalUnit.ringLayer.color = dark;
+        }
+
+        public override Color mapMask_getColour(Hex hex) // TEST ITEM
+        {
+            if (MapMaskManager.maskingMod == this && (int)map.masker.mask == bachelorsMaskID)
+            {
+                if (hex.location == null || !(hex.location.settlement is SettlementHuman settlementHuman) || settlementHuman.ruler == null || settlementHuman.ruler.getSpouse() != null)
+                {
+                    return dark;
+                }
+
+                T_Mourning mourning = (T_Mourning)settlementHuman.ruler.traits.FirstOrDefault(t => t is T_Mourning);
+                if (mourning != null && mourning.turnsLeft >= 0)
+                {
+                    switch (mourning.turnsLeft)
+                    {
+                        case 0:
+                            return new Color(0.5f, 0f, 0f, 0.1f);
+                        case 1:
+                            return new Color(0.5f, 0f, 0f, 0.2f);
+                        case 2:
+                            return new Color(0.5f, 0f, 0f, 0.3f);
+                        case 3:
+                            return new Color(0.5f, 0f, 0f, 0.4f);
+                        default:
+                            return new Color(0.5f, 0f, 0f, 0.5f);
+                    }
+                }
+                return Color.clear;
+            }
+
+            return Color.black;
         }
 
         private void getModKernels (Map map)
@@ -2619,6 +2694,27 @@ namespace CommunityLib
             return data.tryGetModCultureData(culture, out modCultureData);
         }
 
+        public int tryRegisterMapMask(ModKernel maskingMod, string title, string buttonLabel, string description)
+        {
+            return Get().data.addMapMaskData(maskingMod, title, buttonLabel, description);
+        }
+
+        public bool tryGetMapMaskData(ModKernel maskingMod, int id, out string title, out string buttonLabel, out string description)
+        {
+            if (Get().data.TryGetMapMaskData(maskingMod, id, out MapMaskData data))
+            {
+                title = data.Title;
+                buttonLabel = data.ButtonLabel;
+                description = data.Description;
+                return true;
+            }
+
+            title = "";
+            buttonLabel = "";
+            description = "";
+            return false;
+        }
+
         public bool checkIsElderTomb(Location location)
         {
             if (location.settlement is Set_TombOfGods)
@@ -2699,7 +2795,7 @@ namespace CommunityLib
             return false;
         }
 
-
+        #region Collections
         public void registerLocusType(Type type) => data.addLocusType(type);
 
         public bool checkHasLocus(Location location) => data.isLocusType(location);
@@ -2725,6 +2821,7 @@ namespace CommunityLib
         public void registerVampireType(Type type) => data.addVampireType(type);
 
         public bool checkIsVampire(Unit unit) => data.isVampireType(unit);
+        #endregion
 
         public void registerReviveAgentCreationFunction(Func<Person, Location, UA> func) => data.addReviveAgentCreationFunction(func);
 

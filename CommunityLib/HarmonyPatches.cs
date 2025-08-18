@@ -8,6 +8,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace CommunityLib
@@ -185,6 +186,10 @@ namespace CommunityLib
             // UI Fixes
             harmony.Patch(original: AccessTools.Method(typeof(UITopLeft), nameof(UITopLeft.raycastResultsIn)), transpiler: new HarmonyMethod(patchType, nameof(UITopLeft_raycastResultsIn_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(UIMaster), nameof(UIMaster.removeBlocker), new Type[] { typeof(GameObject) }), transpiler: new HarmonyMethod(patchType, nameof(UIMaster_removeBlocker_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIMapMaskList), nameof(UIMapMaskList.checkData), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UIMapLastList_checkData_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIE_Button), nameof(UIE_Button.bOnClick), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(UIE_Button_bOnClick_Prefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIScrollThreats), nameof(UIScrollThreats.checkData), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UIScrollThreats_checkData_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIScrollThreats), nameof(UIScrollThreats.Update), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UIScrollThreats_Update_Transpiler)));
 
             // Map Fixes
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.gen), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Map_gen_Transpiler)));
@@ -351,9 +356,6 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(P_Vinerva_Neurotoxins), nameof(P_Vinerva_Neurotoxins.validTarget), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(P_Vinerva_validTarget_Location_BulkTranspiler)));
             harmony.Patch(original: AccessTools.Method(typeof(P_Vinerva_ChokingSpores), nameof(P_Vinerva_ChokingSpores.validTarget), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(P_Vinerva_validTarget_Location_BulkTranspiler)));
             harmony.Patch(original: AccessTools.Method(typeof(P_Vinerva_SerpentineVines), nameof(P_Vinerva_SerpentineVines.validTarget), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(P_Vinerva_SerpentineVines_validTarget_Location_Transpiler)));
-
-            // House Search Fix
-            harmony.Patch(original: AccessTools.Method(typeof(UIScrollThreats), nameof(UIScrollThreats.checkData), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UIScrollThreats_checkData_Transpiler)));
 
             // Dismiss Key Fix
             harmony.Patch(original: AccessTools.Method(typeof(PopupMsg), nameof(PopupMsg.dismissKeyHit), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(PopupMsg_dismissKeyHit_Prefix)));
@@ -890,6 +892,331 @@ namespace CommunityLib
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
+        }
+
+        private static IEnumerable<CodeInstruction> UIMapLastList_checkData_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            {
+                List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+                MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(UIMapLastList_checkData_TranspilerBody), new Type[] { typeof(UIMapMaskList) });
+
+                yield return new CodeInstruction(OpCodes.Nop);
+                yield return new CodeInstruction(OpCodes.Ldarg_0);
+                yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                yield return new CodeInstruction(OpCodes.Ret);
+
+                Console.WriteLine("CommunityLib: Completed complete function replacement transpiler UIMapLastList_checkData_Transpiler");
+            }
+        }
+
+        private static void UIMapLastList_checkData_TranspilerBody(UIMapMaskList maskList)
+        {
+            ModCore.Get().data.initialiseMapMaskData();
+
+            foreach (object obj in maskList.listContent)
+            {
+                Transform transform = (Transform)obj;
+                UnityEngine.Object.Destroy(transform.gameObject);
+            }
+
+            foreach (MapMaskData data in ModCore.Get().data.EnumerateMapMaskData)
+            {
+                GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(maskList.ui.world.prefabStore.uieButton, maskList.listContent);
+                UIE_Button button = gameObject.GetComponent<UIE_Button>();
+                button.setToMapMask(maskList.ui.world, data.ButtonLabel, (MapMaskManager.maskType)data.AssignedID);
+
+                UIE_Button_ModdedCompanion buttonMod = button.gameObject.AddComponent<UIE_Button_ModdedCompanion>();
+                buttonMod.setToMapMask(button, data.MaskingMod);
+            }
+        }
+
+        private static void UIE_Button_bOnClick_Prefix(UIE_Button __instance)
+        {
+            if (__instance.maskSet)
+            {
+                GameObject gameObject = __instance.gameObject;
+                UIE_Button_ModdedCompanion buttonMod = gameObject.GetComponent<UIE_Button_ModdedCompanion>();
+
+                if (buttonMod == null)
+                {
+                    MapMaskManager.maskingMod = null;
+                }
+                else
+                {
+                    MapMaskManager.maskingMod = buttonMod.maskingMod;
+                }
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> UIScrollThreats_checkData_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody_ModdedMapMask = AccessTools.Method(patchType, nameof(UIScrollThreats_checkData_TranspilerBody), new Type[] { typeof(UIScrollThreats) });
+
+            MethodInfo MI_WriteLine = AccessTools.Method(typeof(Console), nameof(Console.WriteLine), new Type[] { typeof(string) });
+            MethodInfo MI_NullOrWhitespace = AccessTools.Method(typeof(string), nameof(string.IsNullOrWhiteSpace), new Type[] { typeof(string) });
+            MethodInfo MI_ConcatStringS2 = AccessTools.Method(typeof(string), nameof(string.Concat), new Type[] { typeof(string), typeof(string) });
+
+            FieldInfo FIS_MaskingMod = AccessTools.Field(typeof(MapMaskManager), nameof(MapMaskManager.maskingMod));
+            FieldInfo FI_House = AccessTools.Field(typeof(Person), nameof(Person.house));
+            FieldInfo FI_HouseName = AccessTools.Field(typeof(House), nameof(House.name));
+
+            Label notModdedMapMask = ilg.DefineLabel();
+            Label continueLabel = ilg.DefineLabel();
+            Label continueLabelB = ilg.DefineLabel();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldsfld, FIS_MaskingMod);
+                            yield return new CodeInstruction(OpCodes.Ldnull);
+                            yield return new CodeInstruction(OpCodes.Cgt_Un);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, notModdedMapMask);
+
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_ModdedMapMask);
+                            yield return new CodeInstruction(OpCodes.Ret);
+
+                            instructionList[i].labels.Add(notModdedMapMask);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldstr && instructionList[i].operand is string str && str == "House Finder")
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i + 1].opcode == OpCodes.Ldloc_S)
+                        {
+                            continueLabel = (Label)instructionList[i - 1].operand;
+
+                            CodeInstruction code = new CodeInstruction(OpCodes.Ldloc_S, 53);
+                            code.labels.AddRange(instructionList[i].labels);
+                            instructionList[i].labels.Clear();
+                            yield return code;
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_House);
+                            yield return new CodeInstruction(OpCodes.Ldnull);
+                            yield return new CodeInstruction(OpCodes.Ceq);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, continueLabel);
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 4)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i + 1].opcode == OpCodes.Ldloc_S)
+                        {
+                            // Logging
+                            /*yield return new CodeInstruction(OpCodes.Ldstr, "CommunityLib: House is ");
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 53);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_House);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_HouseName);
+                            yield return new CodeInstruction(OpCodes.Call, MI_ConcatStringS2);
+                            yield return new CodeInstruction(OpCodes.Call, MI_WriteLine);*/
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 5)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Endfinally)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 6)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 58);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_House);
+                            yield return new CodeInstruction(OpCodes.Ldnull);
+                            yield return new CodeInstruction(OpCodes.Ceq);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, continueLabelB);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 7)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 58);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_House);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_HouseName);
+                            yield return new CodeInstruction(OpCodes.Call, MI_NullOrWhitespace);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, continueLabelB);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 8)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloca_S)
+                        {
+                            instructionList[i].labels.Add(continueLabelB);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed UIScrollThreats_checkData_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static void UIScrollThreats_checkData_TranspilerBody(UIScrollThreats threats)
+        {
+            if (!ModCore.Get().tryGetMapMaskData(MapMaskManager.maskingMod, (int)threats.master.world.map.masker.mask, out string title, out string buttonLabel, out string description))
+            {
+                return;
+            }
+
+            Console.WriteLine("CommunityLib: Populating Threats for modded map mask.");
+            threats.title.text = title;
+            threats.desc.text = description;
+
+            foreach (object obj in threats.subsetArea)
+            {
+                Transform transform = (Transform)obj;
+                UnityEngine.Object.Destroy(transform.gameObject);
+            }
+
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_mapMask_PopulatingThreats)
+            {
+                hook(threats, MapMaskManager.maskingMod, (int)threats.master.world.map.masker.mask, title, buttonLabel, description);
+            }
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            {
+                hook.mapMask_PopulatingThreats(threats, MapMaskManager.maskingMod, (int)threats.master.world.map.masker.mask, title, buttonLabel, description);
+            }
+
+            foreach (object obj in threats.subsetArea)
+            {
+                Transform transform = (Transform)obj;
+                GameObject gameObject = transform.gameObject;
+                gameObject.AddComponent<ThreatViewerComponent>();
+                ThreatViewerComponent comp = gameObject.GetComponent<ThreatViewerComponent>();
+                comp.ThreatViewer = gameObject;
+            }
+
+            threats.updatedForTurn--;
+        }
+
+        private static IEnumerable<CodeInstruction> UIScrollThreats_Update_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody_ModdedMapMask = AccessTools.Method(patchType, nameof(UIScrollThreats_update_TranspilerBody), new Type[] { typeof(UIScrollThreats) });
+
+            FieldInfo FIS_MaskingMod = AccessTools.Field(typeof(MapMaskManager), nameof(MapMaskManager.maskingMod));
+
+            Label notModdedMapMask = ilg.DefineLabel();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldsfld, FIS_MaskingMod);
+                            yield return new CodeInstruction(OpCodes.Ldnull);
+                            yield return new CodeInstruction(OpCodes.Cgt_Un);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, notModdedMapMask);
+
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_ModdedMapMask);
+                            yield return new CodeInstruction(OpCodes.Ret);
+
+                            instructionList[i].labels.Add(notModdedMapMask);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed UIScrollThreats_update_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static void UIScrollThreats_update_TranspilerBody(UIScrollThreats threats)
+        {
+            threats.tick++;
+            if (threats.tick % 10 != 0)
+            {
+                return;
+            }
+
+            if (!ModCore.Get().tryGetMapMaskData(MapMaskManager.maskingMod, (int)threats.master.world.map.masker.mask, out string title, out string buttonLabel, out string description))
+            {
+                return;
+            }
+
+            Console.WriteLine("CommunityLib: Hover Over for modded map mask.");
+            threats.title.text = title;
+            threats.desc.text = description;
+
+            PointerEventData pointerEventData = new PointerEventData(EventSystem.current) { pointerId = -1 };
+            List<RaycastResult> raycastResults = new List<RaycastResult>();
+            EventSystem.current.RaycastAll(pointerEventData, raycastResults);
+
+            threats.targetHero = null;
+            threats.targetHouse = null;
+            threats.targetItem = null;
+            threats.targetOrder = null;
+            threats.targetProperty = null;
+            threats.targetRoute = null;
+            threats.targetSettlement = null;
+            threats.targetSub = null;
+            threats.targetTrait = null;
+
+            foreach (RaycastResult result in raycastResults)
+            {
+                ThreatViewerComponent comp = result.gameObject.GetComponentInParent<ThreatViewerComponent>();
+                if (comp == null)
+                {
+                    continue;
+                }
+
+                foreach (var hook in ModCore.Get().HookRegistry.Delegate_mapMask_onThreatHovorOver)
+                {
+                    hook(threats, comp.ThreatViewer, MapMaskManager.maskingMod, (int)threats.master.world.map.masker.mask, title, buttonLabel, description);
+                }
+
+                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+                {
+                    hook.mapMask_onThreatHovorOver(threats, comp.ThreatViewer, MapMaskManager.maskingMod, (int)threats.master.world.map.masker.mask, title, buttonLabel, description);
+                }
+                break;
+            }
+            GraphicalMap.checkData();
         }
 
         // Map Fixes
@@ -7376,119 +7703,6 @@ namespace CommunityLib
             }
 
             Console.WriteLine("CommunityLib: Completed P_Vinerva_SerpentineVines_validTarget_Location_Transpiler");
-            if (targetIndex != 0)
-            {
-                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
-            }
-        }
-
-        // House Search Fix
-        private static IEnumerable<CodeInstruction> UIScrollThreats_checkData_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
-        {
-            List<CodeInstruction> instructionList = codeInstructions.ToList();
-
-            MethodInfo MI_WriteLine = AccessTools.Method(typeof(Console), nameof(Console.WriteLine), new Type[] { typeof(string) });
-            MethodInfo MI_NullOrWhitespace = AccessTools.Method(typeof(string), nameof(string.IsNullOrWhiteSpace), new Type[] { typeof(string) });
-            MethodInfo MI_ConcatStringS2 = AccessTools.Method(typeof(string), nameof(string.Concat), new Type[] { typeof(string), typeof(string) });
-
-            FieldInfo FI_House = AccessTools.Field(typeof(Person), nameof(Person.house));
-            FieldInfo FI_HouseName = AccessTools.Field(typeof(House), nameof(House.name));
-
-            Label continueLabel = ilg.DefineLabel();
-            Label continueLabelB = ilg.DefineLabel();
-
-            int targetIndex = 1;
-            for (int i = 0; i < instructionList.Count; i++)
-            {
-                if (targetIndex > 0)
-                {
-                    if (targetIndex == 1)
-                    {
-                        if (instructionList[i].opcode == OpCodes.Ldstr && instructionList[i].operand is string str && str == "House Finder")
-                        {
-                            targetIndex++;
-                        }
-                    }
-                    else if (targetIndex == 2)
-                    {
-                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i + 1].opcode == OpCodes.Ldloc_S)
-                        {
-                            continueLabel = (Label)instructionList[i - 1].operand;
-
-                            CodeInstruction code = new CodeInstruction(OpCodes.Ldloc_S, 53);
-                            code.labels.AddRange(instructionList[i].labels);
-                            instructionList[i].labels.Clear();
-                            yield return code;
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_House);
-                            yield return new CodeInstruction(OpCodes.Ldnull);
-                            yield return new CodeInstruction(OpCodes.Ceq);
-                            yield return new CodeInstruction(OpCodes.Brtrue_S, continueLabel);
-                            targetIndex++;
-                        }
-                    }
-                    else if (targetIndex == 3)
-                    {
-                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i + 1].opcode == OpCodes.Ldloc_S)
-                        {
-                            // Logging
-                            /*yield return new CodeInstruction(OpCodes.Ldstr, "CommunityLib: House is ");
-                            yield return new CodeInstruction(OpCodes.Ldloc_S, 53);
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_House);
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_HouseName);
-                            yield return new CodeInstruction(OpCodes.Call, MI_ConcatStringS2);
-                            yield return new CodeInstruction(OpCodes.Call, MI_WriteLine);*/
-
-                            targetIndex++;
-                        }
-                    }
-                    else if (targetIndex == 4)
-                    {
-                        if (instructionList[i].opcode == OpCodes.Endfinally)
-                        {
-                            targetIndex++;
-                        }
-                    }
-                    else if (targetIndex == 5)
-                    {
-                        if (instructionList[i].opcode == OpCodes.Ldarg_0)
-                        {
-                            yield return new CodeInstruction(OpCodes.Ldloc_S, 58);
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_House);
-                            yield return new CodeInstruction(OpCodes.Ldnull);
-                            yield return new CodeInstruction(OpCodes.Ceq);
-                            yield return new CodeInstruction(OpCodes.Brtrue_S, continueLabelB);
-
-                            targetIndex++;
-                        }
-                    }
-                    else if (targetIndex == 6)
-                    {
-                        if (instructionList[i].opcode == OpCodes.Ldloc_S)
-                        {
-                            yield return new CodeInstruction(OpCodes.Ldloc_S, 58);
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_House);
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_HouseName);
-                            yield return new CodeInstruction(OpCodes.Call, MI_NullOrWhitespace);
-                            yield return new CodeInstruction(OpCodes.Brtrue_S, continueLabelB);
-
-                            targetIndex++;
-                        }
-                    }
-                    else if (targetIndex == 7)
-                    {
-                        if (instructionList[i].opcode == OpCodes.Ldloca_S)
-                        {
-                            instructionList[i].labels.Add(continueLabelB);
-
-                            targetIndex = 0;
-                        }
-                    }
-                }
-
-                yield return instructionList[i];
-            }
-
-            Console.WriteLine("CommunityLib: Completed UIScrollThreats_checkData_Transpiler");
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);

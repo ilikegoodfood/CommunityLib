@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Reflection;
 using System.Linq;
+using Assets.Code.Modding;
 
 namespace CommunityLib
 {
@@ -20,6 +21,8 @@ namespace CommunityLib
             HooksDelegateRegistry registry = ModCore.Get().HookRegistry;
             registry.RegisterHook_onMapGen_PlaceWonders_1(onMapGen_PlaceWonders);
             registry.RegisterHook_onMapGen_PlaceWonders_2(onMapGen_PlaceWonders);
+            registry.RegisterHook_mapMask_PopulatingThreats(mapMask_PopulatingThreats); // TEST ITEM
+            registry.RegisterHook_mapMask_onThreatHovorOver(mapMask_onThreatHovorOver); // TEST ITEM
             registry.RegisterHook_isUnitSubsumed(isUnitSubsumed);
             registry.RegisterHook_onUnitDeath_StartOfProcess(onUnitDeath_StartOfProcess);
             registry.RegisterHook_onSettlementFallIntoRuin_StartOfProcess(onSettlementFallIntoRuin_StartOfProcess);
@@ -161,6 +164,76 @@ namespace CommunityLib
                 }
 
                 failedToPlaceWonder = true;
+            }
+        }
+
+        public void mapMask_PopulatingThreats(UIScrollThreats threats, ModKernel maskingMod, int maskID, string title, string buttonLabel, string description) // TEST ITEM
+        {
+            if (maskID == -1 || maskID != ModCore.Get().bachelorsMaskID)
+            {
+                return;
+            }
+
+            HashSet<Person> visited = new HashSet<Person>();
+            foreach(Location location in threats.world.map.locations)
+            {
+                if (!(location.settlement is SettlementHuman settlementHuman) || settlementHuman.ruler == null || settlementHuman.ruler.getSpouse() != null || settlementHuman.ruler.traits.Any(t => t is T_Mourning mourn && mourn.turnsLeft > 0) || visited.Contains(settlementHuman.ruler))
+                {
+                    continue;
+                }
+                visited.Add(settlementHuman.ruler);
+                
+                string filterText = threats.filterField.text.ToLower();
+                if (filterText == "" || settlementHuman.ruler.getName().ToLower().Contains(filterText))
+                {
+                    GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(threats.world.prefabStore.uieHeroViewer, threats.subsetArea);
+                    UIE_HeroViewer viewer = gameObject.GetComponent<UIE_HeroViewer>();
+                    viewer.setToPerson(threats.world, settlementHuman.ruler);
+
+                    T_Mourning mourning = (T_Mourning)settlementHuman.ruler.traits.FirstOrDefault(t => t is T_Mourning);
+                    if (mourning != null && mourning.turnsLeft >= 0)
+                    {
+                        switch (mourning.turnsLeft)
+                        {
+                            case 0:
+                                viewer.icon.color = new Color(0.5f, 0f, 0f, 0.1f);
+                                break;
+                            case 1:
+                                viewer.icon.color = new Color(0.5f, 0f, 0f, 0.2f);
+                                break;
+                            case 2:
+                                viewer.icon.color = new Color(0.5f, 0f, 0f, 0.3f);
+                                break;
+                            case 3:
+                                viewer.icon.color = new Color(0.5f, 0f, 0f, 0.4f);
+                                break;
+                            default:
+                                viewer.icon.color = new Color(0.5f, 0f, 0f, 0.5f);
+                                break;
+                        }
+                    }
+                }
+            }
+        }
+
+        public virtual void mapMask_onThreatHovorOver(UIScrollThreats threats, GameObject hoveredItem, ModKernel maskingMod, int maskID, string title, string buttonLabel, string description) // TEST ITEM
+        {
+            if (maskingMod != ModCore.Get() || maskID != ModCore.Get().bachelorsMaskID)
+            {
+                return;
+            }
+
+            UIE_HeroViewer viewer = hoveredItem.GetComponent<UIE_HeroViewer>();
+            if (viewer == null)
+            {
+                return;
+            }
+
+            Settlement set = threats.targetSettlement = threats.world.map.locations[viewer.personExamplar.rulerOf].settlement;
+            if (threats.targetSettlement != set)
+            {
+                threats.targetSettlement = set;
+                GraphicalMap.checkData();
             }
         }
 
