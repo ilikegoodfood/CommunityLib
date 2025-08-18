@@ -63,10 +63,10 @@ namespace CommunityLib
 
         public ModData()
         {
-            initialiseModIntegrationData();
-            initialiseModCultureData();
-            initialiseReviveAgentCreationFunctions();
-            initialiseEventPopupData();
+            initializeModIntegrationData();
+            initializeModCultureData();
+            initializeReviveAgentCreationFunctions();
+            initializeEventPopupData();
 
             // Colections
             initializeLocusTypes();
@@ -103,7 +103,7 @@ namespace CommunityLib
             }
         }
 
-        private void initialiseEventPopupData()
+        private void initializeEventPopupData()
         {
             if (eventPopupData == null)
             {
@@ -317,9 +317,9 @@ namespace CommunityLib
             saveData.lastPlayedGod = map.overmind.god.getName();
             saveUserData();
 
-            initialiseModIntegrationData();
-            initialiseModCultureData();
-            initialiseReviveAgentCreationFunctions();
+            initializeModIntegrationData();
+            initializeModCultureData();
+            initializeReviveAgentCreationFunctions();
 
             // Collections
             initializeLocusTypes();
