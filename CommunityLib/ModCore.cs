@@ -318,9 +318,9 @@ namespace CommunityLib
             Get().data.initialiseHidenThoughts();
         }
 
-        public int bachelorsMaskID = -1; // TEST ITEM
+        //public int bachelorsMaskID = -1; // TEST ITEM
 
-        private Color dark = new Color(0f, 0f, 0f, 0.8f); // TEST ITEM
+        //private Color dark = new Color(0f, 0f, 0f, 0.8f); // TEST ITEM
 
         public override void afterLoading(Map map)
         {
@@ -356,7 +356,7 @@ namespace CommunityLib
             orcExpansionDefaults();
             eventModifications();
 
-            Get().bachelorsMaskID = tryRegisterMapMask(Get(), "Bachelors", "Bachelors", "Rulers that can marry.");
+            /*Get().bachelorsMaskID = tryRegisterMapMask(Get(), "Bachelors", "Bachelors", "Rulers that can marry.");
             if (bachelorsMaskID == -1)
             {
                 Console.WriteLine($"CommunityLib: Failed to regsiter Bachelors map mask.");
@@ -364,12 +364,12 @@ namespace CommunityLib
             else
             {
                 Console.WriteLine($"CommunityLib: Registered Bachelors map mask to id '{bachelorsMaskID}'.");
-            }
+            }*/
 
-                updateSaveGameVersion(map);
+            updateSaveGameVersion(map);
         }
 
-        public override string mapMask_getTitleText() // TEST ITEM
+        /*public override string mapMask_getTitleText() // TEST ITEM
         {
             if (MapMaskManager.maskingMod == this && (int)map.masker.mask == bachelorsMaskID)
             {
@@ -402,33 +402,15 @@ namespace CommunityLib
         {
             if (MapMaskManager.maskingMod == this && (int)map.masker.mask == bachelorsMaskID)
             {
-                if (hex.location == null || !(hex.location.settlement is SettlementHuman settlementHuman) || settlementHuman.ruler == null || settlementHuman.ruler.getSpouse() != null)
+                if (hex.location == null || !(hex.location.settlement is SettlementHuman settlementHuman) || settlementHuman.ruler == null || settlementHuman.ruler.getSpouse() != null || settlementHuman.ruler.traits.Any(t => t is T_Mourning mourning))
                 {
                     return dark;
-                }
-
-                T_Mourning mourning = (T_Mourning)settlementHuman.ruler.traits.FirstOrDefault(t => t is T_Mourning);
-                if (mourning != null && mourning.turnsLeft >= 0)
-                {
-                    switch (mourning.turnsLeft)
-                    {
-                        case 0:
-                            return new Color(0.5f, 0f, 0f, 0.1f);
-                        case 1:
-                            return new Color(0.5f, 0f, 0f, 0.2f);
-                        case 2:
-                            return new Color(0.5f, 0f, 0f, 0.3f);
-                        case 3:
-                            return new Color(0.5f, 0f, 0f, 0.4f);
-                        default:
-                            return new Color(0.5f, 0f, 0f, 0.5f);
-                    }
                 }
                 return Color.clear;
             }
 
             return Color.black;
-        }
+        }*/
 
         private void getModKernels (Map map)
         {
