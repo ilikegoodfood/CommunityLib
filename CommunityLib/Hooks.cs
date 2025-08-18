@@ -1,4 +1,5 @@
 ﻿using Assets.Code;
+using Assets.Code.Modding;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -63,6 +64,35 @@ namespace CommunityLib
         public virtual void onGraphicalLinkUpdated(GraphicalLink graphicalLink)
         {
 
+        }
+
+        /// <summary>
+        /// This hook fires when a modded map mask is populating the threats panel. It recieves the UIScrollThreats instance that requires populating (threats), the ModKernel that assigned the map mask (maskingMod), the dynamically assignd int ID of the mask (maskID), and the string title, buttonLabel, and description, to assis with identification accross mods.
+        /// </summary>
+        /// <param name="threats"></param>
+        /// <param name="maskingMod"></param>
+        /// <param name="maskID"></param>
+        /// <param name="title"></param>
+        /// <param name="buttonLabel"></param>
+        /// <param name="description"></param>
+        public virtual void mapMask_PopulatingThreats(UIScrollThreats threats, ModKernel maskingMod, int maskID, string title, string buttonLabel, string description)
+        {
+            return;
+        }
+
+        /// <summary>
+        ///  This hook fires when a modded mask mask is detected during updating of the highlight target in the Threats panel. It should set one of the threats 'target...' fields to the target object and return. updating the GraphicalMap is done automatically after this method returns.
+        /// </summary>
+        /// <param name="threats"></param>
+        /// <param name="hoveredItem"></param>
+        /// <param name="maskingMod"></param>
+        /// <param name="maskID"></param>
+        /// <param name="title"></param>
+        /// <param name="buttonLabel"></param>
+        /// <param name="description"></param>
+        public virtual void mapMask_onThreatHovorOver(UIScrollThreats threats, GameObject hoveredItem, ModKernel maskingMod, int maskID, string title, string buttonLabel, string description)
+        {
+            return;
         }
 
         /// <summary>

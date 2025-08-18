@@ -46,6 +46,10 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
+    <Reference Include="Unity.TextMeshPro">
+      <HintPath>..\..\..\Game DLLs\2_0\Unity.TextMeshPro.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>..\..\..\Game DLLs\1_1\UnityEngine.CoreModule.dll</HintPath>
       <Private>False</Private>
@@ -73,11 +77,14 @@
     <Compile Include="GodSortData.cs" />
     <Compile Include="HexGridUtils.cs" />
     <Compile Include="HooksDelegateRegistry.cs" />
+    <Compile Include="MapMaskData.cs" />
     <Compile Include="Pair.cs" />
     <Compile Include="PowerDelayed.cs" />
     <Compile Include="Rt_TemptRuler.cs" />
+    <Compile Include="ThreatViewerComponent.cs" />
     <Compile Include="T_Prophet.cs" />
     <Compile Include="T_VinervaSeed.cs" />
+    <Compile Include="UIE_Button_ModdedCompanion.cs" />
     <Compile Include="UIScrollWrap.cs" />
     <Compile Include="UIShortLog.cs" />
     <Compile Include="ValuePriorityPair.cs" />

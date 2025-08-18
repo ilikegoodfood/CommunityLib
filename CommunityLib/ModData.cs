@@ -1,8 +1,10 @@
 ﻿using Assets.Code;
+using Assets.Code.Modding;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 
 namespace CommunityLib
@@ -29,6 +31,8 @@ namespace CommunityLib
         private List<Func<Person, Location, UA>> reviveAgentCreationFunctons;
 
         private Dictionary<PopupEvent, Tuple<EventData, EventContext, string>> eventPopupData;
+
+        private Dictionary<Tuple<ModKernel, int>, MapMaskData> mapMaskData;
         #endregion
 
         #region Collections
@@ -65,18 +69,17 @@ namespace CommunityLib
             initialiseEventPopupData();
 
             // Colections
-            initialiseLocusTypes();
+            initializeLocusTypes();
             initialiseMagicTraitTypes();
-            initialiseVampireTypes();
-            initialiseNaturalWonderTypes();
-            InitialiseWonderTypes();
-            initialiseVampireTypes();
+            initializeNaturalWonderTypes();
+            InitializeWonderTypes();
+            initializeVampireTypes();
 
-            initialiseInfluenceGain();
+            initializeInfluenceGain();
         }
 
         #region Individual Initialisers
-        private void initialiseModIntegrationData()
+        private void initializeModIntegrationData()
         {
             if (modIntegrationData == null)
             {
@@ -84,7 +87,7 @@ namespace CommunityLib
             }
         }
 
-        private void initialiseModCultureData()
+        private void initializeModCultureData()
         {
             if (modCultureData == null)
             {
@@ -92,7 +95,7 @@ namespace CommunityLib
             }
         }
 
-        private void initialiseReviveAgentCreationFunctions()
+        private void initializeReviveAgentCreationFunctions()
         {
             if (reviveAgentCreationFunctons == null)
             {
@@ -108,7 +111,39 @@ namespace CommunityLib
             }
         }
 
-        private void initialiseLocusTypes()
+        internal void initialiseMapMaskData()
+        {
+            if (mapMaskData == null)
+            {
+                mapMaskData = new Dictionary<Tuple<ModKernel, int>, MapMaskData>();
+
+                Dictionary<UIKeybinds.Action, MapMaskManager.maskType> maskMappings = UIInputs.getMaskMappings();
+                foreach (UIKeybinds.Action action in maskMappings.Keys)
+                {
+                    StringBuilder textBuilder = new StringBuilder();
+                    int assignedID = (int)maskMappings[action];
+                    string title = map.masker.getTitleText((MapMaskManager.maskType)assignedID);
+                    foreach (char c in title)
+                    {
+                        if (c == '(')
+                        {
+                            break;
+                        }
+                        textBuilder.Append(c);
+                    }
+
+                    textBuilder.Replace("View: ", "");
+                    textBuilder.Append($" ({UIKeybinds.mappings[action].ToString()})");
+                    textBuilder.Replace("Alpha", "");
+
+                    string buttonLabel = textBuilder.ToString();
+
+                    mapMaskData.Add(new Tuple<ModKernel, int>(null, assignedID), new MapMaskData(null, title, buttonLabel, "", assignedID));
+                }
+            }
+        }
+
+        private void initializeLocusTypes()
         {
             if (locusTypes == null)
             {
@@ -124,7 +159,7 @@ namespace CommunityLib
             }
         }
 
-        public void InitialiseWonderTypes()
+        public void InitializeWonderTypes()
         {
             if (wonderTypes == null)
             {
@@ -132,7 +167,7 @@ namespace CommunityLib
             }
         }
 
-        private void initialiseNaturalWonderTypes()
+        private void initializeNaturalWonderTypes()
         {
             if (naturalWonderTypes == null)
             {
@@ -156,7 +191,7 @@ namespace CommunityLib
             }
         }
 
-        private void initialiseVampireTypes()
+        private void initializeVampireTypes()
         {
             if(vampireTypes == null)
             {
@@ -164,7 +199,7 @@ namespace CommunityLib
             }
         }
 
-        private void initialiseInfluenceGain()
+        private void initializeInfluenceGain()
         {
             if (influenceGainElder == null)
             {
@@ -198,14 +233,13 @@ namespace CommunityLib
             modCultureData?.Clear();
             reviveAgentCreationFunctons?.Clear();
             eventPopupData?.Clear();
+            mapMaskData?.Clear();
 
-            // COllections
+            // Collections
             locusTypes?.Clear();
             magicTraitTypes?.Clear();
             wonderTypes?.Clear();
             naturalWonderTypes?.Clear();
-            initialiseNaturalWonderTypes();
-
             vampireTypes?.Clear();
 
             influenceGainElder?.Clear();
@@ -288,12 +322,12 @@ namespace CommunityLib
             initialiseReviveAgentCreationFunctions();
 
             // Collections
-            initialiseLocusTypes();
+            initializeLocusTypes();
             initialiseMagicTraitTypes();
-            initialiseNaturalWonderTypes();
-            initialiseVampireTypes();
+            initializeNaturalWonderTypes();
+            initializeVampireTypes();
 
-            initialiseInfluenceGain();
+            initializeInfluenceGain();
             initialiseHidenThoughts();
 
             // Broken Maker Handling
@@ -375,7 +409,7 @@ namespace CommunityLib
                 return;
             }
 
-            initialiseModIntegrationData();
+            initializeModIntegrationData();
 
             if (modIntegrationData.TryGetValue(key, out ModIntegrationData intData2))
             {
@@ -401,7 +435,7 @@ namespace CommunityLib
                 return;
             }
 
-            initialiseModCultureData();
+            initializeModCultureData();
 
             if (modCultureData.TryGetValue(key, out ModCultureData data2) && data2 == null)
             {
@@ -419,7 +453,7 @@ namespace CommunityLib
 
         internal void addReviveAgentCreationFunction(Func<Person, Location, UA> func)
         {
-            initialiseReviveAgentCreationFunctions();
+            initializeReviveAgentCreationFunctions();
 
             if (func != null && !reviveAgentCreationFunctons.Contains(func))
             {
@@ -437,7 +471,7 @@ namespace CommunityLib
 
         internal void addEventPopupData(PopupEvent popup, EventData data, EventContext ctx, string forceMessage = null)
         {
-            initialiseEventPopupData();
+            initializeEventPopupData();
             Tuple<EventData, EventContext, string> popupData = new Tuple<EventData, EventContext, string>(data, ctx, forceMessage);
             if (!eventPopupData.ContainsKey(popup))
             {
@@ -447,7 +481,7 @@ namespace CommunityLib
 
         internal bool tryGetEventPopupData(PopupEvent popup, out EventData data, out EventContext ctx, out string forceMessage)
         {
-            initialiseEventPopupData();
+            initializeEventPopupData();
             if (eventPopupData.TryGetValue(popup, out Tuple<EventData, EventContext, string> popupData))
             {
                 data = popupData.Item1;
@@ -462,6 +496,59 @@ namespace CommunityLib
             return false;
         }
 
+        internal int addMapMaskData(ModKernel maskingMod, string title, string buttonLabel, string description)
+        {
+            if (maskingMod == null)
+            {
+                return -1;
+            }
+
+            initialiseMapMaskData();
+
+            int nextAvailableID = -1;
+            foreach (MapMaskData data in mapMaskData.Values)
+            {
+                if (data.MaskingMod == maskingMod && data.Title == title)
+                {
+                    return -1;
+                }
+
+                if (nextAvailableID <= data.AssignedID)
+                {
+                    nextAvailableID = data.AssignedID + 1;
+                }
+            }
+
+            if (nextAvailableID == -1)
+            {
+                return nextAvailableID;
+            }
+
+            mapMaskData.Add(new Tuple<ModKernel, int>(maskingMod, nextAvailableID), new MapMaskData(maskingMod, title, buttonLabel, description, nextAvailableID));
+            map.world.ui.checkData();
+            return nextAvailableID;
+        }
+
+        internal bool TryGetMapMaskData(ModKernel maskingMod, int id, out MapMaskData data)
+        {
+            initialiseMapMaskData();
+            return mapMaskData.TryGetValue(new Tuple<ModKernel, int>(maskingMod, id), out data);
+        }
+
+        internal IEnumerable<MapMaskData> EnumerateMapMaskData
+        {
+            get
+            {
+                if (mapMaskData != null)
+                {
+                    foreach (MapMaskData data in mapMaskData.Values)
+                    {
+                        yield return data;
+                    }
+                }
+            }
+        }
+
         internal void addLocusType(Type t)
         {
             if (!t.IsSubclassOf(typeof(Property)))
@@ -469,7 +556,7 @@ namespace CommunityLib
                 return;
             }
 
-            initialiseLocusTypes();
+            initializeLocusTypes();
 
             if (!locusTypes.Contains(t))
             {
@@ -583,7 +670,7 @@ namespace CommunityLib
                 return;
             }
 
-            InitialiseWonderTypes();
+            InitializeWonderTypes();
 
             wonderTypes.Add(t);
         }
@@ -595,7 +682,7 @@ namespace CommunityLib
                 return;
             }
 
-            initialiseNaturalWonderTypes();
+            initializeNaturalWonderTypes();
 
             naturalWonderTypes.Add(t);
         }
@@ -863,7 +950,7 @@ namespace CommunityLib
                 return;
             }
 
-            initialiseVampireTypes();
+            initializeVampireTypes();
 
             if (!vampireTypes.Contains(t))
             {
