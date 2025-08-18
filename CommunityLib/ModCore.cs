@@ -29,9 +29,7 @@ namespace CommunityLib
 
         private List<Hooks> registeredHooks = new List<Hooks>();
 
-        public HooksDelegateRegistry _hookRegistry;
-
-        public HooksDelegateRegistry HookRegistry => _hookRegistry;
+        public HooksDelegateRegistry HookRegistry;
 
         private Dictionary<Type, HashSet<Type>> settlementTypesForOrcExpansion;
 
@@ -280,7 +278,7 @@ namespace CommunityLib
         {
             settlementTypesForOrcExpansion.Clear();
             registeredHooks.Clear();
-            _hookRegistry = new HooksDelegateRegistry();
+            HookRegistry = new HooksDelegateRegistry();
             randStore.Clear();
             data.clean();
             tradeRouteManager = new ManagerTradeRoutes(map);
@@ -334,7 +332,10 @@ namespace CommunityLib
                 Get().data = new ModData();
             }
             Get().data.onLoad(map);
-            Get()._hookRegistry = new HooksDelegateRegistry();
+            if (HookRegistry == null)
+            {
+                HookRegistry = new HooksDelegateRegistry();
+            }
             getModKernels(map);
             HarmonyPatches_Conditional.PatchingInit(map);
 
