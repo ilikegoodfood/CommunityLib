@@ -6197,6 +6197,20 @@ namespace CommunityLib
                     {
                         if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i-1].opcode == OpCodes.Stfld && instructionList[i-2].opcode == OpCodes.Ldloc_S)
                         {
+                            for (int j = i; j < instructionList.Count; j++)
+                            {
+                                if (instructionList[j].opcode == OpCodes.Brfalse_S)
+                                {
+                                    notWatchedLabel = (Label)instructionList[j].operand;
+                                    break;
+                                }
+
+                                if (j + 1 == instructionList.Count)
+                                {
+                                    Console.WriteLine("CommunityLib: Society_processActions_Transpiler failed to find target Brfalse_S,");
+                                }
+                            }
+
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Ldloc_S, 5);
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_onAiDecision);
@@ -6205,15 +6219,6 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Ldnull);
                             yield return new CodeInstruction(OpCodes.Cgt_Un);
                             yield return new CodeInstruction(OpCodes.Brfalse_S, notWatchedLabel);
-
-                            targetIndex++;
-                        }
-                    }
-                    if (targetIndex == 2)
-                    {
-                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i-1].opcode == OpCodes.Nop && instructionList[i-2].opcode == OpCodes.Nop)
-                        {
-                            instructionList[i].labels.Add(notWatchedLabel);
 
                             targetIndex = 0;
                         }
