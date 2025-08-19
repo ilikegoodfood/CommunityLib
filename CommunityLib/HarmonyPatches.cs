@@ -6178,11 +6178,15 @@ namespace CommunityLib
         }
 
         // Sovereign Hooks
-        private static IEnumerable<CodeInstruction> Society_processActions_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        private static IEnumerable<CodeInstruction> Society_processActions_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
             MethodInfo MI_TranspilerBody_onAiDecision = AccessTools.Method(patchType, nameof(Society_processActions_TranspilerBody_onAIDecision), new Type[] { typeof(Society), typeof(Person) });
+
+            FieldInfo FI_ationUnderway = AccessTools.Field(typeof(Society), nameof(Society.actionUnderway));
+
+            Label notWatchedLabel = ilg.DefineLabel();
 
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
@@ -6196,6 +6200,20 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Ldloc_S, 5);
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_onAiDecision);
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_ationUnderway);
+                            yield return new CodeInstruction(OpCodes.Ldnull);
+                            yield return new CodeInstruction(OpCodes.Cgt_Un);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, notWatchedLabel);
+
+                            targetIndex++;
+                        }
+                    }
+                    if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i-1].opcode == OpCodes.Nop && instructionList[i-2].opcode == OpCodes.Nop)
+                        {
+                            instructionList[i].labels.Add(notWatchedLabel);
 
                             targetIndex = 0;
                         }
