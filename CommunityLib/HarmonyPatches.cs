@@ -3228,7 +3228,13 @@ namespace CommunityLib
 
                     if (ModCore.opt_rulerTraitsEffectArmies && settlementHuman.ruler != null)
                     {
-                        maxHP = (int)(maxHP * 0.5 * settlementHuman.ruler.getStatCommand());
+                        double modifier = settlementHuman.ruler.getStatCommand();
+                        if (modifier > 2.5)
+                        {
+                            modifier--;
+                        }
+                        modifier *= 0.25;
+                        maxHP = (int)(maxHP * (0.5 + modifier));
                     }
 
                     if (maxHP < 1)
@@ -10786,7 +10792,13 @@ namespace CommunityLib
                     Location homeLocation = __instance.map.locations[__instance.homeLocation];
                     if (homeLocation.settlement is SettlementHuman settlementHuman && settlementHuman.ruler != null)
                     {
-                        __result = (int)(__result * 0.5 * settlementHuman.ruler.getStatCommand());
+                        double modifier = settlementHuman.ruler.getStatCommand();
+                        if (modifier > 2.5)
+                        {
+                            modifier--;
+                        }
+                        modifier *= 0.25;
+                        __result = (int)(__result * (0.5 + modifier));
                     }
                 }
             }
