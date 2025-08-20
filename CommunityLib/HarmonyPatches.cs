@@ -242,6 +242,8 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Mg_DeathOfTheSun), nameof(Mg_DeathOfTheSun.turnTick), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Mg_DeathOfTheSun_turnTick_Transpiler)));
             // Disrupt Conclave
             harmony.Patch(original: AccessTools.Method(typeof(Ch_DisruptConclave), nameof(Ch_DisruptConclave.getProgressPerTurnInner), new Type[] { typeof(UA), typeof(List<ReasonMsg>) }), postfix: new HarmonyMethod(patchType, nameof(Ch_DisruptConclave_getProgressPerTurnInner_Postfix)));
+            // Orcish Expansion
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_Expand), nameof(Ch_Orcs_Expand.complete), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_Orcs_Expand_complete_Transpiler)));
             // Opportunistict Encroachment
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_OpportunisticEncroachment), nameof(Ch_Orcs_OpportunisticEncroachment.getDesc), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(Ch_Orcs_OpportunisticEncroachment_getDesc_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_OpportunisticEncroachment), nameof(Ch_Orcs_OpportunisticEncroachment.valid), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Ch_Orcs_OpportunisticEncroachment_valid_Transpiler)));
@@ -378,6 +380,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(SG_Orc), nameof(SG_Orc.turnTick), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(SG_Orc_turnTick_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(SG_Orc), nameof(SG_Orc.canSettle), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(SG_Orc_canSettle_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Rt_Orcs_ClaimTerritory), nameof(Rt_Orcs_ClaimTerritory.validFor), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Rt_Orcs_ClaimTerritory_validFor_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Rt_Orcs_ClaimTerritory), nameof(Rt_Orcs_ClaimTerritory.complete), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Rt_Orcs_ClaimTerritory_complete_UA_Postfix)));
 
             // Orc Raiders MaxHP fix
             harmony.Patch(original: AccessTools.Method(typeof(UM_OrcRaiders), nameof(UM_OrcRaiders.assignMaxHP)), postfix: new HarmonyMethod(patchType, nameof(UM_OrcRaiders_assignMaxHP_Postfix)));
@@ -2427,6 +2430,65 @@ namespace CommunityLib
             __result = Math.Max(1, total);
         }
 
+        // Cause Orcish Expansion
+        private static IEnumerable<CodeInstruction> Ch_Orcs_Expand_complete_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Ch_Orcs_Expand_complete_TranspilerBody), new Type[] { typeof(Location) });
+
+            Label nullSettlementLabel = ilg.DefineLabel();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i+1].opcode == OpCodes.Nop && instructionList[i+2].opcode == OpCodes.Nop)
+                        {
+                            nullSettlementLabel = (Label)instructionList[i].operand;
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i - 1].labels.Contains(nullSettlementLabel))
+                        {
+                            yield return instructionList[i];
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 9);
+
+                            i++;
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Ch_Orcs_Expand_complete_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static void Ch_Orcs_Expand_complete_TranspilerBody(Location loc)
+        {
+            for (int i = loc.properties.Count - 1; i >= 0; i--)
+            {
+                if (loc.properties[i] is Pr_HumanOutpost)
+                {
+                    loc.properties.RemoveAt(i);
+                }
+            }
+        }
+
+        // Opportunistic Encroachment
         private static void Ch_Orcs_OpportunisticEncroachment_getDesc_Postfix(ref string __result)
         {
             __result = "Adds <b>Orcish Encroachment</b> to a neighbouring human non-city location. If the human nation goes to war and those locations have either <b>Devastation</b> above 20% or 0 <b>Defence</b>, orcs will take the location and build a camp. Causes major international relationship hit (30%) potentially leading to eventual war.";
@@ -8349,6 +8411,17 @@ namespace CommunityLib
 
             //Console.WriteLine("CommunityLib: Location not claimable");
             return false;
+        }
+
+        private static void Rt_Orcs_ClaimTerritory_complete_UA_Postfix(UA u)
+        {
+            for (int i = u.location.properties.Count - 1; i >= 0; i--)
+            {
+                if (u.location.properties[i] is Pr_HumanOutpost outpost)
+                {
+                    u.location.properties.RemoveAt(i);
+                }
+            }
         }
 
         // Orc REaiders Max HP fix
