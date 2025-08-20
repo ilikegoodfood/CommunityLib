@@ -2004,7 +2004,7 @@ namespace CommunityLib
             {
                 if (Get().data.tryGetEventPopupData(component, out EventData data, out EventContext ctx, out string msgOverride))
                 {
-                    if (!EventManager.events.TryGetValue(data.id, out EventManager.ActiveEvent e) || !e.willTrigger(ctx))
+                    if (!EventManager.events.TryGetValue(data.id, out EventManager.ActiveEvent e) || !EventRuntime.evaluate(e.conditionalRoot, ctx))
                     {
                         Console.WriteLine($"CommunityLib: Event '{component.name}' is invalid. Discarding Popup Event.");
                         blocker.SetActive(false);
