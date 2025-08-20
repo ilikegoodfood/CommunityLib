@@ -1971,6 +1971,7 @@ namespace CommunityLib
                 {
                     if (!EventManager.events.TryGetValue(data.id, out EventManager.ActiveEvent e) || !e.willTrigger(ctx))
                     {
+                        Console.WriteLine($"CommunityLib: Event '{component.name}' is invalid. Discarding Popup Event.");
                         blocker.SetActive(false);
                         map.world.ui.removeBlocker(blocker);
                         return;
