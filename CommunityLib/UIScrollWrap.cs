@@ -31,7 +31,7 @@ namespace CommunityLib
         {
             if (!screenRoot)
             {
-                Console.WriteLine("[UIScrollWrap] screenRoot is null.");
+                //Console.WriteLine("[UIScrollWrap] screenRoot is null.");
                 return false;
             }
 
@@ -43,14 +43,14 @@ namespace CommunityLib
             }
             else*/ if (_wrapped.Contains($"{screenRoot.GetInstanceID()}|{rawPath}"))
             {
-                Console.WriteLine($"[UIScrollWrap] '{screenRoot.GetInstanceID()}|{rawPath}' is alrady wrapped. Skipping.");
+                //Console.WriteLine($"[UIScrollWrap] '{screenRoot.GetInstanceID()}|{rawPath}' is alrady wrapped. Skipping.");
                 return false;
             }
 
             var target = screenRoot.Find(rawPath) as RectTransform;
             if (!target)
             {
-                Console.WriteLine($"[UIScrollWrap] path not found: {rawPath}");
+                //Console.WriteLine($"[UIScrollWrap] path not found: {rawPath}");
                 return false;
             }
 
@@ -59,8 +59,8 @@ namespace CommunityLib
             if (parentSR && parentSR.GetComponent<WrappedScrollMarker>())
             {
                 _wrapped.Add($"{screenRoot.GetInstanceID()}|{rawPath}");
-                Console.WriteLine($"[UIScrollWrap] '{screenRoot.GetInstanceID()}|{rawPath}' is alrady wrapped. Skipping.");
-                return true;
+                //Console.WriteLine($"[UIScrollWrap] '{screenRoot.GetInstanceID()}|{rawPath}' is alrady wrapped. Skipping.");
+                return false;
             }
 
             try
