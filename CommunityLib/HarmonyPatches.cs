@@ -343,6 +343,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.moveTowards), new Type[] { typeof(Unit), typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(Map_moveTowards_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.getPathTo), new Type[] { typeof(Location), typeof(Location), typeof(Unit), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(Map_getPathTo_Location_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.getPathTo), new Type[] { typeof(Location), typeof(SocialGroup), typeof(Unit), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(Map_getPathTo_SocialGroup_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Location), nameof(Location.getNeighbours), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Location_getNeighbours_transpiler)));
 
             // Power Fixes
             harmony.Patch(original: AccessTools.Method(typeof(P_Opha_Smite), nameof(P_Opha_Smite.cast), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(P_Opha_Smite_cast_Transpiler)));
@@ -7327,26 +7328,31 @@ namespace CommunityLib
             {
                 if (targetIndex > 0)
                 {
-                    if (targetIndex == 1 && i == 0)
+                    if (targetIndex == 1)
                     {
-                        targetIndex++;
+                        if (i == 0)
+                        {
+                            yield return new CodeInstruction(OpCodes.Nop);
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Ldarg_2);
+                            yield return new CodeInstruction(OpCodes.Ldarg_3);
+                            yield return new CodeInstruction(OpCodes.Ldarg_S, 4);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                            yield return new CodeInstruction(OpCodes.Br_S, end);
 
-                        yield return new CodeInstruction(OpCodes.Nop);
-                        yield return new CodeInstruction(OpCodes.Ldarg_1);
-                        yield return new CodeInstruction(OpCodes.Ldarg_2);
-                        yield return new CodeInstruction(OpCodes.Ldarg_3);
-                        yield return new CodeInstruction(OpCodes.Ldarg_S, 4);
-                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
-                        yield return new CodeInstruction(OpCodes.Br_S, end);
+                            targetIndex++;
+                        }
                     }
-
-                    if (targetIndex == 2 && instructionList[i].opcode == OpCodes.Call && instructionList[i + 1].opcode == OpCodes.Callvirt)
+                    else if (targetIndex == 2)
                     {
-                        targetIndex = 0;
-                        i++;
+                        if (instructionList[i].opcode == OpCodes.Call && instructionList[i + 1].opcode == OpCodes.Callvirt)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldarg_3);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_EntranceWonder);
 
-                        yield return new CodeInstruction(OpCodes.Ldarg_3);
-                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_EntranceWonder);
+                            targetIndex = 0;
+                            i++;
+                        }
                     }
                 }
 
@@ -7392,6 +7398,61 @@ namespace CommunityLib
             }
 
             return result;
+        }
+
+        public static IEnumerable<CodeInstruction> Location_getNeighbours_transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Map_getPathTo_SocialGroup_TranspilerBody_Intercept), new Type[] { typeof(Location), typeof(SocialGroup), typeof(Unit), typeof(bool) });
+            MethodInfo MI_TranspilerBody_EntranceWonder = AccessTools.Method(patchType, nameof(Map_getPathTo_TranspilerBody_EntranceWonder), new Type[] { typeof(Location), typeof(Unit) });
+
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            Label continueLabel = ilg.DefineLabel();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (i > 4)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_2)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldloc_2);
+                            yield return new CodeInstruction(OpCodes.Ldnull);
+                            yield return new CodeInstruction(OpCodes.Cgt_Un);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, continueLabel);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloca_S)
+                        {
+                            instructionList[i].labels.Add(continueLabel);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Location_getNeighbours_transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
         }
 
         private static void Map_adjacentMoveTo_Prefix(Map __instance, Unit u, Location loc, Location __state)
@@ -10948,6 +11009,12 @@ namespace CommunityLib
                 //Console.WriteLine($"CommunityLib: Queuing {location.getName()} (Score: {priority}).");
                 priorityLocations.Enqueue(location, -priority);
             }
+
+            if (priorityLocations.Count == 0)
+            {
+                return;
+            }
+
             //Console.WriteLine($"CommunityLib: {priorityLocations.Count} possible locations found.");
             int maxDwarvenSettlementCount = Math.Min((int)(Math.Ceiling(priorityLocations.Count / 3.0) + (((i - 1) / 5.0) * (priorityLocations.Count / 3.0))), (map.majorLocations.Count * i) / 6);
             //Console.WriteLine($"CommunityLib: Target number of Dwarven settlements is {maxDwarvenSettlementCount}.");
