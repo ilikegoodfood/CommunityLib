@@ -87,9 +87,9 @@ namespace CommunityLib
                 }
 
                 failedToPlaceWonder = true;
-
+                return;
             }
-
+            
             if (t == typeof(Sub_Wonder_Doorway))
             {
                 List<Location> locations = new List<Location>();
@@ -124,6 +124,7 @@ namespace CommunityLib
                 }
 
                 failedToPlaceWonder = true;
+                return;
             }
             
             if (t == typeof(Sub_Wonder_PrimalFont))
@@ -160,6 +161,7 @@ namespace CommunityLib
                 }
 
                 failedToPlaceWonder = true;
+                return;
             }
         }
 
