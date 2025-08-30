@@ -2456,7 +2456,7 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 2)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i - 1].labels.Contains(nullSettlementLabel))
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i].labels.Contains(nullSettlementLabel))
                         {
                             yield return instructionList[i];
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
