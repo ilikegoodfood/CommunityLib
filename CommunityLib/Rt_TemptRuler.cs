@@ -64,7 +64,7 @@ namespace CommunityLib
                 return false;
             }
 
-            return ua.isCommandable() &&  ua.location.settlement is SettlementHuman settlementHuman && settlementHuman.ruler != null && !settlementHuman.ruler.isDead && EventManager.events.TryGetValue("anw.exploreRuins_VinervaPeriodic1", out EventManager.ActiveEvent activeEvent) && activeEvent.willTrigger(EventContext.withPerson(map, settlementHuman.ruler));
+            return ua.isCommandable() && ua.location.settlement is SettlementHuman settlementHuman && settlementHuman.ruler != null && !settlementHuman.ruler.isDead && EventManager.events.TryGetValue("anw.exploreRuins_VinervaPeriodic1", out EventManager.ActiveEvent activeEvent) && (settlementHuman.ruler.getTagRanking(Tags.AMBITION) > 0 || settlementHuman.ruler.getTagRanking(Tags.CRUEL) > 0 || settlementHuman.ruler.getTagRanking(Tags.GOLD) > 0);
         }
 
         public override bool validFor(UM ua)
@@ -74,7 +74,7 @@ namespace CommunityLib
 
         public override double getComplexity()
         {
-            return 1;
+            return 1.0;
         }
 
         public override double getProgressPerTurnInner(UA unit, List<ReasonMsg> msgs)
@@ -91,7 +91,7 @@ namespace CommunityLib
             }
 
             EventContext ctx = EventContext.withPerson(map, settlementHuman.ruler);
-            if (EventManager.events.TryGetValue("anw.exploreRuins_VinervaPeriodic1", out EventManager.ActiveEvent activeEvent) && activeEvent.willTrigger(ctx))
+            if (EventManager.events.TryGetValue("anw.exploreRuins_VinervaPeriodic1", out EventManager.ActiveEvent activeEvent) && EventRuntime.evaluate(activeEvent.conditionalRoot, ctx))
             {
                 map.world.prefabStore.popEvent(activeEvent.data, ctx, null, false);
             }
