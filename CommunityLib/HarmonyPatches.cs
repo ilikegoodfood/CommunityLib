@@ -7455,7 +7455,7 @@ namespace CommunityLib
             }
         }
 
-        private static void Map_adjacentMoveTo_Prefix(Map __instance, Unit u, Location loc, Location __state)
+        private static void Map_adjacentMoveTo_Prefix(Map __instance, Unit u, Location loc, out Location __state)
         {
             if (u == null)
             {
