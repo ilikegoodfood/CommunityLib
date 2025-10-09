@@ -1,15 +1,11 @@
 ﻿using Assets.Code;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
-using static DuloGames.UI.UIPlayAudio;
 
 namespace CommunityLib
 {
-    public class Rt_TemptRuler : Challenge
+    public class Rt_TemptRuler : Ritual
     {
         public Rt_TemptRuler(Location loc)
             : base(loc)
