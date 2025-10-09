@@ -54,9 +54,13 @@ namespace CommunityLib
 
         public override bool validFor(UA ua)
         {
-            if (ua.person != null && ua.person.traits.Any(t => t is T_VinervaSeed seed && seed.level > 0))
+            if (ua.person == null)
             {
-                ua.rituals.Remove(this);
+                return false;
+            }
+
+            if (!ua.person.traits.Any(t => t is T_VinervaSeed seed && seed.level > 0))
+            {
                 return false;
             }
 

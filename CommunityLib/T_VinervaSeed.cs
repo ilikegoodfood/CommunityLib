@@ -47,7 +47,7 @@ namespace CommunityLib
 
         public override void turnTick(Person p)
         {
-            if (level == 0)
+            if (level <= 0)
             {
                 if (p.unit != null && TemptRulerChallenge != null)
                 {
