@@ -1448,6 +1448,11 @@ namespace CommunityLib
                 fields.Add("is_wonder", new EventRuntime.TypedField<bool>((EventContext c) => c.location != null && checkIsNaturalWonder(c.location)));
             }
 
+            if (!fields.ContainsKey("has_uninfiltrated_point_of_interest"))
+            {
+                fields.Add("has_uninfiltrated_point_of_interest", new EventRuntime.TypedField<bool>((EventContext c) => c.location != null && c.location.settlement != null && c.location.settlement.subs.Count > 0 && c.location.settlement.subs.Any(sub => sub.canBeInfiltrated() && !sub.infiltrated)));
+            }
+
             // Missing Map Fields
             if (!fields.ContainsKey("awareness_of_underground"))
             {
@@ -1755,17 +1760,19 @@ namespace CommunityLib
                     "LOSE_VINERVA_SEED",
                     new EventRuntime.TypedProperty<string>(delegate (EventContext c, string _)
                     {
-                        if (c.unit != null && c.unit.person != null)
+                        if (c.person == null)
                         {
-                            T_VinervaSeed seed = (T_VinervaSeed)c.unit.person.traits.FirstOrDefault(t => t is T_VinervaSeed);
-                            if (seed != null)
+                            return;
+                        }
+
+                        T_VinervaSeed seed = (T_VinervaSeed)c.unit.person.traits.FirstOrDefault(t => t is T_VinervaSeed);
+                        if (seed != null)
+                        {
+                            seed.level--;
+                            if (seed.level <= 0)
                             {
-                                seed.level--;
-                                if (seed.level <= 0)
-                                {
-                                    c.unit.rituals.Remove(seed.TemptRulerChallenge);
-                                    c.unit.person.traits.Remove(seed);
-                                }
+                                c.unit.rituals.Remove(seed.TemptRulerChallenge);
+                                c.unit.person.traits.Remove(seed);
                             }
                         }
                     })

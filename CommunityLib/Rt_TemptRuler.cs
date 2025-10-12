@@ -50,17 +50,18 @@ namespace CommunityLib
 
         public override bool validFor(UA ua)
         {
-            if (ua.person == null)
+            if (!ua.isCommandable() || ua.person == null || !ua.person.traits.Any(t => t is T_VinervaSeed seed && seed.level > 0))
             {
                 return false;
             }
 
-            if (!ua.person.traits.Any(t => t is T_VinervaSeed seed && seed.level > 0))
+            if (!(ua.location.settlement is SettlementHuman settlementHuman) || settlementHuman.ruler == null || settlementHuman.ruler.isDead || !settlementHuman.ruler.isCastMember())
             {
                 return false;
             }
 
-            return ua.isCommandable() && ua.location.settlement is SettlementHuman settlementHuman && settlementHuman.ruler != null && !settlementHuman.ruler.isDead && EventManager.events.TryGetValue("anw.exploreRuins_VinervaPeriodic1", out EventManager.ActiveEvent activeEvent) && (settlementHuman.ruler.getTagRanking(Tags.AMBITION) > 0 || settlementHuman.ruler.getTagRanking(Tags.CRUEL) > 0 || settlementHuman.ruler.getTagRanking(Tags.GOLD) > 0);
+            EventContext ctx = EventContext.withTwoPersons(map, ua.person, settlementHuman.ruler);
+            return  EventManager.events.TryGetValue("anw.exploreRuins_VinervaPeriodic1", out EventManager.ActiveEvent activeEvent) && EventRuntime.evaluate(activeEvent.conditionalRoot, ctx);
         }
 
         public override bool validFor(UM ua)
@@ -86,7 +87,7 @@ namespace CommunityLib
                 return;
             }
 
-            EventContext ctx = EventContext.withPerson(map, settlementHuman.ruler);
+            EventContext ctx = EventContext.withTwoPersons(map, u.person, settlementHuman.ruler);
             if (EventManager.events.TryGetValue("anw.exploreRuins_VinervaPeriodic1", out EventManager.ActiveEvent activeEvent) && EventRuntime.evaluate(activeEvent.conditionalRoot, ctx))
             {
                 map.world.prefabStore.popEvent(activeEvent.data, ctx, null, false);
