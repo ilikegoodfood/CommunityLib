@@ -55,13 +55,13 @@ namespace CommunityLib
                 return false;
             }
 
-            if (!(ua.location.settlement is SettlementHuman settlementHuman) || settlementHuman.ruler == null || settlementHuman.ruler.isDead || !settlementHuman.ruler.isCastMember())
+            if (!(ua.location.settlement is SettlementHuman settlementHuman) || settlementHuman.ruler == null || settlementHuman.ruler.isDead)
             {
                 return false;
             }
 
             EventContext ctx = EventContext.withTwoPersons(map, ua.person, settlementHuman.ruler);
-            return  EventManager.events.TryGetValue("anw.exploreRuins_VinervaPeriodic1", out EventManager.ActiveEvent activeEvent) && EventRuntime.evaluate(activeEvent.conditionalRoot, ctx);
+            return EventManager.events.TryGetValue("anw.exploreRuins_VinervaPeriodic1", out EventManager.ActiveEvent activeEvent) && EventRuntime.evaluate(activeEvent.conditionalRoot, ctx);
         }
 
         public override bool validFor(UM ua)
