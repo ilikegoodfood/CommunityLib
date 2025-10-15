@@ -38,6 +38,46 @@ namespace CommunityLib
 
         private static Tuple<Unit, Location, int, Location[]> lastPath;
 
+        private static Dictionary<string, Dictionary<string, MethodInfo>> declaredMethodCache;
+
+        private static bool TryCacheDeclaredMethod(string typeName, string methodName, MethodInfo methodInfo)
+        {
+            if (declaredMethodCache == null)
+            {
+                declaredMethodCache = new Dictionary<string, Dictionary<string, MethodInfo>>();
+            }
+
+            if (!declaredMethodCache.TryGetValue(typeName, out Dictionary<string, MethodInfo> declaredMethods))
+            {
+                declaredMethods = new Dictionary<string, MethodInfo>();
+                declaredMethods.Add(methodName, methodInfo);
+                declaredMethodCache.Add(typeName, declaredMethods);
+                return true;
+            }
+
+            if (declaredMethods == null)
+            {
+                declaredMethods = new Dictionary<string, MethodInfo>();
+                declaredMethods.Add(methodName, methodInfo);
+                declaredMethodCache[typeName] = declaredMethods;
+                return true;
+            }
+
+            if (!declaredMethods.TryGetValue(methodName, out MethodInfo method))
+            {
+                declaredMethods.Add(methodName, methodInfo);
+                return true;
+            }
+
+            if (method == null)
+            {
+                declaredMethods[methodName] = methodInfo;
+                return true;
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Initialises variables in this class that are required to perform patches, then executes harmony patches.
         /// </summary>
@@ -4552,18 +4592,49 @@ namespace CommunityLib
         private static int PopupHolyOrder_setTo_TranspilerBody_ProcessIncome(HolyOrder order, List<ReasonMsg> msgs)
         {
             Type orderType = order.GetType();
-            if (orderType.IsSubclassOf(typeof(HolyOrder)))
+            if (orderType == typeof(HolyOrder))
             {
-                while (orderType.IsSubclassOf(typeof(HolyOrder)))
+                return order.processIncome(msgs);
+            }
+
+            string typeName = orderType.AssemblyQualifiedName;
+            
+            if (declaredMethodCache != null && declaredMethodCache.TryGetValue(typeName, out Dictionary<string, MethodInfo> declaredMethods) && declaredMethods != null)
+            {
+                if (declaredMethods.TryGetValue("processIncome", out MethodInfo method) && declaredMethods != null)
                 {
-                    MethodInfo MI_processIncome = AccessTools.DeclaredMethod(orderType, "processIncome", new Type[] { typeof(List<ReasonMsg>) });
-                    if (MI_processIncome != null)
+                    return (int)method.Invoke(order, new object[] { msgs });
+                }
+            }
+
+            List<string> encounteredTypeNames = new List<string>();
+            while (orderType.IsSubclassOf(typeof(HolyOrder)))
+            {
+                MethodInfo MI_processIncome = AccessTools.DeclaredMethod(orderType, "processIncome", new Type[] { typeof(List<ReasonMsg>) });
+                if (MI_processIncome != null)
+                {
+                    foreach (string encounteredTypeName in encounteredTypeNames)
                     {
-                        return (int)MI_processIncome.Invoke(order, new object[] { msgs });
+                        TryCacheDeclaredMethod(encounteredTypeName, "processIncome", MI_processIncome);
                     }
 
-                    orderType = orderType.BaseType;
+                    return (int)MI_processIncome.Invoke(order, new object[] { msgs });
                 }
+
+                orderType = orderType.BaseType;
+                if (orderType == typeof(HolyOrder))
+                {
+                    MI_processIncome = AccessTools.Method(typeof(HolyOrder), "processIncome", new Type[] { typeof(List<ReasonMsg>) });
+                    foreach (string encounteredTypeName in encounteredTypeNames)
+                    {
+                        TryCacheDeclaredMethod(encounteredTypeName, "processIncome", MI_processIncome);
+                    }
+
+                    break;
+                }
+
+                typeName = orderType.AssemblyQualifiedName;
+                encounteredTypeNames.Add(typeName);
             }
 
             return order.processIncome(msgs);
@@ -4643,18 +4714,67 @@ namespace CommunityLib
         private static int PopupHolyOrder_setTo_TranspilerBody_ComputeInfluenceDark(HolyOrder order, List<ReasonMsg> msgs)
         {
             Type orderType = order.GetType();
-            if (orderType.IsSubclassOf(typeof(HolyOrder)))
+            if (orderType == typeof(HolyOrder))
             {
-                while (orderType.IsSubclassOf(typeof(HolyOrder)))
+                return order.computeInfluenceDark(msgs);
+            }
+
+            string typeName = orderType.AssemblyQualifiedName;
+            
+            if (declaredMethodCache != null && declaredMethodCache.TryGetValue(typeName, out Dictionary<string, MethodInfo> declaredMethods) && declaredMethods != null)
+            {
+                if (declaredMethods.TryGetValue("computeInfluenceDark", out MethodInfo method) && method != null)
                 {
-                    MethodInfo MI_computeInfluenceDark = AccessTools.DeclaredMethod(orderType, "computeInfluenceDark", new Type[] { typeof(List<ReasonMsg>) });
-                    if (MI_computeInfluenceDark != null)
+                    return (int)method.Invoke(order, new object[] { msgs });
+                }
+            }
+
+            List<string> encounteredTypeNames = new List<string>();
+            while (orderType.IsSubclassOf(typeof(HolyOrder)))
+            {
+                MethodInfo MI_computeInfluenceDark = AccessTools.DeclaredMethod(orderType, "computeInfluenceDark", new Type[] { typeof(List<ReasonMsg>) });
+                if (MI_computeInfluenceDark != null)
+                {
+                    foreach (string encounteredTypeName in encounteredTypeNames)
                     {
-                        return (int)MI_computeInfluenceDark.Invoke(order, new object[] { msgs });
+                        TryCacheDeclaredMethod(encounteredTypeName, "computeInfluenceDark", MI_computeInfluenceDark);
                     }
 
-                    orderType = orderType.BaseType;
+                    return (int)MI_computeInfluenceDark.Invoke(order, new object[] { msgs });
                 }
+
+                orderType = orderType.BaseType;
+                if (orderType == typeof(HolyOrder))
+                {
+                    MI_computeInfluenceDark = AccessTools.Method(typeof(HolyOrder), "computeInfluenceDark", new Type[] { typeof(List<ReasonMsg>) });
+                    foreach (string encounteredTypeName in encounteredTypeNames)
+                    {
+                        if (!declaredMethodCache.TryGetValue(encounteredTypeName, out declaredMethods))
+                        {
+                            declaredMethods = new Dictionary<string, MethodInfo>();
+                            declaredMethods.Add("computeInfluenceDark", MI_computeInfluenceDark);
+                            declaredMethodCache.Add(encounteredTypeName, declaredMethods);
+                        }
+                        else if (declaredMethods == null)
+                        {
+                            declaredMethods = new Dictionary<string, MethodInfo>();
+                            declaredMethods.Add("computeInfluenceDark", MI_computeInfluenceDark);
+                            declaredMethodCache[encounteredTypeName] = declaredMethods;
+                        }
+                        else if (!declaredMethods.TryGetValue("computeInfluenceDark", out MethodInfo method))
+                        {
+                            declaredMethods.Add("computeInfluenceDark", MI_computeInfluenceDark);
+                        }
+                        else if (method == null)
+                        {
+                            declaredMethods["computeInfluenceDark"] = MI_computeInfluenceDark;
+                        }
+                    }
+
+                    break;
+                }
+                typeName = orderType.AssemblyQualifiedName;
+                encounteredTypeNames.Add(typeName);
             }
 
             return order.computeInfluenceDark(msgs);
@@ -4663,18 +4783,48 @@ namespace CommunityLib
         private static int PopupHolyOrder_setTo_TranspilerBody_ComputeInfluenceHuman(HolyOrder order, List<ReasonMsg> msgs)
         {
             Type orderType = order.GetType();
-            if (orderType.IsSubclassOf(typeof(HolyOrder)))
+            if (orderType == typeof(HolyOrder))
             {
-                while (orderType.IsSubclassOf(typeof(HolyOrder)))
+                return order.computeInfluenceHuman(msgs);
+            }
+
+            string typeName = orderType.AssemblyQualifiedName;
+
+            if (declaredMethodCache != null && declaredMethodCache.TryGetValue(typeName, out Dictionary<string, MethodInfo> declaredMethods) && declaredMethods != null)
+            {
+                if (declaredMethods.TryGetValue("computeInfluenceHuman", out MethodInfo declaredMethodInfo) && declaredMethodInfo != null)
                 {
-                    MethodInfo MI_computerInluenceHuman = AccessTools.DeclaredMethod(orderType, "computeInfluenceHuman", new Type[] { typeof(List<ReasonMsg>) });
-                    if (MI_computerInluenceHuman != null)
+                    return (int)declaredMethodInfo.Invoke(order, new object[] { msgs });
+                }
+            }
+
+            List<string> encounteredTypeNames = new List<string> { typeName };
+            while (orderType.IsSubclassOf(typeof(HolyOrder)))
+            {
+                MethodInfo MI_computeInfluenceHuman = AccessTools.DeclaredMethod(orderType, "computeInfluenceHuman", new Type[] { typeof(List<ReasonMsg>) });
+                if (MI_computeInfluenceHuman != null)
+                {
+                    foreach (string encounteredTypeName in encounteredTypeNames)
                     {
-                        return (int)MI_computerInluenceHuman.Invoke(order, new object[] { msgs });
+                        TryCacheDeclaredMethod(encounteredTypeName, "computeInfluenceHuman", MI_computeInfluenceHuman);
                     }
 
-                    orderType = orderType.BaseType;
+                    return (int)MI_computeInfluenceHuman.Invoke(order, new object[] { msgs });
                 }
+
+                orderType = orderType.BaseType;
+                if (orderType == typeof(HolyOrder))
+                {
+                    MI_computeInfluenceHuman = AccessTools.Method(typeof(HolyOrder), "computeInfluenceHuman", new Type[] { typeof(List<ReasonMsg>) });
+                    foreach (string encounteredTypeName in encounteredTypeNames)
+                    {
+                        TryCacheDeclaredMethod(encounteredTypeName, "computeInfluenceHuman", MI_computeInfluenceHuman);
+                    }
+
+                    break;
+                }
+                typeName = orderType.AssemblyQualifiedName;
+                encounteredTypeNames.Add(typeName);
             }
 
             return order.computeInfluenceHuman(msgs);
