@@ -10,8 +10,6 @@ namespace CommunityLib
         // marker so we don’t double-wrap
         private sealed class WrappedScrollMarker : MonoBehaviour { }
 
-        private static int _frameSeen = -1;
-
         private static readonly List<string> _wrapped = new List<string>();
 
         /// <summary>
