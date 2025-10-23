@@ -73,6 +73,11 @@ namespace CommunityLib
 
         public int CompareTo(GodSortData other)
         {
+            if (!ModCore.opt_godSort)
+            {
+                return 0;
+            }
+
             // Handle last played god first
             if (ModCore.opt_godSort_lastPlayedFirst)
             {
