@@ -81,6 +81,8 @@ namespace CommunityLib
 
         public static bool opt_NoCountForcedWonders = false;
 
+        public static bool opt_godSort = true;
+
         public static bool opt_godSort_Alphabetise = false;
 
         public static bool opt_godSort_Random = false;
@@ -187,6 +189,9 @@ namespace CommunityLib
                     break;
                 case "Allow Culture-Specific Minor Settlement Graphics":
                     opt_allowCulturalMinorSettelementGraphics = value;
+                    break;
+                case "God Sort":
+                    opt_godSort = value;
                     break;
                 case "God Sort: Alphabetise":
                     opt_godSort_Alphabetise = value;
@@ -1252,7 +1257,7 @@ namespace CommunityLib
                     default:
                         break;
                 }
-                
+
                 // Code Template for modifying blacklist, non-dependent.
                 /*MethodInfo MI_registerSettlementTypeForOrcAxpansion = kernel.GetType().GetMethod("tryGetSettlementTypeForOrcExpansion", new Type[] { typeof(Type), typeof(HashSet<Type>) });
 
@@ -2854,6 +2859,69 @@ namespace CommunityLib
                     wreck.integrity += Eleven.random.Next(6) + Eleven.random.Next(6);
                 }
             }
+        }
+
+        public bool TryCreateLink(Map map, int locationIndexA, int locationndexB)
+        {
+            if (locationIndexA < 0 || locationIndexA >= map.locations.Count)
+            {
+                return false;
+            }
+
+            if (locationndexB < 0 || locationndexB >= map.locations.Count)
+            {
+                return false;
+            }
+
+            Location locA = map.locations[locationIndexA];
+            Location locB = map.locations[locationndexB];
+            if (locA.links.Any(l => l.other(locA) == locB) || locB.links.Any(l => l.other(locB) == locA))
+            {
+                return false;
+            }
+
+            Link linkA = new Link(map, locA, locB);
+            locA.links.Add(linkA);
+            Link linkB = new Link(map, locB, locA);
+            locB.links.Add(linkB);
+
+            GraphicalMap.purge();
+            GraphicalMap.checkLoaded();
+            map.recomputeStepDistMap();
+
+            return true;
+        }
+
+        public bool TryDestroyLink(Map map, int locationIndexA, int locationndexB)
+        {
+            if (locationIndexA < 0 || locationIndexA >= map.locations.Count)
+            {
+                return false;
+            }
+
+            if (locationndexB < 0 || locationndexB >= map.locations.Count)
+            {
+                return false;
+            }
+
+            Location locA = map.locations[locationIndexA];
+            Location locB = map.locations[locationndexB];
+            Link linkA = locA.links.FirstOrDefault(l => l.other(locA) == locB);
+            Link linkB = locB.links.FirstOrDefault(l => l.other(locB) == locA);
+
+            if (linkA == null || linkB == null)
+            {
+                return false;
+            }
+
+            locA.links.Remove(linkA);
+            locB.links.Remove(linkB);
+
+            GraphicalMap.purge();
+            GraphicalMap.checkLoaded();
+            map.recomputeStepDistMap();
+
+            return true;
         }
     }
 }

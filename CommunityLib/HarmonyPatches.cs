@@ -206,6 +206,7 @@ namespace CommunityLib
 
             // UI Fixes
             harmony.Patch(original: AccessTools.Method(typeof(UITopLeft), nameof(UITopLeft.raycastResultsIn)), transpiler: new HarmonyMethod(patchType, nameof(UITopLeft_raycastResultsIn_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIMainMenu), nameof(UIMainMenu.startProper)), transpiler: new HarmonyMethod(patchType, nameof(UIMainMenu_startProper_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(UIMaster), nameof(UIMaster.removeBlocker), new Type[] { typeof(GameObject) }), transpiler: new HarmonyMethod(patchType, nameof(UIMaster_removeBlocker_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(UIMapMaskList), nameof(UIMapMaskList.checkData), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UIMapLastList_checkData_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(UIE_Button), nameof(UIE_Button.bOnClick), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(UIE_Button_bOnClick_Prefix)));
@@ -765,6 +766,69 @@ namespace CommunityLib
             }
 
             return " turns.";
+        }
+
+        private static IEnumerable<CodeInstruction> UIMainMenu_startProper_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            Label startProperStartLabel = ilg.DefineLabel();
+            Label startProperBypassLabel = ilg.DefineLabel();
+            Label resumeLabel = ilg.DefineLabel();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i+1].opcode == OpCodes.Ldstr)
+                        {
+                            instructionList[i].labels.Add(startProperStartLabel);
+
+                            yield return new CodeInstruction(OpCodes.Nop);
+                            yield return new CodeInstruction(OpCodes.Br_S, startProperBypassLabel);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_0 && instructionList[i-1].opcode == OpCodes.Endfinally)
+                        {
+                            CodeInstruction code = new CodeInstruction(OpCodes.Br_S, resumeLabel);
+                            code.labels.AddRange(instructionList[i].labels);
+                            instructionList[i].labels.Clear();
+                            instructionList[i].labels.Add(startProperBypassLabel);
+
+                            yield return code;
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i-1].opcode == OpCodes.Nop)
+                        {
+                            instructionList[i].labels.Add(resumeLabel);
+
+                            yield return new CodeInstruction(OpCodes.Br_S, startProperStartLabel);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+
+            }
+
+            Console.WriteLine("CommunityLib: Completed UIMainMenu_startProper_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
         }
 
         private static IEnumerable<CodeInstruction> UIMaster_removeBlocker_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
@@ -8636,23 +8700,30 @@ namespace CommunityLib
         // God Sort Patches
         private static void PrefabStore_getScrollSetGods_Prefix(List<God> gods)
         {
+            if (!ModCore.opt_godSort)
+            {
+                Console.WriteLine("CommunityLib: God Sort is disabled.");
+                return;
+            }
+            Console.WriteLine("CommunityLib: God Sort is enabled.");
+
             GodSortData[] godSortData = new GodSortData[gods.Count];
 
             string lastPlayedGodName = ModCore.Get().data.getSaveData().lastPlayedGod;
 
             HashSet<Type> baseGameGodTypes = new HashSet<Type> { typeof(God_LaughingKing), typeof(God_Vinerva), typeof(God_Ophanim), typeof(God_Mammon), typeof(God_Eternity), typeof(God_Cards) };
 
-            for (int i = 0; i < gods.Count; i++)
+            for (int j = 0; j < gods.Count; j++)
             {
                 GodSortData godData = new GodSortData
                 {
-                    god = gods[i],
-                    processedName = gods[i].getName(),
-                    isVanilla = baseGameGodTypes.Contains(gods[i].GetType()) || gods[i].getName() == "Cordyceps Hive Mind",
-                    isBonusGod = gods[i].getName().StartsWith("Bonus God: "),
-                    isMinorGod = gods[i].getName().StartsWith("Minor God: "),
-                    isLastPlayed = gods[i].getName() == lastPlayedGodName,
-                    isSWWF = gods[i].GetType() == typeof(God_Snake)
+                    god = gods[j],
+                    processedName = gods[j].getName(),
+                    isVanilla = baseGameGodTypes.Contains(gods[j].GetType()) || gods[j].getName() == "Cordyceps Hive Mind",
+                    isBonusGod = gods[j].getName().StartsWith("Bonus God: "),
+                    isMinorGod = gods[j].getName().StartsWith("Minor God: "),
+                    isLastPlayed = gods[j].getName() == lastPlayedGodName,
+                    isSWWF = gods[j].GetType() == typeof(God_Snake)
                 };
 
                 // Process god names based on sorting options
@@ -8663,14 +8734,14 @@ namespace CommunityLib
                     godData.randomOrderKey = Eleven.random.Next();
                 }
 
-                godSortData[i] = godData;
+                godSortData[j] = godData;
             }
 
-            Array.Sort(godSortData);
-
-            for (int i = 0; i < godSortData.Length; i++)
+            int i = 0;
+            foreach (GodSortData sortData in godSortData.OrderBy(data => data))
             {
-                gods[i] = godSortData[i].god;
+                gods[i] = sortData.god;
+                i++;
             }
         }
 
