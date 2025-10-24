@@ -34,10 +34,8 @@ namespace CommunityLib
             registry.RegisterHook_onGraphicalLinkUpdated(onGraphicalLinkUpdated);
             registry.RegisterHook_interceptGetVisibleUnits(interceptGetVisibleUnits);
             registry.RegisterHook_onPopulatingTradeRoutePathfindingDelegates(onPopulatingTradeRoutePathfindingDelegates);
-            registry.RegisterHook_onAgentLevelup_GetTraits(onAgentLevelup_GetTraits);
             registry.RegisterHook_interceptAgentAI(interceptAgentAI);
             registry.RegisterHook_onAgentAI_EndOfProcess(onAgentAI_EndOfProcess);
-            registry.RegisterHook_onUnitAI_GetsDistanceToLocation(onUnitAI_GetsDistanceToLocation);
         }
 
         public List<WonderData> onMapGen_PlaceWonders()
@@ -664,27 +662,6 @@ namespace CommunityLib
                 }
             }
 
-            if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC))
-            {
-                if (intDataCCC.typeDict.TryGetValue("UAEN_Pigeon", out Type pigeonType) && pigeonType != null)
-                {
-                    if (ua.GetType() == pigeonType)
-                    {
-                        visibleUnits.Clear();
-                        return true;
-                    }
-                }
-
-                if (intDataCCC.typeDict.TryGetValue("UAEN_Toad", out Type toadType) && toadType != null)
-                {
-                    if (ua.GetType() == toadType)
-                    {
-                        visibleUnits.Clear();
-                        return true;
-                    }
-                }
-            }
-
             return false;
         }
 
@@ -693,21 +670,6 @@ namespace CommunityLib
             if (ModCore.opt_denseTradeRoutes && DensifyingTradeRoutes)
             {
                 destinationValidityDelegates.Remove(Pathfinding.delegate_TRADEVALID_NODUPLICATES);
-            }
-        }
-
-        public void onAgentLevelup_GetTraits(UA ua, List<Trait> availableTraits, bool startingTraits)
-        {
-            if (startingTraits && ua is UAE_Warlock)
-            {
-                if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC))
-                {
-                    if (intDataCCC.typeDict.TryGetValue("Curseweaving", out Type curseweavingType))
-                    {
-                        Trait curseweaving = (Trait)Activator.CreateInstance(curseweavingType);
-                        availableTraits.Add(curseweaving);
-                    }
-                }
             }
         }
 
@@ -788,61 +750,6 @@ namespace CommunityLib
                     }
                 }
             }
-
-            if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC))
-            {
-                if (intDataCCC.typeDict.TryGetValue("UAEN_Pigeon", out Type pigeonType) && pigeonType != null)
-                {
-                    if (ua.GetType() == pigeonType)
-                    {
-                        if (ua.task == null)
-                        {
-                            if (ua.person.gold > 0 || ua.person.items.Any(i => i != null))
-                            {
-                                Pr_ItemCache pr_ItemCache = new Pr_ItemCache(ua.location);
-                                foreach (Item item in ua.person.items)
-                                {
-                                    if (item == null)
-                                    {
-                                        continue;
-                                    }
-
-                                    pr_ItemCache.addItemToSet(item);
-                                }
-                                pr_ItemCache.gold = ua.person.gold;
-                            }
-
-                            ua.map.addUnifiedMessage(ua, ua.location, "Pigeon flew away", $"After loosing its owner the pigeon has flown away, leaving any gold or items it was carrying behind.", "PigeonFlewAway");
-                            if (GraphicalMap.selectedUnit == ua)
-                            {
-                                GraphicalMap.selectedUnit = null;
-                            }
-                            ua.disband(ua.map, "Ownerless pigeon dissapeared into the wilds");
-                            return;
-                        }
-                    }
-                }
-            }
-
-            return;
-        }
-
-        public int onUnitAI_GetsDistanceToLocation(Unit u, Location target, Location[] pathTo, int travelTime)
-        {
-            //Console.WriteLine("CommunityLib: Internal Hook GetDistance for " + u.getName() + " of type " + u.GetType().Name);
-            if (u.person != null)
-            {
-                //Console.WriteLine("CommunityLib: " + u.getName() + " has person");
-                if (ModCore.Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC) && intDataCCC != null && intDataCCC.typeDict.TryGetValue("HeroicBoots", out Type heroicBootsType) && heroicBootsType != null)
-                {
-                    if (u.person.items.Any(i => i != null && i.GetType() == heroicBootsType))
-                    {
-                        travelTime = (int)Math.Ceiling(travelTime / (u.getMaxMoves() + 2.0));
-                    }
-                }
-            }
-
-            return travelTime;
         }
     }
 }

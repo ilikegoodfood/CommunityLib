@@ -648,97 +648,32 @@ namespace CommunityLib
                             }
                         }
                         break;
-                    case "CovenExpansion":
-                        Console.WriteLine("CommunityLib: Covens, Curses, and Curios is Enabled");
+                    case "CovenExpansionRecast":
+                        Console.WriteLine("CommunityLib: Covens, Curses, and Curios Recast is Enabled");
                         ModIntegrationData intDataCCC = new ModIntegrationData(kernel);
                         data.addModIntegrationData("CovensCursesCurios", intDataCCC);
 
                         if (data.tryGetModIntegrationData("CovensCursesCurios", out intDataCCC))
                         {
-                            if (intDataCCC.typeDict.TryGetValue("Kernel", out Type kernelType))
-                            {
-                                MethodInfo MI_afterMapGenAfterHistorical = kernelType.GetMethod("afterMapGenAfterHistorical", new Type[] { typeof(Map) });
-                                if (MI_afterMapGenAfterHistorical != null)
-                                {
-                                    intDataCCC.methodInfoDict.Add("Kernel.afterMapGenAfterHistorical", MI_afterMapGenAfterHistorical);
-                                }
-                                else
-                                {
-                                    Console.WriteLine("CommunityLib: Failed to get afterMapGenAfterHistorical Method from kernel Type (CovenExpansion.ModcoreCovenExpansion.afterMapGenAfterHistorical)");
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine("CommunityLib: Failed to get mod kernel Type (CovenExpansion.ModcoreCovenExpansion)");
-                            }
-
-                            Type magicTraitType = intDataCCC.assembly.GetType("CovenExpansion.T_curseWeaving", false);
+                            Type magicTraitType = intDataCCC.assembly.GetType("CovenExpansionRecast.T_MasteryCurseweaving", false);
                             if (magicTraitType != null)
                             {
                                 intDataCCC.typeDict.Add("Curseweaving", magicTraitType);
                                 registerMagicType(magicTraitType);
-                            }
-                            else
-                            {
-                                Console.WriteLine("CommunityLib: Failed to get Curseweaving trait Type (CovenExpansion.T_curseWeaving)");
-                            }
 
-                            Type heroicBootsType = intDataCCC.assembly.GetType("CovenExpansion.I_heroicBoot", false);
-                            if (heroicBootsType != null)
-                            {
-                                intDataCCC.typeDict.Add("HeroicBoots", heroicBootsType);
-                                intDataCCC.methodInfoDict.Add("HeroicBoots.turnTick", AccessTools.Method(heroicBootsType, "turnTick", new Type[] { typeof(Person) }));
+                                ConstructorInfo ctor = magicTraitType.GetConstructor(Type.EmptyTypes);
+                                if (ctor != null)
+                                {
+                                    intDataCCC.constructorInfoDict.Add("Curseweaving", ctor);
+                                }
+                                else
+                                {
+                                    Console.WriteLine("CommunityLib: Failed to get parameterless constructor for Curseweaving trait Type (CovenExpansionRecast.T_MasteryCurseweaving)");
+                                }
                             }
                             else
                             {
-                                Console.WriteLine("CommunityLib: Failed to get Heroic boots item Type (CovenExpansion.I_heroicBoot)");
-                            }
-
-                            Type toadType = intDataCCC.assembly.GetType("CovenExpansion.UAEN_Toad", false);
-                            if (toadType != null)
-                            {
-                                intDataCCC.typeDict.Add("UAEN_Toad", toadType);
-                                intDataCCC.methodInfoDict.Add("UAEN_Toad.addChallenges", toadType.GetMethod("addChallenges", new Type[] { typeof(Location), typeof(List<Challenge>) }));
-                                intDataCCC.fieldInfoDict.Add("UAEN_Toad.Squash", toadType.GetField("ch_Squash"));
-                            }
-                            else
-                            {
-                                Console.WriteLine("CommunityLib: Failed to get Toad UAEN Type (CovenExpansion.UAEN_Toad)");
-                            }
-
-                            Type ribbitType = intDataCCC.assembly.GetType("CovenExpansion.Rt_Ribbit", false);
-                            if (ribbitType != null)
-                            {
-                                intDataCCC.typeDict.Add("Rt_Ribbit", ribbitType);
-                            }
-                            else
-                            {
-                                Console.WriteLine("CommunityLib: Failed to get Ribbit ritual Type (CovenExpansion.Rt_Ribbit)");
-                            }
-
-                            Type pigeonType = intDataCCC.assembly.GetType("CovenExpansion.UAEN_Pigeon", false);
-                            if (pigeonType != null)
-                            {
-                                intDataCCC.typeDict.Add("UAEN_Pigeon", pigeonType);
-                                intDataCCC.methodInfoDict.Add("UAEN_Pigeon.turnTick", pigeonType.GetMethod("turnTick", new Type[] { typeof(Map) }));
-                                intDataCCC.methodInfoDict.Add("UAEN_Pigeon.gainPigeon", pigeonType.GetMethod("gainPigeon", new Type[] { typeof(UA) }));
-                                intDataCCC.fieldInfoDict.Add("UAEN_Pigeon.target", pigeonType.GetField("target"));
-                                intDataCCC.fieldInfoDict.Add("UAEN_Pigeon.owner", pigeonType.GetField("owner"));
-                                intDataCCC.fieldInfoDict.Add("UAEN_Pigeon.returning", pigeonType.GetField("returning"));
-                            }
-                            else
-                            {
-                                Console.WriteLine("CommunityLib: Failed to get Pigeon UAEN Type (CovenExpansion.UAEN_Pigeon)");
-                            }
-
-                            Type flyingPigeonType = intDataCCC.assembly.GetType("CovenExpansion.Rt_flyingPigeon", false);
-                            if (flyingPigeonType != null)
-                            {
-                                intDataCCC.typeDict.Add("Rt_flyingPigeon", flyingPigeonType);
-                            }
-                            else
-                            {
-                                Console.WriteLine("CommunityLib: Failed to get flying pigeon ritual Type (CovenExpansion.Rt_flyingPigeon)");
+                                Console.WriteLine("CommunityLib: Failed to get Curseweaving trait Type (CovenExpansionRecast.T_MasteryCurseweaving)");
                             }
                         }
                         break;
@@ -866,8 +801,18 @@ namespace CommunityLib
                             Type fleshcraftingTraitType = intDataEscam.assembly.GetType("God_Flesh.T_FleshKnowledge", false);
                             if (fleshcraftingTraitType != null)
                             {
-                                intDataEscam.typeDict.Add("FleshcraftingTraitType", fleshcraftingTraitType);
+                                intDataEscam.typeDict.Add("Fleshcrafting", fleshcraftingTraitType);
                                 registerMagicType(fleshcraftingTraitType);
+
+                                ConstructorInfo ctor = fleshcraftingTraitType.GetConstructor(Type.EmptyTypes);
+                                if (ctor != null)
+                                {
+                                    intDataEscam.constructorInfoDict.Add("Flescrafting", ctor);
+                                }
+                                else
+                                {
+                                    Console.WriteLine("CommunityLib: Failed to get parameterless constructor for Fleshcrafting trait Type (God_Flesh.T_FleshKnowledge)");
+                                }
                             }
                             else
                             {
@@ -1393,6 +1338,286 @@ namespace CommunityLib
                         }
                     }
                 });
+            }
+
+            if (properties.ContainsKey("INCREASE_MASTERY_BLOOD"))
+            {
+                properties["INCREASE_MASTERY_BLOOD"] = new EventRuntime.TypedProperty<int>(delegate (EventContext c, int v)
+                {
+                    if (c.person == null)
+                    {
+                        return;
+                    }
+
+                    if (v == 0)
+                    {
+                        v = 1;
+                    }
+
+                    Trait toRemove = null;
+                    foreach (Trait trait in c.person.traits)
+                    {
+                        if (trait is T_MasteryBlood mastery)
+                        {
+                            mastery.level += v;
+                            if (mastery.level > mastery.getMaxLevel())
+                            {
+                                mastery.level = mastery.getMaxLevel();
+                            }
+                            else if (mastery.level == 0)
+                            {
+                                toRemove = trait;
+                                break;
+                            }
+                            return;
+                        }
+                    }
+
+                    if (toRemove != null)
+                    {
+                        c.person.traits.Remove(toRemove);
+                        return;
+                    }
+
+                    if (v > 0)
+                    {
+                        if (v > 0)
+                        {
+                            Trait trait = new T_MasteryBlood() { level = v };
+
+                            if (trait.level > trait.getMaxLevel())
+                            {
+                                trait.level = trait.getMaxLevel();
+                            }
+
+                            c.person.traits.Add(trait);
+                        }
+                    }
+                });
+            }
+
+            if (properties.ContainsKey("INCREASE_MASTERY_DEATH"))
+            {
+                properties["INCREASE_MASTERY_DEATH"] = new EventRuntime.TypedProperty<int>(delegate (EventContext c, int v)
+                {
+                    if (c.person == null)
+                    {
+                        return;
+                    }
+
+                    if (v == 0)
+                    {
+                        v = 1;
+                    }
+
+                    Trait toRemove = null;
+                    foreach (Trait trait in c.person.traits)
+                    {
+                        if (trait is T_MasteryDeath mastery)
+                        {
+                            mastery.level += v;
+                            if (mastery.level > mastery.getMaxLevel())
+                            {
+                                mastery.level = mastery.getMaxLevel();
+                            }
+                            else if (mastery.level == 0)
+                            {
+                                toRemove = trait;
+                                break;
+                            }
+                            return;
+                        }
+                    }
+
+                    if (toRemove != null)
+                    {
+                        c.person.traits.Remove(toRemove);
+                        return;
+                    }
+
+                    if (v > 0)
+                    {
+                        Trait trait = new T_MasteryDeath() { level = v };
+
+                        if (trait.level > trait.getMaxLevel())
+                        {
+                            trait.level = trait.getMaxLevel();
+                        }
+
+                        c.person.traits.Add(trait);
+                    }
+                });
+            }
+
+            if (properties.ContainsKey("INCREASE_MASTERY_GEO"))
+            {
+                properties["INCREASE_MASTERY_GEO"] = new EventRuntime.TypedProperty<int>(delegate (EventContext c, int v)
+                {
+                    if (c.person == null)
+                    {
+                        return;
+                    }
+
+                    if (v == 0)
+                    {
+                        v = 1;
+                    }
+
+                    Trait toRemove = null;
+                    foreach (Trait trait in c.person.traits)
+                    {
+                        if (trait is T_MasteryGeomancy mastery)
+                        {
+                            mastery.level += v;
+                            if (mastery.level > mastery.getMaxLevel())
+                            {
+                                mastery.level = mastery.getMaxLevel();
+                            }
+                            else if (mastery.level == 0)
+                            {
+                                toRemove = trait;
+                                break;
+                            }
+                            return;
+                        }
+                    }
+
+                    if (toRemove != null)
+                    {
+                        c.person.traits.Remove(toRemove);
+                        return;
+                    }
+
+                    if (v > 0)
+                    {
+                        Trait trait = new T_MasteryGeomancy() { level = v };
+
+                        if (trait.level > trait.getMaxLevel())
+                        {
+                            trait.level = trait.getMaxLevel();
+                        }
+
+                        c.person.traits.Add(trait);
+                    }
+                });
+            }
+
+            if (!properties.ContainsKey("INCREASE_MASTERY_CURSE"))
+            {
+                properties.Add("INCREASE_MASTERY_CURSE", new EventRuntime.TypedProperty<int>(delegate (EventContext c, int v)
+                {
+                    if (!Get().data.tryGetModIntegrationData("CovensCursesCurios", out ModIntegrationData intDataCCC) || intDataCCC == null || !intDataCCC.typeDict.TryGetValue("Curseweaving", out Type curseweavingType) || curseweavingType == null)
+                    {
+                        return;
+                    }
+
+                    if (c.person == null)
+                    {
+                        return;
+                    }
+
+                    if (v == 0)
+                    {
+                        v = 1;
+                    }
+
+                    Trait toRemove = null;
+                    foreach (Trait trait in c.person.traits)
+                    {
+                        if (curseweavingType.IsAssignableFrom(trait.GetType()))
+                        {
+                            trait.level += v;
+                            if (trait.level > trait.getMaxLevel())
+                            {
+                                trait.level = trait.getMaxLevel();
+                            }
+                            else if (trait.level == 0)
+                            {
+                                toRemove = trait;
+                                break;
+                            }
+                            return;
+                        }
+                    }
+
+                    if (toRemove != null)
+                    {
+                        c.person.traits.Remove(toRemove);
+                        return;
+                    }
+
+                    if (v > 0 && intDataCCC.constructorInfoDict.TryGetValue("Curseweaving", out ConstructorInfo ctor) && ctor != null)
+                    {
+                        Trait trait = (Trait)ctor.Invoke(new object[0]);
+
+                        trait.level = v;
+                        if (trait.level > trait.getMaxLevel())
+                        {
+                            trait.level = trait.getMaxLevel();
+                        }
+
+                        c.person.traits.Add(trait);
+                    }
+                }));
+            }
+
+            if (!properties.ContainsKey("INCREASE_MASTERY_FLESH"))
+            {
+                properties.Add("INCREASE_MASTERY_FLESH", new EventRuntime.TypedProperty<int>(delegate (EventContext c, int v)
+                {
+                    if (!Get().data.tryGetModIntegrationData("Escamrak", out ModIntegrationData intDataEscam) || intDataEscam == null || !intDataEscam.typeDict.TryGetValue("Fleshcrafting", out Type fleshcraftingType) || fleshcraftingType == null)
+                    {
+                        return;
+                    }
+
+                    if (c.person == null)
+                    {
+                        return;
+                    }
+
+                    if (v == 0)
+                    {
+                        v = 1;
+                    }
+
+                    Trait toRemove = null;
+                    foreach (Trait trait in c.person.traits)
+                    {
+                        if (fleshcraftingType.IsAssignableFrom(trait.GetType()))
+                        {
+                            trait.level += v;
+                            if (trait.level > trait.getMaxLevel())
+                            {
+                                trait.level = trait.getMaxLevel();
+                            }
+                            else if (trait.level == 0)
+                            {
+                                toRemove = trait;
+                                break;
+                            }
+                            return;
+                        }
+                    }
+
+                    if (toRemove != null)
+                    {
+                        c.person.traits.Remove(toRemove);
+                        return;
+                    }
+
+                    if (v > 0 && intDataEscam.constructorInfoDict.TryGetValue("Fleshcrafting", out ConstructorInfo ctor) && ctor != null)
+                    {
+                        Trait trait = (Trait)ctor.Invoke(new object[0]);
+
+                        trait.level = v;
+                        if (trait.level > trait.getMaxLevel())
+                        {
+                            trait.level = trait.getMaxLevel();
+                        }
+
+                        c.person.traits.Add(trait);
+                    }
+                }));
             }
 
             // Misising God Fields
