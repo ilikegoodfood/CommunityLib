@@ -67,6 +67,10 @@ namespace CommunityLib
 
         public static bool opt_defeatableVinerva = true;
 
+        public static int opt_evilBeneathMaxHp = 1000;
+
+        public static bool opt_cthonianHPFromCharge = false;
+
         public static bool opt_rulerTraitsEffectArmies = false;
 
         public static bool opt_DynamicOrcCount = false;
@@ -153,6 +157,9 @@ namespace CommunityLib
                     break;
                 case "Ruler Traits Effect Armies":
                     opt_rulerTraitsEffectArmies = value;
+                    break;
+                case "Modifier Charge Effects Cthonian Armies":
+                    opt_cthonianHPFromCharge = value;
                     break;
                 case "Enshadow in Dwarven Cities":
                     opt_dwarven_enshadow = value;
@@ -256,6 +263,9 @@ namespace CommunityLib
         {
             switch (optName)
             {
+                case "The Evil Beneath's Max Health":
+                    opt_evilBeneathMaxHp = value;
+                    break;
                 case "Target Dwarven Civilization Count":
                     opt_targetDwarfCount = value;
                     break;
@@ -2226,6 +2236,14 @@ namespace CommunityLib
                         p.traits.RemoveAt(i);
                     }
                 }
+            }
+        }
+
+        public override void afterMapGenAfterHistorical(Map map)
+        {
+            if (map.overmind.god is God_Underground evilBeneath && evilBeneath.heart != null)
+            {
+                evilBeneath.heart.maxHp = opt_evilBeneathMaxHp;
             }
         }
 

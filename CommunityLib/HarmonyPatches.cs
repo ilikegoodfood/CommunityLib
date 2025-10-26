@@ -344,6 +344,7 @@ namespace CommunityLib
 
             // Property Fixes
             harmony.Patch(original: AccessTools.Method(typeof(Pr_ArcaneSecret), nameof(Pr_ArcaneSecret.turnTick), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Pr_ArcaneSecret_turnTick_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Pr_Cthonians), nameof(Pr_Cthonians.turnTick), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Pr_Cthonians_turnTick_Transpiler)));
 
             // Religion UI Screen modification
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bPrev), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
@@ -6979,6 +6980,71 @@ namespace CommunityLib
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
+        }
+
+        private static IEnumerable<CodeInstruction> Pr_Cthonians_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Pr_Cthonians_turnTick_TranspilerBody), new Type[] { typeof(Pr_Cthonians) });
+
+            bool returnCode = true;
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldc_I4_2)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldc_I4_2)
+                        {
+                            returnCode = false;
+
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Add)
+                        {
+                            returnCode = true;
+                            targetIndex = 0;
+                            i++;
+                        }
+                    }
+                }
+
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
+            }
+
+            Console.WriteLine("CommunityLib: Completed Pr_Cthonians_turnTick_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static int Pr_Cthonians_turnTick_TranspilerBody(Pr_Cthonians cthonians)
+        {
+            if (ModCore.opt_cthonianHPFromCharge)
+            {
+                return (int)Math.Floor(cthonians.charge / 25.0) + Eleven.random.Next(10);
+            }
+
+            return 2 + Eleven.random.Next(10);
         }
 
         // Religion UI Screen modification
