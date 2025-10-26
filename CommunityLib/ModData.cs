@@ -116,7 +116,10 @@ namespace CommunityLib
             if (mapMaskData == null)
             {
                 mapMaskData = new Dictionary<Tuple<ModKernel, int>, MapMaskData>();
+            }
 
+            if (mapMaskData.Count == 0)
+            {
                 Dictionary<UIKeybinds.Action, MapMaskManager.maskType> maskMappings = UIInputs.getMaskMappings();
                 foreach (UIKeybinds.Action action in maskMappings.Keys)
                 {
@@ -967,7 +970,7 @@ namespace CommunityLib
 
             foreach (Type type in vampireTypes)
             {
-                if (u.GetType() == type || u.GetType().IsSubclassOf(type))
+                if (type.IsAssignableFrom(u.GetType()))
                 {
                     return true;
                 }
