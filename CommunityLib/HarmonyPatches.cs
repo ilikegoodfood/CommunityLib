@@ -548,28 +548,16 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldfld && instructionList[i+1].opcode == OpCodes.Ceq)
+                        if (instructionList[i].opcode == OpCodes.Ldc_R4 && instructionList[i+1].opcode == OpCodes.Ldc_I4_S)
                         {
-                            targetIndex++;
-                        }
-                    }
-                    else if (targetIndex == 2)
-                    {
-                        if (instructionList[i].opcode == OpCodes.Brfalse)
-                        {
-                            Label retLabel = (Label)instructionList[i].operand;
-
-                            yield return new CodeInstruction(OpCodes.Brfalse, retLabel);
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
-                            yield return new CodeInstruction(OpCodes.Ldloc_0);
+                            yield return instructionList[i];
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
-                            yield return new CodeInstruction(OpCodes.Br, retLabel);
 
                             i++;
                             targetIndex = 0;
                         }
                     }
-                    
                 }
 
                 yield return instructionList[i];
@@ -582,23 +570,14 @@ namespace CommunityLib
             }
         }
 
-        private static void GraphicalLink_Update_TranspilerBody(GraphicalLink gLink, float alpha)
+        private static float GraphicalLink_Update_TranspilerBody(GraphicalLink gLink, float curve)
         {
-            float alphaA = alpha;
-            float alphaB = alpha;
-
-            int z = GraphicalMap.z;
-            if (gLink.link.a.hex.z != z)
+            if (gLink.link.a.hex.z != gLink.link.b.hex.z)
             {
-                alphaA = 0f;
+                return curve * 0.5f;
             }
-            gLink.lineRenderer.startColor = new Color(0.1f, 0.1f, 1f, alphaA);
 
-            if (gLink.link.b.hex.z != z)
-            {
-                alphaB = 0f;
-            }
-            gLink.lineRenderer.endColor = new Color(0.1f, 0.1f, 1f, alphaB);
+            return curve;
         }
 
         private static void GraphicalLink_Update_Postfix(GraphicalLink __instance)
@@ -6477,9 +6456,16 @@ namespace CommunityLib
             {
                 if (targetIndex > 0)
                 {
-                    if (targetIndex == 1 && i > 1)
+                    if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i-1].opcode == OpCodes.Stfld && instructionList[i-2].opcode == OpCodes.Ldloc_S)
+                        if (i > 1)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i - 1].opcode == OpCodes.Stfld && instructionList[i - 2].opcode == OpCodes.Ldloc_S)
                         {
                             for (int j = i; j < instructionList.Count; j++)
                             {
@@ -6491,7 +6477,7 @@ namespace CommunityLib
 
                                 if (j + 1 == instructionList.Count)
                                 {
-                                    Console.WriteLine("CommunityLib: Society_processActions_Transpiler failed to find target Brfalse_S,");
+                                    Console.WriteLine("CommunityLib: Society_processActions_Transpiler failed to find target Brfalse_S.");
                                 }
                             }
 
