@@ -102,6 +102,9 @@ namespace CommunityLib
             // Graphical unit updated hook
             harmony.Patch(original: AccessTools.Method(typeof(GraphicalUnit), nameof(GraphicalUnit.checkData), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(GraphicalUnit_checkData_Postfix)));
 
+            // Graphical link tweak
+            harmony.Patch(original: AccessTools.Method(typeof(GraphicalHex), nameof(GraphicalLink.Update), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(GraphicalLink_Update_Transpiler)), postfix: new HarmonyMethod(patchType, nameof(GraphicalLink_Update_Postfix)));
+
             // Unit death hooks
             harmony.Patch(original: AccessTools.Method(typeof(Unit), nameof(Unit.die), new Type[] { typeof(Map), typeof(string), typeof(Person) }), prefix: new HarmonyMethod(patchType, nameof(Unit_die_Prefix)), transpiler: new HarmonyMethod(patchType, nameof(Unit_die_Transpiler)));
 
