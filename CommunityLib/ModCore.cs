@@ -61,6 +61,10 @@ namespace CommunityLib
 
         public static bool opt_allowCulturalMinorSettelementGraphics = true;
 
+        public static bool opt_disableCurvedLinks = false;
+
+        public static bool opt_disableCrossLayerCurvedLinks = false;
+
         public static bool opt_enhancedTradeRouteLinks = true;
 
         public static bool opt_darkProphets = false;
@@ -208,6 +212,12 @@ namespace CommunityLib
                     break;
                 case "Chosen One Death Message":
                     opt_chosenOneDeathMessage = value;
+                    break;
+                case "Disable Curved Links":
+                    opt_disableCurvedLinks = value;
+                    break;
+                case "Disable Curved Links Across Map Layers":
+                    opt_disableCrossLayerCurvedLinks = value;
                     break;
                 case "Enhanced Trade Route Links":
                     opt_enhancedTradeRouteLinks = value;

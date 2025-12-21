@@ -574,7 +574,17 @@ namespace CommunityLib
         {
             if (gLink.link.a.hex.z != gLink.link.b.hex.z)
             {
+                if (ModCore.opt_disableCrossLayerCurvedLinks)
+                {
+                    return 0f;
+                }
+
                 return curve * 0.5f;
+            }
+
+            if (ModCore.opt_disableCurvedLinks)
+            {
+                return 0f;
             }
 
             return curve;
