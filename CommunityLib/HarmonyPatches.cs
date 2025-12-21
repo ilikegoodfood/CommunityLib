@@ -465,6 +465,51 @@ namespace CommunityLib
             }
         }
 
+        private static IEnumerable<CodeInstruction> GraphicalLink_Update_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(GraphicalLink_Update_TranspilerBody), new Type[] { typeof(GraphicalLink), typeof(float) });
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldc_R4 && instructionList[i+1].opcode == OpCodes.Ldc_I4_S)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return instructionList[i];
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+
+                            i++;
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed GraphicalLink_Update_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static float GraphicalLink_Update_TranspilerBody(GraphicalLink gLink, float curve)
+        {
+            if (ModCore.opt_disableCurvedLinks)
+            {
+                return 0f;
+            }
+
+            return curve;
+        }
+
         private static void GraphicalLink_Update_Postfix(GraphicalLink __instance)
         {
             foreach (var hook in ModCore.Get().HookRegistry.Delegate_onGraphicalLinkUpdated)
