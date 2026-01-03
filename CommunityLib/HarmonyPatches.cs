@@ -10255,19 +10255,30 @@ namespace CommunityLib
                 }
             }
 
-            Location[] pathToNearest = Pathfinding.getPathTo(um.location, destinationValidityDelegate_Cthonians, um, um.map.overmind.cthoniansRiseUp ? new List<int> { 0, 1 } : new List<int> { 1 }, false);
-
-            if (pathToNearest != null)
+            Location[] pathToNearest = null; 
+            if (um.map.overmind.cthoniansRiseUp)
             {
-                um.task = new Task_GoToLocation(pathToNearest[pathToNearest.Length - 1]);
+                pathToNearest = Pathfinding.getPathTo(um.location, destinationValidityDelegate_Cthonians, um, new List<int> { 0, 1 }, false);
             }
+            else
+            {
+                pathToNearest = Pathfinding.getPathTo(um.location, destinationValidityDelegate_Cthonians, um, new List<int> { 1 }, false);
+            }
+
+
+            if (pathToNearest == null || pathToNearest.Length < 2)
+            {
+                return;
+            }
+
+            um.task = new Task_GoToLocation(pathToNearest[pathToNearest.Length - 1]);
         }
 
         private static bool destinationValidityDelegate_Cthonians(Location[] path, Location locA, Unit u, List<int> targetLayers)
         {
             if (locA.settlement is SettlementHuman settlementHuman)
             {
-                if (settlementHuman.shadow < 0.75 && (!(locA.soc is Society society) || !society.isOphanimControlled && !society.isDarkEmpire))
+                if (settlementHuman.shadow < 0.75 && (!(locA.soc is Society society) || !society.isDark() && !society.isOphanimControlled && !society.isDarkEmpire))
                 {
                     return true;
                 }
