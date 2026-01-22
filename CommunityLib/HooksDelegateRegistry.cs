@@ -103,9 +103,9 @@ namespace CommunityLib
             return true;
         }
 
-        private List<Action<UIScrollThreats, GameObject, ModKernel, int, string, string, string>> _delegate_mapMask_onThreatHovorOver = new List<Action<UIScrollThreats, GameObject, ModKernel, int, string, string, string>>();
-        public List<Action<UIScrollThreats, GameObject, ModKernel, int, string, string, string>> Delegate_mapMask_onThreatHovorOver { get { return _delegate_mapMask_onThreatHovorOver; } }
-        public bool RegisterHook_mapMask_onThreatHovorOver(Action<UIScrollThreats, GameObject, ModKernel, int, string, string, string> hook)
+        private List<Action<UIScrollThreats, MonoBehaviour, ModKernel, int, string, string, string>> _delegate_mapMask_onThreatHovorOver = new List<Action<UIScrollThreats, MonoBehaviour, ModKernel, int, string, string, string>>();
+        public List<Action<UIScrollThreats, MonoBehaviour, ModKernel, int, string, string, string>> Delegate_mapMask_onThreatHovorOver { get { return _delegate_mapMask_onThreatHovorOver; } }
+        public bool RegisterHook_mapMask_onThreatHovorOver(Action<UIScrollThreats, MonoBehaviour, ModKernel, int, string, string, string> hook)
         {
             if (hook == null)
                 return false;

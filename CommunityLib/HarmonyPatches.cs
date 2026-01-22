@@ -1277,11 +1277,14 @@ namespace CommunityLib
                 return;
             }
 
-            Console.WriteLine("CommunityLib: Hover Over for modded map mask.");
             threats.title.text = title;
             threats.desc.text = description;
 
-            PointerEventData pointerEventData = new PointerEventData(EventSystem.current) { pointerId = -1 };
+            PointerEventData pointerEventData = new PointerEventData(EventSystem.current)
+            {
+                pointerId = -1,
+                position = Input.mousePosition
+            };
             List<RaycastResult> raycastResults = new List<RaycastResult>();
             EventSystem.current.RaycastAll(pointerEventData, raycastResults);
 
@@ -1297,20 +1300,34 @@ namespace CommunityLib
 
             foreach (RaycastResult result in raycastResults)
             {
-                ThreatViewerComponent comp = result.gameObject.GetComponentInParent<ThreatViewerComponent>();
+                MonoBehaviour comp = result.gameObject.GetComponentInParent<UIE_ModifierViewer>();
                 if (comp == null)
                 {
-                    continue;
+                    comp = result.gameObject.GetComponentInParent<UIE_HeroViewer>();
+                }
+                if (comp == null)
+                {
+                    comp = result.gameObject.GetComponentInParent<Text>();
+                }
+                if (comp == null)
+                {
+                    comp = result.gameObject.GetComponentInParent<UIE_TradeRoute>();
+                }
+
+                if (comp == null)
+                {
+                    //Console.WriteLine($"CommunityLib: No valid threat component found.");
+                    return;
                 }
 
                 foreach (var hook in ModCore.Get().HookRegistry.Delegate_mapMask_onThreatHovorOver)
                 {
-                    hook(threats, comp.ThreatViewer, MapMaskManager.maskingMod, (int)threats.master.world.map.masker.mask, title, buttonLabel, description);
+                    hook(threats, comp, MapMaskManager.maskingMod, (int)threats.master.world.map.masker.mask, title, buttonLabel, description);
                 }
 
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
-                    hook.mapMask_onThreatHovorOver(threats, comp.ThreatViewer, MapMaskManager.maskingMod, (int)threats.master.world.map.masker.mask, title, buttonLabel, description);
+                    hook.mapMask_onThreatHovorOver(threats, comp, MapMaskManager.maskingMod, (int)threats.master.world.map.masker.mask, title, buttonLabel, description);
                 }
                 break;
             }

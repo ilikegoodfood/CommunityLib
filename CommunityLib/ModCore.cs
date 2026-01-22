@@ -7,7 +7,6 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
-using static SortedDictionaryProvider;
 
 namespace CommunityLib
 {
@@ -41,6 +40,12 @@ namespace CommunityLib
 
         private ConditionalUAENOverrideAI conditionalOverrideAI;
 
+        public int bachelorsMaskID = -1;
+
+        private Color dark = new Color(0f, 0f, 0f, 0.9f);
+
+        private Color light = new Color(1f, 1f, 1f, 0.9f);
+
         public static bool opt_autoRelaunch = false;
 
         public static bool opt_spawnShipwrecks = false;
@@ -65,7 +70,10 @@ namespace CommunityLib
 
         public static bool opt_disableCrossLayerCurvedLinks = false;
 
-        public static bool opt_enhancedTradeRouteLinks = true;
+        /*
+         * The Width of Links is now reset somehwhere in the update cycle, rending this option non-functional.
+         */
+        //public static bool opt_enhancedTradeRouteLinks = true;
 
         public static bool opt_darkProphets = false;
 
@@ -219,9 +227,9 @@ namespace CommunityLib
                 case "Disable Curved Links Across Map Layers":
                     opt_disableCrossLayerCurvedLinks = value;
                     break;
-                case "Enhanced Trade Route Links":
+                /*case "Enhanced Trade Route Links":
                     opt_enhancedTradeRouteLinks = value;
-                    break;
+                    break;*/
                 case "Dense Trade Routes":
                     opt_denseTradeRoutes = value;
                     break;
@@ -336,16 +344,13 @@ namespace CommunityLib
 
             orcExpansionDefaults();
             eventModifications();
+            setupMapMasks();
         }
 
         public override void afterMapGenBeforeHistorical(Map map)
         {
             Get().data.initialiseHidenThoughts();
         }
-
-        //public int bachelorsMaskID = -1; // TEST ITEM
-
-        //private Color dark = new Color(0f, 0f, 0f, 0.8f); // TEST ITEM
 
         public override void afterLoading(Map map)
         {
@@ -381,20 +386,32 @@ namespace CommunityLib
             orcExpansionDefaults();
             eventModifications();
 
-            /*Get().bachelorsMaskID = tryRegisterMapMask(Get(), "Bachelors", "Bachelors", "Rulers that can marry.");
-            if (bachelorsMaskID == -1)
-            {
-                Console.WriteLine($"CommunityLib: Failed to regsiter Bachelors map mask.");
-            }
-            else
-            {
-                Console.WriteLine($"CommunityLib: Registered Bachelors map mask to id '{bachelorsMaskID}'.");
-            }*/
+            setupMapMasks();
 
             updateSaveGameVersion(map);
         }
 
-        /*public override string mapMask_getTitleText() // TEST ITEM
+        public void setupMapMasks()
+        {
+            if (Get().data.tryGetModIntegrationData("Chandalor", out ModIntegrationData intDataChand) && intDataChand.typeDict.TryGetValue("Chandalor", out Type godType) && godType.IsAssignableFrom(map.overmind.god.GetType()))
+            {
+                Get().bachelorsMaskID = tryRegisterMapMask(Get(), "Bachelors", "Bachelors", "Rulers that can marry.");
+                if (bachelorsMaskID == -1)
+                {
+                    Console.WriteLine($"CommunityLib: Failed to regsiter Bachelors map mask.");
+                }
+                else
+                {
+                    Console.WriteLine($"CommunityLib: Registered Bachelors map mask to id '{bachelorsMaskID}'.");
+                }
+            }
+            else
+            {
+                bachelorsMaskID = -1;
+            }
+        }
+
+        public override string mapMask_getTitleText() // TEST ITEM
         {
             if (MapMaskManager.maskingMod == this && (int)map.masker.mask == bachelorsMaskID)
             {
@@ -406,7 +423,13 @@ namespace CommunityLib
 
         public override bool mapMask_shouldApplyMask(Hex hex) // TEST ITEM
         {
-            if (MapMaskManager.maskingMod == this && (int)map.masker.mask == bachelorsMaskID)
+            int maskID = (int)map.masker.mask;
+            if (maskID == -1)
+            {
+                return false;
+            }
+
+            if (MapMaskManager.maskingMod == this && maskID == bachelorsMaskID)
             {
                 return true;
             }
@@ -425,17 +448,39 @@ namespace CommunityLib
 
         public override Color mapMask_getColour(Hex hex) // TEST ITEM
         {
-            if (MapMaskManager.maskingMod == this && (int)map.masker.mask == bachelorsMaskID)
+            int maskID = (int)map.masker.mask;
+            if (maskID == -1 || MapMaskManager.maskingMod != Get())
+            {
+                return Color.black;
+            }
+
+            if ((int)map.masker.mask == bachelorsMaskID)
             {
                 if (hex.location == null || !(hex.location.settlement is SettlementHuman settlementHuman) || settlementHuman.ruler == null || settlementHuman.ruler.getSpouse() != null || settlementHuman.ruler.traits.Any(t => t is T_Mourning mourning))
                 {
                     return dark;
                 }
-                return Color.clear;
+
+                Settlement targetSettlement = hex.map.world.ui.uiScrollables.scrollable_threats.targetSettlement;
+                if (targetSettlement == null)
+                {
+                    return Color.clear;
+                }
+
+                if (targetSettlement == settlementHuman)
+                {
+                    //Console.WriteLine($"CommunityLib: Target Settlement is {settlementHuman.getName()}, ruled by {settlementHuman.ruler.getName()}.");
+                    return light;
+                }
+                else
+                {
+                    return dark;
+                }
+                
             }
 
             return Color.black;
-        }*/
+        }
 
         private void getModKernels (Map map)
         {
