@@ -54,6 +54,10 @@
       <HintPath>..\..\..\Game DLLs\1_1\UnityEngine.CoreModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>..\..\..\Game DLLs\2_0_1\UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityEngine.JSONSerializeModule">
       <HintPath>..\..\..\Game DLLs\1_1\UnityEngine.JSONSerializeModule.dll</HintPath>
       <Private>False</Private>

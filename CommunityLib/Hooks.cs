@@ -90,7 +90,7 @@ namespace CommunityLib
         /// <param name="title"></param>
         /// <param name="buttonLabel"></param>
         /// <param name="description"></param>
-        public virtual void mapMask_onThreatHovorOver(UIScrollThreats threats, GameObject hoveredItem, ModKernel maskingMod, int maskID, string title, string buttonLabel, string description)
+        public virtual void mapMask_onThreatHovorOver(UIScrollThreats threats, MonoBehaviour hoveredItem, ModKernel maskingMod, int maskID, string title, string buttonLabel, string description)
         {
             return;
         }

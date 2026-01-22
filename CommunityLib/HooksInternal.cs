@@ -21,8 +21,8 @@ namespace CommunityLib
             HooksDelegateRegistry registry = ModCore.Get().HookRegistry;
             registry.RegisterHook_onMapGen_PlaceWonders_1(onMapGen_PlaceWonders);
             registry.RegisterHook_onMapGen_PlaceWonders_2(onMapGen_PlaceWonders);
-            //registry.RegisterHook_mapMask_PopulatingThreats(mapMask_PopulatingThreats); // TEST ITEM
-            //registry.RegisterHook_mapMask_onThreatHovorOver(mapMask_onThreatHovorOver); // TEST ITEM
+            registry.RegisterHook_mapMask_PopulatingThreats(mapMask_PopulatingThreats); // TEST ITEM
+            registry.RegisterHook_mapMask_onThreatHovorOver(mapMask_onThreatHovorOver); // TEST ITEM
             registry.RegisterHook_isUnitSubsumed(isUnitSubsumed);
             registry.RegisterHook_onUnitDeath_StartOfProcess(onUnitDeath_StartOfProcess);
             registry.RegisterHook_onSettlementFallIntoRuin_StartOfProcess(onSettlementFallIntoRuin_StartOfProcess);
@@ -31,7 +31,7 @@ namespace CommunityLib
             registry.RegisterHook_onBrokenMakerSleeps_TurnTick(onBrokenMakerSleeps_TurnTick);
             registry.RegisterHook_onCheckIsProphetPlayerAligned(onCheckIsProphetPlayerAligned);
             registry.RegisterHook_onLocationViewFaithButton_GetHolyOrder(onLocationViewFaithButton_GetHolyOrder);
-            registry.RegisterHook_onGraphicalLinkUpdated(onGraphicalLinkUpdated);
+            //registry.RegisterHook_onGraphicalLinkUpdated(onGraphicalLinkUpdated);
             registry.RegisterHook_interceptGetVisibleUnits(interceptGetVisibleUnits);
             registry.RegisterHook_onPopulatingTradeRoutePathfindingDelegates(onPopulatingTradeRoutePathfindingDelegates);
             registry.RegisterHook_interceptAgentAI(interceptAgentAI);
@@ -163,7 +163,7 @@ namespace CommunityLib
             }
         }
 
-        /*public void mapMask_PopulatingThreats(UIScrollThreats threats, ModKernel maskingMod, int maskID, string title, string buttonLabel, string description) // TEST ITEM
+        public void mapMask_PopulatingThreats(UIScrollThreats threats, ModKernel maskingMod, int maskID, string title, string buttonLabel, string description)
         {
             if (maskID == -1 || maskID != ModCore.Get().bachelorsMaskID)
             {
@@ -182,33 +182,44 @@ namespace CommunityLib
                 string filterText = threats.filterField.text.ToLower();
                 if (filterText == "" || settlementHuman.ruler.getName().ToLower().Contains(filterText))
                 {
-                    GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(threats.world.prefabStore.uieHeroViewer, threats.subsetArea) || settlementHuman.ruler.traits.Any(t => t is T_Mourning);
+                    GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(threats.world.prefabStore.uieHeroViewer, threats.subsetArea);
                     UIE_HeroViewer viewer = gameObject.GetComponent<UIE_HeroViewer>();
                     viewer.setToPerson(threats.world, settlementHuman.ruler);
                 }
             }
         }
 
-        public virtual void mapMask_onThreatHovorOver(UIScrollThreats threats, GameObject hoveredItem, ModKernel maskingMod, int maskID, string title, string buttonLabel, string description) // TEST ITEM
+        public virtual void mapMask_onThreatHovorOver(UIScrollThreats threats, MonoBehaviour hoveredItem, ModKernel maskingMod, int maskID, string title, string buttonLabel, string description)
         {
-            if (maskingMod != ModCore.Get() || maskID != ModCore.Get().bachelorsMaskID)
+            //Console.WriteLine($"CommunityLib: MaskId: {maskID}.");
+            if (maskID == -1 || maskingMod != ModCore.Get() || maskID != ModCore.Get().bachelorsMaskID)
             {
+                //Console.WriteLine($"CommunityLib: Invalid Mask ID.");
                 return;
             }
 
-            UIE_HeroViewer viewer = hoveredItem.GetComponent<UIE_HeroViewer>();
-            if (viewer == null)
+            //Console.WriteLine($"CommunityLib: Hover over threat instance for bachelor's modded map mask.");
+            if (hoveredItem == null)
             {
+                //Console.WriteLine($"CommunityLib: Hovered MonoBehaviour is null.");
                 return;
             }
 
-            Settlement set = threats.targetSettlement = threats.world.map.locations[viewer.personExamplar.rulerOf].settlement;
-            if (threats.targetSettlement != set)
+            if (!(hoveredItem is UIE_HeroViewer viewer))
             {
-                threats.targetSettlement = set;
-                GraphicalMap.checkData();
+                //Console.WriteLine($"CommunityLib: Hovered over threat viewer instance that was not a hero viewer.");
+                return;
             }
-        }*/
+
+            if (viewer.personExamplar == null)
+            {
+                //Console.WriteLine($"CommunityLib: Target Hero Viewer has no person exemplar.");
+                return;
+            }
+
+            //Console.WriteLine($"CommunityLib: Hovered over Hero Viewer threat panel isntance for {viewer.personExamplar.getName()}");
+            threats.targetSettlement = threats.world.map.locations[viewer.personExamplar.rulerOf].settlement;
+        }
 
         public bool isUnitSubsumed(Unit uOriginal, Unit uSubsuming)
         {
@@ -543,7 +554,7 @@ namespace CommunityLib
 
         public void onGraphicalLinkUpdated(GraphicalLink graphicalLink)
         {
-            if (ModCore.opt_enhancedTradeRouteLinks)
+            /*if (ModCore.opt_enhancedTradeRouteLinks)
             {
                 List<TradeRoute> routes = new List<TradeRoute>();
                 foreach (TradeRoute route in graphicalLink.link.a.map.tradeManager.routes)
@@ -609,7 +620,7 @@ namespace CommunityLib
                     graphicalLink.lineRenderer.startWidth = width;
                     graphicalLink.lineRenderer.endWidth = width;
                 }
-            }
+            }*/
         }
 
         public bool interceptGetVisibleUnits(UA ua, List<Unit> visibleUnits)
