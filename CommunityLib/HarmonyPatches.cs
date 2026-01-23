@@ -231,6 +231,19 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(UIE_Button), nameof(UIE_Button.bOnClick), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(UIE_Button_bOnClick_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UIScrollThreats), nameof(UIScrollThreats.checkData), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UIScrollThreats_checkData_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(UIScrollThreats), nameof(UIScrollThreats.Update), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UIScrollThreats_Update_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIE_HeroViewer), nameof(UIE_HeroViewer.bGoTo), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPostfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIE_TradeRoute), nameof(UIE_TradeRoute.goTo), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPostfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UILeftPrimary), nameof(UILeftPrimary.bFlagButton), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPostfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView1), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPostfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView2), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPostfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView3), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPostfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView4), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPostfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView5), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPostfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView6), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPostfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView7), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPostfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView8), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPostfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView9), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPostfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIInputs), nameof(UIInputs.hotkeys), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UIInputs_hotkeys_transpiler)));
 
             // Map Fixes
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.gen), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Map_gen_Transpiler)));
@@ -307,12 +320,18 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Rt_Orc_ReceiveFunding), nameof(Rt_Orc_ReceiveFunding.validFor), new Type[] { typeof(UA) }), prefix: new HarmonyMethod(patchType, nameof(Rt_Orc_ReceiveFunding_validFor_Prefix)));
             // Root Out Doubters
             harmony.Patch(original: AccessTools.Method(typeof(Ch_RootOutDoubters), nameof(Ch_RootOutDoubters.getDesc), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(Ch_RootOutDoubters_getDesc_Postfix)));
+            //Drink Primal Waters
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_DrinkPrimalWaters), nameof(Ch_DrinkPrimalWaters.validFor), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_DrinkPrimalWaters_validFor_Transpiler)));
+            // Wrest Control Good
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_WrestleForControl_Good), nameof(Ch_WrestleForControl_Good.validFor), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Ch_WrestleForControl_Good_validFor_Postfix)));
 
             // Task Fixes
             // Follow
             harmony.Patch(original: AccessTools.Method(typeof(Task_Follow), nameof(Task_Follow.turnTick), new Type[] { typeof(Unit) }), transpiler: new HarmonyMethod(patchType, nameof(Task_Follow_turnTick_Transpiler)));
             // Raze Subsettlement
             harmony.Patch(original: AccessTools.Method(typeof(Task_GoRazeSubsettlement), nameof(Task_GoRazeSubsettlement.turnTick), new Type[] { typeof(Unit) }), transpiler: new HarmonyMethod(patchType, nameof(Task_GoRazeSubsettlement_turnTick_Transpiler)));
+            // CaptureLocation
+            harmony.Patch(original: AccessTools.Method(typeof(Task_CaptureLocation), nameof(Task_CaptureLocation.turnTick), new Type[] { typeof(Unit) }), transpiler: new HarmonyMethod(patchType, nameof(Task_CaptureLocation_turnTick_Transpiler)));
 
             // Dwarven Changes //
             harmony.Patch(original: AccessTools.Constructor(typeof(Set_DwarvenCity), new Type[] { typeof(Location) }), postfix: new HarmonyMethod(patchType, nameof(Set_DwarvenCity_ctor_Postfix)));
@@ -1332,6 +1351,49 @@ namespace CommunityLib
                 break;
             }
             GraphicalMap.checkData();
+        }
+
+        public static void UIE_Threat_bGoTo_BulkPostfix()
+        {
+            MapMaskManager.maskingMod = null;
+        }
+
+        public static IEnumerable<CodeInstruction> UIInputs_hotkeys_transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            FieldInfo FIS_MaskingMod = AccessTools.Field(typeof(MapMaskManager), nameof(MapMaskManager.maskingMod));
+
+            Label notModdedMapMask = ilg.DefineLabel();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if ( i > 4 && instructionList[i].opcode == OpCodes.Call && instructionList[i-1].opcode == OpCodes.Nop && instructionList[i-2].opcode == OpCodes.Nop && instructionList[i-3].opcode == OpCodes.Stsfld)
+                        {
+                            CodeInstruction code = new CodeInstruction(OpCodes.Ldnull);
+                            code.labels.AddRange(instructionList[i].labels);
+                            instructionList[i].labels.Clear();
+                            yield return code;
+                            yield return new CodeInstruction(OpCodes.Stsfld, FIS_MaskingMod);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed UIInputs_hotkeys_transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
         }
 
         // Map Fixes
@@ -2988,6 +3050,64 @@ namespace CommunityLib
             __result = __result.Replace($"by{doubterAmount}%", $"by {doubterAmount}%");
         }
 
+        private static IEnumerable<CodeInstruction> Ch_DrinkPrimalWaters_validFor_Transpiler(IEnumerable <CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Ch_DrinkPrimalWaters_validFor_TranspilerBody), new Type[] { typeof(bool), typeof(Ch_DrinkPrimalWaters), typeof(UA) });
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (i > 1 && instructionList[i].opcode == OpCodes.Stloc_S && instructionList[i-1].opcode == OpCodes.Ldc_I4_1)
+                        {
+                            CodeInstruction code = new CodeInstruction(OpCodes.Ldarg_0);
+                            code.labels.AddRange(instructionList[i].labels);
+                            instructionList[i].labels.Clear();
+                            yield return code;
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Ch_DrinkPrimalWaters_validFor_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static bool Ch_DrinkPrimalWaters_validFor_TranspilerBody(bool result, Ch_DrinkPrimalWaters drink, UA ua)
+        {
+            if (!ua.isCommandable() && (ua.society.isDark() || (ua.society is Society society && (society.isDarkEmpire || society.isOphanimControlled))))
+            {
+                return drink.font.control >= drink.map.param.ch_drinkprimalwaters_parameterValue2;
+            }
+
+            return result;
+        }
+
+        private static void Ch_WrestleForControl_Good_validFor_Postfix(UA ua, ref bool __result)
+        {
+            if (__result)
+            {
+                if (ua.society != null && (ua.society.isDark() || (ua.society is Society soc && (soc.isDarkEmpire || soc.isOphanimControlled))))
+                {
+                    __result = false;
+                }
+            }
+        }
+
         // Task Fixes //
         // Task_Follow
         private static IEnumerable<CodeInstruction> Task_Follow_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
@@ -3033,7 +3153,6 @@ namespace CommunityLib
                 {
                     yield return instructionList[i];
                 }
-                
             }
 
             Console.WriteLine("CommunityLib: Completed Task_Follow_turnTick_Transpiler");
@@ -3132,6 +3251,49 @@ namespace CommunityLib
             return false;
         }
 
+        // Capture Location
+        private static IEnumerable<CodeInstruction> Task_CaptureLocation_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_GetLocation = AccessTools.PropertyGetter(typeof(Unit), nameof(Unit.location));
+
+            FieldInfo FI_SocialGroup = AccessTools.Field(typeof(Location), nameof(Location.soc));
+
+            bool returnCode = true;
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (i > 4 && instructionList[i].opcode == OpCodes.Nop && instructionList[i-1].opcode == OpCodes.Brfalse_S && instructionList[i-2].opcode == OpCodes.Ldloc_S)
+                        {
+                            yield return new CodeInstruction(OpCodes.Nop);
+                            yield return new CodeInstruction(OpCodes.Ldloc_0);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_GetLocation);
+                            yield return new CodeInstruction(OpCodes.Ldnull);
+                            yield return new CodeInstruction(OpCodes.Stfld, FI_SocialGroup);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
+
+            }
+
+            Console.WriteLine("CommunityLib: Completed Task_CaptureLocation_turnTick_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
 
         // Dwarven Changes
         private static void Set_DwarvenCity_ctor_Postfix(Set_DwarvenCity __instance)
@@ -8441,7 +8603,7 @@ namespace CommunityLib
             HashSet<Location> settleCandidateHashSet = new HashSet<Location>();
             foreach (Location location in soceityLocations)
             {
-                bool removed = false ;
+                bool removed = false;
                 if (location.settlement == null || location.settlement is Set_MinorOther)
                 {
                     if (!orcs.canGoUnderground() && (location.hex.z == 0 || location.hex.z == 1) && !orcMapLayers.Item2.Contains(location.hex.z))
@@ -8471,11 +8633,11 @@ namespace CommunityLib
                                 settleCandidates.Add(neighbour);
                             }
                         }
-                        else if (neighbour.soc == null)
+                        else if (neighbour.soc == null && !orcs.isAtWar())
                         {
                             if (ModCore.Get().checkIsNaturalWonder(neighbour) || (neighbour.settlement is Set_MinorOther && neighbour.settlement.subs.Any(sub => sub is Sub_Temple temple && temple.order is HolyOrder_Witches)))
                             {
-                                if (orcs.canGoUnderground() || (location.hex.z == 0 || location.hex.z == 1) && orcMapLayers.Item2.Contains(location.hex.z))
+                                if (orcs.canGoUnderground() || ((location.hex.z == 0 || location.hex.z == 1) && orcMapLayers.Item2.Contains(location.hex.z)))
                                 {
                                     if (neighbour.hex.getHabilitability() >= map.param.orc_habRequirement * map.opt_orcHabMult)
                                     {
