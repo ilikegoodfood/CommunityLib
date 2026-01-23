@@ -42,9 +42,11 @@ namespace CommunityLib
 
         public int bachelorsMaskID = -1;
 
-        private Color dark = new Color(0f, 0f, 0f, 0.9f);
+        public int mournersMaskID = -1;
 
-        private Color light = new Color(1f, 1f, 1f, 0.9f);
+        private Color color_dark = new Color(0f, 0f, 0f, 0.9f);
+
+        private Color color_light = new Color(1f, 1f, 1f, 0.9f);
 
         public static bool opt_autoRelaunch = false;
 
@@ -348,6 +350,8 @@ namespace CommunityLib
 
         public void setupMapMasks()
         {
+            mournersMaskID = tryRegisterMapMask(Get(), "Mourners", "Mourners", "Shows people who are mourning a recent death, and if the death that they are mourning was a murder. Mourner's who's grief can be exploited to create a vendetta, a blood fued between houses, are marked in white. ");
+
             if (Get().data.tryGetModIntegrationData("Chandalor", out ModIntegrationData intDataChand) && intDataChand.typeDict.TryGetValue("Chandalor", out Type godType) && godType.IsAssignableFrom(map.overmind.god.GetType()))
             {
                 Get().bachelorsMaskID = tryRegisterMapMask(Get(), "Bachelors", "Bachelors", "Rulers that can marry.");
@@ -366,17 +370,27 @@ namespace CommunityLib
             }
         }
 
-        public override string mapMask_getTitleText() // TEST ITEM
+        public override string mapMask_getTitleText()
         {
-            if (MapMaskManager.maskingMod == this && (int)map.masker.mask == bachelorsMaskID)
+            int maskID = (int)map.masker.mask;
+            if (maskID == -1)
+            {
+                return "Unknown Map Mask";
+            }
+
+            if (maskID == bachelorsMaskID)
             {
                 return "Bachelors";
             }
+            if (maskID == mournersMaskID)
+            {
+                return "Mourners";
+            }
 
-            return "";
+            return "Unknown Map Mask";
         }
 
-        public override bool mapMask_shouldApplyMask(Hex hex) // TEST ITEM
+        public override bool mapMask_shouldApplyMask(Hex hex)
         {
             int maskID = (int)map.masker.mask;
             if (maskID == -1)
@@ -384,7 +398,11 @@ namespace CommunityLib
                 return false;
             }
 
-            if (MapMaskManager.maskingMod == this && maskID == bachelorsMaskID)
+            if (maskID == bachelorsMaskID)
+            {
+                return true;
+            }
+            if (maskID == mournersMaskID)
             {
                 return true;
             }
@@ -394,26 +412,127 @@ namespace CommunityLib
 
         public override void mapMask_applyMaskNow(Unit unit, GraphicalUnit graphicalUnit) // TEST ITEM
         {
-            graphicalUnit.portraitLayer.color = dark;
-            graphicalUnit.backgroundLayer.color = dark;
-            graphicalUnit.borderLayer1.color = dark;
-            graphicalUnit.borderLayer2.color = dark;
-            graphicalUnit.ringLayer.color = dark;
+            int maskID = (int)map.masker.mask;
+            if (maskID == -1 || unit == null || graphicalUnit == null)
+            {
+                return;
+            }
+
+            if (maskID == bachelorsMaskID)
+            {
+                graphicalUnit.portraitLayer.color = color_dark;
+                graphicalUnit.backgroundLayer.color = color_dark;
+                graphicalUnit.borderLayer1.color = color_dark;
+                graphicalUnit.borderLayer2.color = color_dark;
+                graphicalUnit.ringLayer.color = color_dark;
+            }
+            else if(maskID == mournersMaskID)
+            {
+                bool isMourner = false;
+                if (unit.person != null)
+                {
+                    UA targetHero = unit.map.world.ui.uiScrollables.scrollable_threats.targetHero;
+                    Settlement targetSettlement = unit.map.world.ui.uiScrollables.scrollable_threats.targetSettlement;
+                    if (targetHero == null && targetSettlement == null)
+                    {
+                        bool mourningIsExploitable = false;
+                        foreach (Trait trait in unit.person.traits)
+                        {
+                            if (!(trait is T_Mourning mourning))
+                            {
+                                continue;
+                            }
+
+                            if (mourning.killer > -1 && !mourning.exploited)
+                            {
+                                mourningIsExploitable = true;
+                            }
+
+                            isMourner = true;
+                        }
+
+                        if (isMourner)
+                        {
+                            if (mourningIsExploitable)
+                            {
+                                graphicalUnit.portraitLayer.color = Color.white;
+                                graphicalUnit.backgroundLayer.color = Color.white;
+                                graphicalUnit.borderLayer1.color = Color.white;
+                                graphicalUnit.borderLayer2.color = Color.white;
+                                graphicalUnit.ringLayer.color = Color.white;
+                            }
+                            else
+                            {
+                                graphicalUnit.portraitLayer.color = Color.white;
+                                graphicalUnit.backgroundLayer.color = Color.white;
+                                graphicalUnit.borderLayer1.color = Color.yellow;
+                                graphicalUnit.borderLayer2.color = Color.yellow;
+                                graphicalUnit.ringLayer.color = Color.yellow;
+                            }
+                        }
+                    }
+                    else if ((targetHero != null && unit.person == targetHero.person) || (targetSettlement != null && unit.person == targetSettlement.location.person()))
+                    {
+                        isMourner = true;
+
+                        bool mourningIsExploitable = false;
+                        foreach (Trait trait in unit.person.traits)
+                        {
+                            if (!(trait is T_Mourning mourning))
+                            {
+                                continue;
+                            }
+
+                            if (mourning.killer > -1 && !mourning.exploited)
+                            {
+                                mourningIsExploitable = true;
+                                break;
+                            }
+                        }
+
+                        if (mourningIsExploitable)
+                        {
+                            graphicalUnit.portraitLayer.color = Color.white;
+                            graphicalUnit.backgroundLayer.color = Color.white;
+                            graphicalUnit.borderLayer1.color = Color.white;
+                            graphicalUnit.borderLayer2.color = Color.white;
+                            graphicalUnit.ringLayer.color = Color.white;
+                        }
+                        else
+                        {
+                            graphicalUnit.portraitLayer.color = Color.white;
+                            graphicalUnit.backgroundLayer.color = Color.white;
+                            graphicalUnit.borderLayer1.color = Color.yellow;
+                            graphicalUnit.borderLayer2.color = Color.yellow;
+                            graphicalUnit.ringLayer.color = Color.yellow;
+                        }
+                    }
+                }
+
+                if (!isMourner)
+                {
+                    graphicalUnit.portraitLayer.color = color_dark;
+                    graphicalUnit.backgroundLayer.color = color_dark;
+                    graphicalUnit.borderLayer1.color = color_dark;
+                    graphicalUnit.borderLayer2.color = color_dark;
+                    graphicalUnit.ringLayer.color = color_dark;
+                }
+            }
         }
 
-        public override Color mapMask_getColour(Hex hex) // TEST ITEM
+        public override Color mapMask_getColour(Hex hex)
         {
             int maskID = (int)map.masker.mask;
             if (maskID == -1 || MapMaskManager.maskingMod != Get())
             {
-                return Color.black;
+                return color_dark;
             }
 
-            if ((int)map.masker.mask == bachelorsMaskID)
+            if (maskID == bachelorsMaskID)
             {
                 if (hex.location == null || !(hex.location.settlement is SettlementHuman settlementHuman) || settlementHuman.ruler == null || settlementHuman.ruler.getSpouse() != null || settlementHuman.ruler.traits.Any(t => t is T_Mourning mourning))
                 {
-                    return dark;
+                    return color_dark;
                 }
 
                 Settlement targetSettlement = hex.map.world.ui.uiScrollables.scrollable_threats.targetSettlement;
@@ -425,16 +544,69 @@ namespace CommunityLib
                 if (targetSettlement == settlementHuman)
                 {
                     //Console.WriteLine($"CommunityLib: Target Settlement is {settlementHuman.getName()}, ruled by {settlementHuman.ruler.getName()}.");
-                    return light;
+                    return color_light;
                 }
                 else
                 {
-                    return dark;
+                    return color_dark;
                 }
                 
             }
+            else if (maskID == mournersMaskID)
+            {
+                if (hex.location == null || !(hex.location.settlement is SettlementHuman settlementHuman) || settlementHuman.ruler == null)
+                {
+                    return color_dark;
+                }
 
-            return Color.black;
+                UA targetHero = hex.map.world.ui.uiScrollables.scrollable_threats.targetHero;
+                Settlement targetSettlement = hex.map.world.ui.uiScrollables.scrollable_threats.targetSettlement;
+                if (targetSettlement == null && targetHero == null)
+                {
+                    bool isMourner = false;
+                    bool mourningIsExploitable = false;
+                    foreach (Trait trait in settlementHuman.ruler.traits)
+                    {
+                        if (!(trait is T_Mourning mourning))
+                        {
+                            continue;
+                        }
+
+                        if (mourning.killer > -1 && !mourning.exploited)
+                        {
+                            mourningIsExploitable = true;
+                        }
+
+                        isMourner = true;
+                    }
+
+                    if (isMourner)
+                    {
+                        if (mourningIsExploitable)
+                        {
+                            return color_light;
+                        }
+                        else
+                        {
+                            return Color.clear;
+                        }
+                    }
+                    else
+                    {
+                        return color_dark;
+                    }
+                }
+                else if (targetSettlement == settlementHuman)
+                {
+                    return color_light;
+                }
+                else
+                {
+                    return color_dark;
+                }
+            }
+
+            return color_dark;
         }
 
         private void getModKernels (Map map)

@@ -165,60 +165,116 @@ namespace CommunityLib
 
         public void mapMask_PopulatingThreats(UIScrollThreats threats, ModKernel maskingMod, int maskID, string title, string buttonLabel, string description)
         {
-            if (maskID == -1 || maskID != ModCore.Get().bachelorsMaskID)
+            if (maskID == -1)
             {
                 return;
             }
 
-            HashSet<Person> visited = new HashSet<Person>();
-            foreach(Location location in threats.world.map.locations)
+            if (maskID == ModCore.Get().bachelorsMaskID)
             {
-                if (!(location.settlement is SettlementHuman settlementHuman) || settlementHuman.ruler == null || settlementHuman.ruler.getSpouse() != null || settlementHuman.ruler.traits.Any(t => t is T_Mourning mourn && mourn.turnsLeft > 0) || visited.Contains(settlementHuman.ruler))
+                HashSet<Person> visited = new HashSet<Person>();
+                foreach (Location location in threats.world.map.locations)
                 {
-                    continue;
+                    if (!(location.settlement is SettlementHuman settlementHuman) || settlementHuman.ruler == null || settlementHuman.ruler.getSpouse() != null || visited.Contains(settlementHuman.ruler))
+                    {
+                        continue;
+                    }
+                    visited.Add(settlementHuman.ruler);
+
+                    string filterText = threats.filterField.text.ToLower();
+                    if (string.IsNullOrWhiteSpace(filterText) || settlementHuman.ruler.getName().ToLower().Contains(filterText))
+                    {
+                        GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(threats.world.prefabStore.uieHeroViewer, threats.subsetArea);
+                        UIE_HeroViewer viewer = gameObject.GetComponent<UIE_HeroViewer>();
+                        viewer.setToPerson(threats.world, settlementHuman.ruler);
+                    }
                 }
-                visited.Add(settlementHuman.ruler);
-                
-                string filterText = threats.filterField.text.ToLower();
-                if (filterText == "" || settlementHuman.ruler.getName().ToLower().Contains(filterText))
+            }
+            else if (maskID == ModCore.Get().mournersMaskID)
+            {
+                HashSet<Person> visited = new HashSet<Person>();
+                foreach (Person person in threats.world.map.persons)
                 {
-                    GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(threats.world.prefabStore.uieHeroViewer, threats.subsetArea);
-                    UIE_HeroViewer viewer = gameObject.GetComponent<UIE_HeroViewer>();
-                    viewer.setToPerson(threats.world, settlementHuman.ruler);
+                    if (visited.Contains(person))
+                    {
+                        continue;
+                    }
+
+                    visited.Add(person);
+                    if (person.isDead)
+                    {
+                        continue;
+                    }
+
+                    foreach (Trait trait in person.traits)
+                    {
+                        if (!(trait is T_Mourning mourn))
+                        {
+                            continue;
+                        }
+
+                        string filterText = threats.filterField.text.ToLower();
+                        if (string.IsNullOrWhiteSpace(filterText) || person.getName().ToLower().Contains(filterText))
+                        {
+                            GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(threats.world.prefabStore.uieHeroViewer, threats.subsetArea);
+                            UIE_HeroViewer viewer = gameObject.GetComponent<UIE_HeroViewer>();
+                            viewer.setToPerson(threats.world, person);
+
+                            if (mourn.exploited)
+                            {
+                                viewer.title.text = $"{person.getName()} mourns the death of {threats.world.map.persons[mourn.person].getName()} for {mourn.turnsLeft} {(mourn.turnsLeft == 1 ? "turn" : "turns")} (exploited)";
+                            }
+                            else if (mourn.killer > -1)
+                            {
+                                viewer.title.text = $"{person.getName()} mourns the death of {threats.world.map.persons[mourn.person].getName()} for {mourn.turnsLeft} {(mourn.turnsLeft == 1 ? "turn" : "turns")} (killed by {threats.world.map.persons[mourn.killer].getName()})";
+                            }
+                            else
+                            {
+                                viewer.title.text = $"{person.getName()} mourns the death of {threats.world.map.persons[mourn.person].getName()} for {mourn.turnsLeft} {(mourn.turnsLeft == 1 ? "turn" : "turns")}";
+                            }
+                        }
+                    }
                 }
             }
         }
 
         public virtual void mapMask_onThreatHovorOver(UIScrollThreats threats, MonoBehaviour hoveredItem, ModKernel maskingMod, int maskID, string title, string buttonLabel, string description)
         {
-            //Console.WriteLine($"CommunityLib: MaskId: {maskID}.");
-            if (maskID == -1 || maskingMod != ModCore.Get() || maskID != ModCore.Get().bachelorsMaskID)
+            if (maskID == -1 || maskingMod != ModCore.Get())
             {
-                //Console.WriteLine($"CommunityLib: Invalid Mask ID.");
                 return;
             }
 
-            //Console.WriteLine($"CommunityLib: Hover over threat instance for bachelor's modded map mask.");
             if (hoveredItem == null)
             {
-                //Console.WriteLine($"CommunityLib: Hovered MonoBehaviour is null.");
                 return;
             }
 
-            if (!(hoveredItem is UIE_HeroViewer viewer))
+            if (maskID == ModCore.Get().bachelorsMaskID)
             {
-                //Console.WriteLine($"CommunityLib: Hovered over threat viewer instance that was not a hero viewer.");
-                return;
-            }
+                if (!(hoveredItem is UIE_HeroViewer viewer) || viewer.personExamplar == null)
+                {
+                    return;
+                }
 
-            if (viewer.personExamplar == null)
+                threats.targetSettlement = threats.world.map.locations[viewer.personExamplar.rulerOf].settlement;
+            }
+            else if (maskID == ModCore.Get().mournersMaskID)
             {
-                //Console.WriteLine($"CommunityLib: Target Hero Viewer has no person exemplar.");
-                return;
-            }
+                if (!(hoveredItem is UIE_HeroViewer viewer) || viewer.personExamplar == null)
+                {
+                    return;
+                }
 
-            //Console.WriteLine($"CommunityLib: Hovered over Hero Viewer threat panel isntance for {viewer.personExamplar.getName()}");
-            threats.targetSettlement = threats.world.map.locations[viewer.personExamplar.rulerOf].settlement;
+                if (viewer.personExamplar.rulerOf > -1)
+                {
+                    threats.targetSettlement = threats.world.map.locations[viewer.personExamplar.rulerOf].settlement;
+                }
+                if (viewer.personExamplar.unit is UA ua)
+                {
+                    threats.targetHero = ua;
+                }
+            }
         }
 
         public bool isUnitSubsumed(Unit uOriginal, Unit uSubsuming)
