@@ -215,18 +215,18 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(UIE_Button), nameof(UIE_Button.bOnClick), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(UIE_Button_bOnClick_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UIScrollThreats), nameof(UIScrollThreats.checkData), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UIScrollThreats_checkData_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(UIScrollThreats), nameof(UIScrollThreats.Update), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UIScrollThreats_Update_Transpiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(UIE_HeroViewer), nameof(UIE_HeroViewer.bGoTo), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPostfix)));
-            harmony.Patch(original: AccessTools.Method(typeof(UIE_TradeRoute), nameof(UIE_TradeRoute.goTo), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPostfix)));
-            harmony.Patch(original: AccessTools.Method(typeof(UILeftPrimary), nameof(UILeftPrimary.bFlagButton), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPostfix)));
-            harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView1), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPostfix)));
-            harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView2), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPostfix)));
-            harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView3), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPostfix)));
-            harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView4), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPostfix)));
-            harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView5), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPostfix)));
-            harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView6), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPostfix)));
-            harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView7), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPostfix)));
-            harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView8), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPostfix)));
-            harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView9), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPostfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIE_HeroViewer), nameof(UIE_HeroViewer.bGoTo), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPrefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIE_TradeRoute), nameof(UIE_TradeRoute.goTo), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPrefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UILeftPrimary), nameof(UILeftPrimary.bFlagButton), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPrefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView1), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPrefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView2), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPrefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView3), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPrefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView4), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPrefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView5), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPrefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView6), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPrefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView7), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPrefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView8), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPrefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView9), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPrefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UIInputs), nameof(UIInputs.hotkeys), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UIInputs_hotkeys_transpiler)));
 
             // Map Fixes
@@ -266,7 +266,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Rti_CorruptElfstone), nameof(Rti_CorruptElfstone.validFor), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Rti_CorruptElfstone_validFor_Postfix)));
             // Dark Empire
             harmony.Patch(original: AccessTools.Method(typeof(Rt_DarkEmpire), nameof(Rt_DarkEmpire.getDesc), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(Rt_DarkEmpire_getDesc_Postfix)));
-            // Death of The Dun
+            // Death of The Sun
             harmony.Patch(original: AccessTools.Method(typeof(Mg_DeathOfTheSun), nameof(Mg_DeathOfTheSun.turnTick), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Mg_DeathOfTheSun_turnTick_Transpiler)));
             // Disrupt Conclave
             harmony.Patch(original: AccessTools.Method(typeof(Ch_DisruptConclave), nameof(Ch_DisruptConclave.getProgressPerTurnInner), new Type[] { typeof(UA), typeof(List<ReasonMsg>) }), postfix: new HarmonyMethod(patchType, nameof(Ch_DisruptConclave_getProgressPerTurnInner_Postfix)));
@@ -291,6 +291,11 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Ch_DrinkPrimalWaters), nameof(Ch_DrinkPrimalWaters.validFor), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_DrinkPrimalWaters_validFor_Transpiler)));
             // Wrest Control Good
             harmony.Patch(original: AccessTools.Method(typeof(Ch_WrestleForControl_Good), nameof(Ch_WrestleForControl_Good.validFor), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Ch_WrestleForControl_Good_validFor_Postfix)));
+            // Escalate Int Vendetta
+            harmony.Patch(original: AccessTools.Method(typeof(Rt_EscalateIntoVendetta), nameof(Rt_EscalateIntoVendetta.valid), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Rt_EscalateIntoVendetta_valid_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Rt_EscalateIntoVendetta), nameof(Rt_EscalateIntoVendetta.complete), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Rt_EscalateIntoVendetta_complete_Transpiler)));
+            // Prophecy Step
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_ProphecyStep), nameof(Ch_ProphecyStep.validFor), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_ProphecyStep_validFor_Transpiler)));
 
             // Task Fixes
             // Follow
@@ -1276,7 +1281,7 @@ namespace CommunityLib
             GraphicalMap.checkData();
         }
 
-        public static void UIE_Threat_bGoTo_BulkPostfix()
+        public static void UIE_Threat_bGoTo_BulkPrefix()
         {
             MapMaskManager.maskingMod = null;
         }
@@ -2556,6 +2561,222 @@ namespace CommunityLib
                 {
                     __result = false;
                 }
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> Rt_EscalateIntoVendetta_valid_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_KillerHouseCheck = AccessTools.Method(patchType, nameof(Rt_EscalateIntoVendetta_KillerHouseCheck), new Type[] { typeof(int) });
+
+            FieldInfo FI_KilerID = AccessTools.Field(typeof(T_Mourning), nameof(T_Mourning.killer));
+
+            Label falseLabel1 = ilg.DefineLabel();
+            Label falseLabel2 = ilg.DefineLabel();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (i > 0 && instructionList[i].opcode == OpCodes.Br_S && instructionList[i-1].opcode == OpCodes.Ceq)
+                        {
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, falseLabel1);
+
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 5);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_KilerID);
+                            yield return new CodeInstruction(OpCodes.Call, MI_KillerHouseCheck);
+
+                            instructionList[i+1].labels.Add(falseLabel1);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Br_S && instructionList[i-1].opcode == OpCodes.Ceq)
+                        {
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, falseLabel2);
+
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 12);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_KilerID);
+                            yield return new CodeInstruction(OpCodes.Call, MI_KillerHouseCheck);
+
+                            instructionList[i+1].labels.Add(falseLabel2);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Rt_EscalateIntoVendetta_valid_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> Rt_EscalateIntoVendetta_complete_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_KillerHouseCheck = AccessTools.Method(patchType, nameof(Rt_EscalateIntoVendetta_KillerHouseCheck), new Type[] { typeof(int) });
+            MethodInfo MI_ExploitCheck = AccessTools.Method(patchType, nameof(Rt_EscalateIntoVendetta_complete_ExploitCheck), new Type[] { typeof(Person), typeof(T_Mourning) });
+
+            FieldInfo FI_KilerID = AccessTools.Field(typeof(T_Mourning), nameof(T_Mourning.killer));
+
+            Label falseLabel1 = ilg.DefineLabel();
+            Label trueLabel1 = ilg.DefineLabel();
+
+            Label falseLabel2 = ilg.DefineLabel();
+            Label trueLabel2 = ilg.DefineLabel();
+
+            Label skipExploitLabel = ilg.DefineLabel();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (i > 0 && instructionList[i].opcode == OpCodes.Stloc_S && instructionList[i-1].opcode == OpCodes.Ceq)
+                        {
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, falseLabel1);
+
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 8);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_KilerID);
+                            yield return new CodeInstruction(OpCodes.Call, MI_KillerHouseCheck);
+                            yield return new CodeInstruction(OpCodes.Br_S, trueLabel1);
+
+                            CodeInstruction code = new CodeInstruction(OpCodes.Ldc_I4_0);
+                            code.labels.Add(falseLabel1);
+                            yield return code;
+
+                            instructionList[i].labels.Add(trueLabel1);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Stloc_S && instructionList[i - 1].opcode == OpCodes.Ceq)
+                        {
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, falseLabel2);
+
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 14);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_KilerID);
+                            yield return new CodeInstruction(OpCodes.Call, MI_KillerHouseCheck);
+                            yield return new CodeInstruction(OpCodes.Br_S, trueLabel2);
+
+                            CodeInstruction code = new CodeInstruction(OpCodes.Ldc_I4_0);
+                            code.labels.Add(falseLabel2);
+                            yield return code;
+
+                            instructionList[i].labels.Add(trueLabel2);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i+1].opcode == OpCodes.Ldc_I4_1 && instructionList[i+2].opcode == OpCodes.Stfld)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldloc_1);
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 19);
+                            yield return new CodeInstruction(OpCodes.Call, MI_ExploitCheck);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, skipExploitLabel);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 4)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i+1].opcode == OpCodes.Ldloca_S)
+                        {
+                            instructionList[i].labels.Add(skipExploitLabel);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Rt_EscalateIntoVendetta_complete_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static bool Rt_EscalateIntoVendetta_KillerHouseCheck(int killerID)
+        {
+            if (killerID == -1)
+            {
+                return false;
+            }
+
+            Person killer = World.staticMap.persons[killerID];
+            if (killer.house == World.staticMap.soc_neutral.houseOrc || World.staticMap.soc_dark.houses.Contains(killer.house) || World.staticMap.soc_neutral.houses.Contains(killer.house))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool Rt_EscalateIntoVendetta_complete_ExploitCheck(Person exploitedKiller, T_Mourning mourn)
+        {
+            if (mourn.killer == -1)
+            {
+                return false;
+            }
+
+            Person killer2 = exploitedKiller.map.persons[mourn.killer];
+            if (killer2 == null || killer2.house != exploitedKiller.house)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private static IEnumerable<CodeInstruction> Ch_ProphecyStep_validFor_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (i > 0 && instructionList[i].opcode == OpCodes.Ldc_I4_0 && instructionList[i-1].opcode == OpCodes.Ldfld && instructionList[i+1].opcode == OpCodes.Ceq)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_1);
+
+                            i++;
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Ch_ProphecyStep_validFor_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 

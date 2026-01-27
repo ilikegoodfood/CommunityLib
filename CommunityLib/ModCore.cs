@@ -44,6 +44,8 @@ namespace CommunityLib
 
         public int mournersMaskID = -1;
 
+        public int potentialVendettaMaskID = -1;
+
         private Color color_dark = new Color(0f, 0f, 0f, 0.9f);
 
         private Color color_light = new Color(1f, 1f, 1f, 0.9f);
@@ -272,6 +274,10 @@ namespace CommunityLib
             randStore.Clear();
             data.clean();
             tradeRouteManager = new ManagerTradeRoutes(map);
+
+            bachelorsMaskID = -1;
+            mournersMaskID = -1;
+            potentialVendettaMaskID = -1;
         }
 
         public override void beforeMapGen(Map map)
@@ -350,7 +356,9 @@ namespace CommunityLib
 
         public void setupMapMasks()
         {
-            mournersMaskID = tryRegisterMapMask(Get(), "Mourners", "Mourners", "Shows people who are mourning a recent death, and if the death that they are mourning was a murder. Mourner's who's grief can be exploited to create a vendetta, a blood fued between houses, are marked in white. ");
+            mournersMaskID = tryRegisterMapMask(Get(), "Mourners", "Mourners", "Shows people who are mourning a recent death, and if the death that they are mourning was a murder. Mourner's who's grief cannot be exploited to create a vendetta, a blood feud between houses, are marked in yellow. ");
+
+            potentialVendettaMaskID = tryRegisterMapMask(Get(), "Potential Vendettas", "Potential Vendettas", "Shows mourners that can be exploited to create a blood feud between houses, grouped by source and target houses.");
 
             if (Get().data.tryGetModIntegrationData("Chandalor", out ModIntegrationData intDataChand) && intDataChand.typeDict.TryGetValue("Chandalor", out Type godType) && godType.IsAssignableFrom(map.overmind.god.GetType()))
             {
@@ -378,13 +386,9 @@ namespace CommunityLib
                 return "Unknown Map Mask";
             }
 
-            if (maskID == bachelorsMaskID)
+            if(Get().data.TryGetMapMaskData(Get(), maskID, out MapMaskData data))
             {
-                return "Bachelors";
-            }
-            if (maskID == mournersMaskID)
-            {
-                return "Mourners";
+                return data.Title;
             }
 
             return "Unknown Map Mask";
@@ -398,11 +402,7 @@ namespace CommunityLib
                 return false;
             }
 
-            if (maskID == bachelorsMaskID)
-            {
-                return true;
-            }
-            if (maskID == mournersMaskID)
+            if (Get().data.TryGetMapMaskData(Get(), maskID, out _))
             {
                 return true;
             }
@@ -418,6 +418,7 @@ namespace CommunityLib
                 return;
             }
 
+            UIScrollThreats threats = unit.map.world.ui.uiScrollables.scrollable_threats;
             if (maskID == bachelorsMaskID)
             {
                 graphicalUnit.portraitLayer.color = color_dark;
@@ -431,21 +432,29 @@ namespace CommunityLib
                 bool isMourner = false;
                 if (unit.person != null)
                 {
-                    UA targetHero = unit.map.world.ui.uiScrollables.scrollable_threats.targetHero;
-                    Settlement targetSettlement = unit.map.world.ui.uiScrollables.scrollable_threats.targetSettlement;
+                    UA targetHero = threats.targetHero;
+                    Settlement targetSettlement = threats.targetSettlement;
                     if (targetHero == null && targetSettlement == null)
                     {
-                        bool mourningIsExploitable = false;
                         foreach (Trait trait in unit.person.traits)
                         {
-                            if (!(trait is T_Mourning mourning))
+                            if (!(trait is T_Mourning mourn))
                             {
                                 continue;
                             }
 
-                            if (mourning.killer > -1 && !mourning.exploited)
+                            if (mourn.killer > -1 && !mourn.exploited)
                             {
-                                mourningIsExploitable = true;
+                                Person killer = threats.world.map.persons[mourn.killer];
+                                if (unit.person.house != killer.house && killer.house != threats.world.map.soc_neutral.houseOrc && !threats.world.map.soc_neutral.houses.Contains(killer.house) && !threats.world.map.soc_dark.houses.Contains(killer.house))
+                                {
+                                    graphicalUnit.portraitLayer.color = Color.white;
+                                    graphicalUnit.backgroundLayer.color = Color.white;
+                                    graphicalUnit.borderLayer1.color = Color.white;
+                                    graphicalUnit.borderLayer2.color = Color.white;
+                                    graphicalUnit.ringLayer.color = Color.white;
+                                    return;
+                                }
                             }
 
                             isMourner = true;
@@ -453,29 +462,18 @@ namespace CommunityLib
 
                         if (isMourner)
                         {
-                            if (mourningIsExploitable)
-                            {
-                                graphicalUnit.portraitLayer.color = Color.white;
-                                graphicalUnit.backgroundLayer.color = Color.white;
-                                graphicalUnit.borderLayer1.color = Color.white;
-                                graphicalUnit.borderLayer2.color = Color.white;
-                                graphicalUnit.ringLayer.color = Color.white;
-                            }
-                            else
-                            {
-                                graphicalUnit.portraitLayer.color = Color.white;
-                                graphicalUnit.backgroundLayer.color = Color.white;
-                                graphicalUnit.borderLayer1.color = Color.yellow;
-                                graphicalUnit.borderLayer2.color = Color.yellow;
-                                graphicalUnit.ringLayer.color = Color.yellow;
-                            }
+                            graphicalUnit.portraitLayer.color = Color.white;
+                            graphicalUnit.backgroundLayer.color = Color.white;
+                            graphicalUnit.borderLayer1.color = Color.yellow;
+                            graphicalUnit.borderLayer2.color = Color.yellow;
+                            graphicalUnit.ringLayer.color = Color.yellow;
                         }
                     }
-                    else if ((targetHero != null && unit.person == targetHero.person) || (targetSettlement != null && unit.person == targetSettlement.location.person()))
+                    else if ((targetHero != null && unit.person == targetHero.person)
+                        || (targetSettlement != null && unit.person == targetSettlement.location.person()))
                     {
                         isMourner = true;
 
-                        bool mourningIsExploitable = false;
                         foreach (Trait trait in unit.person.traits)
                         {
                             if (!(trait is T_Mourning mourning))
@@ -485,12 +483,106 @@ namespace CommunityLib
 
                             if (mourning.killer > -1 && !mourning.exploited)
                             {
-                                mourningIsExploitable = true;
-                                break;
+                                graphicalUnit.portraitLayer.color = Color.white;
+                                graphicalUnit.backgroundLayer.color = Color.white;
+                                graphicalUnit.borderLayer1.color = Color.white;
+                                graphicalUnit.borderLayer2.color = Color.white;
+                                graphicalUnit.ringLayer.color = Color.white;
+                                return;
                             }
                         }
 
-                        if (mourningIsExploitable)
+                        graphicalUnit.portraitLayer.color = Color.white;
+                        graphicalUnit.backgroundLayer.color = Color.white;
+                        graphicalUnit.borderLayer1.color = Color.yellow;
+                        graphicalUnit.borderLayer2.color = Color.yellow;
+                        graphicalUnit.ringLayer.color = Color.yellow;
+                    }
+                }
+
+                if (!isMourner)
+                {
+                    graphicalUnit.portraitLayer.color = color_dark;
+                    graphicalUnit.backgroundLayer.color = color_dark;
+                    graphicalUnit.borderLayer1.color = color_dark;
+                    graphicalUnit.borderLayer2.color = color_dark;
+                    graphicalUnit.ringLayer.color = color_dark;
+                }
+            }
+            else if (maskID == potentialVendettaMaskID)
+            {
+                bool isMourner = false;
+                if (unit.person != null)
+                {
+                    UA targetHero = threats.targetHero;
+                    Settlement targetSettlement = threats.targetSettlement;
+                    House targetHouse = threats.targetHouse;
+                    if (targetHero == null && targetSettlement == null && targetHouse == null)
+                    {
+                        foreach (Trait trait in unit.person.traits)
+                        {
+                            if (!(trait is T_Mourning mourn))
+                            {
+                                continue;
+                            }
+
+                            if (mourn.exploited || mourn.killer < 0)
+                            {
+                                continue;
+                            }
+
+                            Person killer = threats.world.map.persons[mourn.killer];
+                            if (unit.person.house == killer.house || killer.house == threats.world.map.soc_neutral.houseOrc || threats.world.map.soc_neutral.houses.Contains(killer.house) || threats.world.map.soc_dark.houses.Contains(killer.house))
+                            {
+                                continue;
+                            }
+
+                            isMourner = true;
+
+                            graphicalUnit.portraitLayer.color = Color.white;
+                            graphicalUnit.backgroundLayer.color = Color.white;
+                            graphicalUnit.borderLayer1.color = Color.white;
+                            graphicalUnit.borderLayer2.color = Color.white;
+                            graphicalUnit.ringLayer.color = Color.white;
+                            break;
+                        }
+                    }
+                    else if ((targetHero != null && unit.person == targetHero.person)
+                        || (targetSettlement != null && unit.person == targetSettlement.location.person()))
+                    {
+                        isMourner = true;
+
+                        graphicalUnit.portraitLayer.color = Color.white;
+                        graphicalUnit.backgroundLayer.color = Color.white;
+                        graphicalUnit.borderLayer1.color = Color.white;
+                        graphicalUnit.borderLayer2.color = Color.white;
+                        graphicalUnit.ringLayer.color = Color.white;
+                    }
+                    else if (targetHouse != null && unit.person.house == targetHouse)
+                    {
+                        foreach (Trait trait in unit.person.traits)
+                        {
+                            if (!(trait is T_Mourning mourn))
+                            {
+                                continue;
+                            }
+
+                            if (mourn.exploited || mourn.killer < 0)
+                            {
+                                continue;
+                            }
+
+                            Person killer = threats.world.map.persons[mourn.killer];
+                            if (unit.person.house == killer.house || killer.house == threats.world.map.soc_neutral.houseOrc || threats.world.map.soc_neutral.houses.Contains(killer.house) || threats.world.map.soc_dark.houses.Contains(killer.house))
+                            {
+                                continue;
+                            }
+
+                            isMourner = true;
+                            break;
+                        }
+
+                        if (isMourner)
                         {
                             graphicalUnit.portraitLayer.color = Color.white;
                             graphicalUnit.backgroundLayer.color = Color.white;
@@ -528,6 +620,7 @@ namespace CommunityLib
                 return color_dark;
             }
 
+            UIScrollThreats threats = hex.map.world.ui.uiScrollables.scrollable_threats;
             if (maskID == bachelorsMaskID)
             {
                 if (hex.location == null || !(hex.location.settlement is SettlementHuman settlementHuman) || settlementHuman.ruler == null || settlementHuman.ruler.getSpouse() != null || settlementHuman.ruler.traits.Any(t => t is T_Mourning mourning))
@@ -535,7 +628,7 @@ namespace CommunityLib
                     return color_dark;
                 }
 
-                Settlement targetSettlement = hex.map.world.ui.uiScrollables.scrollable_threats.targetSettlement;
+                Settlement targetSettlement = threats.targetSettlement;
                 if (targetSettlement == null)
                 {
                     return Color.clear;
@@ -543,7 +636,6 @@ namespace CommunityLib
 
                 if (targetSettlement == settlementHuman)
                 {
-                    //Console.WriteLine($"CommunityLib: Target Settlement is {settlementHuman.getName()}, ruled by {settlementHuman.ruler.getName()}.");
                     return color_light;
                 }
                 else
@@ -559,22 +651,25 @@ namespace CommunityLib
                     return color_dark;
                 }
 
-                UA targetHero = hex.map.world.ui.uiScrollables.scrollable_threats.targetHero;
-                Settlement targetSettlement = hex.map.world.ui.uiScrollables.scrollable_threats.targetSettlement;
-                if (targetSettlement == null && targetHero == null)
+                UA targetHero = threats.targetHero;
+                Settlement targetSettlement = threats.targetSettlement;
+                if (targetHero == null && targetSettlement == null)
                 {
                     bool isMourner = false;
-                    bool mourningIsExploitable = false;
                     foreach (Trait trait in settlementHuman.ruler.traits)
                     {
-                        if (!(trait is T_Mourning mourning))
+                        if (!(trait is T_Mourning mourn))
                         {
                             continue;
                         }
 
-                        if (mourning.killer > -1 && !mourning.exploited)
+                        if (mourn.killer > -1 && !mourn.exploited)
                         {
-                            mourningIsExploitable = true;
+                            Person killer = threats.world.map.persons[mourn.killer];
+                            if (settlementHuman.ruler.house != killer.house && killer.house != threats.world.map.soc_neutral.houseOrc && !threats.world.map.soc_neutral.houses.Contains(killer.house) && !threats.world.map.soc_dark.houses.Contains(killer.house))
+                            {
+                                return color_light;
+                            }
                         }
 
                         isMourner = true;
@@ -582,23 +677,104 @@ namespace CommunityLib
 
                     if (isMourner)
                     {
-                        if (mourningIsExploitable)
-                        {
-                            return color_light;
-                        }
-                        else
-                        {
-                            return Color.clear;
-                        }
+                        return new Color(1.0f, 0.9f, 0f, 0.9f);
                     }
-                    else
+
+                    return color_dark;
+                }
+                else if ((targetHero != null && settlementHuman.ruler == targetHero.person)
+                    || (targetSettlement != null && targetSettlement == settlementHuman))
+                {
+                    foreach(Trait trait in settlementHuman.ruler.traits)
                     {
-                        return color_dark;
+                        if (!(trait is T_Mourning mourn))
+                        {
+                            continue;
+                        }
+
+                        if (mourn.exploited || mourn.killer < 0)
+                        {
+                            continue;
+                        }
+
+                        Person killer = threats.world.map.persons[mourn.killer];
+                        if (settlementHuman.ruler.house == killer.house || killer.house == threats.world.map.soc_neutral.houseOrc || threats.world.map.soc_neutral.houses.Contains(killer.house) || threats.world.map.soc_dark.houses.Contains(killer.house))
+                        {
+                            continue;
+                        }
+
+                        return color_light;
+                    }
+
+                    return new Color(1.0f, 0.9f, 0f, 0.9f);
+                }
+                else
+                {
+                    return color_dark;
+                }
+            }
+            else if (maskID == potentialVendettaMaskID)
+            {
+                if (hex.location == null || !(hex.location.settlement is SettlementHuman settlementHuman) || settlementHuman.ruler == null)
+                {
+                    return color_dark;
+                }
+
+                UA targetHero = threats.targetHero;
+                Settlement targetSettlement = threats.targetSettlement;
+                House targetHouse = threats.targetHouse;
+                if (targetHero == null && targetSettlement == null && targetHouse == null)
+                {
+                    foreach (Trait trait in settlementHuman.ruler.traits)
+                    {
+                        if (!(trait is T_Mourning mourn))
+                        {
+                            continue;
+                        }
+
+                        if (mourn.exploited || mourn.killer < 0)
+                        {
+                            continue;
+                        }
+
+                        Person killer = threats.world.map.persons[mourn.killer];
+                        if (settlementHuman.ruler.house == killer.house || killer.house == threats.world.map.soc_neutral.houseOrc || threats.world.map.soc_neutral.houses.Contains(killer.house) || threats.world.map.soc_dark.houses.Contains(killer.house))
+                        {
+                            continue;
+                        }
+
+                        return color_light;
                     }
                 }
-                else if (targetSettlement == settlementHuman)
+                else if ((targetHero != null && settlementHuman.ruler == targetHero.person)
+                    || (targetSettlement != null && settlementHuman == targetSettlement))
                 {
                     return color_light;
+                }
+                else if (targetHouse != null && settlementHuman.ruler.house == targetHouse)
+                {
+                    foreach (Trait trait in settlementHuman.ruler.traits)
+                    {
+                        if (!(trait is T_Mourning mourn))
+                        {
+                            continue;
+                        }
+
+                        if (mourn.exploited || mourn.killer < 0)
+                        {
+                            continue;
+                        }
+
+                        Person killer = threats.world.map.persons[mourn.killer];
+                        if (settlementHuman.ruler.house == killer.house || killer.house == threats.world.map.soc_neutral.houseOrc || threats.world.map.soc_neutral.houses.Contains(killer.house) || threats.world.map.soc_dark.houses.Contains(killer.house))
+                        {
+                            continue;
+                        }
+
+                        return color_light;
+                    }
+
+                    return new Color(1.0f, 0.9f, 0f, 0.9f);
                 }
                 else
                 {
@@ -2480,6 +2656,61 @@ namespace CommunityLib
                             }
                         }
                     }
+                }
+            }
+        }
+
+        public override void populatingThreats(Overmind overmind, List<MsgEvent> threats)
+        {
+            Location elderTomb = null;
+            foreach (Location loc in overmind.map.locations)
+            {
+                if (Get().checkIsElderTomb(loc) && loc.GetChallenges().Any(ch => ch is Ch_FulfillTheProphecy))
+                {
+                    elderTomb = loc;
+                    break;
+                }
+            }
+
+            if (elderTomb != null)
+            {
+                if (overmind.map.worldPanic >= overmind.map.param.panic_forChosenOneVictory)
+                {
+                    UA chosenOne = overmind.map.awarenessManager.getChosenOne();
+                    if (chosenOne != null && chosenOne.person != null)
+                    {
+                        T_ChosenOne chosenOneTrait = (T_ChosenOne)chosenOne.person.traits.FirstOrDefault(t => t is T_ChosenOne);
+                        if (chosenOneTrait != null)
+                        {
+                            int cooldown = chosenOneTrait.lastUlt + overmind.map.param.ch_chosenOneCooldown - overmind.map.turn;
+                            int attemptCooldown = chosenOneTrait.lastAttemptedUlt + overmind.map.param.ch_chosenOneAttemptCooldown - overmind.map.turn;
+                            int finalCooldown = Math.Max(cooldown, attemptCooldown) + 1;
+                            if (finalCooldown < 0)
+                            {
+                                threats.Add(new MsgEvent("The Chosen One can fulfil the prophecy", 0.7, false, elderTomb.hex));
+                            }
+                            else if (finalCooldown == 1)
+                            {
+                                threats.Add(new MsgEvent($"The Chosen One cannot fulfil the prophecy\n The Chosen One can use their power again next turn", 0.7, true, elderTomb.hex));
+                            }
+                            else
+                            {
+                                threats.Add(new MsgEvent($"The Chosen One cannot fulfil the prophecy\n The Chosen One can use their power again in {finalCooldown} turns", 0.5 + (0.2 * (1 - (finalCooldown/41))), true, elderTomb.hex));
+                            }
+                        }
+                        else
+                        {
+                            threats.Add(new MsgEvent("The Chosen One cannot fulfil the prophecy\n No Chosen One Exists", 0.5, true, elderTomb.hex));
+                        }
+                    }
+                    else
+                    {
+                        threats.Add(new MsgEvent("The Chosen One cannot fulfil the prophecy\n No Chosen One Exists", 0.5, true, elderTomb.hex));
+                    }
+                }
+                else
+                {
+                    threats.Add(new MsgEvent($"The Chosen One cannot fulfil the prophecy\n World Panic is {(int)(overmind.map.worldPanic * 100)}% of required {(int)(overmind.map.param.panic_forChosenOneVictory * 100)}%", 0.5 + (0.2 * (overmind.map.worldPanic/ overmind.map.param.panic_forChosenOneVictory)), true, elderTomb.hex));
                 }
             }
         }
