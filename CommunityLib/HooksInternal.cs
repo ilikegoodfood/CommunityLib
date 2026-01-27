@@ -197,6 +197,9 @@ namespace CommunityLib
             else if (maskID == ModCore.Get().mournersMaskID)
             {
                 HashSet<Person> visited = new HashSet<Person>();
+                List<Tuple<Person, T_Mourning>> exploitableMourning = new List<Tuple<Person, T_Mourning>>();
+                List<Tuple<Person, T_Mourning>> exploitedMourning = new List<Tuple<Person, T_Mourning>>();
+                List<Tuple<Person, T_Mourning>> inexploitableMourning = new List<Tuple<Person, T_Mourning>>();
                 foreach (Person person in threats.world.map.persons)
                 {
                     if (visited.Contains(person))
@@ -205,7 +208,7 @@ namespace CommunityLib
                     }
 
                     visited.Add(person);
-                    if (person.isDead)
+                    if (person.isDead || (person.rulerOf < 0 && person.unit == null) || threats.world.map.soc_neutral.houses.Contains(person.house) || threats.world.map.soc_dark.houses.Contains(person.house))
                     {
                         continue;
                     }
@@ -217,26 +220,124 @@ namespace CommunityLib
                             continue;
                         }
 
-                        string filterText = threats.filterField.text.ToLower();
-                        if (string.IsNullOrWhiteSpace(filterText) || person.getName().ToLower().Contains(filterText))
+                        if (mourn.exploited)
                         {
-                            GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(threats.world.prefabStore.uieHeroViewer, threats.subsetArea);
-                            UIE_HeroViewer viewer = gameObject.GetComponent<UIE_HeroViewer>();
-                            viewer.setToPerson(threats.world, person);
-
-                            if (mourn.exploited)
-                            {
-                                viewer.title.text = $"{person.getName()} mourns the death of {threats.world.map.persons[mourn.person].getName()} for {mourn.turnsLeft} {(mourn.turnsLeft == 1 ? "turn" : "turns")} (exploited)";
-                            }
-                            else if (mourn.killer > -1)
-                            {
-                                viewer.title.text = $"{person.getName()} mourns the death of {threats.world.map.persons[mourn.person].getName()} for {mourn.turnsLeft} {(mourn.turnsLeft == 1 ? "turn" : "turns")} (killed by {threats.world.map.persons[mourn.killer].getName()})";
-                            }
-                            else
-                            {
-                                viewer.title.text = $"{person.getName()} mourns the death of {threats.world.map.persons[mourn.person].getName()} for {mourn.turnsLeft} {(mourn.turnsLeft == 1 ? "turn" : "turns")}";
-                            }
+                            exploitedMourning.Add(new Tuple<Person, T_Mourning>(person, mourn));
+                            continue;
                         }
+
+                        if (mourn.killer < 0)
+                        {
+                            inexploitableMourning.Add(new Tuple<Person, T_Mourning>(person, mourn));
+                            continue;
+                        }
+
+                        Person killer = threats.world.map.persons[mourn.killer];
+                        if (killer.house == threats.world.map.soc_neutral.houseOrc || threats.world.map.soc_neutral.houses.Contains(killer.house) || threats.world.map.soc_dark.houses.Contains(killer.house))
+                        {
+                            inexploitableMourning.Add(new Tuple<Person, T_Mourning>(person, mourn));
+                            continue;
+                        }
+
+                        exploitableMourning.Add(new Tuple<Person, T_Mourning>(person, mourn));
+                    }
+                }
+
+                foreach (Tuple<Person, T_Mourning> tuple in exploitableMourning)
+                {
+                    string filterText = threats.filterField.text.ToLower();
+                    if (string.IsNullOrWhiteSpace(filterText) || tuple.Item1.getName().ToLower().Contains(filterText))
+                    {
+                        GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(threats.world.prefabStore.uieHeroViewer, threats.subsetArea);
+                        UIE_HeroViewer viewer = gameObject.GetComponent<UIE_HeroViewer>();
+                        viewer.setToPerson(threats.world, tuple.Item1);
+
+                        viewer.title.text = $"{tuple.Item1.getName()} mourns the death of {threats.world.map.persons[tuple.Item2.person].getName()} for {tuple.Item2.turnsLeft} {(tuple.Item2.turnsLeft == 1 ? "turn" : "turns")} (killed by {threats.world.map.persons[tuple.Item2.killer].getName()})";
+                    }
+                }
+                foreach (Tuple<Person, T_Mourning> tuple in exploitedMourning)
+                {
+                    string filterText = threats.filterField.text.ToLower();
+                    if (string.IsNullOrWhiteSpace(filterText) || tuple.Item1.getName().ToLower().Contains(filterText))
+                    {
+                        GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(threats.world.prefabStore.uieHeroViewer, threats.subsetArea);
+                        UIE_HeroViewer viewer = gameObject.GetComponent<UIE_HeroViewer>();
+                        viewer.setToPerson(threats.world, tuple.Item1);
+
+                        viewer.title.text = $"{tuple.Item1.getName()} mourns the death of {threats.world.map.persons[tuple.Item2.person].getName()} for {tuple.Item2.turnsLeft} {(tuple.Item2.turnsLeft == 1 ? "turn" : "turns")} (exploited)";
+                    }
+                }
+                foreach (Tuple<Person, T_Mourning> tuple in inexploitableMourning)
+                {
+                    string filterText = threats.filterField.text.ToLower();
+                    if (string.IsNullOrWhiteSpace(filterText) || tuple.Item1.getName().ToLower().Contains(filterText))
+                    {
+                        GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(threats.world.prefabStore.uieHeroViewer, threats.subsetArea);
+                        UIE_HeroViewer viewer = gameObject.GetComponent<UIE_HeroViewer>();
+                        viewer.setToPerson(threats.world, tuple.Item1);
+
+                        viewer.title.text = $"{tuple.Item1.getName()} mourns the death of {threats.world.map.persons[tuple.Item2.person].getName()} for {tuple.Item2.turnsLeft} {(tuple.Item2.turnsLeft == 1 ? "turn" : "turns")}";
+                    }
+                }
+            }
+            else if (maskID == ModCore.Get().potentialVendettaMaskID)
+            {
+                HashSet<Person> visited = new HashSet<Person>();
+                Dictionary<Tuple<House, House>, List<Tuple<Person, T_Mourning>>> vendettaData = new Dictionary<Tuple<House, House>, List<Tuple<Person, T_Mourning>>>();
+                List<Tuple<Person, T_Mourning>> inexploitableMourning = new List<Tuple<Person, T_Mourning>>();
+                foreach (Person person in threats.world.map.persons)
+                {
+                    if (visited.Contains(person))
+                    {
+                        continue;
+                    }
+
+                    visited.Add(person);
+                    if (person.isDead || (person.rulerOf < 0 && person.unit == null) || threats.world.map.soc_neutral.houses.Contains(person.house) || threats.world.map.soc_dark.houses.Contains(person.house))
+                    {
+                        continue;
+                    }
+
+                    foreach (Trait trait in person.traits)
+                    {
+                        if (!(trait is T_Mourning mourn) || mourn.exploited || mourn.killer < 0)
+                        {
+                            continue;
+                        }
+
+                        Person killer = threats.world.map.persons[mourn.killer];
+                        if (person.house == killer.house || killer.house == threats.world.map.soc_neutral.houseOrc || threats.world.map.soc_neutral.houses.Contains(killer.house) || threats.world.map.soc_dark.houses.Contains(killer.house))
+                        {
+                            continue;
+                        }
+
+                        Tuple<House, House> housePair = new Tuple<House, House>(person.house, killer.house);
+                        if (!vendettaData.TryGetValue(housePair, out List<Tuple<Person, T_Mourning>> mourners))
+                        {
+                            vendettaData.Add(housePair, new List<Tuple<Person, T_Mourning>> { new Tuple<Person, T_Mourning>(person, mourn) });
+                        }
+                        else
+                        {
+                            mourners.Add(new Tuple<Person, T_Mourning>(person, mourn));
+                        }
+                    }
+                }
+
+                foreach (KeyValuePair<Tuple<House, House>, List<Tuple<Person, T_Mourning>>> kvp in vendettaData)
+                {
+                    GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(threats.world.prefabStore.uieHeroViewer, threats.subsetArea);
+                    UIE_HeroViewer viewer = gameObject.GetComponent<UIE_HeroViewer>();
+                    viewer.setToHouse(threats.world, kvp.Value[0].Item1);
+
+                    viewer.title.text = $"House {kvp.Key.Item1.name} can be provoked into starting a fued with House {kvp.Key.Item2.name} ({threats.world.map.locations.Where(l => l.settlement is SettlementHuman sH && sH.ruler != null && sH.ruler.house == kvp.Key.Item2).Count()} rulers, {threats.world.map.units.Where(u => u is UA && u.person != null && u.person.house == kvp.Key.Item2).Count()} heroes).";
+
+                    foreach (Tuple<Person, T_Mourning> tuple in kvp.Value)
+                    {
+                        GameObject gameObject2 = UnityEngine.Object.Instantiate<GameObject>(threats.world.prefabStore.uieHeroViewer, threats.subsetArea);
+                        UIE_HeroViewer viewer2 = gameObject2.GetComponent<UIE_HeroViewer>();
+                        viewer2.setToPerson(threats.world, tuple.Item1);
+
+                        viewer2.title.text = $"{tuple.Item1.getName()} mourns the death of {threats.world.map.persons[tuple.Item2.person].getName()} for {tuple.Item2.turnsLeft} {(tuple.Item2.turnsLeft == 1 ? "turn" : "turns")} (killed by {threats.world.map.persons[tuple.Item2.killer].getName()})";
                     }
                 }
             }
@@ -277,6 +378,27 @@ namespace CommunityLib
                 if (viewer.personExamplar.unit is UA ua)
                 {
                     threats.targetHero = ua;
+                }
+            }
+            else if (maskID == ModCore.Get().potentialVendettaMaskID)
+            {
+                if ((hoveredItem is UIE_HeroViewer viewer))
+                {
+                    if (viewer.personExamplar != null)
+                    {
+                        if (viewer.personExamplar.rulerOf > -1)
+                        {
+                            threats.targetSettlement = threats.world.map.locations[viewer.personExamplar.rulerOf].settlement;
+                        }
+                        if (viewer.personExamplar.unit is UA ua)
+                        {
+                            threats.targetHero = ua;
+                        }
+                    }
+                    else if (viewer.houseExemplar != null)
+                    {
+                        threats.targetHouse = viewer.houseExemplar.house;
+                    }
                 }
             }
         }
