@@ -678,11 +678,13 @@ namespace CommunityLib
 
             if (ModCore.opt_darkProphets)
             {
+
+
                 if (prophet.society is Society society)
                 {
                     if (society.isDarkEmpire)
                     {
-                        if (prophet.person.shadow > 50.0)
+                        if (prophet.person.shadow >= 0.5)
                         {
                             return true;
                         }
@@ -691,6 +693,14 @@ namespace CommunityLib
                     {
                         return true;
                     }
+                    else if (prophet.society.isDark())
+                    {
+                        return true;
+                    }
+                }
+                else if (prophet.society.isDark())
+                {
+                    return true;
                 }
             }
 
