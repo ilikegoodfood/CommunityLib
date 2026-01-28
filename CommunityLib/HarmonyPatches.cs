@@ -449,8 +449,12 @@ namespace CommunityLib
 
             harmony.Patch(original: AccessTools.Method(typeof(UIInputs), nameof(UIInputs.rightClickOnHex), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UIInput_rightClickOnHex_Transpiler)));
 
-            // MOD OPTIONS //
-            // God-Sort
+            // --- Performance Improvements -- //
+            // Map Mask Manager
+            harmony.Patch(original: AccessTools.Method(typeof(MapMaskManager), nameof(MapMaskManager.getColor), new Type[] { typeof(Hex) }), transpiler: new HarmonyMethod(patchType, nameof(MapMaskManager_getColor_Transpiler)));
+
+            // --- MOD OPTIONS --- //
+            // God-Sort //
             // Patches for PrefabStore
             harmony.Patch(original: AccessTools.Method(typeof(PrefabStore), nameof(PrefabStore.getScrollSetGods), new Type[] { typeof(List<God>) }), prefix: new HarmonyMethod(patchType, nameof(PrefabStore_getScrollSetGods_Prefix)));
 
@@ -9018,6 +9022,7 @@ namespace CommunityLib
             return "ERROR: " + u.getName() + " is neither being attacked by or attacking anyone.";
         }
 
+        // Engagement Check fixes
         private static IEnumerable<CodeInstruction> UA_playerTriesToTrade_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
@@ -9144,7 +9149,340 @@ namespace CommunityLib
             }
         }
 
-        // Mod Option Patches //
+        // --- Performance Improvements -- //
+        // Map Mask Manager
+        private static IEnumerable<CodeInstruction> MapMaskManager_getColor_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody_International = AccessTools.Method(patchType, nameof(MapMaskManager_getColor_TranspilerBody_International), new Type[] { typeof(Hex) });
+            MethodInfo MI_TranspilerBody_Infiltration = AccessTools.Method(patchType, nameof(MapMaskManager_getColor_TranspilerBody_Infiltration), new Type[] { typeof(Hex) });
+            MethodInfo MI_TranspilerBody_Awareness = AccessTools.Method(patchType, nameof(MapMaskManager_getColor_TranspilerBody_Awareness), new Type[] { typeof(Hex) });
+            MethodInfo MI_TranspilerBody_POIViewer = AccessTools.Method(patchType, nameof(MapMaskManager_getColor_TranspilerBody_POIViewer), new Type[] { typeof(Hex) });
+            MethodInfo MI_TranspilerBody_HeroViewer = AccessTools.Method(patchType, nameof(MapMaskManager_getColor_TranspilerBody_HeroViewer), new Type[] { typeof(Hex) });
+            MethodInfo MI_TranspilerBody_SpecificNation = AccessTools.Method(patchType, nameof(MapMaskManager_getColor_TranspilerBody_SpecificNation), new Type[] { typeof(Hex) });
+
+            Label retLabel = ilg.DefineLabel();
+
+            bool returnCode = true;
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                switch(targetIndex)
+                {
+                    case 1:
+                        if (instructionList[i].blocks.Any(b => b.blockType == ExceptionBlockType.BeginExceptionBlock))
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_International);
+                            yield return new CodeInstruction(OpCodes.Stloc_1);
+
+                            returnCode = false;
+
+                            targetIndex++;
+                        }
+                        break;
+                    case 2:
+                        if (instructionList[i].blocks.Any(b => b.blockType == ExceptionBlockType.BeginCatchBlock))
+                        {
+                            targetIndex++;
+                        }
+                        break;
+                    case 3:
+                        if (instructionList[i].opcode == OpCodes.Leave)
+                        {
+                            retLabel = (Label)instructionList[i].operand;
+
+                            yield return new CodeInstruction(OpCodes.Br_S, retLabel);
+
+                            returnCode = true;
+                            i++;
+                            targetIndex++;
+                        }
+                        break;
+                    case 4:
+                        if (instructionList[i].blocks.Any(b => b.blockType == ExceptionBlockType.BeginExceptionBlock))
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Infiltration);
+                            yield return new CodeInstruction(OpCodes.Stloc_1);
+                            yield return new CodeInstruction(OpCodes.Br_S, retLabel);
+
+                            returnCode = false;
+
+                            targetIndex++;
+                        }
+                        break;
+                    case 5:
+                        if (instructionList[i].blocks.Any(b => b.blockType == ExceptionBlockType.BeginCatchBlock))
+                        {
+                            targetIndex++;
+                        }
+                        break;
+                    case 6:
+                        if (instructionList[i].opcode == OpCodes.Leave)
+                        {
+                            returnCode = true;
+                            i++;
+                            targetIndex++;
+                        }
+                        break;
+                    case 7:
+                        if (instructionList[i].blocks.Any(b => b.blockType == ExceptionBlockType.BeginExceptionBlock))
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Awareness);
+                            yield return new CodeInstruction(OpCodes.Stloc_1);
+                            yield return new CodeInstruction(OpCodes.Br_S, retLabel);
+
+                            returnCode = false;
+
+                            targetIndex++;
+                        }
+                        break;
+                    case 8:
+                        if (instructionList[i].blocks.Any(b => b.blockType == ExceptionBlockType.BeginCatchBlock))
+                        {
+                            targetIndex++;
+                        }
+                        break;
+                    case 9:
+                        if (instructionList[i].opcode == OpCodes.Leave)
+                        {
+                            returnCode = true;
+                            i++;
+                            targetIndex++;
+                        }
+                        break;
+                    case 10:
+                        if (instructionList[i].blocks.Any(b => b.blockType == ExceptionBlockType.BeginExceptionBlock))
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_POIViewer);
+                            yield return new CodeInstruction(OpCodes.Stloc_1);
+                            yield return new CodeInstruction(OpCodes.Br_S, retLabel);
+
+                            returnCode = false;
+
+                            targetIndex++;
+                        }
+                        break;
+                    case 11:
+                        if (instructionList[i].blocks.Any(b => b.blockType == ExceptionBlockType.BeginCatchBlock))
+                        {
+                            targetIndex++;
+                        }
+                        break;
+                    case 12:
+                        if (instructionList[i].opcode == OpCodes.Leave)
+                        {
+                            returnCode = true;
+                            i++;
+                            targetIndex++;
+                        }
+                        break;
+                    case 13:
+                        if (instructionList[i].blocks.Any(b => b.blockType == ExceptionBlockType.BeginExceptionBlock))
+                        {
+                            targetIndex++;
+                        }
+                        break;
+                    case 14:
+                        if (instructionList[i].blocks.Any(b => b.blockType == ExceptionBlockType.BeginFinallyBlock))
+                        {
+                            targetIndex++;
+                        }
+                        break;
+                    case 15:
+                        if (instructionList[i].opcode == OpCodes.Endfinally)
+                        {
+                            targetIndex++;
+                        }
+                        break;
+                    case 16:
+                        if (instructionList[i].blocks.Any(b => b.blockType == ExceptionBlockType.BeginExceptionBlock))
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_HeroViewer);
+                            yield return new CodeInstruction(OpCodes.Stloc_1);
+                            yield return new CodeInstruction(OpCodes.Br_S, retLabel);
+
+                            returnCode = false;
+
+                            targetIndex++;
+                        }
+                        break;
+                    case 17:
+                        if (instructionList[i].blocks.Any(b => b.blockType == ExceptionBlockType.BeginCatchBlock))
+                        {
+                            targetIndex++;
+                        }
+                        break;
+                    case 18:
+                        if (instructionList[i].opcode == OpCodes.Leave)
+                        {
+                            returnCode = true;
+                            i++;
+                            targetIndex++;
+                        }
+                        break;
+                    case 19:
+                        if (instructionList[i].blocks.Any(b => b.blockType == ExceptionBlockType.BeginExceptionBlock))
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_SpecificNation);
+                            yield return new CodeInstruction(OpCodes.Stloc_1);
+                            yield return new CodeInstruction(OpCodes.Br_S, retLabel);
+
+                            returnCode = false;
+
+                            targetIndex++;
+                        }
+                        break;
+                    case 20:
+                        if (instructionList[i].blocks.Any(b => b.blockType == ExceptionBlockType.BeginCatchBlock))
+                        {
+                            targetIndex++;
+                        }
+                        break;
+                    case 21:
+                        if (instructionList[i].opcode == OpCodes.Leave)
+                        {
+                            returnCode = true;
+                            i++;
+                            targetIndex = 0;
+                        }
+                        break;
+                    default:
+                        break;
+                }
+
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
+            }
+
+            Console.WriteLine("CommunityLib: Completed MapMaskManager_getColor_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static Color MapMaskManager_getColor_TranspilerBody_International(Hex hex)
+        {
+            if (hex == null || hex.territoryOf < 0 || hex.territoryOf >= hex.map.locations.Count)
+            {
+                return new Color(0f, 0f, 0f, 0.9f);
+            }
+
+            Location loc = hex.map.locations[hex.territoryOf];
+            if (loc == null || loc.soc == null || GraphicalMap.selectedHex == null || GraphicalMap.selectedHex.location == null || GraphicalMap.selectedHex.location.soc == null)
+            {
+                return new Color(0f, 0f, 0f, 0.9f);
+            }
+
+            double status = GraphicalMap.selectedHex.location.soc.getRel(loc.soc).status;
+            if (status > 0)
+            {
+                return new Color(0f, (float)status, 0f, 0.9f);
+            }
+
+            return new Color((float)status, 0f, 0f, 0.9f);
+        }
+
+        private static Color MapMaskManager_getColor_TranspilerBody_Infiltration(Hex hex)
+        {
+            if (hex == null || hex.location == null || hex.location.settlement == null)
+            {
+                return new Color(0f, 0f, 0f, 0.9f);
+            }
+
+            float infiltration = (float)hex.location.settlement.infiltration;
+            return new Color(infiltration, infiltration, infiltration, 0.9f);
+        }
+
+        private static Color MapMaskManager_getColor_TranspilerBody_Awareness(Hex hex)
+        {
+            if (hex == null || hex.location == null || hex.location.person() == null)
+            {
+                return new Color(0f, 0f, 0f, 0.9f);
+            }
+
+            float awareness = (float)hex.location.person().awareness;
+            return new Color(awareness, awareness * 0.2f, 0f, 0.9f);
+        }
+
+        private static Color MapMaskManager_getColor_TranspilerBody_POIViewer(Hex hex)
+        {
+            if (hex == null || hex.location == null || hex.location.settlement == null)
+            {
+                return new Color(0f, 0f, 0f, 0.9f);
+            }
+
+            if (hex.map.world.ui.uiScrollables.scrollable_threats.targetSub == null || !hex.location.settlement.subs.Any(sub => sub.GetType() == hex.map.world.ui.uiScrollables.scrollable_threats.targetSub.GetType()))
+            {
+                return new Color(0f, 0f, 0f, 0.9f);
+            }
+
+            return new Color(0f, 0f, 1f, 0.9f);
+        }
+
+        private static Color MapMaskManager_getColor_TranspilerBody_HeroViewer(Hex hex)
+        {
+            if (hex == null || hex.location == null)
+            {
+                return new Color(0f, 0f, 0f, 0.9f);
+            }
+
+            UA targetHero = hex.map.world.ui.uiScrollables.scrollable_threats.targetHero;
+            if (targetHero != null)
+            {
+                if (targetHero.location == hex.location)
+                {
+                    return new Color(1f, 1f, 1f, 0.9f);
+                }
+                if (targetHero.homeLocation == hex.location.index)
+                {
+                    return new Color(1f, 1f, 1f, 0.9f);
+                }
+                return new Color(0f, 0f, 0f, 0.9f);
+            }
+
+            if (!(hex.location.settlement is SettlementHuman settlementHuman))
+            {
+                return new Color(0f, 0f, 0f, 0.9f);
+            }
+
+            foreach (Act_FundHero fund in settlementHuman.fundingActions)
+            {
+                if (fund.hero() != null && !fund.hero().isDead && fund.hero().unit is UAG && !fund.hero().unit.isCommandable())
+                {
+                    return new Color(0f, 0.5f, 0.5f, 0.8f);
+                }
+            }
+
+            return new Color(0f, 0f, 0f, 0.9f);
+        }
+
+        private static Color MapMaskManager_getColor_TranspilerBody_SpecificNation(Hex hex)
+        {
+            if (hex == null || hex.territoryOf < 0 || hex.territoryOf >= hex.map.locations.Count)
+            {
+                return new Color(0.25f, 0.25f, 0.25f, 0.9f);
+            }
+
+            Location loc = hex.map.locations[hex.territoryOf];
+            if (loc == null || loc.soc == null || loc.soc != MapMaskManager.group)
+            {
+                return new Color(0.25f, 0.25f, 0.25f, 0.9f);
+            }
+
+            return new Color(0.25f, 0.7f, 0.7f, 0.9f);
+        }
+
+        // --- Mod Option Patches --- //
         // God Sort Patches
         private static void PrefabStore_getScrollSetGods_Prefix(List<God> gods)
         {
