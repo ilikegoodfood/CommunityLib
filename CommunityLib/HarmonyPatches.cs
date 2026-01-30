@@ -9176,6 +9176,10 @@ namespace CommunityLib
 
             if (ModCore.Get().data.TryGetMapMaskData(MapMaskManager.maskingMod, (int)masker.mask, out MapMaskData data))
             {
+                if (hex.terrain == Hex.terrainType.SEA)
+                {
+                    return false;
+                }
                 return data.NeedsSimplifiedTerrain;
             }
 
