@@ -26,17 +26,32 @@ namespace CommunityLib
 
         public string Description => _description;
 
+        private bool _needsSimplifiedTerrain = false;
+
+        public bool NeedsSimplifiedTerrain
+        {
+            get
+            {
+                return _needsSimplifiedTerrain;
+            }
+            internal set
+            {
+                _needsSimplifiedTerrain = value;
+            }
+        }
+
         private int _assignedID = -1;
 
         public int AssignedID => _assignedID;
 
-        internal MapMaskData(ModKernel maskingMod, string title, string buttonLabel, string description, int assignedID)
+        internal MapMaskData(ModKernel maskingMod, string title, string buttonLabel, string description, int assignedID, bool needsSimplifiedTerrain)
         {
             _maskingMod = maskingMod;
             _title = title;
             _buttonLabel = buttonLabel;
             _description = description;
             _assignedID = assignedID;
+            _needsSimplifiedTerrain = needsSimplifiedTerrain;
         }
     }
 }
