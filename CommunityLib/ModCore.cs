@@ -670,6 +670,10 @@ namespace CommunityLib
             {
                 if (hex.location == null || !(hex.location.settlement is SettlementHuman settlementHuman) || settlementHuman.ruler == null || settlementHuman.ruler.getSpouse() != null || settlementHuman.ruler.traits.Any(t => t is T_Mourning mourning))
                 {
+                    if (hex.terrain == Hex.terrainType.SEA)
+                    {
+                        return Color.clear;
+                    }
                     return color_dark;
                 }
 
@@ -685,6 +689,10 @@ namespace CommunityLib
                 }
                 else
                 {
+                    if (hex.terrain == Hex.terrainType.SEA)
+                    {
+                        return Color.clear;
+                    }
                     return color_dark;
                 }
                 
@@ -693,6 +701,10 @@ namespace CommunityLib
             {
                 if (hex.location == null || !(hex.location.settlement is SettlementHuman settlementHuman) || settlementHuman.ruler == null)
                 {
+                    if (hex.terrain == Hex.terrainType.SEA)
+                    {
+                        return Color.clear;
+                    }
                     return color_dark;
                 }
 
@@ -725,6 +737,10 @@ namespace CommunityLib
                         return new Color(1.0f, 0.9f, 0f, 0.9f);
                     }
 
+                    if (hex.terrain == Hex.terrainType.SEA)
+                    {
+                        return Color.clear;
+                    }
                     return color_dark;
                 }
                 else if ((targetHero != null && settlementHuman.ruler == targetHero.person)
@@ -755,6 +771,10 @@ namespace CommunityLib
                 }
                 else
                 {
+                    if (hex.terrain == Hex.terrainType.SEA)
+                    {
+                        return Color.clear;
+                    }
                     return color_dark;
                 }
             }
@@ -762,6 +782,10 @@ namespace CommunityLib
             {
                 if (hex.location == null || !(hex.location.settlement is SettlementHuman settlementHuman) || settlementHuman.ruler == null)
                 {
+                    if (hex.terrain == Hex.terrainType.SEA)
+                    {
+                        return Color.clear;
+                    }
                     return color_dark;
                 }
 
@@ -823,6 +847,10 @@ namespace CommunityLib
                 }
                 else
                 {
+                    if (hex.terrain == Hex.terrainType.SEA)
+                    {
+                        return Color.clear;
+                    }
                     return color_dark;
                 }
             }
