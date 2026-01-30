@@ -115,11 +115,6 @@ namespace CommunityLib
             return true;
         }
 
-        public virtual List<object> mapMask_PopulatingThreats(ModKernel maskingMod, int maskID, string title, string buttonLabel, string description)
-        {
-            return null;
-        }
-
         // onPopulatingPathfindingDelegates
 
         private List<Action<Location, Unit, List<int>, List<Func<Location[], Location, Unit, List<int>, double>>>> _delegate_onPopulatingPathfindingDelegates = new List<Action<Location, Unit, List<int>, List<Func<Location[], Location, Unit, List<int>, double>>>>();

@@ -74,6 +74,8 @@ namespace CommunityLib
 
         public static bool opt_disableCrossLayerCurvedLinks = false;
 
+        public static bool opt_transparentMaskBackgrounds = true;
+
         /*
          * The Width of Links is now reset somehwhere in the update cycle, rending this option non-functional.
          */
@@ -230,6 +232,9 @@ namespace CommunityLib
                     break;
                 case "Disable Curved Links Across Map Layers":
                     opt_disableCrossLayerCurvedLinks = value;
+                    break;
+                case "Transparent Mask Backgrounds":
+                    opt_transparentMaskBackgrounds = value;
                     break;
                 /*case "Enhanced Trade Route Links":
                     opt_enhancedTradeRouteLinks = value;
@@ -401,13 +406,13 @@ namespace CommunityLib
 
         public void setupMapMasks()
         {
-            mournersMaskID = tryRegisterMapMask(Get(), "Mourners", "Mourners", "Shows people who are mourning a recent death, and if the death that they are mourning was a murder. Mourner's who's grief cannot be exploited to create a vendetta, a blood feud between houses, are marked in yellow. ");
+            mournersMaskID = tryRegisterMapMask(Get(), "Mourners", "Mourners", "Shows people who are mourning a recent death, and if the death that they are mourning was a murder. Mourner's who's grief cannot be exploited to create a vendetta, a blood feud between houses, are marked in yellow.", false);
 
-            potentialVendettaMaskID = tryRegisterMapMask(Get(), "Potential Vendettas", "Potential Vendettas", "Shows mourners that can be exploited to create a blood feud between houses, grouped by source and target houses.");
+            potentialVendettaMaskID = tryRegisterMapMask(Get(), "Potential Vendettas", "Potential Vendettas", "Shows mourners that can be exploited to create a blood feud between houses, grouped by source and target houses.", false);
 
             if (Get().data.tryGetModIntegrationData("Chandalor", out ModIntegrationData intDataChand) && intDataChand.typeDict.TryGetValue("Chandalor", out Type godType) && godType.IsAssignableFrom(map.overmind.god.GetType()))
             {
-                Get().bachelorsMaskID = tryRegisterMapMask(Get(), "Bachelors", "Bachelors", "Rulers that can marry.");
+                Get().bachelorsMaskID = tryRegisterMapMask(Get(), "Bachelors", "Bachelors", "Rulers that can marry.", false);
                 if (bachelorsMaskID == -1)
                 {
                     Console.WriteLine($"CommunityLib: Failed to regsiter Bachelors map mask.");
@@ -662,6 +667,15 @@ namespace CommunityLib
             int maskID = (int)map.masker.mask;
             if (maskID == -1 || MapMaskManager.maskingMod != Get())
             {
+                if (opt_transparentMaskBackgrounds)
+                {
+                    if (hex.terrain == Hex.terrainType.SEA)
+                    {
+                        return new Color(0.2f, 0.2f, 0.2f, 0.4f);
+                    }
+                    return new Color(0.2f, 0.2f, 0.2f, 0.7f);
+                }
+
                 return color_dark;
             }
 
@@ -687,20 +701,36 @@ namespace CommunityLib
                 {
                     return color_light;
                 }
-                else
+                
+                if (opt_transparentMaskBackgrounds)
                 {
                     if (hex.terrain == Hex.terrainType.SEA)
                     {
-                        return Color.clear;
+                        return new Color(0.2f, 0.2f, 0.2f, 0.4f);
                     }
-                    return color_dark;
+                    return new Color(0.2f, 0.2f, 0.2f, 0.7f);
                 }
+
+                if (hex.terrain == Hex.terrainType.SEA)
+                {
+                    return Color.clear;
+                }
+                return color_dark;
                 
             }
             else if (maskID == mournersMaskID)
             {
                 if (hex.location == null || !(hex.location.settlement is SettlementHuman settlementHuman) || settlementHuman.ruler == null)
                 {
+                    if (opt_transparentMaskBackgrounds)
+                    {
+                        if (hex.terrain == Hex.terrainType.SEA)
+                        {
+                            return new Color(0.2f, 0.2f, 0.2f, 0.4f);
+                        }
+                        return new Color(0.2f, 0.2f, 0.2f, 0.7f);
+                    }
+
                     if (hex.terrain == Hex.terrainType.SEA)
                     {
                         return Color.clear;
@@ -737,6 +767,15 @@ namespace CommunityLib
                         return new Color(1.0f, 0.9f, 0f, 0.9f);
                     }
 
+                    if (opt_transparentMaskBackgrounds)
+                    {
+                        if (hex.terrain == Hex.terrainType.SEA)
+                        {
+                            return new Color(0.2f, 0.2f, 0.2f, 0.4f);
+                        }
+                        return new Color(0.2f, 0.2f, 0.2f, 0.7f);
+                    }
+
                     if (hex.terrain == Hex.terrainType.SEA)
                     {
                         return Color.clear;
@@ -769,6 +808,14 @@ namespace CommunityLib
 
                     return new Color(1.0f, 0.9f, 0f, 0.9f);
                 }
+                else if (opt_transparentMaskBackgrounds)
+                {
+                    if (hex.terrain == Hex.terrainType.SEA)
+                    {
+                        return new Color(0.2f, 0.2f, 0.2f, 0.4f);
+                    }
+                    return new Color(0.2f, 0.2f, 0.2f, 0.7f);
+                }
                 else
                 {
                     if (hex.terrain == Hex.terrainType.SEA)
@@ -782,6 +829,15 @@ namespace CommunityLib
             {
                 if (hex.location == null || !(hex.location.settlement is SettlementHuman settlementHuman) || settlementHuman.ruler == null)
                 {
+                    if (opt_transparentMaskBackgrounds)
+                    {
+                        if (hex.terrain == Hex.terrainType.SEA)
+                        {
+                            return new Color(0.2f, 0.2f, 0.2f, 0.4f);
+                        }
+                        return new Color(0.2f, 0.2f, 0.2f, 0.7f);
+                    }
+
                     if (hex.terrain == Hex.terrainType.SEA)
                     {
                         return Color.clear;
@@ -844,6 +900,14 @@ namespace CommunityLib
                     }
 
                     return new Color(1.0f, 0.9f, 0f, 0.9f);
+                }
+                else if (opt_transparentMaskBackgrounds)
+                {
+                    if (hex.terrain == Hex.terrainType.SEA)
+                    {
+                        return new Color(0.2f, 0.2f, 0.2f, 0.4f);
+                    }
+                    return new Color(0.2f, 0.2f, 0.2f, 0.7f);
                 }
                 else
                 {
@@ -3418,9 +3482,9 @@ namespace CommunityLib
             return data.tryGetModCultureData(culture, out modCultureData);
         }
 
-        public int tryRegisterMapMask(ModKernel maskingMod, string title, string buttonLabel, string description)
+        public int tryRegisterMapMask(ModKernel maskingMod, string title, string buttonLabel, string description, bool needsSimplifiedTerrain)
         {
-            return Get().data.addMapMaskData(maskingMod, title, buttonLabel, description);
+            return Get().data.addMapMaskData(maskingMod, title, buttonLabel, description, needsSimplifiedTerrain);
         }
 
         public bool tryGetMapMaskData(ModKernel maskingMod, int id, out string title, out string buttonLabel, out string description)

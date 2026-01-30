@@ -21,8 +21,8 @@ namespace CommunityLib
             HooksDelegateRegistry registry = ModCore.Get().HookRegistry;
             registry.RegisterHook_onMapGen_PlaceWonders_1(onMapGen_PlaceWonders);
             registry.RegisterHook_onMapGen_PlaceWonders_2(onMapGen_PlaceWonders);
-            registry.RegisterHook_mapMask_PopulatingThreats(mapMask_PopulatingThreats); // TEST ITEM
-            registry.RegisterHook_mapMask_onThreatHovorOver(mapMask_onThreatHovorOver); // TEST ITEM
+            registry.RegisterHook_mapMask_PopulatingThreats(mapMask_PopulatingThreats);
+            registry.RegisterHook_mapMask_onThreatHovorOver(mapMask_onThreatHovorOver);
             registry.RegisterHook_isUnitSubsumed(isUnitSubsumed);
             registry.RegisterHook_onUnitDeath_StartOfProcess(onUnitDeath_StartOfProcess);
             registry.RegisterHook_onSettlementFallIntoRuin_StartOfProcess(onSettlementFallIntoRuin_StartOfProcess);

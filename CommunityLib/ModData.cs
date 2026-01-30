@@ -131,6 +131,8 @@ namespace CommunityLib
 
             if (mapMaskData.Count == 0)
             {
+                HashSet<int> nonSimplifiedMapMasks = new HashSet<int> { (int)MapMaskManager.maskType.TRADE_ROUTE, (int)MapMaskManager.maskType.NATION, (int)MapMaskManager.maskType.PROFILE, (int)MapMaskManager.maskType.INTERNATIONAL, (int)MapMaskManager.maskType.SPECIFIC_NATION, (int)MapMaskManager.maskType.ITEMS_FOR_SALE, (int)MapMaskManager.maskType.PROPHECY, (int)MapMaskManager.maskType.PEOPLE };
+
                 Dictionary<UIKeybinds.Action, MapMaskManager.maskType> maskMappings = UIInputs.getMaskMappings();
                 foreach (UIKeybinds.Action action in maskMappings.Keys)
                 {
@@ -152,7 +154,14 @@ namespace CommunityLib
 
                     string buttonLabel = textBuilder.ToString();
 
-                    mapMaskData.Add(new Tuple<ModKernel, int>(null, assignedID), new MapMaskData(null, title, buttonLabel, "", assignedID));
+                    if (nonSimplifiedMapMasks.Contains(assignedID))
+                    {
+                        mapMaskData.Add(new Tuple<ModKernel, int>(null, assignedID), new MapMaskData(null, title, buttonLabel, "", assignedID, false));
+                    }
+                    else
+                    {
+                        mapMaskData.Add(new Tuple<ModKernel, int>(null, assignedID), new MapMaskData(null, title, buttonLabel, "", assignedID, true));
+                    }
                 }
             }
         }
@@ -547,7 +556,7 @@ namespace CommunityLib
             return false;
         }
 
-        internal int addMapMaskData(ModKernel maskingMod, string title, string buttonLabel, string description)
+        internal int addMapMaskData(ModKernel maskingMod, string title, string buttonLabel, string description, bool needsSimplifiedTerrain)
         {
             if (maskingMod == null)
             {
@@ -575,7 +584,7 @@ namespace CommunityLib
                 return nextAvailableID;
             }
 
-            mapMaskData.Add(new Tuple<ModKernel, int>(maskingMod, nextAvailableID), new MapMaskData(maskingMod, title, buttonLabel, description, nextAvailableID));
+            mapMaskData.Add(new Tuple<ModKernel, int>(maskingMod, nextAvailableID), new MapMaskData(maskingMod, title, buttonLabel, description, nextAvailableID, needsSimplifiedTerrain));
             map.world.ui.checkData();
             return nextAvailableID;
         }
