@@ -451,7 +451,7 @@ namespace CommunityLib
 
             // --- Performance Improvements -- //
             // Map Mask Manager
-            harmony.Patch(original: AccessTools.Method(typeof(MapMaskManager), nameof(MapMaskManager.getColor), new Type[] { typeof(Hex) }), transpiler: new HarmonyMethod(patchType, nameof(MapMaskManager_getColor_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(MapMaskManager), nameof(MapMaskManager.getColor), new Type[] { typeof(Hex) }), transpiler: new HarmonyMethod(patchType, nameof(MapMaskManager_getColor_Transpiler_Replacement)));
 
             // --- MOD OPTIONS --- //
             // God-Sort //
@@ -9480,6 +9480,494 @@ namespace CommunityLib
             }
 
             return new Color(0.25f, 0.7f, 0.7f, 0.9f);
+        }
+
+        private static IEnumerable<CodeInstruction> MapMaskManager_getColor_Transpiler_Replacement(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(MapMaskManager_getColor_TranspilerBody), new Type[] { typeof(MapMaskManager), typeof(Hex) });
+
+            yield return new CodeInstruction(OpCodes.Nop);
+            yield return new CodeInstruction(OpCodes.Ldarg_0);
+            yield return new CodeInstruction(OpCodes.Ldarg_1);
+            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+            yield return new CodeInstruction(OpCodes.Ret);
+
+            Console.WriteLine("CommunityLib: Completed complete function replacement transpiler MapMaskManager_getColor_Transpiler_Replacement");
+        }
+
+        private static Color MapMaskManager_getColor_TranspilerBody(MapMaskManager masker, Hex hex)
+        {
+            if (MapMaskManager.maskingMod != null)
+            {
+                return MapMaskManager.maskingMod.mapMask_getColour(hex);
+            }
+
+            int lightLevel = 0;
+            switch(masker.mask)
+            {
+                case MapMaskManager.maskType.NONE: //0
+                    if (GraphicalMap.selectedUnit != null)
+                    {
+                        if (hex.owner != null && hex.owner.hostileTo(GraphicalMap.selectedUnit))
+                        {
+                            return new Color(0.5f, 0f, 0f, 0.5f);
+                        }
+                    }
+                    return Color.clear;
+                case MapMaskManager.maskType.NATION: //1
+                    if (hex.owner != null)
+                    {
+                        float r = hex.owner.color.r;
+                        float g = hex.owner.color.g;
+                        float b = hex.owner.color.b;
+
+                        if (hex.terrain == Hex.terrainType.SEA)
+                        {
+                            new Color(hex.owner.color.r, hex.owner.color.g, hex.owner.color.b, 0.4f);
+                        }
+                        return new Color(hex.owner.color.r, hex.owner.color.g, hex.owner.color.b, 0.7f);
+                    }
+
+                    if (hex.terrain == Hex.terrainType.SEA)
+                    {
+                        return Color.clear;
+                    }
+                    return new Color(0.2f, 0.2f, 0.2f, 0.7f);
+                case MapMaskManager.maskType.PROFILE: //2
+                    if (GraphicalMap.selectedUnit is UA)
+                    {
+                        if (masker.map.getStepDist(GraphicalMap.selectedUnit.location, masker.map.locations[hex.territoryOf]) <= GraphicalMap.selectedUnit.profile / 10.0)
+                        {
+                            return Color.clear;
+                        }
+                    }
+                    lightLevel = 2;
+                    break;
+                case MapMaskManager.maskType.INTERNATIONAL: //3
+                    if (hex.territoryOf >= 0 && hex.territoryOf < hex.map.locations.Count)
+                    {
+                        Location loc = hex.map.locations[hex.territoryOf];
+                        if (loc != null && loc.soc != null && GraphicalMap.selectedHex != null && GraphicalMap.selectedHex.location != null && GraphicalMap.selectedHex.location.soc != null)
+                        {
+                            double status = GraphicalMap.selectedHex.location.soc.getRel(loc.soc).status;
+                            if (status > 0)
+                            {
+                                if (hex.terrain == Hex.terrainType.SEA)
+                                {
+                                    return new Color(0f, (float)status, 0f, 0.4f);
+                                }
+                                return new Color(0f, (float)status, 0f, 0.9f);
+                            }
+                        }
+                    }
+                    break;
+                case MapMaskManager.maskType.INFILTRATION: //6
+                    if (hex.location != null && hex.location.settlement != null)
+                    {
+                        float infiltration = (float)hex.location.settlement.infiltration;
+                        return new Color(infiltration, infiltration, infiltration, 0.9f);
+                    }
+                    break;
+                case MapMaskManager.maskType.POI_VIEWER: //8
+                    if (hex != null && hex.location != null && hex.location.settlement != null)
+                    {
+                        if (hex.map.world.ui.uiScrollables.scrollable_threats.targetSub != null && hex.location.settlement.subs.Any(sub => sub.GetType() == hex.map.world.ui.uiScrollables.scrollable_threats.targetSub.GetType()))
+                        {
+                            return new Color(0f, 0f, 1f, 0.9f);
+                        }
+                    }
+                    break;
+                case MapMaskManager.maskType.AWARENESS: //9
+                    if (hex.location != null && hex.location.person() != null)
+                    {
+                        float awareness = (float)hex.location.person().awareness;
+                        return new Color(awareness, awareness * 0.2f, 0f, 0.9f);
+                    }
+                    break;
+                case MapMaskManager.maskType.MODIFIER_VIEWER: //10
+                    if (hex.location != null)
+                    {
+                        foreach (Property property in hex.location.properties)
+                        {
+                            if (masker.map.world.ui.uiScrollables.scrollable_threats.targetProperty != null)
+                            {
+                                bool isTarget = false;
+                                if (masker.map.world.ui.uiScrollables.scrollable_threats.targetProperty is Pr_EventCustom custom)
+                                {
+                                    if (property == custom)
+                                    {
+                                        isTarget = true;
+                                    }
+                                }
+                                else if (property.GetType() == masker.map.world.ui.uiScrollables.scrollable_threats.targetProperty.GetType())
+                                {
+                                    isTarget = true;
+                                }
+
+                                if (isTarget)
+                                {
+                                    float charge = (float)property.charge / 300f;
+                                    if (charge > 300f)
+                                    {
+                                        charge = 300f;
+                                    }
+                                    else if (charge < 0f)
+                                    {
+                                        charge = 0f;
+                                    }
+
+                                    return new Color(charge, 0f, 1f - charge, 0.9f);
+                                }
+                            }
+                        }
+                    }
+                    break;
+                case MapMaskManager.maskType.HERO_VIEWER: //12
+                    UA targetHero = masker.map.world.ui.uiScrollables.scrollable_threats.targetHero;
+                    if (hex.location != null)
+                    {
+                        if (targetHero != null)
+                        {
+                            if (targetHero.location == hex.location)
+                            {
+                                return new Color(1f, 1f, 1f, 0.9f);
+                            }
+                            if (targetHero.homeLocation == hex.location.index)
+                            {
+                                return new Color(0f, 0.7f, 0.7f, 0.9f);
+                            }
+                        }
+                        else if (hex.location.settlement is SettlementHuman settlementHuman)
+                        {
+                            if (settlementHuman.fundingActions.Any(a => a.hero() != null && !a.hero().isDead && a.hero().unit is UAG && !a.hero().unit.isCommandable()))
+                            {
+                                return new Color(0f, 0.5f, 0.5f, 0.8f);
+                            }
+                        }
+                    }
+                    break;
+                case MapMaskManager.maskType.SPECIFIC_NATION: //14
+                    if (hex.territoryOf >= 0 && hex.territoryOf < hex.map.locations.Count)
+                    {
+                        Location loc = hex.map.locations[hex.territoryOf];
+                        if (loc != null && loc.soc != null && loc.soc == MapMaskManager.group)
+                        {
+                            return new Color(0.25f, 0.7f, 0.7f, 0.9f);
+                        }
+                    }
+                    lightLevel = 2;
+                    break;
+                case MapMaskManager.maskType.TRADE_ROUTE: //15
+                    if (hex.location != null)
+                    {
+                        TradeRoute targetRoute = masker.map.world.ui.uiScrollables.scrollable_threats.targetRoute;
+                        if (targetRoute != null)
+                        {
+                            if (masker.map.tradeManager.tradeDensity[hex.location.index] != null && masker.map.tradeManager.tradeDensity[hex.location.index].Contains(targetRoute))
+                            {
+                                if (targetRoute.path[0] == hex.location || targetRoute.path[targetRoute.path.Count - 1] == hex.location)
+                                {
+                                    return new Color(0.36f, 1f, 1f, 0.9f);
+                                }
+                                return new Color(0.25f, 0.7f, 0.7f, 0.9f);
+                            }
+                        }
+                        else
+                        {
+                            float weight = (float)masker.map.tradeManager.getTradeWeight(hex.location);
+                            if (weight > 0f)
+                            {
+                                if (masker.map.tradeManager.tradeDensity[hex.location.index] != null)
+                                {
+                                    if (masker.map.tradeManager.tradeDensity[hex.location.index].Any(route => route.path[0] == hex.location || route.path[route.path.Count - 1] == hex.location))
+                                    {
+                                        return new Color(1f, 1f, 1f, 0.9f);
+                                    }
+                                }
+
+                                weight = weight * 0.5f + 0.2f;
+
+                                if (weight > 1f)
+                                {
+                                    weight = 1f;
+                                }
+
+                                return new Color(weight, weight, weight, 0.9f);
+                            }
+                        }
+                    }
+                    lightLevel = 2;
+                    break;
+                case MapMaskManager.maskType.TRAIT: //16
+                    if (hex.location != null && hex.location.person() != null)
+                    {
+                        string targetTrait = masker.map.world.ui.uiScrollables.scrollable_threats.targetTrait;
+                        if (targetTrait != null && hex.location.person().traits.Any(t => Eleven.removeParenthesis(t.getName()) == targetTrait))
+                        {
+                            return new Color(1f, 1f, 1f, 0.9f);
+                        }
+                    }
+                    lightLevel = 1;
+                    break;
+                case MapMaskManager.maskType.PREFERENCE: //17
+                    if (hex.location != null && hex.location.person() != null)
+                    {
+                        string targetTrait = masker.map.world.ui.uiScrollables.scrollable_threats.targetTrait;
+                        if (targetTrait != null)
+                        {
+                            if (targetTrait.EndsWith("[HATE]"))
+                            {
+                                if (hex.location.person().extremeHates.Any(tag => targetTrait.StartsWith(Tags.getName(tag))))
+                                {
+                                    return new Color(1f, 1f, 1f, 0.9f);
+                                }
+                            }
+                            else if (targetTrait.EndsWith("[dislike]"))
+                            {
+                                if (hex.location.person().hates.Any(tag => targetTrait.StartsWith(Tags.getName(tag))))
+                                {
+                                    return new Color(1f, 1f, 1f, 0.9f);
+                                }
+                            }
+                            else if (targetTrait.EndsWith("[like]"))
+                            {
+                                if (hex.location.person().likes.Any(tag => targetTrait.StartsWith(Tags.getName(tag))))
+                                {
+                                    return new Color(1f, 1f, 1f, 0.9f);
+                                }
+                            }
+                            else if (targetTrait.EndsWith("[LOVE]"))
+                            {
+                                if (hex.location.person().extremeLikes.Any(tag => targetTrait.StartsWith(Tags.getName(tag))))
+                                {
+                                    return new Color(1f, 1f, 1f, 0.9f);
+                                }
+                            }
+                        }
+                    }
+                    lightLevel = 1;
+                    break;
+                case MapMaskManager.maskType.HOUSE: //18
+                    if (hex.location != null && hex.location.person() != null)
+                    {
+                        Person ruler = hex.location.person();
+                        House targetHouse = masker.map.world.ui.uiScrollables.scrollable_threats.targetHouse;
+                        if (targetHouse != null)
+                        {
+                            if (ruler.house == targetHouse)
+                            {
+                                return targetHouse.colour;
+                            }
+                        }
+                        else if (ruler.house != null)
+                        {
+                            return ruler.house.colour;
+                        }
+                    }
+                    lightLevel = 1;
+                    break;
+                case MapMaskManager.maskType.SHADOW: //19
+                    if (hex.location != null && hex.location.getShadow() > 0.005)
+                    {
+                        float shadow = (float)hex.location.getShadow();
+                        if (shadow > 1f)
+                        {
+                            shadow = 1f;
+                        }
+                        else if (shadow < 0f)
+                        {
+                            shadow = 0f;
+                        }
+                        return new Color(shadow, 0f, 1f - shadow, 0.9f);
+                    }
+                    lightLevel = 1;
+                    break;
+                case MapMaskManager.maskType.RULER_SHADOW: //20
+                    if (hex.location != null && hex.location.person() != null)
+                    {
+                        float shadow = (float)hex.location.person().shadow;
+                        if (shadow > 1f)
+                        {
+                            shadow = 1f;
+                        }
+                        else if (shadow < 0f)
+                        {
+                            shadow = 0f;
+                        }
+                        return new Color(shadow, 0f, 1f - shadow, 0.9f);
+                    }
+                    lightLevel = 1;
+                    break;
+                case MapMaskManager.maskType.RELIGION: //21
+                    if (hex.location != null && hex.location.settlement != null)
+                    {
+                        HolyOrder targetOrder = masker.map.world.ui.uiScrollables.scrollable_threats.targetOrder;
+                        if (hex.location.settlement is SettlementHuman settlementHuman)
+                        {
+                            if (targetOrder != null)
+                            {
+                                if (settlementHuman.order == targetOrder)
+                                {
+                                    return settlementHuman.order.color;
+                                }
+                            }
+                            else if (settlementHuman.order != null)
+                            {
+                                return settlementHuman.order.color;
+                            }
+                        }
+                        else
+                        {
+                            foreach (Subsettlement sub in hex.location.settlement.subs)
+                            {
+                                if (sub is Sub_Temple temple)
+                                {
+                                    if (temple.order != null)
+                                    {
+                                        if (targetOrder != null)
+                                        {
+                                            if (temple.order == targetOrder)
+                                            {
+                                                return temple.order.color;
+                                            }
+                                        }
+                                        else if (temple.order != null)
+                                        {
+                                            return temple.order.color;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    lightLevel = 1;
+                    break;
+                case MapMaskManager.maskType.POPULATION: //23
+                    if (hex.location != null)
+                    {
+                        if (hex.location.settlement is SettlementHuman settlementHuman)
+                        {
+                            float population = settlementHuman.population;
+                            if (masker.map.data_highestPopCity != 0)
+                            {
+                                population /= masker.map.data_highestPopCity;
+                                if (population > 1f)
+                                {
+                                    population = 1f;
+                                }
+                                else if (population < 0f)
+                                {
+                                    population = 0f;
+                                }
+
+                                return new Color(population, 0f, 1f - population, 0.9f);
+                            }
+                        }
+                    }
+                    lightLevel = 1;
+                    break;
+                case MapMaskManager.maskType.SETTLEMENTS: //22
+                    if (hex.location != null && hex.location.settlement != null)
+                    {
+                        Settlement targetSettlement = masker.map.world.ui.uiScrollables.scrollable_threats.targetSettlement;
+                        if (targetSettlement != null)
+                        {
+                            if (hex.location.settlement == targetSettlement)
+                            {
+                                return new Color(0.7f, 0.7f, 0.7f, 0.9f);
+                            }
+                        }
+                        else
+                        {
+                            return new Color(0.7f, 0.7f, 0.7f, 0.9f);
+                        }
+                    }
+                    lightLevel = 1;
+                    break;
+                case MapMaskManager.maskType.ITEMS_FOR_SALE: //24
+                    if (hex.location != null && hex.location.settlement != null)
+                    {
+                        if (masker.map.world.ui.uiScrollables.scrollable_threats.targetItem != null)
+                        {
+                            if (hex.location.GetChallenges().Any(ch => ch is Ch_BuyItem buy && buy.onSale.getName() == masker.map.world.ui.uiScrollables.scrollable_threats.targetItem.getName()))
+                            {
+                                return new Color(1f, 1f, 1f, 0.9f);
+                            }
+                        }
+                        else if (hex.location.GetChallenges().Any(ch => ch is Ch_BuyItem))
+                        {
+                            return new Color(1f, 1f, 1f, 0.9f);
+                        }
+                    }
+                    lightLevel = 2;
+                    break;
+                case MapMaskManager.maskType.PROPHECY: //26
+                    lightLevel = 2;
+                    break;
+                case MapMaskManager.maskType.CURSED: //28
+                    if (hex.location != null)
+                    {
+                        Person person = hex.location.person();
+                        if (person != null && person.house != null & person.house.curses.Count > 0)
+                        {
+                            return person.house.colour;
+                        }
+                    }
+                    break;
+                case MapMaskManager.maskType.HEROES_HOME: //29
+                    if (hex.location == MapMaskManager.focusLocation)
+                    {
+                        return new Color(0.2f, 0.9f, 1f, 0.9f);
+                    }
+                    lightLevel = 1;
+                    break;
+                case MapMaskManager.maskType.TESTING:
+                    if (hex.location != null)
+                    {
+                        float weight = (float)masker.map.tradeManager.getTradeWeight(hex.location);
+                        if (weight > 0f)
+                        {
+                            weight = weight * 0.5f + 0.2f;
+
+                            if (weight > 1f)
+                            {
+                                weight = 1f;
+                            }
+
+                            return new Color(weight, weight, weight, 0.9f);
+                        }
+                    }
+                    lightLevel = 1;
+                    break;
+                default:
+                    return Color.black;
+            }
+
+            if (lightLevel == 2)
+            {
+                if (hex.terrain == Hex.terrainType.SEA)
+                {
+                    return new Color(0.2f, 0.2f, 0.2f, 0.4f);
+                }
+                return new Color(0.2f, 0.2f, 0.2f, 0.7f);
+            }
+            
+            if (lightLevel == 1)
+            {
+                if (hex.terrain == Hex.terrainType.SEA)
+                {
+                    return Color.clear;
+                }
+                return new Color(0f, 0f, 0f, 0.75f);
+            }
+
+            if (hex.terrain == Hex.terrainType.SEA)
+            {
+                return Color.clear;
+            }
+            return new Color(0f, 0f, 0f, 0.9f);
         }
 
         // --- Mod Option Patches --- //
