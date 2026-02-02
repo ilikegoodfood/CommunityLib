@@ -782,6 +782,7 @@ namespace CommunityLib
                 }
 
                 Item targetItem = hex.map.world.ui.uiScrollables.scrollable_threats.targetItem;
+                bool hasInaccessableItem = false;
                 foreach (Property property in hex.location.properties)
                 {
                     if (!(property is Pr_ItemCache cache))
@@ -793,12 +794,26 @@ namespace CommunityLib
                     {
                         if (cache.items.Any(i => i != null && i.getName() == targetItem.getName()))
                         {
-                            return Color.clear;
+                            if (!hex.location.units.Any(u => u is UA ua && ua.task is Task_PerformChallenge pChallenge && pChallenge.challenge == cache.challenges.FirstOrDefault(ch => ch is Ch_AccessCache)))
+                            {
+                                return Color.clear;
+                            }
+                            else
+                            {
+                                hasInaccessableItem = true;
+                            }
                         }
                     }
                     else if (cache.items.Any(i => i != null))
                     {
-                        return Color.clear;
+                        if (!hex.location.units.Any(u => u is UA ua && ua.task is Task_PerformChallenge pChallenge && pChallenge.challenge == cache.challenges.FirstOrDefault(ch => ch is Ch_AccessCache)))
+                        {
+                            return Color.clear;
+                        }
+                        else
+                        {
+                            hasInaccessableItem = true;
+                        }
                     }
                 }
 
@@ -819,7 +834,7 @@ namespace CommunityLib
                                 }
                                 else
                                 {
-                                    return new Color(1.0f, 0.9f, 0f, 0.9f);
+                                    hasInaccessableItem = true;
                                 }
                             }
                             else
@@ -839,7 +854,7 @@ namespace CommunityLib
                             }
                             else
                             {
-                                return new Color(1.0f, 0.9f, 0f, 0.9f);
+                                hasInaccessableItem = true;
                             }
                         }
                         else
@@ -847,6 +862,11 @@ namespace CommunityLib
                             return Color.clear;
                         }
                     }
+                }
+
+                if (hasInaccessableItem)
+                {
+                    return new Color(1.0f, 0.9f, 0f, 0.9f);
                 }
 
                 if (opt_transparentMaskBackgrounds)
