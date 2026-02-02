@@ -568,9 +568,9 @@ namespace CommunityLib
             int nextAvailableID = -1;
             foreach (MapMaskData data in mapMaskData.Values)
             {
-                if (data.MaskingMod == maskingMod && data.Title == title)
+                if (data.MaskingMod == maskingMod && data.Title == title && data.ButtonLabel == buttonLabel)
                 {
-                    return -1;
+                    return data.AssignedID;
                 }
 
                 if (nextAvailableID <= data.AssignedID)
@@ -593,6 +593,22 @@ namespace CommunityLib
         {
             initialiseMapMaskData();
             return mapMaskData.TryGetValue(new Tuple<ModKernel, int>(maskingMod, id), out data);
+        }
+
+        internal bool TryGetMapMaskData(int id, out MapMaskData data)
+        {
+            initialiseMapMaskData();
+            foreach (KeyValuePair<Tuple<ModKernel, int>, MapMaskData> kvp in mapMaskData)
+            {
+                if (kvp.Key.Item2 == id)
+                {
+                    data = kvp.Value;
+                    return true;
+                }
+            }
+
+            data = null;
+            return false;
         }
 
         internal IEnumerable<MapMaskData> EnumerateMapMaskData

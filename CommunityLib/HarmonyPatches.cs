@@ -516,6 +516,7 @@ namespace CommunityLib
             // Map Mask Manager
             harmony.Patch(original: AccessTools.Method(typeof(MapMaskManager), nameof(MapMaskManager.needSimpleTerrainBackground), new Type[] { typeof(Hex) }), transpiler: new HarmonyMethod(patchType, nameof(MapMaskManager_needSimpleTerrainBackground_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(MapMaskManager), nameof(MapMaskManager.getColor), new Type[] { typeof(Hex) }), transpiler: new HarmonyMethod(patchType, nameof(MapMaskManager_getColor_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(MapMaskManager), nameof(MapMaskManager.toggleMask), new Type[] { typeof(MapMaskManager.maskType) }), transpiler: new HarmonyMethod(patchType, nameof(MapMaskManager_toggleMask_Transpiler)));
 
             // --- MOD OPTIONS --- //
             // God-Sort //
@@ -11812,6 +11813,43 @@ namespace CommunityLib
                 return Color.clear;
             }
             return new Color(0f, 0f, 0f, 0.9f);
+        }
+
+        private static IEnumerable<CodeInstruction> MapMaskManager_toggleMask_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(MapMaskManager_toggleMask_TranspilerBody), new Type[] { typeof(MapMaskManager), typeof(MapMaskManager.maskType) });
+
+            yield return new CodeInstruction(OpCodes.Nop);
+            yield return new CodeInstruction(OpCodes.Ldarg_0);
+            yield return new CodeInstruction(OpCodes.Ldarg_1);
+            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+            yield return new CodeInstruction(OpCodes.Ret);
+
+            Console.WriteLine("CommunityLib: Completed complete function replacement transpiler MapMaskManager_toggleMask_Transpiler");
+        }
+
+        private static void MapMaskManager_toggleMask_TranspilerBody(MapMaskManager masker, MapMaskManager.maskType maskType)
+        {
+            if (masker.mask == maskType)
+            {
+                if (masker.mask == MapMaskManager.maskType.NONE)
+                {
+                    MapMaskManager.maskingMod = null;
+                    masker.mask = MapMaskManager.maskType.NONE;
+                }
+                else if (ModCore.Get().data.TryGetMapMaskData((int)maskType, out MapMaskData data))
+                {
+                    MapMaskManager.maskingMod = data.MaskingMod;
+                    masker.mask = maskType;
+                }
+                else
+                {
+                    MapMaskManager.maskingMod = null;
+                    masker.mask = MapMaskManager.maskType.NONE;
+                }
+            }
         }
 
         // --- Mod Option Patches --- //
