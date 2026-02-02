@@ -450,7 +450,7 @@ namespace CommunityLib
                             hasTargetItem = true;
                             if (selectedUnit is UA selectedAgent && selectedAgent.person != null)
                             {
-                                if (ua.person.level < selectedAgent.person.level)
+                                if (ua.isCommandable() || ua.person.level < selectedAgent.person.level)
                                 {
                                     graphicalUnit.portraitLayer.color = Color.white;
                                     graphicalUnit.backgroundLayer.color = Color.white;
@@ -482,7 +482,7 @@ namespace CommunityLib
                         hasTargetItem = true;
                         if (selectedUnit is UA selectedAgent && selectedAgent.person != null)
                         {
-                            if (ua.person.level < selectedAgent.person.level)
+                            if (ua.isCommandable() || ua.person.level < selectedAgent.person.level)
                             {
                                 graphicalUnit.portraitLayer.color = Color.white;
                                 graphicalUnit.backgroundLayer.color = Color.white;
