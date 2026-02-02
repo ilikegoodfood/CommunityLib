@@ -841,7 +841,7 @@ namespace CommunityLib
                         {
                             if (!hex.location.units.Any(u => u is UA ua && ua.task is Task_PerformChallenge pChallenge && pChallenge.challenge == cache.challenges.FirstOrDefault(ch => ch is Ch_AccessCache)))
                             {
-                                return Color.clear;
+                                return color_light;
                             }
                             else
                             {
@@ -875,7 +875,7 @@ namespace CommunityLib
                             {
                                 if (hex.location.GetChallenges().Any(ch => ch is Ch_AccessVault access && access.valid() && access.validFor(ua)))
                                 {
-                                    return Color.clear;
+                                    return color_light;
                                 }
                                 else
                                 {
