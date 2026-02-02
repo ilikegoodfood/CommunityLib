@@ -1303,7 +1303,7 @@ namespace CommunityLib
             }
             else if (__instance.orderExemplar != null)
             {
-                MapMaskManager.maskingMod = null;
+                
             }
             else if (__instance.setExemplar != null)
             {
