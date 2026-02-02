@@ -5,6 +5,8 @@ using UnityEngine;
 using System.Reflection;
 using System.Linq;
 using Assets.Code.Modding;
+using UnityEngine.UI;
+using UnityEngine.Events;
 
 namespace CommunityLib
 {
@@ -170,7 +172,7 @@ namespace CommunityLib
                 return;
             }
 
-            if (maskID == ModCore.Get().bachelorsMaskID)
+            if (maskID == ModCore.Get().maskid_Bachelors)
             {
                 HashSet<Person> visited = new HashSet<Person>();
                 foreach (Location location in threats.world.map.locations)
@@ -190,7 +192,237 @@ namespace CommunityLib
                     }
                 }
             }
-            else if (maskID == ModCore.Get().mournersMaskID)
+            else if (maskID == ModCore.Get().maskId_carriedItems)
+            {
+                Dictionary<string, Pair<Item, int>> items = new Dictionary<string, Pair<Item, int>>();
+                Dictionary<string, HashSet<Hex>> itemLocations = new Dictionary<string, HashSet<Hex>>();
+                foreach (Location location in threats.world.map.locations)
+                {
+                    Person person = location.person();
+                    string filter = threats.filterField.text.ToLowerInvariant();
+                    if (person != null && !person.isDead)
+                    {
+                        for (int i = 0; i < person.items.Length; i++)
+                        {
+                            Item item = person.items[i];
+                            if (item == null)
+                            {
+                                continue;
+                            }
+
+                            if (!string.IsNullOrWhiteSpace(filter))
+                            {
+                                if (item.getName().Contains(filter) || person.getName().Contains(filter) || location.getName().Contains(filter))
+                                {
+                                    if (items.TryGetValue(item.getName(), out Pair<Item, int> pair))
+                                    {
+                                        pair.Item2 += 1;
+                                    }
+                                    else
+                                    {
+                                        items.Add(item.getName(), new Pair<Item, int>(item, 1));
+                                    }
+
+                                    if (itemLocations.TryGetValue(item.getName(), out HashSet<Hex> hexes))
+                                    {
+                                        hexes.Add(location.hex);
+                                    }
+                                    else
+                                    {
+                                        itemLocations.Add(item.getName(), new HashSet<Hex> { location.hex });
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                if (items.TryGetValue(item.getName(), out Pair<Item, int> pair))
+                                {
+                                    pair.Item2 += 1;
+                                }
+                                else
+                                {
+                                    items.Add(item.getName(), new Pair<Item, int>(item, 1));
+                                }
+
+                                if (itemLocations.TryGetValue(item.getName(), out HashSet<Hex> hexes))
+                                {
+                                    hexes.Add(location.hex);
+                                }
+                                else
+                                {
+                                    itemLocations.Add(item.getName(), new HashSet<Hex> { location.hex });
+                                }
+                            }
+                        }
+                    }
+
+                    foreach (Property property in location.properties)
+                    {
+                        if (!(property is Pr_ItemCache cache))
+                        {
+                            continue;
+                        }
+
+                        for (int i = 0; i < cache.items.Length; i++)
+                        {
+                            Item item = cache.items[i];
+                            if (item == null)
+                            {
+                                continue;
+                            }
+
+                            if (!string.IsNullOrWhiteSpace(filter))
+                            {
+                                if (item.getName().Contains(filter) || location.getName().Contains(filter))
+                                {
+                                    if (items.TryGetValue(item.getName(), out Pair<Item, int> pair))
+                                    {
+                                        pair.Item2 += 1;
+                                    }
+                                    else
+                                    {
+                                        items.Add(item.getName(), new Pair<Item, int>(item, 1));
+                                    }
+
+                                    if (itemLocations.TryGetValue(item.getName(), out HashSet<Hex> hexes))
+                                    {
+                                        hexes.Add(location.hex);
+                                    }
+                                    else
+                                    {
+                                        itemLocations.Add(item.getName(), new HashSet<Hex> { location.hex });
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                if (items.TryGetValue(item.getName(), out Pair<Item, int> pair))
+                                {
+                                    pair.Item2 += 1;
+                                }
+                                else
+                                {
+                                    items.Add(item.getName(), new Pair<Item, int>(item, 1));
+                                }
+
+                                if (itemLocations.TryGetValue(item.getName(), out HashSet<Hex> hexes))
+                                {
+                                    hexes.Add(location.hex);
+                                }
+                                else
+                                {
+                                    itemLocations.Add(item.getName(), new HashSet<Hex> { location.hex });
+                                }
+                            }
+                        }
+                    }
+
+                    foreach (Unit unit in location.units)
+                    {
+                        if (!(unit is UA ua) || ua.person == null)
+                        {
+                            continue;
+                        }
+
+                        person = ua.person;
+                        for (int i = 0; i < person.items.Length; i++)
+                        {
+                            Item item = person.items[i];
+                            if (item == null)
+                            {
+                                continue;
+                            }
+
+                            if (!string.IsNullOrWhiteSpace(filter))
+                            {
+                                if (item.getName().Contains(filter) || person.getName().Contains(filter) || location.getName().Contains(filter))
+                                {
+                                    if (items.TryGetValue(item.getName(), out Pair<Item, int> pair))
+                                    {
+                                        pair.Item2 += 1;
+                                    }
+                                    else
+                                    {
+                                        items.Add(item.getName(), new Pair<Item, int>(item, 1));
+                                    }
+
+                                    if (itemLocations.TryGetValue(item.getName(), out HashSet<Hex> hexes))
+                                    {
+                                        hexes.Add(location.hex);
+                                    }
+                                    else
+                                    {
+                                        itemLocations.Add(item.getName(), new HashSet<Hex> { location.hex });
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                if (items.TryGetValue(item.getName(), out Pair<Item, int> pair))
+                                {
+                                    pair.Item2 += 1;
+                                }
+                                else
+                                {
+                                    items.Add(item.getName(), new Pair<Item, int>(item, 1));
+                                }
+
+                                if (itemLocations.TryGetValue(item.getName(), out HashSet<Hex> hexes))
+                                {
+                                    hexes.Add(location.hex);
+                                }
+                                else
+                                {
+                                    itemLocations.Add(item.getName(), new HashSet<Hex> { location.hex });
+                                }
+                            }
+                        }
+                    }
+                }
+
+                foreach (KeyValuePair<string, Pair<Item, int>> kvp in items)
+                {
+                    GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(threats.master.world.prefabStore.uieHeroViewer, threats.subsetArea);
+                    UIE_HeroViewer viewer = gameObject.GetComponentInChildren<UIE_HeroViewer>();
+                    viewer.setToSale(threats.world, kvp.Value.Item1, kvp.Value.Item2);
+                    if (kvp.Value.Item2 == 1)
+                    {
+                        viewer.task.text = kvp.Value.Item2 + " is carried by a person or stored in a cache";
+                    }
+                    else
+                    {
+                        viewer.task.text = kvp.Value.Item2 + " are carried by people or stored in caches";
+                    }
+
+                    Button button = gameObject.GetComponentInChildren<Button>();
+                    if (button != null)
+                    {
+                        for(int i = 0; i < button.onClick.GetPersistentEventCount(); i++)
+                        {
+                            string methodName = button.onClick.GetPersistentMethodName(i);
+                            if (methodName == nameof(UIE_HeroViewer.bGoTo))
+                            {
+                                button.onClick.SetPersistentListenerState(i, UnityEngine.Events.UnityEventCallState.Off);
+                                break;
+                            }
+                        }
+                        if (itemLocations.TryGetValue(kvp.Key, out HashSet<Hex> hexes))
+                        {
+                            List<Hex> hexList = hexes.ToList();
+                            int index = 0;
+                            button.onClick.AddListener(() => {
+                                GraphicalMap.panTo(hexList[index]);
+                                index = (index + 1) % hexList.Count;
+                            });
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("CommunityLib: Failed to disconnect onClick listener.");
+                    }
+                }
+            }
+            else if (maskID == ModCore.Get().maskId_mourners)
             {
                 HashSet<Person> visited = new HashSet<Person>();
                 List<Tuple<Person, T_Mourning>> exploitableMourning = new List<Tuple<Person, T_Mourning>>();
@@ -276,7 +508,7 @@ namespace CommunityLib
                     }
                 }
             }
-            else if (maskID == ModCore.Get().potentialVendettaMaskID)
+            else if (maskID == ModCore.Get().maskID_potentialVendettas)
             {
                 HashSet<Person> visited = new HashSet<Person>();
                 Dictionary<Tuple<House, House>, List<Tuple<Person, T_Mourning>>> vendettaData = new Dictionary<Tuple<House, House>, List<Tuple<Person, T_Mourning>>>();
@@ -351,7 +583,7 @@ namespace CommunityLib
                 return;
             }
 
-            if (maskID == ModCore.Get().bachelorsMaskID)
+            if (maskID == ModCore.Get().maskid_Bachelors)
             {
                 if (!(hoveredItem is UIE_HeroViewer viewer) || viewer.personExamplar == null)
                 {
@@ -360,7 +592,16 @@ namespace CommunityLib
 
                 threats.targetSettlement = threats.world.map.locations[viewer.personExamplar.rulerOf].settlement;
             }
-            else if (maskID == ModCore.Get().mournersMaskID)
+            else if (maskID == ModCore.Get().maskId_carriedItems)
+            {
+                if (!(hoveredItem is UIE_HeroViewer viewer) || viewer.buyExemplar == null)
+                {
+                    return;
+                }
+
+                threats.targetItem = viewer.buyExemplar;
+            }
+            else if (maskID == ModCore.Get().maskId_mourners)
             {
                 if (!(hoveredItem is UIE_HeroViewer viewer) || viewer.personExamplar == null)
                 {
@@ -376,7 +617,7 @@ namespace CommunityLib
                     threats.targetHero = ua;
                 }
             }
-            else if (maskID == ModCore.Get().potentialVendettaMaskID)
+            else if (maskID == ModCore.Get().maskID_potentialVendettas)
             {
                 if ((hoveredItem is UIE_HeroViewer viewer))
                 {

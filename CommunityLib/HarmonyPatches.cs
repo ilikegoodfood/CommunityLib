@@ -215,7 +215,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(UIE_Button), nameof(UIE_Button.bOnClick), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(UIE_Button_bOnClick_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UIScrollThreats), nameof(UIScrollThreats.checkData), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UIScrollThreats_checkData_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(UIScrollThreats), nameof(UIScrollThreats.Update), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UIScrollThreats_Update_Transpiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(UIE_HeroViewer), nameof(UIE_HeroViewer.bGoTo), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPrefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIE_HeroViewer), nameof(UIE_HeroViewer.bGoTo), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(UIE_HeroViewer_bGoTo_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UIE_TradeRoute), nameof(UIE_TradeRoute.goTo), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPrefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UILeftPrimary), nameof(UILeftPrimary.bFlagButton), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPrefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView1), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPrefix)));
@@ -1289,6 +1289,35 @@ namespace CommunityLib
         public static void UIE_Threat_bGoTo_BulkPrefix()
         {
             MapMaskManager.maskingMod = null;
+        }
+
+        public static void UIE_HeroViewer_bGoTo_Prefix(UIE_HeroViewer __instance)
+        {
+            if (__instance.heroExamplar != null)
+            {
+                MapMaskManager.maskingMod = null;
+            }
+            else if (__instance.houseExemplar != null)
+            {
+                MapMaskManager.maskingMod = null;
+            }
+            else if (__instance.orderExemplar != null)
+            {
+                MapMaskManager.maskingMod = null;
+            }
+            else if (__instance.setExemplar != null)
+            {
+                MapMaskManager.maskingMod = null;
+            }
+            else if (__instance.buyExemplar != null)
+            {
+
+            }
+            else if (__instance.personExamplar != null)
+            {
+                MapMaskManager.maskingMod = null;
+            }
+                
         }
 
         public static IEnumerable<CodeInstruction> UIInputs_hotkeys_transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)

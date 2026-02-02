@@ -40,11 +40,13 @@ namespace CommunityLib
 
         private ConditionalUAENOverrideAI conditionalOverrideAI;
 
-        public int bachelorsMaskID = -1;
+        public int maskid_Bachelors = -1;
 
-        public int mournersMaskID = -1;
+        public int maskId_mourners = -1;
 
-        public int potentialVendettaMaskID = -1;
+        public int maskID_potentialVendettas = -1;
+
+        public int maskId_carriedItems = -1;
 
         private Color color_dark = new Color(0f, 0f, 0f, 0.9f);
 
@@ -280,9 +282,9 @@ namespace CommunityLib
             data.clean();
             tradeRouteManager = new ManagerTradeRoutes(map);
 
-            bachelorsMaskID = -1;
-            mournersMaskID = -1;
-            potentialVendettaMaskID = -1;
+            maskid_Bachelors = -1;
+            maskId_mourners = -1;
+            maskID_potentialVendettas = -1;
         }
 
         public override void beforeMapGen(Map map)
@@ -361,25 +363,27 @@ namespace CommunityLib
 
         public void setupMapMasks()
         {
-            mournersMaskID = tryRegisterMapMask(Get(), "Mourners", "Mourners", "Shows people who are mourning a recent death, and if the death that they are mourning was a murder. Mourner's who's grief cannot be exploited to create a vendetta, a blood feud between houses, are marked in yellow.", false);
+            maskId_carriedItems = tryRegisterMapMask(Get(), "Items Carried", "Items Carried", "Shows items that are carried by people. If one of your agents is selected, items carried that they steal are highlighted in yellow.", false);
 
-            potentialVendettaMaskID = tryRegisterMapMask(Get(), "Potential Vendettas", "Potential Vendettas", "Shows mourners that can be exploited to create a blood feud between houses, grouped by source and target houses.", false);
+            maskId_mourners = tryRegisterMapMask(Get(), "Mourners", "Mourners", "Shows people who are mourning a recent death, and if the death that they are mourning was a murder. Mourner's who's grief cannot be exploited to create a vendetta, a blood feud between houses, are marked in yellow.", false);
+
+            maskID_potentialVendettas = tryRegisterMapMask(Get(), "Potential Vendettas", "Potential Vendettas", "Shows mourners that can be exploited to create a blood feud between houses, grouped by source and target houses.", false);
 
             if (Get().data.tryGetModIntegrationData("Chandalor", out ModIntegrationData intDataChand) && intDataChand.typeDict.TryGetValue("Chandalor", out Type godType) && godType.IsAssignableFrom(map.overmind.god.GetType()))
             {
-                Get().bachelorsMaskID = tryRegisterMapMask(Get(), "Bachelors", "Bachelors", "Rulers that can marry.", false);
-                if (bachelorsMaskID == -1)
+                Get().maskid_Bachelors = tryRegisterMapMask(Get(), "Bachelors", "Bachelors", "Rulers that can marry.", false);
+                if (maskid_Bachelors == -1)
                 {
                     Console.WriteLine($"CommunityLib: Failed to regsiter Bachelors map mask.");
                 }
                 else
                 {
-                    Console.WriteLine($"CommunityLib: Registered Bachelors map mask to id '{bachelorsMaskID}'.");
+                    Console.WriteLine($"CommunityLib: Registered Bachelors map mask to id '{maskid_Bachelors}'.");
                 }
             }
             else
             {
-                bachelorsMaskID = -1;
+                maskid_Bachelors = -1;
             }
         }
 
@@ -391,9 +395,9 @@ namespace CommunityLib
                 return "Unknown Map Mask";
             }
 
-            if(Get().data.TryGetMapMaskData(Get(), maskID, out MapMaskData data))
+            if(Get().tryGetMapMaskData(Get(), maskID, out string title, out _, out _))
             {
-                return data.Title;
+                return title;
             }
 
             return "Unknown Map Mask";
@@ -407,7 +411,7 @@ namespace CommunityLib
                 return false;
             }
 
-            if (Get().data.TryGetMapMaskData(Get(), maskID, out _))
+            if (Get().tryGetMapMaskData(Get(), maskID, out _, out _, out _))
             {
                 return true;
             }
@@ -424,7 +428,7 @@ namespace CommunityLib
             }
 
             UIScrollThreats threats = unit.map.world.ui.uiScrollables.scrollable_threats;
-            if (maskID == bachelorsMaskID)
+            if (maskID == maskid_Bachelors)
             {
                 graphicalUnit.portraitLayer.color = color_dark;
                 graphicalUnit.backgroundLayer.color = color_dark;
@@ -432,7 +436,90 @@ namespace CommunityLib
                 graphicalUnit.borderLayer2.color = color_dark;
                 graphicalUnit.ringLayer.color = color_dark;
             }
-            else if(maskID == mournersMaskID)
+            else if (maskID == maskId_carriedItems)
+            {
+                bool hasTargetItem = false;
+                if (unit is UA ua && ua.person != null)
+                {
+                    Item targetItem = unit.map.world.ui.uiScrollables.scrollable_threats.targetItem;
+                    Unit selectedUnit = GraphicalMap.selectedUnit;
+                    if (targetItem != null)
+                    {
+                        if (ua.person.items.Any(i => i != null && i.getName() == targetItem.getName()))
+                        {
+                            hasTargetItem = true;
+                            if (selectedUnit is UA selectedAgent && selectedAgent.person != null)
+                            {
+                                if (ua.person.level < selectedAgent.person.level)
+                                {
+                                    graphicalUnit.portraitLayer.color = Color.white;
+                                    graphicalUnit.backgroundLayer.color = Color.white;
+                                    graphicalUnit.borderLayer1.color = Color.white;
+                                    graphicalUnit.borderLayer2.color = Color.white;
+                                    graphicalUnit.ringLayer.color = Color.white;
+                                }
+                                else
+                                {
+                                    graphicalUnit.portraitLayer.color = Color.white;
+                                    graphicalUnit.backgroundLayer.color = Color.white;
+                                    graphicalUnit.borderLayer1.color = Color.yellow;
+                                    graphicalUnit.borderLayer2.color = Color.yellow;
+                                    graphicalUnit.ringLayer.color = Color.yellow;
+                                }
+                            }
+                            else
+                            {
+                                graphicalUnit.portraitLayer.color = Color.white;
+                                graphicalUnit.backgroundLayer.color = Color.white;
+                                graphicalUnit.borderLayer1.color = Color.white;
+                                graphicalUnit.borderLayer2.color = Color.white;
+                                graphicalUnit.ringLayer.color = Color.white;
+                            }
+                        }
+                    }
+                    else if (ua.person.items.Any(i => i != null))
+                    {
+                        hasTargetItem = true;
+                        if (selectedUnit is UA selectedAgent && selectedAgent.person != null)
+                        {
+                            if (ua.person.level < selectedAgent.person.level)
+                            {
+                                graphicalUnit.portraitLayer.color = Color.white;
+                                graphicalUnit.backgroundLayer.color = Color.white;
+                                graphicalUnit.borderLayer1.color = Color.white;
+                                graphicalUnit.borderLayer2.color = Color.white;
+                                graphicalUnit.ringLayer.color = Color.white;
+                            }
+                            else
+                            {
+                                graphicalUnit.portraitLayer.color = Color.white;
+                                graphicalUnit.backgroundLayer.color = Color.white;
+                                graphicalUnit.borderLayer1.color = Color.yellow;
+                                graphicalUnit.borderLayer2.color = Color.yellow;
+                                graphicalUnit.ringLayer.color = Color.yellow;
+                            }
+                        }
+                        else
+                        {
+                            graphicalUnit.portraitLayer.color = Color.white;
+                            graphicalUnit.backgroundLayer.color = Color.white;
+                            graphicalUnit.borderLayer1.color = Color.white;
+                            graphicalUnit.borderLayer2.color = Color.white;
+                            graphicalUnit.ringLayer.color = Color.white;
+                        }
+                    }
+                }
+
+                if (!hasTargetItem)
+                {
+                    graphicalUnit.portraitLayer.color = color_dark;
+                    graphicalUnit.backgroundLayer.color = color_dark;
+                    graphicalUnit.borderLayer1.color = color_dark;
+                    graphicalUnit.borderLayer2.color = color_dark;
+                    graphicalUnit.ringLayer.color = color_dark;
+                }
+            }
+            else if (maskID == maskId_mourners)
             {
                 bool isMourner = false;
                 if (unit.person != null)
@@ -514,7 +601,7 @@ namespace CommunityLib
                     graphicalUnit.ringLayer.color = color_dark;
                 }
             }
-            else if (maskID == potentialVendettaMaskID)
+            else if (maskID == maskID_potentialVendettas)
             {
                 bool isMourner = false;
                 if (unit.person != null)
@@ -635,7 +722,7 @@ namespace CommunityLib
             }
 
             UIScrollThreats threats = hex.map.world.ui.uiScrollables.scrollable_threats;
-            if (maskID == bachelorsMaskID)
+            if (maskID == maskid_Bachelors)
             {
                 if (hex.location == null || !(hex.location.settlement is SettlementHuman settlementHuman) || settlementHuman.ruler == null || settlementHuman.ruler.getSpouse() != null || settlementHuman.ruler.traits.Any(t => t is T_Mourning mourning))
                 {
@@ -673,7 +760,112 @@ namespace CommunityLib
                 return color_dark;
                 
             }
-            else if (maskID == mournersMaskID)
+
+            if (maskID == maskId_carriedItems)
+            {
+                if (hex.location == null)
+                {
+                    if (opt_transparentMaskBackgrounds)
+                    {
+                        if (hex.terrain == Hex.terrainType.SEA)
+                        {
+                            return new Color(0.2f, 0.2f, 0.2f, 0.4f);
+                        }
+                        return new Color(0.2f, 0.2f, 0.2f, 0.7f);
+                    }
+
+                    if (hex.terrain == Hex.terrainType.SEA)
+                    {
+                        return Color.clear;
+                    }
+                    return color_dark;
+                }
+
+                Item targetItem = hex.map.world.ui.uiScrollables.scrollable_threats.targetItem;
+                foreach (Property property in hex.location.properties)
+                {
+                    if (!(property is Pr_ItemCache cache))
+                    {
+                        continue;
+                    }
+
+                    if (targetItem != null)
+                    {
+                        if (cache.items.Any(i => i != null && i.getName() == targetItem.getName()))
+                        {
+                            return Color.clear;
+                        }
+                    }
+                    else if (cache.items.Any(i => i != null))
+                    {
+                        return Color.clear;
+                    }
+                }
+
+                Person person = hex.location.person();
+                Unit selectedUnit = GraphicalMap.selectedUnit;
+                if (person != null)
+                {
+                    if (targetItem != null)
+                    {
+                        if (person.items.Any(i => i != null && i.getName() == targetItem.getName()))
+                        {
+                            UA ua = selectedUnit as UA;
+                            if (ua != null && ua.person != null)
+                            {
+                                if (hex.location.GetChallenges().Any(ch => ch is Ch_AccessVault access && access.valid() && access.validFor(ua)))
+                                {
+                                    return Color.clear;
+                                }
+                                else
+                                {
+                                    return new Color(1.0f, 0.9f, 0f, 0.9f);
+                                }
+                            }
+                            else
+                            {
+                                return Color.clear;
+                            }
+                        }
+                    }
+                    else if (person.items.Any(i => i != null))
+                    {
+                        UA ua = selectedUnit as UA;
+                        if (ua != null && ua.person != null)
+                        {
+                            if (hex.location.GetChallenges().Any(ch => ch is Ch_AccessVault access && access.valid() && access.validFor(ua)))
+                            {
+                                return Color.clear;
+                            }
+                            else
+                            {
+                                return new Color(1.0f, 0.9f, 0f, 0.9f);
+                            }
+                        }
+                        else
+                        {
+                            return Color.clear;
+                        }
+                    }
+                }
+
+                if (opt_transparentMaskBackgrounds)
+                {
+                    if (hex.terrain == Hex.terrainType.SEA)
+                    {
+                        return new Color(0.2f, 0.2f, 0.2f, 0.4f);
+                    }
+                    return new Color(0.2f, 0.2f, 0.2f, 0.7f);
+                }
+
+                if (hex.terrain == Hex.terrainType.SEA)
+                {
+                    return Color.clear;
+                }
+                return color_dark;
+            }
+
+            if (maskID == maskId_mourners)
             {
                 if (hex.location == null || !(hex.location.settlement is SettlementHuman settlementHuman) || settlementHuman.ruler == null)
                 {
@@ -780,7 +972,8 @@ namespace CommunityLib
                     return color_dark;
                 }
             }
-            else if (maskID == potentialVendettaMaskID)
+            
+            if (maskID == maskID_potentialVendettas)
             {
                 if (hex.location == null || !(hex.location.settlement is SettlementHuman settlementHuman) || settlementHuman.ruler == null)
                 {
