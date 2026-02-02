@@ -870,10 +870,10 @@ namespace CommunityLib
                     {
                         if (person.items.Any(i => i != null && i.getName() == targetItem.getName()))
                         {
-                            UA ua = selectedUnit as UA;
-                            if (ua != null && ua.person != null)
+                            UA selectedAgent = selectedUnit as UA;
+                            if (selectedAgent != null && selectedAgent.person != null)
                             {
-                                if (hex.location.GetChallenges().Any(ch => ch is Ch_AccessVault access && access.valid() && access.validFor(ua)))
+                                if (hex.location.GetChallenges().Any(ch => ch is Ch_AccessVault access && access.valid() && access.validFor(selectedAgent)))
                                 {
                                     return color_light;
                                 }
@@ -884,7 +884,7 @@ namespace CommunityLib
                             }
                             else
                             {
-                                return Color.clear;
+                                return color_light;
                             }
                         }
                     }
