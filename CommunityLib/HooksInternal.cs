@@ -1128,7 +1128,7 @@ namespace CommunityLib
             return false;
         }
 
-        public bool onPathfinding_AllowSecondPass(Location locA, Unit u, List<int> mapLayers, List<Func<Location[], Location, Unit, List<int>, double>> pathfindingDelegates)
+        public bool onPathfinding_AllowSecondPass(Location locA, Location locB, Unit u, List<int> mapLayers, List<Func<Location[], Location, Unit, List<int>, double>> pathfindingDelegates, List<Func<Location[], Location, Unit, List<int>, List<Location>>> getNeighbourDelegates)
         {
             bool result = false;
 
