@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Assets.Code;
-using UnityEngine;
 
 namespace CommunityLib
 {
@@ -118,6 +117,7 @@ namespace CommunityLib
             }
             return 0.0;
         }
+        #endregion
 
         #region GetNeighbours Delegates
         public static List<Location> delegate_NEIGHBOURS_VANILLA(Location[] currentPath, Location location, Unit u)
@@ -127,11 +127,15 @@ namespace CommunityLib
 
         public static List<Location> delegate_NEIGHBOURS_THEENTRACE(Location[] currentPath, Location location, Unit u)
         {
-            List<Location> neighbours = new List<Location>();
+            if (!(u is UA ua) || !ua.isCommandable())
+            {
+                return null;
+            }
 
+            List<Location> neighbours = new List<Location>();
             if (location.settlement is Set_MinorOther && location.settlement.subs.Any(sub => sub is Sub_Wonder_Doorway))
             {
-                Location tomb = u.map.locations.FirstOrDefault(l => ModCore.Get().checkIsElderTomb(l));
+                Location tomb = location.map.locations.FirstOrDefault(l => l != null && ModCore.Get().checkIsElderTomb(l));
 
                 if (tomb != null)
                 {
@@ -150,7 +154,7 @@ namespace CommunityLib
 
         public static Location[] getPathTo(Location locA, Location locB, Unit u = null, bool safeMove = false)
         {
-            return getPathTo(locA, locB, null, u, safeMove);
+            return getPathTo(locA, locB, null, null, u, safeMove);
         }
 
         public static Location[] getPathTo(Location locA, Location locB, List<Func<Location[], Location, Unit, double>> pathfindingDelegates, Unit u = null, bool safeMove = false)
@@ -175,7 +179,7 @@ namespace CommunityLib
 
             if (getNeighboursDelegates == null)
             {
-                getNeighboursDelegates = new List<Func<Location[], Location, Unit, List<int>, List<Location>>> { delegate_NEIGHBOURS_VANILLA };
+                getNeighboursDelegates = new List<Func<Location[], Location, Unit, List<Location>>> { delegate_NEIGHBOURS_VANILLA };
             }
             else if (!getNeighboursDelegates.Contains(delegate_NEIGHBOURS_VANILLA))
             {
@@ -191,9 +195,9 @@ namespace CommunityLib
                         pathfindingDelegates.Add(delegate_FAVOURABLE_WIND);
                     }
 
-                    if (!getNeighboursDelegates.Contains(delegate_NEIGHBOURS_VANILLA))
+                    if (!getNeighboursDelegates.Contains(delegate_NEIGHBOURS_THEENTRACE))
                     {
-                        getNeighboursDelegates.Add(delegate_NEIGHBOURS_VANILLA);
+                        getNeighboursDelegates.Add(delegate_NEIGHBOURS_THEENTRACE);
                     }
                 }
 
@@ -269,9 +273,13 @@ namespace CommunityLib
                     neighbours.Clear();
                     foreach (var getNeighbourDelegate in getNeighboursDelegates)
                     {
-                        foreach(Location neighbour in getNeighbourDelegate(pair.Value, pair.Value[pair.Value.Length - 1], u, expectedMapLayers))
+                        List<Location> neighbourResukts = getNeighbourDelegate(pair.Value, pair.Value[pair.Value.Length - 1], u);
+                        if (neighbourResukts != null)
                         {
-                            neighbours.Add(neighbour);
+                            foreach (Location neighbour in neighbourResukts)
+                            {
+                                neighbours.Add(neighbour);
+                            }
                         }
                     }
 
@@ -340,17 +348,7 @@ namespace CommunityLib
 
         public static Location[] getPathTo(Location loc, SocialGroup sg, Unit u, bool safeMove = false)
         {
-            return getPathTo(loc, sg, u, null, safeMove);
-        }
-
-        public static Location[] getPathTo(Location loc, SocialGroup sg, Unit u, List<Func<Location[], Location, Unit, double>> pathfindingDelegates, bool safeMove = false)
-        {
-            return getPathTo(loc, sg, u, null, safeMove);
-        }
-
-        public static Location[] getPathTo(Location loc, SocialGroup sg, Unit u, bool safeMove = false)
-        {
-            return getPathTo(loc, sg, u, null, safeMove);
+            return getPathTo(loc, sg, u, null, null, safeMove);
         }
 
         public static Location[] getPathTo(Location loc, SocialGroup sg, Unit u, List<Func<Location[], Location, Unit, double>> pathfindingDelegates, bool safeMove = false)
@@ -460,15 +458,17 @@ namespace CommunityLib
                 int i = 0;
                 while (i < 5 * loc.map.locations.Count && paths.Count > 0)
                 {
-                    i++;
-
                     ValuePriorityPair<Location[], double> pair = paths.DequeueWithPriority();
                     neighbours.Clear();
                     foreach (var getNeighbourDelegate in getNeighboursDelegates)
                     {
-                        foreach (Location neighbour in getNeighbourDelegate(pair.Value, pair.Value[pair.Value.Length - 1], u))
+                        List<Location> neighbourResukts = getNeighbourDelegate(pair.Value, pair.Value[pair.Value.Length - 1], u);
+                        if (neighbourResukts != null)
                         {
-                            neighbours.Add(neighbour);
+                            foreach (Location neighbour in neighbourResukts)
+                            {
+                                neighbours.Add(neighbour);
+                            }
                         }
                     }
 
@@ -554,13 +554,12 @@ namespace CommunityLib
                     break;
                 }
             }
-
             return null;
         }
 
         public static Location[] getPathTo(Location loc, Func<Location[], Location, Unit, bool> destinationValidityDelegate, Unit u, bool safeMove)
         {
-            return getPathTo(loc, destinationValidityDelegate, null, u, safeMove);
+            return getPathTo(loc, destinationValidityDelegate, null, null, u, safeMove);
         }
 
         public static Location[] getPathTo(Location loc, Func<Location[], Location, Unit, bool> destinationValidityDelegate, List<Func<Location[], Location, Unit, double>> pathfindingDelegates, Unit u, bool safeMove)
@@ -673,9 +672,13 @@ namespace CommunityLib
                     neighbours.Clear();
                     foreach (var getNeighbourDelegate in getNeighboursDelegates)
                     {
-                        foreach (Location neighbour in getNeighbourDelegate(pair.Value, pair.Value[pair.Value.Length - 1], u))
+                        List<Location> neighbourResukts = getNeighbourDelegate(pair.Value, pair.Value[pair.Value.Length - 1], u);
+                        if (neighbourResukts != null)
                         {
-                            neighbours.Add(neighbour);
+                            foreach (Location neighbour in neighbourResukts)
+                            {
+                                neighbours.Add(neighbour);
+                            }
                         }
                     }
 
