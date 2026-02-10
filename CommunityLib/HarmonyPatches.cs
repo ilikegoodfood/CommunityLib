@@ -3578,6 +3578,11 @@ namespace CommunityLib
             {
                 return;
             }
+
+            if (dwarves.getCapital() == null)
+            {
+                return;
+            }
             //Console.WriteLine($"CommunityLib: '{__instance.getName()}' is Dwarven settlement of '{dwarves.getName()}'.");
 
             int pop = __instance.population;
