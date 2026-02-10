@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Assets.Code;
-using UnityEngine;
 
 namespace CommunityLib
 {
@@ -159,11 +158,15 @@ namespace CommunityLib
 
         public static List<Location> delegate_NEIGHBOURS_THEENTRACE(Location[] currentPath, Location location, Unit u, List<int> targetMapLayers)
         {
-            List<Location> neighbours = new List<Location>();
+            if (!(u is UA ua) || !ua.isCommandable())
+            {
+                return null;
+            }
 
+            List<Location> neighbours = new List<Location>();
             if (location.settlement is Set_MinorOther && location.settlement.subs.Any(sub => sub is Sub_Wonder_Doorway))
             {
-                Location tomb = u.map.locations.FirstOrDefault(l => ModCore.Get().checkIsElderTomb(l));
+                Location tomb = location.map.locations.FirstOrDefault(l => l != null && ModCore.Get().checkIsElderTomb(l));
 
                 if (tomb != null)
                 {
@@ -182,7 +185,7 @@ namespace CommunityLib
 
         public static Location[] getPathTo(Location locA, Location locB, Unit u = null, bool safeMove = false)
         {
-            return getPathTo(locA, locB, null, u, safeMove);
+            return getPathTo(locA, locB, null, null, u, safeMove);
         }
 
         public static Location[] getPathTo(Location locA, Location locB, List<Func<Location[], Location, Unit, List<int>, double>> pathfindingDelegates, Unit u = null, bool safeMove = false)
@@ -236,9 +239,9 @@ namespace CommunityLib
                         pathfindingDelegates.Add(delegate_FAVOURABLE_WIND);
                     }
 
-                    if (!getNeighboursDelegates.Contains(delegate_NEIGHBOURS_VANILLA))
+                    if (!getNeighboursDelegates.Contains(delegate_NEIGHBOURS_THEENTRACE))
                     {
-                        getNeighboursDelegates.Add(delegate_NEIGHBOURS_VANILLA);
+                        getNeighboursDelegates.Add(delegate_NEIGHBOURS_THEENTRACE);
                     }
                 }
 
@@ -314,9 +317,13 @@ namespace CommunityLib
                     neighbours.Clear();
                     foreach (var getNeighbourDelegate in getNeighboursDelegates)
                     {
-                        foreach(Location neighbour in getNeighbourDelegate(pair.Value, pair.Value[pair.Value.Length - 1], u, expectedMapLayers))
+                        List<Location> neighbourResukts = getNeighbourDelegate(pair.Value, pair.Value[pair.Value.Length - 1], u, expectedMapLayers);
+                        if (neighbourResukts != null)
                         {
-                            neighbours.Add(neighbour);
+                            foreach (Location neighbour in neighbourResukts)
+                            {
+                                neighbours.Add(neighbour);
+                            }
                         }
                     }
 
@@ -385,24 +392,24 @@ namespace CommunityLib
 
         public static Location[] getPathTo(Location loc, SocialGroup sg, Unit u, bool safeMove = false)
         {
-            return getPathTo(loc, sg, u, null, safeMove);
+            return getPathTo(loc, sg, u, null, null, null, safeMove);
         }
 
         public static Location[] getPathTo(Location loc, SocialGroup sg, Unit u, int targetMapLayer, bool safeMove = false)
         {
             if (targetMapLayer < 0)
             {
-                return getPathTo(loc, sg, u, null, safeMove);
+                return getPathTo(loc, sg, u, null, null, null, safeMove);
             }
             else
             {
-                return getPathTo(loc, sg, u, new List<int> { targetMapLayer }, safeMove);
+                return getPathTo(loc, sg, u, null, null, new List<int> { targetMapLayer }, safeMove);
             }
         }
 
         public static Location[] getPathTo(Location loc, SocialGroup sg, Unit u, List<int> targetMapLayers, bool safeMove = false)
         {
-            return getPathTo(loc, sg, u, null, targetMapLayers, safeMove);
+            return getPathTo(loc, sg, u, null, null, targetMapLayers, safeMove);
         }
 
         public static Location[] getPathTo(Location loc, SocialGroup sg, Unit u, List<Func<Location[], Location, Unit, List<int>, double>> pathfindingDelegates, List<int> targetMapLayers, bool safeMove = false)
@@ -534,9 +541,13 @@ namespace CommunityLib
                     neighbours.Clear();
                     foreach (var getNeighbourDelegate in getNeighboursDelegates)
                     {
-                        foreach (Location neighbour in getNeighbourDelegate(pair.Value, pair.Value[pair.Value.Length - 1], u, expectedMapLayers))
+                        List<Location> neighbourResukts = getNeighbourDelegate(pair.Value, pair.Value[pair.Value.Length - 1], u, expectedMapLayers);
+                        if (neighbourResukts != null)
                         {
-                            neighbours.Add(neighbour);
+                            foreach (Location neighbour in neighbourResukts)
+                            {
+                                neighbours.Add(neighbour);
+                            }
                         }
                     }
 
@@ -628,12 +639,12 @@ namespace CommunityLib
 
         public static Location[] getPathTo(Location loc, Func<Location[], Location, Unit, List<int>, bool> destinationValidityDelegate, Unit u, List<int> targetMapLayers, bool safeMove)
         {
-            return getPathTo(loc, destinationValidityDelegate, null, u, targetMapLayers, safeMove);
+            return getPathTo(loc, destinationValidityDelegate, null, null, u, targetMapLayers, safeMove);
         }
 
         public static Location[] getPathTo(Location loc, Func<Location[], Location, Unit, List<int>, bool> destinationValidityDelegate, List<Func<Location[], Location, Unit, List<int>, double>> pathfindingDelegates, Unit u, List<int> targetMapLayers, bool safeMove)
         {
-            return getPathTo(loc, destinationValidityDelegate, pathfindingDelegates, null, targetMapLayers, safeMove);
+            return getPathTo(loc, destinationValidityDelegate, pathfindingDelegates, null, u, targetMapLayers, safeMove);
         }
 
         public static Location[] getPathTo(Location loc, Func<Location[], Location, Unit, List<int>, bool> destinationValidityDelegate, List<Func<Location[], Location, Unit, List<int>, double>> pathfindingDelegates, List<Func<Location[], Location, Unit, List<int>, List<Location>>> getNeighboursDelegates, Unit u, List<int> targetMapLayers, bool safeMove)
@@ -754,9 +765,13 @@ namespace CommunityLib
                     neighbours.Clear();
                     foreach (var getNeighbourDelegate in getNeighboursDelegates)
                     {
-                        foreach (Location neighbour in getNeighbourDelegate(pair.Value, pair.Value[pair.Value.Length - 1], u, targetMapLayers))
+                        List<Location> neighbourResukts = getNeighbourDelegate(pair.Value, pair.Value[pair.Value.Length - 1], u, targetMapLayers);
+                        if (neighbourResukts != null)
                         {
-                            neighbours.Add(neighbour);
+                            foreach (Location neighbour in neighbourResukts)
+                            {
+                                neighbours.Add(neighbour);
+                            }
                         }
                     }
 

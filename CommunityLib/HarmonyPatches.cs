@@ -3579,17 +3579,20 @@ namespace CommunityLib
                 return;
             }
 
+            //Console.WriteLine($"CommunityLib: '{__instance.getName()}' is Dwarven settlement of '{dwarves.getName()}'.");
+
             if (dwarves.getCapital() == null)
             {
                 return;
             }
-            //Console.WriteLine($"CommunityLib: '{__instance.getName()}' is Dwarven settlement of '{dwarves.getName()}'.");
+
+            //Console.WriteLine($"CommunityLib: '{dwarves.getName()}' has a valid capital.");
 
             int pop = __instance.population;
 
             if ((pop < __instance.getMaxPopulation() * 0.7 && pop < __instance.foodLastTurn) || pop <= 20)
             {
-                //Console.WriteLine($"CommunityLib: Population is insufficient for epansion.");
+                Console.WriteLine($"CommunityLib: Population is insufficient for epansion.");
                 return;
             }
 
@@ -3663,7 +3666,7 @@ namespace CommunityLib
 
                         //Console.WriteLine($"CommunityLib: Got valid expansion location '{neighbour.getName()}'");
                         int score = 40;
-                        Location[] path = Pathfinding.getPathTo(neighbour, dwarves.getCapital(), new List<Func<Location[], Location, Unit, List<int>, double>> { Pathfinding.delegate_DWARVEN_EXPANSION });
+                        Location[] path = Pathfinding.getPathTo(neighbour, dwarves.getCapital(), new List<Func<Location[], Location, Unit, List<int>, double>> { Pathfinding.delegate_DWARVEN_EXPANSION }, null, null, false);
 
                         if (path == null || path.Length < 2)
                         {
@@ -3739,6 +3742,8 @@ namespace CommunityLib
 
             Task_BuildSettlement task = new Task_BuildSettlement(targetLocation, isFortress, 1);
             settlers.task = task;
+
+            //Console.WriteLine($"CommunityLib: Finished Procesing turnTick for '{__instance.getName()}'.");
         }
 
         private static IEnumerable<CodeInstruction> Set_DwarvenSettlement_getSecurityInner_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
@@ -7969,103 +7974,48 @@ namespace CommunityLib
         }
 
         // Pathfinding Modifications
-        private static IEnumerable<CodeInstruction> Map_getPathTo_Location_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        private static IEnumerable<CodeInstruction> Map_getPathTo_Location_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
-            MethodInfo MI_TranspilerBody_Intercept = AccessTools.Method(patchType, nameof(Map_getPathTo_Location_TranspilerBody_Intercept), new Type[] { typeof(Location), typeof(Location), typeof(Unit), typeof(bool) });
+            MethodInfo MI_TranspilerBody_Intercept = AccessTools.Method(patchType, nameof(Map_getPathTo_Location_TranspilerBody), new Type[] { typeof(Location), typeof(Location), typeof(Unit), typeof(bool) });
 
-            List<CodeInstruction> instructionList = codeInstructions.ToList();
+            yield return new CodeInstruction(OpCodes.Nop);
+            yield return new CodeInstruction(OpCodes.Ldarg_1);
+            yield return new CodeInstruction(OpCodes.Ldarg_2);
+            yield return new CodeInstruction(OpCodes.Ldarg_3);
+            yield return new CodeInstruction(OpCodes.Ldarg_S, 4);
+            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Intercept);
+            yield return new CodeInstruction(OpCodes.Ret);
 
-            Label end = ilg.DefineLabel();
-            instructionList[instructionList.Count - 1].labels.Add(end);
-
-            int targetIndex = 1;
-            for (int i = 0; i < instructionList.Count; i++)
-            {
-                if (targetIndex > 0)
-                {
-                    if (targetIndex == 1)
-                    {
-                        if (i == 0)
-                        {
-                            yield return new CodeInstruction(OpCodes.Nop);
-                            yield return new CodeInstruction(OpCodes.Ldarg_1);
-                            yield return new CodeInstruction(OpCodes.Ldarg_2);
-                            yield return new CodeInstruction(OpCodes.Ldarg_3);
-                            yield return new CodeInstruction(OpCodes.Ldarg_S, 4);
-                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Intercept);
-                            yield return new CodeInstruction(OpCodes.Br_S, end);
-
-                            targetIndex = 0;
-                        }
-                    }
-                }
-
-
-                yield return instructionList[i];
-            }
-
-            Console.WriteLine("CommunityLib: Completed Map_getPathTo_Location_Transpiler");
-            if (targetIndex != 0)
-            {
-                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
-            }
+            Console.WriteLine("CommunityLib: Completed complete function replacement transpiler Map_getPathTo_Location_Transpiler");
         }
 
-        private static Location[] Map_getPathTo_Location_TranspilerBody_Intercept(Location locA, Location locB, Unit u, bool safeMove)
+        private static Location[] Map_getPathTo_Location_TranspilerBody(Location locA, Location locB, Unit u, bool safeMove)
         {
-            return Pathfinding.getPathTo(locA, locB, u ,safeMove);
+            return Pathfinding.getPathTo(locA, locB, u, safeMove);
         }
 
-        private static IEnumerable<CodeInstruction> Map_getPathTo_SocialGroup_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        private static IEnumerable<CodeInstruction> Map_getPathTo_SocialGroup_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
-            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Map_getPathTo_SocialGroup_TranspilerBody_Intercept), new Type[] { typeof(Location), typeof(SocialGroup), typeof(Unit), typeof(bool) });
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Map_getPathTo_SocialGroup_TranspilerBody), new Type[] { typeof(Location), typeof(SocialGroup), typeof(Unit), typeof(bool) });
 
-            List<CodeInstruction> instructionList = codeInstructions.ToList();
+            yield return new CodeInstruction(OpCodes.Nop);
+            yield return new CodeInstruction(OpCodes.Ldarg_1);
+            yield return new CodeInstruction(OpCodes.Ldarg_2);
+            yield return new CodeInstruction(OpCodes.Ldarg_3);
+            yield return new CodeInstruction(OpCodes.Ldarg_S, 4);
+            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+            yield return new CodeInstruction(OpCodes.Ret);
 
-            Label end = ilg.DefineLabel();
-            instructionList[instructionList.Count - 1].labels.Add(end);
-
-            int targetIndex = 1;
-            for (int i = 0; i < instructionList.Count; i++)
-            {
-                if (targetIndex > 0)
-                {
-                    if (targetIndex == 1)
-                    {
-                        if (i == 0)
-                        {
-                            yield return new CodeInstruction(OpCodes.Nop);
-                            yield return new CodeInstruction(OpCodes.Ldarg_1);
-                            yield return new CodeInstruction(OpCodes.Ldarg_2);
-                            yield return new CodeInstruction(OpCodes.Ldarg_3);
-                            yield return new CodeInstruction(OpCodes.Ldarg_S, 4);
-                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
-                            yield return new CodeInstruction(OpCodes.Br_S, end);
-
-                            targetIndex = 0;
-                        }
-                    }
-                }
-
-                yield return instructionList[i];
-            }
-
-            Console.WriteLine("CommunityLib: Completed Map_getPathTo_SocialGroup_Transpiler");
-            if (targetIndex != 0)
-            {
-                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
-            }
+            Console.WriteLine("CommunityLib: Completed complete function replacement transpiler Map_getPathTo_SocialGroup_Transpiler");
         }
 
-        private static Location[] Map_getPathTo_SocialGroup_TranspilerBody_Intercept(Location loc, SocialGroup sg, Unit u, bool safeMove)
+        private static Location[] Map_getPathTo_SocialGroup_TranspilerBody(Location loc, SocialGroup sg, Unit u, bool safeMove)
         {
             return Pathfinding.getPathTo(loc, sg, u, safeMove);
         }
 
         public static IEnumerable<CodeInstruction> Location_getNeighbours_transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
         {
-            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Map_getPathTo_SocialGroup_TranspilerBody_Intercept), new Type[] { typeof(Location), typeof(SocialGroup), typeof(Unit), typeof(bool) });
-
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
             Label continueLabel = ilg.DefineLabel();
@@ -8077,13 +8027,6 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (i > 4)
-                        {
-                            targetIndex++;
-                        }
-                    }
-                    else if (targetIndex == 2)
-                    {
                         if (instructionList[i].opcode == OpCodes.Ldloc_2)
                         {
                             yield return new CodeInstruction(OpCodes.Ldloc_2);
@@ -8094,7 +8037,7 @@ namespace CommunityLib
                             targetIndex++;
                         }
                     }
-                    else if (targetIndex == 3)
+                    else if (targetIndex == 2)
                     {
                         if (instructionList[i].opcode == OpCodes.Ldloca_S)
                         {
@@ -8104,7 +8047,6 @@ namespace CommunityLib
                         }
                     }
                 }
-
 
                 yield return instructionList[i];
             }
@@ -8137,7 +8079,7 @@ namespace CommunityLib
                         theEntrance = true;
                     }
 
-                    if (u.homeLocation != -1 && u.homeLocation < u.map.locations.Count && loc == __instance.locations[u.homeLocation])
+                    if (loc.index == u.homeLocation)
                     {
                         theEntrance = true;
                     }
@@ -10660,7 +10602,7 @@ namespace CommunityLib
 
         private static bool destinationValidityDelegate_Cthonians(Location[] path, Location locA, Unit u, List<int> targetLayers)
         {
-            if (locA.settlement is SettlementHuman settlementHuman)
+            if (locA?.settlement is SettlementHuman settlementHuman)
             {
                 if (settlementHuman.shadow < 0.75 && (!(locA.soc is Society society) || !society.isDark() && !society.isOphanimControlled && !society.isDarkEmpire))
                 {
