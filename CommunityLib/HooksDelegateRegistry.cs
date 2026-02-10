@@ -116,9 +116,10 @@ namespace CommunityLib
         }
 
         // onPopulatingPathfindingDelegates
-        private List<Action<Location, Unit, List<Func<Location[], Location, Unit, double>>>> _delegate_onPopulatingPathfindingDelegates = new List<Action<Location, Unit, List<Func<Location[], Location, Unit, double>>>>();
-        public List<Action<Location, Unit, List<Func<Location[], Location, Unit, double>>>> Delegate_onPopulatingPathfindingDelegates { get { return _delegate_onPopulatingPathfindingDelegates; } }
-        public bool RegisterHook_onPopulatingPathfindingDelegates(Action<Location, Unit, List<Func<Location[], Location, Unit, double>>> hook)
+
+        private List<Action<Location, Location, Unit, List<Func<Location[], Location, Unit, double>>, List<Func<Location[], Location, Unit, List<Location>>>>> _delegate_onPopulatingPathfindingDelegates = new List<Action<Location, Location, Unit, List<Func<Location[], Location, Unit, double>>, List<Func<Location[], Location, Unit, List<Location>>>>>();
+        public List<Action<Location, Location, Unit, List<Func<Location[], Location, Unit, double>>, List<Func<Location[], Location, Unit, List<Location>>>>> Delegate_onPopulatingPathfindingDelegates { get { return _delegate_onPopulatingPathfindingDelegates; } }
+        public bool RegisterHook_onPopulatingPathfindingDelegates(Action<Location, Location, Unit, List<int>, List<Func<Location[], Location, Unit, List<int>, double>>, List<Func<Location[], Location, Unit, List<int>, List<Location>>>> hook)
         {
             if (hook == null)
                 return false;
@@ -129,9 +130,10 @@ namespace CommunityLib
         }
 
         // onPathfinding_AllowSecondPass
-        private List<Func<Location, Unit, List<Func<Location[], Location, Unit, double>>, bool>> _delegate_onPathfinding_AllowSecondPass = new List<Func<Location, Unit, List<Func<Location[], Location, Unit, double>>, bool>>();
-        public List<Func<Location, Unit, List<Func<Location[], Location, Unit, double>>, bool>> Delegate_onPathfinding_AllowSecondPass { get { return _delegate_onPathfinding_AllowSecondPass; } }
-        public bool RegisterHook_onPathfinding_AllowSecondPass(Func<Location, Unit, List<Func<Location[], Location, Unit, double>>, bool> hook)
+        
+        private List<Func<Location, Location, Unit, List<Func<Location[], Location, Unit, double>>, List<Func<Location[], Location, Unit, List<Location>>>, bool>> _delegate_onPathfinding_AllowSecondPass = new List<Func<Location, Location, Unit, List<Func<Location[], Location, Unit, double>>, List<Func<Location[], Location, Unit, List<Location>>>, bool>>();
+        public List<Func<Location, Location, Unit, List<Func<Location[], Location, Unit, double>>, List<Func<Location[], Location, Unit, List<Location>>>, bool>> Delegate_onPathfinding_AllowSecondPass { get { return _delegate_onPathfinding_AllowSecondPass; } }
+        public bool RegisterHook_onPathfinding_AllowSecondPass(Func<Location, Location, Unit, List<Func<Location[], Location, Unit, double>>, List<Func<Location[], Location, Unit, List<Location>>>, bool> hook)
         {
             if (hook == null)
                 return false;

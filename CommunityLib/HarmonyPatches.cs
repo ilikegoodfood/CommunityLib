@@ -6337,7 +6337,6 @@ namespace CommunityLib
         private static IEnumerable<CodeInstruction> Map_getPathTo_Location_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
         {
             MethodInfo MI_TranspilerBody_Intercept = AccessTools.Method(patchType, nameof(Map_getPathTo_Location_TranspilerBody_Intercept), new Type[] { typeof(Location), typeof(Location), typeof(Unit), typeof(bool) });
-            MethodInfo MI_TranspilerBody_EntranceWonder = AccessTools.Method(patchType, nameof(Map_getPathTo_TranspilerBody_EntranceWonder), new Type[] { typeof(Location), typeof(Unit) });
 
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
@@ -6353,8 +6352,6 @@ namespace CommunityLib
                     {
                         if (i == 0)
                         {
-                            targetIndex++;
-
                             yield return new CodeInstruction(OpCodes.Nop);
                             yield return new CodeInstruction(OpCodes.Ldarg_1);
                             yield return new CodeInstruction(OpCodes.Ldarg_2);
@@ -6362,18 +6359,8 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Ldarg_S, 4);
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Intercept);
                             yield return new CodeInstruction(OpCodes.Br_S, end);
-                        }
-                    }
-                    else if (targetIndex == 2)
-                    {
-                        if (instructionList[i].opcode == OpCodes.Call && instructionList[i + 1].opcode == OpCodes.Callvirt)
-                        {
+
                             targetIndex = 0;
-
-                            yield return new CodeInstruction(OpCodes.Ldarg_3);
-                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_EntranceWonder);
-
-                            i++;
                         }
                     }
                 }
@@ -6397,7 +6384,6 @@ namespace CommunityLib
         private static IEnumerable<CodeInstruction> Map_getPathTo_SocialGroup_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
         {
             MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Map_getPathTo_SocialGroup_TranspilerBody_Intercept), new Type[] { typeof(Location), typeof(SocialGroup), typeof(Unit), typeof(bool) });
-            MethodInfo MI_TranspilerBody_EntranceWonder = AccessTools.Method(patchType, nameof(Map_getPathTo_TranspilerBody_EntranceWonder), new Type[] { typeof(Location), typeof(Unit) });
 
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
@@ -6421,22 +6407,10 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
                             yield return new CodeInstruction(OpCodes.Br_S, end);
 
-                            targetIndex++;
-                        }
-                    }
-                    else if (targetIndex == 2)
-                    {
-                        if (instructionList[i].opcode == OpCodes.Call && instructionList[i + 1].opcode == OpCodes.Callvirt)
-                        {
-                            yield return new CodeInstruction(OpCodes.Ldarg_3);
-                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_EntranceWonder);
-
                             targetIndex = 0;
-                            i++;
                         }
                     }
                 }
-
 
                 yield return instructionList[i];
             }
@@ -6453,38 +6427,9 @@ namespace CommunityLib
             return Pathfinding.getPathTo(loc, sg, u, safeMove);
         }
 
-        private static List<Location> Map_getPathTo_TranspilerBody_EntranceWonder(Location loc, Unit u)
-        {
-            List<Location> result = loc.getNeighbours();
-
-            if (u != null && u.isCommandable() && u is UA ua)
-            {
-                if (loc.settlement is Set_MinorOther && loc.settlement.subs.Any(sub => sub is Sub_Wonder_Doorway))
-                {
-                    Location tomb = u.map.locations.FirstOrDefault(l => ModCore.Get().checkIsElderTomb(l));
-                    if (tomb != null && !result.Contains(tomb))
-                    {
-                        result.Add(tomb);
-                    }
-
-                    if (u.homeLocation != -1)
-                    {
-                        Location home = u.map.locations[u.homeLocation];
-                        if (!result.Contains(home))
-                        {
-                            result.Add(home);
-                        }
-                    }
-                }
-            }
-
-            return result;
-        }
-
         public static IEnumerable<CodeInstruction> Location_getNeighbours_transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
         {
             MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Map_getPathTo_SocialGroup_TranspilerBody_Intercept), new Type[] { typeof(Location), typeof(SocialGroup), typeof(Unit), typeof(bool) });
-            MethodInfo MI_TranspilerBody_EntranceWonder = AccessTools.Method(patchType, nameof(Map_getPathTo_TranspilerBody_EntranceWonder), new Type[] { typeof(Location), typeof(Unit) });
 
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
@@ -6552,13 +6497,12 @@ namespace CommunityLib
                 if (u.location.settlement is Set_MinorOther && u.location.settlement.subs.Any(sub => sub is Sub_Wonder_Doorway))
                 {
                     Location tomb = u.map.locations.FirstOrDefault(l => ModCore.Get().checkIsElderTomb(l));
-
                     if (tomb != null && loc == tomb)
                     {
                         theEntrance = true;
                     }
 
-                    if (u.homeLocation != -1 && loc == __instance.locations[u.homeLocation])
+                    if (u.homeLocation != -1 && u.homeLocation < u.map.locations.Count && loc == __instance.locations[u.homeLocation])
                     {
                         theEntrance = true;
                     }
