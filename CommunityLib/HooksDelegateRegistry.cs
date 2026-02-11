@@ -119,7 +119,7 @@ namespace CommunityLib
 
         private List<Action<Location, Location, Unit, List<Func<Location[], Location, Unit, double>>, List<Func<Location[], Location, Unit, List<Location>>>>> _delegate_onPopulatingPathfindingDelegates = new List<Action<Location, Location, Unit, List<Func<Location[], Location, Unit, double>>, List<Func<Location[], Location, Unit, List<Location>>>>>();
         public List<Action<Location, Location, Unit, List<Func<Location[], Location, Unit, double>>, List<Func<Location[], Location, Unit, List<Location>>>>> Delegate_onPopulatingPathfindingDelegates { get { return _delegate_onPopulatingPathfindingDelegates; } }
-        public bool RegisterHook_onPopulatingPathfindingDelegates(Action<Location, Location, Unit, List<int>, List<Func<Location[], Location, Unit, List<int>, double>>, List<Func<Location[], Location, Unit, List<int>, List<Location>>>> hook)
+        public bool RegisterHook_onPopulatingPathfindingDelegates(Action<Location, Location, Unit, List<Func<Location[], Location, Unit, double>>, List<Func<Location[], Location, Unit, List<Location>>>> hook)
         {
             if (hook == null)
                 return false;
