@@ -319,7 +319,7 @@ namespace CommunityLib
 
         public override void afterMapGenBeforeHistorical(Map map)
         {
-            Get().data.initialiseHidenThoughts();
+            Get().data.initializeHiddenThoughts();
         }
 
         public override void afterLoading(Map map)
@@ -332,10 +332,7 @@ namespace CommunityLib
                 Get().data = new ModData();
             }
             Get().data.onLoad(map);
-            if (HookRegistry == null)
-            {
-                HookRegistry = new HooksDelegateRegistry();
-            }
+            HookRegistry = new HooksDelegateRegistry();
             getModKernels(map);
             HarmonyPatches_Conditional.PatchingInit(map);
 
@@ -1094,6 +1091,18 @@ namespace CommunityLib
         {
             foreach (ModKernel kernel in map.mods)
             {
+                // Populate HooksRegistry._delegates_apliesGraphicalHexUpdate
+                Type type = kernel.GetType();
+                while (type != typeof(ModKernel))
+                {
+                    if (AccessTools.DeclaredMethod(type, nameof(ModKernel.onGraphicalHexUpdated), new Type[] { typeof(GraphicalHex) }) != null)
+                    {
+                        Get().HookRegistry.RegisterHook_appliesGraphicalHexUpdate(kernel, null);
+                    }
+                    type = type.BaseType;
+                }
+
+                // Gather reflection data for all mods which the Community Library needs to account for or interact with.
                 switch (kernel.GetType().Namespace)
                 {
                     case "ProductionGod":

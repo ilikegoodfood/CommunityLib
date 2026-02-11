@@ -32,6 +32,8 @@ namespace CommunityLib
 
         private Dictionary<PopupEvent, Tuple<EventData, EventContext, string>> eventPopupData;
 
+        private HashSet<ModKernel> modsThatApplyGraphicalHexUpdates;
+
         private Dictionary<Tuple<ModKernel, int>, MapMaskData> mapMaskData;
         #endregion
 
@@ -67,6 +69,8 @@ namespace CommunityLib
             initializeModCultureData();
             initializeReviveAgentCreationFunctions();
             initializeEventPopupData();
+            initializeMapMaskData();
+            initializeModsThatApplyGraphicalHexUpdate(map);
 
             // Colections
             initializeLocusTypes();
@@ -111,7 +115,7 @@ namespace CommunityLib
             }
         }
 
-        internal void initialiseMapMaskData()
+        internal void initializeMapMaskData()
         {
             if (mapMaskData == null)
             {
@@ -152,6 +156,19 @@ namespace CommunityLib
                         mapMaskData.Add(new Tuple<ModKernel, int>(null, assignedID), new MapMaskData(null, title, buttonLabel, "", assignedID, true));
                     }
                 }
+            }
+        }
+
+        private void initializeModsThatApplyGraphicalHexUpdate(Map map)
+        {
+            if (modsThatApplyGraphicalHexUpdates == null)
+            {
+                modsThatApplyGraphicalHexUpdates = new HashSet<ModKernel>();
+            }
+
+            foreach (ModKernel mod in map.mods)
+            {
+
             }
         }
 
@@ -224,7 +241,7 @@ namespace CommunityLib
             }
         }
 
-        internal void initialiseHidenThoughts()
+        internal void initializeHiddenThoughts()
         {
             if (hiddenThoughts == null)
             {
@@ -246,6 +263,7 @@ namespace CommunityLib
             reviveAgentCreationFunctons?.Clear();
             eventPopupData?.Clear();
             mapMaskData?.Clear();
+            modsThatApplyGraphicalHexUpdates?.Clear();
 
             // Collections
             locusTypes?.Clear();
@@ -332,6 +350,9 @@ namespace CommunityLib
             initializeModIntegrationData();
             initializeModCultureData();
             initializeReviveAgentCreationFunctions();
+            initializeEventPopupData();
+            initializeMapMaskData();
+            initializeModsThatApplyGraphicalHexUpdate(map);
 
             // Collections
             initializeLocusTypes();
@@ -340,7 +361,7 @@ namespace CommunityLib
             initializeVampireTypes();
 
             initializeInfluenceGain();
-            initialiseHidenThoughts();
+            initializeHiddenThoughts();
 
             // Broken Maker Handling
             _acceleratedTime = map.acceleratedTime;
@@ -515,7 +536,7 @@ namespace CommunityLib
                 return -1;
             }
 
-            initialiseMapMaskData();
+            initializeMapMaskData();
 
             int nextAvailableID = -1;
             foreach (MapMaskData data in mapMaskData.Values)
@@ -543,7 +564,7 @@ namespace CommunityLib
 
         internal bool TryGetMapMaskData(ModKernel maskingMod, int id, out MapMaskData data)
         {
-            initialiseMapMaskData();
+            initializeMapMaskData();
             return mapMaskData.TryGetValue(new Tuple<ModKernel, int>(maskingMod, id), out data);
         }
 

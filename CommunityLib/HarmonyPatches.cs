@@ -1,4 +1,5 @@
 ﻿using Assets.Code;
+using Assets.Code.Modding;
 using DuloGames.UI;
 using FullSerializer;
 using HarmonyLib;
@@ -99,6 +100,9 @@ namespace CommunityLib
             }
 
             // --- HOOKS --- //
+            // GraphicalHex update hook
+            harmony.Patch(original: AccessTools.Method(typeof(GraphicalHex), nameof(GraphicalHex.checkData), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(GraphicalHex_checkData_Transpiler)));
+
             // Graphical unit updated hook
             harmony.Patch(original: AccessTools.Method(typeof(GraphicalUnit), nameof(GraphicalUnit.checkData), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(GraphicalUnit_checkData_Postfix)));
 
@@ -479,6 +483,66 @@ namespace CommunityLib
 
             // Template Patch
             // harmony.Patch(original: AccessTools.Method(typeof(), nameof(), new Type[] { typeof() }), postfix: new HarmonyMethod(patchType, nameof()));
+        }
+
+        // Graphical Hex updated hooks
+        private static IEnumerable<CodeInstruction> GraphicalHex_checkData_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            int startIndex = -1;
+            for (int i = instructionList.Count - 1; i >= 0; i--)
+            {
+                if (instructionList[i].opcode == OpCodes.Nop && instructionList[i+1].opcode == OpCodes.Ldarg_0)
+                {
+                    // The first Nop Ldarg_0 frm the end is the loading of the enumerator.
+                    startIndex = i;
+                    break;
+                }
+            }
+
+            if (startIndex == -1)
+            {
+                Console.WriteLine("CommunityLib: ERROR: GraphicalHex_checkData_Transpiler failed to locate start index");
+            }
+
+            int targetIndex = 1;
+            bool returnCode = true;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (i == startIndex)
+                        {
+                            yield return instructionList[i];
+                            returnCode = false;
+                            targetIndex++;
+                        }
+                    }
+                    if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ret)
+                        {
+                            // This is the first instruction after the end of the foreach mod in mods loop.
+                            returnCode = true;
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
+            }
+
+            Console.WriteLine("CommunityLib: Completed GraphicalHex_checkData_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
         }
 
         // Graphical unit updated hook
@@ -962,7 +1026,7 @@ namespace CommunityLib
 
         private static void UIMapLastList_checkData_TranspilerBody(UIMapMaskList maskList)
         {
-            ModCore.Get().data.initialiseMapMaskData();
+            ModCore.Get().data.initializeMapMaskData();
 
             foreach (object obj in maskList.listContent)
             {
