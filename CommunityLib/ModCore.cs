@@ -361,6 +361,7 @@ namespace CommunityLib
             updateSaveGameVersion(map);
         }
 
+        #region MapMasks
         public void setupMapMasks()
         {
             maskId_carriedItems = tryRegisterMapMask(Get(), "Items Carried", "Items Carried", "Shows items that are carried by people. If one of your agents is selected, items carried that they steal are highlighted in yellow.", false);
@@ -1089,11 +1090,24 @@ namespace CommunityLib
 
             return color_dark;
         }
+        #endregion
 
         private void getModKernels (Map map)
         {
             foreach (ModKernel kernel in map.mods)
             {
+                Type t = kernel.GetType();
+                Type[] onGraphicalHexUpdatedParameters = new Type[] { typeof(GraphicalHex) };
+                while (t != typeof(ModKernel))
+                {
+                    if (AccessTools.DeclaredMethod(t, nameof(ModKernel.onGraphicalHexUpdated), onGraphicalHexUpdatedParameters) != null)
+                    {
+                        Get().HookRegistry.RegisterHook_appliesGraphicalHexUpdate(kernel, null);
+                        break;
+                    }
+                    t = t.BaseType;
+                }
+
                 switch (kernel.GetType().Namespace)
                 {
                     case "ProductionGod":
@@ -3757,6 +3771,7 @@ namespace CommunityLib
         public bool checkIsVampire(Unit unit) => data.isVampireType(unit);
         #endregion
 
+        #region Helper Functions
         public void registerReviveAgentCreationFunction(Func<Person, Location, UA> func) => data.addReviveAgentCreationFunction(func);
 
         public bool checkIsProphetPlayerAligned(HolyOrder order)
@@ -3815,6 +3830,32 @@ namespace CommunityLib
             }
 
             return Math.Max(0, travelTime);
+        }
+
+        public void CheckAllGraphicalHexData()
+        {
+            foreach (GraphicalHex graphicalHex in GraphicalMap.loaded)
+            {
+                graphicalHex.checkData();
+            }
+
+            foreach (ModKernel mod in HarmonyPatches.EnumerateModsThatApplyGraphicalHexUpdate(World.staticMap))
+            {
+                foreach (GraphicalHex graphicalHex in GraphicalMap.loaded)
+                {
+                    mod.onGraphicalHexUpdated(graphicalHex);
+                }
+            }
+        }
+
+        public void CheckGraphicalHexData(GraphicalHex graphicalHex)
+        {
+            graphicalHex.checkData();
+
+            foreach (ModKernel mod in HarmonyPatches.EnumerateModsThatApplyGraphicalHexUpdate(World.staticMap))
+            {
+                mod.onGraphicalHexUpdated(graphicalHex);
+            }
         }
 
         public void forceShipwrecks()
@@ -3906,5 +3947,6 @@ namespace CommunityLib
 
             return true;
         }
+        #endregion
     }
 }
