@@ -16,9 +16,7 @@ namespace CommunityLib
             get => values[index];
             set
             {
-                var key = keys[index];
                 values[index] = value;
-                keyIndexMap[key] = index;
             }
         }
 
@@ -85,9 +83,9 @@ namespace CommunityLib
             return values.Contains(value);
         }
 
-        public bool Contains(KeyValuePair<TKey, TValue> kvp)
+        public bool Contains(KeyValuePair<TKey, TValue> item)
         {
-            return keyIndexMap.TryGetValue(kvp.Key, out int index) && EqualityComparer<TValue>.Default.Equals(kvp.Value, values[index]);
+            return keyIndexMap.TryGetValue(item.Key, out int index) && EqualityComparer<TValue>.Default.Equals(item.Value, values[index]);
         }
 
         public bool TryGetValue(TKey key, out TValue value)
@@ -131,13 +129,13 @@ namespace CommunityLib
             return false;
         }
 
-        public bool Remove(KeyValuePair<TKey, TValue> kvp)
+        public bool Remove(KeyValuePair<TKey, TValue> item)
         {
-            if (keyIndexMap.TryGetValue(kvp.Key, out int index) && EqualityComparer<TValue>.Default.Equals(kvp.Value, values[index]))
+            if (keyIndexMap.TryGetValue(item.Key, out int index) && EqualityComparer<TValue>.Default.Equals(item.Value, values[index]))
             {
                 keys.RemoveAt(index);
                 values.RemoveAt(index);
-                keyIndexMap.Remove(kvp.Key);
+                keyIndexMap.Remove(item.Key);
                 UpdateIndexes(index);
                 return true;
             }
@@ -219,9 +217,8 @@ namespace CommunityLib
         }
 
         // Get the keys as a collection
-        public ICollection<TKey> Keys => keys;
-
-        public ICollection<TValue> Values => values;
+        public ICollection<TKey> Keys => keys.AsReadOnly();
+        public ICollection<TValue> Values => values.AsReadOnly();
 
         // Enumerator for looping
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
@@ -237,4 +234,5 @@ namespace CommunityLib
             return GetEnumerator();
         }
     }
+
 }

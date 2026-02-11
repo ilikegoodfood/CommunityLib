@@ -62,8 +62,28 @@ namespace CommunityLib
             return true;
         }
 
+        // appliesGraphicalHexUpdate
+        private OrderedDictionary<ModKernel, Func<Map, bool>> _delegate_appliesGraphicalHexUpdate = new OrderedDictionary<ModKernel, Func<Map, bool>>();
+        public OrderedDictionary<ModKernel, Func<Map, bool>> Delegate_appliesGraphicalHexUpdate { get { return _delegate_appliesGraphicalHexUpdate; } }
+        public bool RegisterHook_appliesGraphicalHexUpdate(ModKernel modKernel, Func<Map, bool> hook)
+        {
+            if (modKernel == null)
+                return false;
+            if (_delegate_appliesGraphicalHexUpdate.TryGetValue(modKernel, out Func<Map, bool> storedHook))
+            {
+                if (storedHook == null)
+                {
+                    _delegate_appliesGraphicalHexUpdate[modKernel] = hook;
+                    return true;
+                }
+                return false;
+            }
+            _delegate_appliesGraphicalHexUpdate.Add(modKernel, hook);
+            return true;
+        }
+
         // onGraphicalUnitUpdated
-        
+
         private List<Action<GraphicalUnit>> _delegate_onGraphicalUnitUpdated = new List<Action<GraphicalUnit>>();
         public List<Action<GraphicalUnit>> Delegate_onGraphicalUnitUpdated { get { return _delegate_onGraphicalUnitUpdated; } }
         public bool RegisterHook_onGraphicalUnitUpdated(Action<GraphicalUnit> hook)

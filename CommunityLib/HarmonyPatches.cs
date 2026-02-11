@@ -1,4 +1,5 @@
 ﻿using Assets.Code;
+using Assets.Code.Modding;
 using HarmonyLib;
 using System;
 using System.Collections.Generic;
@@ -116,6 +117,13 @@ namespace CommunityLib
             }
 
             // --- HOOKS --- //
+            // GraphicalHex checkData hook
+            harmony.Patch(original: AccessTools.Method(typeof(GraphicalMap), nameof(GraphicalMap.checkData), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(GraphicalMap_graphicalHexData_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(GraphicalMap), nameof(GraphicalMap.panTo), new Type[] { typeof(Hex) }), prefix: new HarmonyMethod(patchType, nameof(GraphicalMap_panTo_Hex_Prefix)), postfix: new HarmonyMethod(patchType, nameof(GraphicalMap_panTo_BulkPostfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(GraphicalMap), nameof(GraphicalMap.panTo), new Type[] { typeof(int), typeof(int), typeof(int) }), prefix: new HarmonyMethod(patchType, nameof(GraphicalMap_panTo_Coordinate_Prefix)), postfix: new HarmonyMethod(patchType, nameof(GraphicalMap_panTo_BulkPostfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(GraphicalMap), nameof(GraphicalMap.panTo), new Type[] { typeof(Unit) }), prefix: new HarmonyMethod(patchType, nameof(GraphicalMap_panTo_Unit_Prefix)), postfix: new HarmonyMethod(patchType, nameof(GraphicalMap_panTo_BulkPostfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(GraphicalHex), nameof(GraphicalHex.checkData), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(GraphicalHex_checkData_Transpiler)));
+
             // Graphical unit updated hook
             harmony.Patch(original: AccessTools.Method(typeof(GraphicalUnit), nameof(GraphicalUnit.checkData), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(GraphicalUnit_checkData_Postfix)));
 
@@ -547,6 +555,161 @@ namespace CommunityLib
 
             // Template Patch
             // harmony.Patch(original: AccessTools.Method(typeof(), nameof(), new Type[] { typeof() }), postfix: new HarmonyMethod(patchType, nameof()));
+        }
+
+        // Graphical Hex checkData hook
+        private static void GraphicalMap_graphicalHexData_Postfix()
+        {
+            foreach (ModKernel mod in EnumerateModsThatApplyGraphicalHexUpdate(World.staticMap))
+            {
+                foreach (GraphicalHex graphicalHex in GraphicalMap.loaded)
+                {
+                    mod.onGraphicalHexUpdated(graphicalHex);
+                }
+            }
+        }
+
+        private static void GraphicalMap_panTo_Hex_Prefix(Hex hex, out bool __state)
+        {
+            __state = GraphicalMap.z != hex.z;
+        }
+
+        private static void GraphicalMap_panTo_BulkPostfix(bool __state)
+        {
+            if (__state)
+            {
+                foreach (ModKernel mod in EnumerateModsThatApplyGraphicalHexUpdate(World.staticMap))
+                {
+                    foreach (GraphicalHex graphicalHex in GraphicalMap.loaded)
+                    {
+                        mod.onGraphicalHexUpdated(graphicalHex);
+                    }
+                }
+            }
+        }
+
+        private static void GraphicalMap_panTo_Coordinate_Prefix(int panToZ, out bool __state)
+        {
+            __state = panToZ != GraphicalMap.z;
+        }
+
+        private static void GraphicalMap_panTo_Unit_Prefix(Unit unit, out bool __state)
+        {
+            __state = unit.location.hex.z != GraphicalMap.z;
+        }
+
+        private static IEnumerable<CodeInstruction> PrefabStore_GetGraphicalHex_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(PrefabStore_GetGraphicalHex_TranspilerBody), new Type[] { typeof(GraphicalHex) });
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Stloc_2)
+                        {
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                            yield return new CodeInstruction(OpCodes.Ldloc_1);
+                            yield return new CodeInstruction(OpCodes.Ret);
+
+                            targetIndex = 0;
+                            break;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed PrefabStore_GetGraphicalHex_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static void PrefabStore_GetGraphicalHex_TranspilerBody(GraphicalHex graphicalHex)
+        {
+            foreach(ModKernel mod in EnumerateModsThatApplyGraphicalHexUpdate(graphicalHex.world.map))
+            {
+                mod.onGraphicalHexUpdated(graphicalHex);
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> GraphicalHex_checkData_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            int startIndex = -1;
+            for (int i = instructionList.Count - 1; i >= 0; i--)
+            {
+                if (instructionList[i].opcode == OpCodes.Nop && instructionList[i+1].opcode == OpCodes.Ldarg_0)
+                {
+                    // The first Nop LDarg_0 from the end is the enumeration loading for the mod list, which we are removing.
+                    startIndex = i;
+                    break;
+                }
+            }
+
+            if (startIndex == -1)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler GraphicalHex_checkData_Transpiler failed to find start index");
+            }
+
+            int targetIndex = 1;
+            bool returnCode = true;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (i == startIndex)
+                        {
+                            yield return instructionList[i];
+
+                            returnCode = false;
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ret)
+                        {
+                            // Ret is the first instruction line after the foreach mod in mod list loop.
+                            returnCode = true;
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
+            }
+
+            Console.WriteLine("CommunityLib: Completed GraphicalHex_checkData_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        public static IEnumerable<ModKernel> EnumerateModsThatApplyGraphicalHexUpdate(Map map)
+        {
+            foreach (KeyValuePair<ModKernel, Func<Map, bool>> kvp in ModCore.Get().HookRegistry.Delegate_appliesGraphicalHexUpdate)
+            {
+                if (kvp.Value == null || kvp.Value(map))
+                {
+                    yield return kvp.Key;
+                }
+            }
         }
 
         // Graphical unit updated hook
