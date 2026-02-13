@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Text;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -363,6 +364,9 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.getPathTo), new Type[] { typeof(Location), typeof(Location), typeof(Unit), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(Map_getPathTo_Location_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.getPathTo), new Type[] { typeof(Location), typeof(SocialGroup), typeof(Unit), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(Map_getPathTo_SocialGroup_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Location), nameof(Location.getNeighbours), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Location_getNeighbours_transpiler)));
+
+            // God Fixes
+            harmony.Patch(original: AccessTools.Method(typeof(God_Mammon), nameof(God_Mammon.eat), new Type[] { typeof(int), typeof(int) }), prefix: new HarmonyMethod(patchType, nameof(God_Mammon_eat_Prefix)), postfix: new HarmonyMethod(patchType, nameof(God_Mammon_eat_Postfix)));
 
             // Power Fixes
             harmony.Patch(original: AccessTools.Method(typeof(P_Vinerva_BlackForest), nameof(P_Vinerva_BlackForest.validTarget), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(P_Vinerva_validTarget_Location_BulkTranspiler)));
@@ -6641,6 +6645,65 @@ namespace CommunityLib
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        // God Fixes
+        private static void God_Mammon_eat_Prefix(God_Mammon __instance, out bool __state)
+        {
+            __state = __instance.awake;
+        }
+
+        private static void God_Mammon_eat_Postfix(God_Mammon __instance, int amount, int mode, bool __state)
+        {
+            if(__state)
+            {
+                amount = (int)Math.Ceiling(amount * __instance.map.param.power_mountainCallProgress);
+                double tilesOfExpansion = amount * __instance.map.param.god_mammonTurnsOfExpansionPerAmountEaten * __instance.map.difficultyMult_shrinkWithDifficulty;
+                __instance.wealth.tilesOfExpansion += tilesOfExpansion;
+                StringBuilder message = new StringBuilder();
+                if (__instance.wealth.charge < 100.0)
+                {
+                    int heal = (int)(amount * __instance.map.param.god_mammonMaxHealPerEat);
+                    __instance.wealth.charge = Math.Min(100.0, __instance.wealth.charge + heal);
+
+                    if (mode == 0)
+                    {
+                        message.Append("\n\nThe added bounty they carried has replenished The Mountain's Wealth by ");
+                    }
+                    else if (mode == 1)
+                    {
+                        message.Append("\n\nThe souls lost to mortal sin have added to The Mountain's Wealth by ");
+                    }
+                    message.Append(heal.ToString());
+                    message.Append("% (max 100%). ");
+                }
+
+                if (mode == 0)
+                {
+                    int menace = (int)(__instance.map.param.god_mammonMenaceGainPerCrowdPoint * amount * __instance.map.difficultyMult_growWithDifficulty);
+                    int profile = (int)(__instance.map.param.god_mammonProfileGainPerCrowdPoint * amount * __instance.map.difficultyMult_growWithDifficulty);
+
+                    __instance.wealth.menace += menace;
+                    __instance.wealth.profile += profile;
+
+                    message.Append(menace.ToString());
+                    message.Append(" <b>menace</b> and ");
+                    message.Append(profile.ToString());
+                    message.Append(" <b>profile</b> has been added to The Mountain (Now at ");
+                    message.Append(((int)__instance.wealth.menace).ToString());
+                    message.Append(" <b>menace</b> and ");
+                    message.Append(((int)__instance.wealth.profile).ToString());
+                    message.Append(" <b>profile</b>). Menace and profile decay by ");
+                    message.Append(((int)(100.0 * __instance.map.param.god_mammonWealthMenaceDecayMult)).ToString());
+                    message.Append("% per turn (more menace/profile is therefore lost per turn at high menace/profile values)");
+
+                    __instance.map.addUnifiedMessage(__instance.mountain, null, "Crowd Eaten", $"A crowd of people have reached the mountain and gone inside, to be devoured by Mammon.\n\nYou may use powers to expand Mammon's Influence along trade routes for up to {(int)__instance.wealth.tilesOfExpansion} more locations. {message.ToString()}", UnifiedMessage.messageType.MAMMON_EATS, false);
+                }
+                else if (mode == 1)
+                {
+                    __instance.map.addUnifiedMessage(__instance.mountain, null, "Sin Eaten", $"A society has lost its humanity, descending into carnage and bloodshed over the lust for gold and material wealth.\n\nYou may use powers to expand Mammon's Influence along trade routes for up to {(int)__instance.wealth.tilesOfExpansion} more locations. {message.ToString()}", UnifiedMessage.messageType.MAMMON_EATS, false);
+                }
             }
         }
 
