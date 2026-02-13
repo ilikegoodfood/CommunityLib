@@ -143,6 +143,21 @@ namespace CommunityLib
         }
         #endregion
 
+        #region Mod-Specific Pathfinding Delegates
+        public static double delegate_LIVINGVOID_AVOIDVOID(Location[] currentPath, Location location, Unit u, List<int> targetMapLayers)
+        {
+            if (u != null && !u.isCommandable() && u != u.map.awarenessManager.chosenOne)
+            {
+                if (u.map.tempMap[location.hex.x][location.hex.y] < -999f)
+                {
+                    return -10000.0;
+                }
+            }
+
+            return 0.0;
+        }
+        #endregion
+
         #region Destination Validity Delegates
         public static bool delegate_VALID_LAYERBOUND(Location[] currentPath, Location location, Unit u, List<int> targetMapLayers)
         {
@@ -871,6 +886,7 @@ namespace CommunityLib
             return null;
         }
 
+        #region Trade Route Pathfnding Delegates
         public static double delegate_TRADE_VANILLA(Location[] currentPath, Location location, List<int> targetMapLayers)
         {
             double result = 0.0;
@@ -1059,7 +1075,21 @@ namespace CommunityLib
 
             return 0.0;
         }
+        #endregion
 
+        #region Mod-Specific TRade Route Pathfinding Delegates
+        public static double delegate_TRADE_LIVINGVOID_AVOIDVOID(Location[] currentPath, Location location, List<int> targetMapLayers)
+        {
+            if (location.map.tempMap[location.hex.x][location.hex.y] < -999f)
+            {
+                return -10000.0;
+            }
+
+            return 0.0;
+        }
+        #endregion
+
+        #region Trade Route Validity Delegates
         public static bool delegate_TRADEVALID_NODUPLICATES(Location[] currentPath, Location location, List<int> targetMapLayers)
         {
             return !location.map.tradeManager.routes.Any(r => (r.start() == currentPath[0] && r.end() == location) || (r.start() == location && r.end() == currentPath[0]));
@@ -1074,6 +1104,7 @@ namespace CommunityLib
         {
             return targetMapLayers == null || targetMapLayers.Count == 0 || targetMapLayers.Contains(location.hex.z);
         }
+        #endregion
 
         public static Location[] getTradeRouteTo(Location start, Location end)
         {
