@@ -38,6 +38,21 @@ namespace CommunityLib
             registry.RegisterHook_onPopulatingTradeRoutePathfindingDelegates(onPopulatingTradeRoutePathfindingDelegates);
             registry.RegisterHook_interceptAgentAI(interceptAgentAI);
             registry.RegisterHook_onAgentAI_EndOfProcess(onAgentAI_EndOfProcess);
+
+            if (ModCore.Get().data.tryGetModIntegrationData("LivingVoid", out ModIntegrationData intDataVoid))
+            {
+                registry.RegisterHook_appliesGraphicalHexUpdate(intDataVoid.kernel, LivingVoid_appliesGraphicalHexUpdate);
+            }
+        }
+
+        public bool LivingVoid_appliesGraphicalHexUpdate(Map map)
+        {
+            if (!ModCore.Get().data.tryGetModIntegrationData("LivingVoid", out ModIntegrationData intDataVoid) || intDataVoid.typeDict.TryGetValue("LivingVoid", out Type godType) || godType == null)
+            {
+                return false;
+            }
+
+            return map.overmind.god.GetType() == godType && map.overmind.god.awake;
         }
 
         public List<WonderData> onMapGen_PlaceWonders()
@@ -1105,11 +1120,28 @@ namespace CommunityLib
             return false;
         }
 
+        public void onPopulatingPathfindingDelegates(Location loc, Unit u, List<Func<Location[], Location, Unit, double>> pathfindingDelegates, List<Func<Location[], Location, Unit, List<Location>>> getNeighbourDelegates)
+        {
+
+            if (loc.map.overmind.god.awake && ModCore.Get().data.tryGetModIntegrationData("LivingVoid", out ModIntegrationData intDataVoid) && intDataVoid.typeDict.TryGetValue("LivingVoid", out Type godType) && godType != null && godType.IsAssignableFrom(loc.map.overmind.god.GetType()))
+            {
+                if (u != null && !u.isCommandable() && u != u.map.awarenessManager.chosenOne)
+                {
+                    pathfindingDelegates.Add(Pathfinding.delegate_LIVINGVOID_AVOIDVOID);
+                }
+            }
+        }
+
         public void onPopulatingTradeRoutePathfindingDelegates(Location start, List<Func<Location[], Location, double>> pathfindingDelegates, List<Func<Location[], Location, bool>> destinationValidityDelegates)
         {
             if (ModCore.opt_denseTradeRoutes && DensifyingTradeRoutes)
             {
                 destinationValidityDelegates.Remove(Pathfinding.delegate_TRADEVALID_NODUPLICATES);
+            }
+
+            if (start.map.overmind.god.awake && ModCore.Get().data.tryGetModIntegrationData("LivingVoid", out ModIntegrationData intDataVoid) && intDataVoid.typeDict.TryGetValue("LivingVoid", out Type godType) && godType != null && godType.IsAssignableFrom(start.map.overmind.god.GetType()))
+            {
+                pathfindingDelegates.Add(Pathfinding.delegate_TRADE_LIVINGVOID_AVOIDVOID);
             }
         }
 

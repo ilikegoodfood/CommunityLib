@@ -119,6 +119,21 @@ namespace CommunityLib
         }
         #endregion
 
+        #region Mod-Specific Pathfinding Delegates
+        public static double delegate_LIVINGVOID_AVOIDVOID(Location[] currentPath, Location location, Unit u)
+        {
+            if (u != null && !u.isCommandable() && u != u.map.awarenessManager.chosenOne)
+            {
+                if (u.map.tempMap[location.hex.x][location.hex.y] < -999f)
+                {
+                    return -10000.0;
+                }
+            }
+
+            return 0.0;
+        }
+        #endregion
+
         #region GetNeighbours Delegates
         public static List<Location> delegate_NEIGHBOURS_VANILLA(Location[] currentPath, Location location, Unit u)
         {
@@ -778,6 +793,7 @@ namespace CommunityLib
             return null;
         }
 
+        #region Trade Route Pathfnding Delegates
         public static double delegate_TRADE_VANILLA(Location[] currentPath, Location location)
         {
             double result = 0.0;
@@ -926,6 +942,21 @@ namespace CommunityLib
             return result;
         }
 
+        #endregion
+
+        #region Mod-Specific TRade Route Pathfinding Delegates
+        public static double delegate_TRADE_LIVINGVOID_AVOIDVOID(Location[] currentPath, Location location)
+        {
+            if (location.map.tempMap[location.hex.x][location.hex.y] < -999f)
+            {
+                return -10000.0;
+            }
+
+            return 0.0;
+        }
+        #endregion
+
+        #region Trade Route Validity Delegates
         public static bool delegate_TRADEVALID_NODUPLICATES(Location[] currentPath, Location location)
         {
             return !location.map.tradeManager.routes.Any(r => (r.start() == currentPath[0] && r.end() == location) || (r.start() == location && r.end() == currentPath[0]));
@@ -935,6 +966,7 @@ namespace CommunityLib
         {
             return ModCore.Get().tradeRouteManager.routeData.indexGroups.Any(ig => ig.Contains(location.index) && !ig.Contains(currentPath[0].index));
         }
+        #endregion
 
         public static Location[] getTradeRouteTo(Location start, Location end)
         {
