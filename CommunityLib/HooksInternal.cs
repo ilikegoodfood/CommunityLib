@@ -51,7 +51,7 @@ namespace CommunityLib
 
         public bool LivingVoid_appliesGraphicalHexUpdate(Map map)
         {
-            if (!ModCore.Get().data.tryGetModIntegrationData("LivingVoid", out ModIntegrationData intDataVoid) || intDataVoid.typeDict.TryGetValue("LivingVoid", out Type godType) || godType == null)
+            if (!ModCore.Get().data.tryGetModIntegrationData("LivingVoid", out ModIntegrationData intDataVoid) || !intDataVoid.typeDict.TryGetValue("LivingVoid", out Type godType) || godType == null)
             {
                 return false;
             }
