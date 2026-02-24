@@ -2690,7 +2690,7 @@ namespace CommunityLib
                     {
                         if (instructionList[i].opcode == OpCodes.Ldstr && (string)instructionList[i].operand == " caused by your actions, and has taken ")
                         {
-                            instructionList[i].operand = "often caused by your actions, and has taken ";
+                            instructionList[i].operand = " often caused by your actions, and has taken ";
                             targetIndex = 0;
                         }
                     }
