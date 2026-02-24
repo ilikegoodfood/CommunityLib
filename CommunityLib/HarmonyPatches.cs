@@ -261,6 +261,8 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Curse_WastingSouls), nameof(Curse_WastingSouls.turnTick), new Type[] { typeof(Person) }), transpiler: new HarmonyMethod(patchType, nameof(Curse_WastingSoul_turnTick_Transpiler)));
 
             // Challenge fixes //
+            // Base Challenge
+            harmony.Patch(original: AccessTools.Method(typeof(Challenge), nameof(Challenge.applyDangerDamage), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Challenge_applyDangerDamage_Transpiler)));
             // Cultivate Vinerva's Gifts
             harmony.Patch(original: AccessTools.Method(typeof(Ch_H_CultivateHerGifts), nameof(Ch_H_CultivateHerGifts.validFor), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_H_CultivateHerGifts_validFor_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Ch_H_CultivateHerGifts), nameof(Ch_H_CultivateHerGifts.complete), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_H_CultivateHerGifts_complete_Transpiler)));
@@ -317,6 +319,8 @@ namespace CommunityLib
 
             // Local Action Fixes
             harmony.Patch(original: AccessTools.Method(typeof(Assets.Code.Action), nameof(Assets.Code.Action.valid), new Type[] { typeof(Person), typeof(SettlementHuman) }), new HarmonyMethod(patchType, nameof(Action_valid_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(Act_FundOutpost), nameof(Act_FundOutpost.getUtility), new Type[] { typeof(SettlementHuman), typeof(Person), typeof(List<ReasonMsg>) }), postfix: new HarmonyMethod(patchType, nameof(Act_FundOutpost_getUtility_Postfix)));
+
             // Power Fixes
             harmony.Patch(original: AccessTools.Method(typeof(P_Opha_TakeControl), nameof(P_Opha_TakeControl.getDesc), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(P_Opha_TakeControl_getDesc_Postfix)));
 
@@ -2329,6 +2333,35 @@ namespace CommunityLib
         }
 
         // CHallenge Fixes
+        private static IEnumerable<CodeInstruction> Challenge_applyDangerDamage_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldstr && (string)instructionList[i].operand == " caused by your actions, and has taken ")
+                        {
+                            instructionList[i].operand = "often caused by your actions, and has taken ";
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Challenge_applyDangerDamage_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
         private static IEnumerable<CodeInstruction> Ch_H_CultivateHerGifts_validFor_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
@@ -3292,6 +3325,48 @@ namespace CommunityLib
                     {
                         __result = false;
                     }
+                }
+            }
+        }
+
+        public static void Act_FundOutpost_getUtility_Postfix(Act_FundOutpost __instance, ref double __result, SettlementHuman hum, Person ruler, List<ReasonMsg> reasons)
+        {
+            Society society = hum.location.soc as Society;
+            if (society == null)
+            {
+                return;
+            }
+
+            if (society.isAtWar())
+            {
+                foreach (Location neighbour in __instance.outpost.location.getNeighbours())
+                {
+                    if (neighbour.soc == null || neighbour.soc == society)
+                    {
+                        continue;
+                    }
+
+                    if (society.getRel(neighbour.soc).state == DipRel.dipState.war)
+                    {
+                        __result -= 100.0;
+                        reasons?.Add(new ReasonMsg("The outpost is vulnerable to my enemies", -100.0));
+                        return;
+                    }
+                }
+            }
+
+            foreach (Unit u in __instance.outpost.location.units)
+            {
+                if (!(u is UM um) || um.society == null)
+                {
+                    continue;
+                }
+
+                if (um.society == __instance.map.soc_dark || society.getRel(um.society).state == DipRel.dipState.war || society.getRel(um.society).state == DipRel.dipState.hostile)
+                {
+                    __result -= 100.0;
+                    reasons?.Add(new ReasonMsg("The outpost is vulnerable to my enemies", -100.0));
+                    return;
                 }
             }
         }
