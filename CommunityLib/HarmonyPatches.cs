@@ -259,6 +259,9 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.placeTomb), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Map_placeTomb_transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.processPeople), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Map_processPeople_Transpiler)));
 
+            // Population Manager Fixes
+            harmony.Patch(original: AccessTools.Method(typeof(ManagerPopulation), nameof(ManagerPopulation.processColoniesPostcheck), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(ManagerPopulation_processColoniesPostcheck_Transpiler)));
+
             // Agent Fixes
             harmony.Patch(original: AccessTools.Method(typeof(UAE_Abstraction), nameof(UAE_Abstraction.validTarget), new Type[] { typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(UAE_Abstraction_validTarget_transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getVisibleChallenges), new Type[] { typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(UA_getVisibleChallenges_Transpiler)));
@@ -1837,6 +1840,102 @@ namespace CommunityLib
             }
 
             return targetLocation;
+        }
+
+        // Population Manager Fixes
+        private static IEnumerable<CodeInstruction> ManagerPopulation_processColoniesPostcheck_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(ManagerPopulation_processColoniesPostcheck_TranspilerBody), new Type[] { typeof(Location), typeof(Society) });
+
+            Label continueLabel = ilg.DefineLabel();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Beq_S)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Brfalse_S)
+                        {
+                            continueLabel = (Label)instructionList[i].operand;
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldloc_2);
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 21);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, continueLabel);
+
+                            yield return new CodeInstruction(OpCodes.Nop);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+
+            }
+
+            Console.WriteLine("CommunityLib: Completed ManagerPopulation_processColoniesPostcheck_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static bool ManagerPopulation_processColoniesPostcheck_TranspilerBody(Location location, Society society)
+        {
+            if (society.isAtWar())
+            {
+                foreach (Location neighbour in location.getNeighbours())
+                {
+                    if (neighbour.soc == null || neighbour.soc == society)
+                    {
+                        continue;
+                    }
+
+                    if (society.getRel(neighbour.soc).state == DipRel.dipState.war)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            foreach (Unit u in location.units)
+            {
+                if (!(u is UM um))
+                {
+                    continue;
+                }
+
+                if (um.society == location.map.soc_dark)
+                {
+                    return false;
+                }
+
+                if (society.getRel(um.society).state == DipRel.dipState.war || society.getRel(um.society).state == DipRel.dipState.hostile)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         // Agent Fixes
@@ -10521,20 +10620,7 @@ namespace CommunityLib
         // Unit
         private static bool Unit_isCommandable_Postfix(bool result, UAEN __instance)
         {
-            result = __instance.corrupted;
-
-            if (!result)
-            {
-                foreach (Trait trait in __instance.person.traits)
-                {
-                    if (trait.grantsCommand())
-                    {
-                        result = true;
-                        break;
-                    }
-                }
-            }
-
+            result = __instance.corrupted || __instance.person.state == Person.personState.enthralled || __instance.person.traits.Any(t => t.grantsCommand());
             return result;
         }
 
