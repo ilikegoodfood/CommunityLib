@@ -332,6 +332,8 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Rt_Orcs_RaidingParty), nameof(Rt_Orcs_RaidingParty.complete), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Rt_Orcs_RaidingParty_complete_Transpiler)));
             // Orc Funding
             harmony.Patch(original: AccessTools.Method(typeof(Rt_Orc_ReceiveFunding), nameof(Rt_Orc_ReceiveFunding.validFor), new Type[] { typeof(UA) }), prefix: new HarmonyMethod(patchType, nameof(Rt_Orc_ReceiveFunding_validFor_Prefix)));
+            // SmugglersInTunnels
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_SmugglersInTunnels), nameof(Ch_SmugglersInTunnels.valid), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(Ch_SmugglersInTunnels_valid_Postfix)));
             // Root Out Doubters
             harmony.Patch(original: AccessTools.Method(typeof(Ch_RootOutDoubters), nameof(Ch_RootOutDoubters.getDesc), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(Ch_RootOutDoubters_getDesc_Postfix)));
             //Drink Primal Waters
@@ -384,6 +386,9 @@ namespace CommunityLib
             // Property Fixes
             harmony.Patch(original: AccessTools.Method(typeof(Pr_ArcaneSecret), nameof(Pr_ArcaneSecret.turnTick), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Pr_ArcaneSecret_turnTick_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Pr_Cthonians), nameof(Pr_Cthonians.turnTick), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Pr_Cthonians_turnTick_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Pr_TunnelsAbove), nameof(Pr_TunnelsAbove.getDesc), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(Pr_TunnelsAbove_getDesc_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(Pr_TunnelsBeneath), nameof(Pr_TunnelsBeneath.getDesc), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(Pr_TunnelsBeneath_getDesc_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(Pr_SmugglersInTunnels), nameof(Pr_SmugglersInTunnels.turnTick), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(Pr_SmugglersInTunnels_turnTick_Postfix)));
 
             // Religion UI Screen modification
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bPrev), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
@@ -3380,6 +3385,17 @@ namespace CommunityLib
             }
 
             return true;
+        }
+
+        private static void Ch_SmugglersInTunnels_valid_Postfix(Ch_SmugglersInTunnels __instance, ref bool __result)
+        {
+            if (__result)
+            {
+                if (!(__instance.location.settlement is SettlementHuman) && !__instance.location.properties.Any(pr => pr is Pr_HumanOutpost))
+                {
+                    __result = false;
+                }
+            }
         }
 
         private static void Ch_RootOutDoubters_getDesc_Postfix(Ch_RootOutDoubters __instance, ref string __result)
@@ -7826,6 +7842,24 @@ namespace CommunityLib
             }
 
             return 2 + Eleven.random.Next(10);
+        }
+
+        private static void Pr_TunnelsAbove_getDesc_Postfix(Pr_TunnelsAbove __instance, ref string __result)
+        {
+            __result = $"Winding tunnels, narrow and dangerous, form a secret path leading down to {__instance.above.getName()}. Only the foolish or the desperate would try to traverse these labyrinthine passages.";
+        }
+
+        private static void Pr_TunnelsBeneath_getDesc_Postfix(Pr_TunnelsBeneath __instance, ref string __result)
+        {
+            __result = $"Winding tunnels, narrow and dangerous, form a secret path leading up to {__instance.above.getName()}. Only the foolish or the desperate would try to traverse these labyrinthine passages.";
+        }
+
+        private static void Pr_SmugglersInTunnels_turnTick_Postfix(Pr_SmugglersInTunnels __instance)
+        {
+            if (!(__instance.location.settlement is SettlementHuman) && !__instance.location.properties.Any(pr => pr is Pr_HumanOutpost))
+            {
+                __instance.location.properties.Remove(__instance);
+            }
         }
 
         // Religion UI Screen modification
