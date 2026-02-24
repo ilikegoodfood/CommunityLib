@@ -1760,7 +1760,7 @@ namespace CommunityLib
                         if (instructionList[i].opcode == OpCodes.Ldloc_S)
                         {
                             yield return new CodeInstruction(OpCodes.Ldloc_2);
-                            yield return new CodeInstruction(OpCodes.Ldloc_S, 21);
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 20);
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
                             yield return new CodeInstruction(OpCodes.Brfalse_S, continueLabel);
 
