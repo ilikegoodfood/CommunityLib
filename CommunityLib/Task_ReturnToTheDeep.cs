@@ -66,7 +66,7 @@ namespace CommunityLib
                 {
                     pathTo = Pathfinding.getPathTo(unit.location, target, unit, false);
 
-                    Location[] otherPath = Pathfinding.getPathTo(unit.location, delegate_VALID_OCEAN, deepOne, null, false);
+                    Location[] otherPath = Pathfinding.getPathTo(unit.location, delegate_VALID_OCEAN, deepOne, false);
                     if (pathTo == null || pathTo.Length < 2)
                     {
                         unit.task = null;
@@ -80,7 +80,7 @@ namespace CommunityLib
                 }
                 else
                 {
-                    pathTo = Pathfinding.getPathTo(unit.location, delegate_VALID_OCEAN, deepOne, null, false); ;
+                    pathTo = Pathfinding.getPathTo(unit.location, delegate_VALID_OCEAN, deepOne, false);
                     if (pathTo == null || pathTo.Length < 2)
                     {
                         unit.task = null;

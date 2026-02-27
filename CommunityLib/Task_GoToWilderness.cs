@@ -48,7 +48,7 @@ namespace CommunityLib
                 {
                     pathTo = Pathfinding.getPathTo(unit.location, target, unit, safeMove);
 
-                    Location[] otherPath = Pathfinding.getPathTo(unit.location, (SocialGroup)null, unit, mapLayers.ToList(), safeMove);
+                    Location[] otherPath = Pathfinding.getPathTo(unit.location, (SocialGroup)null, unit, safeMove);
                     if (pathTo == null || pathTo.Length < 2)
                     {
                         unit.task = null;
@@ -62,7 +62,7 @@ namespace CommunityLib
                 }
                 else
                 {
-                    pathTo = Pathfinding.getPathTo(unit.location, (SocialGroup)null, unit, mapLayers.ToList(), safeMove);
+                    pathTo = Pathfinding.getPathTo(unit.location, (SocialGroup)null, unit, safeMove);
                     if (pathTo == null || pathTo.Length < 2)
                     {
                         unit.task = null;
