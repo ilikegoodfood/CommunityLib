@@ -82,12 +82,6 @@ namespace CommunityLib
                 }
 
                 unit.map.adjacentMoveTo(unit, pathTo[1]);
-                if (unit.location != pathTo[1])
-                {
-                    World.log("Move unsuccessful. Cancelling");
-                    unit.task = null;
-                    break;
-                }
                 unit.movesTaken++;
 
                 if (unit.location == target)

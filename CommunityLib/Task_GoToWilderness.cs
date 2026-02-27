@@ -1,9 +1,5 @@
 ﻿using Assets.Code;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CommunityLib
 {
@@ -45,23 +41,62 @@ namespace CommunityLib
                 return;
             }
 
-            Location[] pathTo = Pathfinding.getPathTo(unit.location, (SocialGroup)null, unit, safeMove);
-            if (pathTo == null || pathTo.Length < 2)
-            {
-                unit.task = null;
-                return;
-            }
-            target = pathTo[pathTo.Length - 1];
-
-            int index = 1;
             while (unit.movesTaken < unit.getMaxMoves())
             {
-                unit.location.map.adjacentMoveTo(unit, pathTo[index]);
-                unit.movesTaken++;
-                index++;
-
-                if (unit.location == target)
+                Location[] pathTo;
+                if (target != null && target.soc == null)
                 {
+                    pathTo = Pathfinding.getPathTo(unit.location, target, unit, safeMove);
+
+                    Location[] otherPath = Pathfinding.getPathTo(unit.location, (SocialGroup)null, unit, mapLayers.ToList(), safeMove);
+                    if (pathTo == null || pathTo.Length < 2)
+                    {
+                        unit.task = null;
+                        return;
+                    }
+                    if (otherPath.Length < pathTo.Length)
+                    {
+                        pathTo = otherPath;
+                        target = pathTo[pathTo.Length - 1];
+                    }
+                }
+                else
+                {
+                    pathTo = Pathfinding.getPathTo(unit.location, (SocialGroup)null, unit, mapLayers.ToList(), safeMove);
+                    if (pathTo == null || pathTo.Length < 2)
+                    {
+                        unit.task = null;
+                        return;
+                    }
+                    target = pathTo[pathTo.Length - 1];
+                }
+
+                unit.location.map.adjacentMoveTo(unit, pathTo[1]);
+                unit.movesTaken++;
+
+                if (unit.isCommandable())
+                {
+                    EventManager.onEnthralledUnitMove(unit.location.map, unit);
+                    foreach (Property property in unit.location.properties)
+                    {
+                        if (property is Pr_DeepOneCult)
+                        {
+                            unit.map.hintSystem.popHint(HintSystem.hintType.DEEP_ONES);
+                        }
+                        else if (property is Pr_ArcaneSecret)
+                        {
+                            unit.map.hintSystem.popHint(HintSystem.hintType.MAGIC);
+                        }
+                    }
+                }
+
+                if (unit.location.soc == null)
+                {
+                    if (unit.isCommandable())
+                    {
+                        unit.map.addUnifiedMessage(unit, target, "Unit Arrives", $"{unit.getName()} has reached the wilderness of {unit.location.getName(true)}.", UnifiedMessage.messageType.UNIT_ARRIVES, false);
+                    }
+
                     unit.task = null;
                     break;
                 }

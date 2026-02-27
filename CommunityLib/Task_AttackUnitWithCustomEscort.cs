@@ -106,6 +106,45 @@ namespace CommunityLib
                         unit.task = null;
                         return;
                     }
+
+                    if (unit.location == target.location)
+                    {
+                        //Console.WriteLine("CommunityLib: Reached target");
+                        if (target.engagedBy == null && target.engaging == null && target.turnLastEngaged != unit.map.turn)
+                        {
+                            //Console.WriteLine("CommunityLib: Targetcan be engaged");
+                            UA ua = unit as UA;
+                            UA targetUA = target as UA;
+
+                            if (ua != null && targetUA != null)
+                            {
+                                //Console.WriteLine("CommunityLib: Engaging target");
+                                if (target.isCommandable())
+                                {
+                                    if (unit.map.automatic)
+                                    {
+                                        BattleAgents battleAgents = new BattleAgents(ua, targetUA);
+                                        battleAgents.automatic();
+                                    }
+                                    else
+                                    {
+                                        unit.engaging = target;
+                                        target.engagedBy = unit;
+                                        unit.turnLastEngaged = unit.map.turn;
+                                        target.turnLastEngaged = unit.map.turn;
+                                    }
+                                }
+                                else
+                                {
+                                    BattleAgents battleAgents = new BattleAgents(ua, targetUA);
+                                    battleAgents.automatic();
+                                }
+                            }
+
+                            unit.task = null;
+                        }
+                        break;
+                    }
                 }
             }
         }
