@@ -83,24 +83,64 @@ namespace CommunityLib
                 return;
             }
 
-            Location[] pathTo = Pathfinding.getPathTo(unit.location, delegate_VALID_OCEAN, deepOne, null, false);
-            if (pathTo == null || pathTo.Length < 2)
-            {
-                deepOne.die(deepOne.map, "Unable to reach the ocean");
-                return;
-            }
-            target = pathTo[pathTo.Length - 1];
-
-            int index = 1;
             while (unit.movesTaken < unit.getMaxMoves())
             {
-                deepOne.map.adjacentMoveTo(unit, pathTo[index]);
-                deepOne.movesTaken++;
-                index++;
+                Location[] pathTo;
+                if (target != null && target.isOcean)
+                {
+                    pathTo = Pathfinding.getPathTo(unit.location, target, unit, false);
 
-                if (deepOne.location == target)
+                    Location[] otherPath = Pathfinding.getPathTo(unit.location, delegate_VALID_OCEAN, deepOne, null, false);
+                    if (pathTo == null || pathTo.Length < 2)
+                    {
+                        unit.task = null;
+                        return;
+                    }
+                    if (otherPath.Length < pathTo.Length)
+                    {
+                        pathTo = otherPath;
+                        target = pathTo[pathTo.Length - 1];
+                    }
+                }
+                else
+                {
+                    pathTo = Pathfinding.getPathTo(unit.location, delegate_VALID_OCEAN, deepOne, null, false); ;
+                    if (pathTo == null || pathTo.Length < 2)
+                    {
+                        unit.task = null;
+                        return;
+                    }
+                    target = pathTo[pathTo.Length - 1];
+                }
+
+                deepOne.map.adjacentMoveTo(unit, pathTo[1]);
+                deepOne.movesTaken++;
+
+                if (unit.isCommandable())
+                {
+                    EventManager.onEnthralledUnitMove(unit.location.map, unit);
+                    foreach (Property property in unit.location.properties)
+                    {
+                        if (property is Pr_DeepOneCult)
+                        {
+                            unit.map.hintSystem.popHint(HintSystem.hintType.DEEP_ONES);
+                        }
+                        else if (property is Pr_ArcaneSecret)
+                        {
+                            unit.map.hintSystem.popHint(HintSystem.hintType.MAGIC);
+                        }
+                    }
+                }
+
+                if (deepOne.location.isOcean)
                 {
                     deepOne.moveType = Unit.MoveType.AQUAPHIBIOUS;
+
+                    if (unit.isCommandable())
+                    {
+                        unit.map.addUnifiedMessage(unit, target, "Returned To The Deep", $"{unit.getName()} has plunged beneath the waves at {unit.location.getName()}. Now that their gills are full, and their skin wet, they will never again traverse the dryness of land.", "RETURNED TO THE DEEP", false);
+                    }
+
                     deepOne.task = null;
                     return;
                 }

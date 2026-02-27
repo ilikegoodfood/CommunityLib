@@ -1,9 +1,4 @@
 ﻿using Assets.Code;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CommunityLib
 {
@@ -17,12 +12,20 @@ namespace CommunityLib
 
         public bool hasArrived;
 
-        public Task_GoToUnit(Unit self, Unit c, int maxTravelTime = -1, int arrivalCancellationDelay = 0, bool runAIImmediatelyOnArrival = false) : base(self, c)
+        public Location targetLocation = null;
+
+        public Task_GoToUnit(Unit self, Unit c, int maxTravelTime = -1, int arrivalCancellationDelay = 0, bool runAIImmediatelyOnArrival = false)
+            : base(self, c)
         {
             this.maxTravelTime = maxTravelTime;
             this.arrivalCancellationDelay = arrivalCancellationDelay;
             this.runAIImmediatelyOnArrival = runAIImmediatelyOnArrival;
             hasArrived = false;
+            targetLocation = target.location;
+            if (ModCore.Get().checkIsUnitSubsumed(target) && target.person != null)
+            {
+                targetLocation = target.person.unit.location;
+            }
         }
 
         public override string getShort()
@@ -49,20 +52,20 @@ namespace CommunityLib
         {
             if (target == null)
             {
-                return $"Travelling to no-one at nowhere";
+                return $"Travelling to no-one.";
             }
 
             if (hasArrived && arrivalCancellationDelay > 0)
             {
-                return $"Following {target.getName()} who is currently at {target.location.getName()} ({arrivalCancellationDelay} turns remaining)";
+                return $"Following {target.getName()} who is currently at {target.location.getName()} ({arrivalCancellationDelay} turns remaining).";
             }
 
             if (maxTravelTime > -1)
             {
-                return $"Travelling to {target.getName()} at {target.location.getName()} ({maxTravelTime} turns remaining)";
+                return $"Travelling to {target.getName()} at {target.location.getName()} ({maxTravelTime} turns remaining).";
             }
 
-            return $"This unit is travelling to {target.getName()} at {target.location.getName()}";
+            return $"This unit is travelling to {target.getName()} at {target.location.getName()}.";
         }
 
         public override Location getLocation()
@@ -84,19 +87,10 @@ namespace CommunityLib
                 }
             }
 
-            if (target == null || (!ModCore.Get().checkIsUnitSubsumed(target) && target.isDead))
+            if (target == null || (!ModCore.Get().checkIsUnitSubsumed(target) && target.isDead) || targetLocation == null)
             {
                 unit.task = null;
                 return;
-            }
-
-            if (unit.location == target.location)
-            {
-                hasArrived = true;
-                if (runAIImmediatelyOnArrival)
-                {
-                    unit.turnTickAI();
-                }
             }
 
             if (maxTravelTime > -1)
@@ -108,24 +102,72 @@ namespace CommunityLib
                 }
             }
 
-            Location[] path = Pathfinding.getPathTo(unit.location, target.location, unit, false);
+            targetLocation = target.location;
+            if (ModCore.Get().checkIsUnitSubsumed(target) && target.person != null)
+            {
+                targetLocation = target.person.unit.location;
+            }
+
+            if (unit.location == targetLocation)
+            {
+                hasArrived = true;
+                if (runAIImmediatelyOnArrival)
+                {
+                    unit.turnTickAI();
+                    return;
+                }
+            }
+
             while (unit.movesTaken < unit.getMaxMoves())
             {
-                bool moved = unit.map.moveTowards(unit, target.location);
-                if (!moved)
+                targetLocation = target.location;
+                if (ModCore.Get().checkIsUnitSubsumed(target) && target.person != null)
                 {
-                    World.log("Move unsuccessful. Cancelling go to challenge");
+                    targetLocation = target.person.unit.location;
+                }
+
+                Location[] path = Pathfinding.getPathTo(unit.location, targetLocation, unit, false);
+                if (path == null || path.Length < 2)
+                {
                     unit.task = null;
                     return;
                 }
+
+                unit.map.adjacentMoveTo(unit, path[1]);
                 unit.movesTaken++;
 
-                if (unit.location == target.location)
+                if (unit.isCommandable())
                 {
+                    EventManager.onEnthralledUnitMove(unit.location.map, unit);
+                    foreach (Property property in unit.location.properties)
+                    {
+                        if (property is Pr_DeepOneCult)
+                        {
+                            unit.map.hintSystem.popHint(HintSystem.hintType.DEEP_ONES);
+                        }
+                        else if (property is Pr_ArcaneSecret)
+                        {
+                            unit.map.hintSystem.popHint(HintSystem.hintType.MAGIC);
+                        }
+                    }
+                }
+
+                if (unit.location == targetLocation)
+                {
+                    if (!hasArrived && unit.isCommandable())
+                    {
+                        unit.map.addUnifiedMessage(unit, target, "Unit Arrives", $"{unit.getName()} has reached {target.getName()} at {targetLocation.getName()}{(arrivalCancellationDelay > 0 ? $", and will continue following them for {arrivalCancellationDelay} {(arrivalCancellationDelay == 1 ? "turn" : "turns")}." : ".")}", UnifiedMessage.messageType.UNIT_ARRIVES, false);
+                    }
                     hasArrived = true;
+                    
+                    if (arrivalCancellationDelay <= 0)
+                    {
+                        unit.task = null;
+                    }
                     if (runAIImmediatelyOnArrival)
                     {
                         unit.turnTickAI();
+                        return;
                     }
                     break;
                 }
