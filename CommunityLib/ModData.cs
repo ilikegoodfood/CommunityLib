@@ -111,7 +111,7 @@ namespace CommunityLib
             }
         }
 
-        internal void initialiseMapMaskData()
+        internal void initializeMapMaskData()
         {
             if (mapMaskData == null)
             {
@@ -224,7 +224,7 @@ namespace CommunityLib
             }
         }
 
-        internal void initialiseHidenThoughts()
+        internal void initializeHidenThoughts()
         {
             if (hiddenThoughts == null)
             {
@@ -340,7 +340,7 @@ namespace CommunityLib
             initializeVampireTypes();
 
             initializeInfluenceGain();
-            initialiseHidenThoughts();
+            initializeHidenThoughts();
 
             // Broken Maker Handling
             _acceleratedTime = map.acceleratedTime;
@@ -515,7 +515,7 @@ namespace CommunityLib
                 return -1;
             }
 
-            initialiseMapMaskData();
+            initializeMapMaskData();
 
             int nextAvailableID = -1;
             foreach (MapMaskData data in mapMaskData.Values)
@@ -543,8 +543,24 @@ namespace CommunityLib
 
         internal bool TryGetMapMaskData(ModKernel maskingMod, int id, out MapMaskData data)
         {
-            initialiseMapMaskData();
+            initializeMapMaskData();
             return mapMaskData.TryGetValue(new Tuple<ModKernel, int>(maskingMod, id), out data);
+        }
+
+        internal bool TryGetMapMaskData(int id, out MapMaskData data)
+        {
+            initializeMapMaskData();
+            foreach (KeyValuePair<Tuple<ModKernel, int>, MapMaskData> kvp in mapMaskData)
+            {
+                if (kvp.Key.Item2 == id)
+                {
+                    data = kvp.Value;
+                    return true;
+                }
+            }
+
+            data = null;
+            return false;
         }
 
         internal IEnumerable<MapMaskData> EnumerateMapMaskData

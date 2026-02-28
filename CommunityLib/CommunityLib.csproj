@@ -86,6 +86,7 @@
     <Compile Include="PowerDelayed.cs" />
     <Compile Include="Rt_TemptRuler.cs" />
     <Compile Include="ThreatViewerComponent.cs" />
+    <Compile Include="T_CarryingPrey.cs" />
     <Compile Include="T_Prophet.cs" />
     <Compile Include="T_VinervaSeed.cs" />
     <Compile Include="UIE_Button_ModdedCompanion.cs" />

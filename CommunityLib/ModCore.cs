@@ -319,7 +319,7 @@ namespace CommunityLib
 
         public override void afterMapGenBeforeHistorical(Map map)
         {
-            Get().data.initialiseHidenThoughts();
+            Get().data.initializeHidenThoughts();
         }
 
         public override void afterLoading(Map map)
@@ -1282,8 +1282,18 @@ namespace CommunityLib
                                 Console.WriteLine("CommunityLib: Failed to get Feeding pheromone property Type (ShadowsInsectGod.Code.Pr_Pheromone_Feeding)");
                             }
 
-                            Type spawnDroneFromHumanType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.P_SpawnDroneFromHuman", false);
+                            Type motorFunctionOverrideType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.P_MotorFunctionOverride", false);
+                            if (motorFunctionOverrideType != null)
+                            {
+                                intDataCord.typeDict.Add("MotorFunctionOverride", motorFunctionOverrideType);
+                                intDataCord.methodInfoDict.Add("MotorFunctionOverride.getRestrictionText", AccessTools.Method(motorFunctionOverrideType, "getRestrictionText", Type.EmptyTypes));
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Motor function override power Type (ShadowsInsectGod.Code.P_MotorFunctionOverride)");
+                            }
 
+                            Type spawnDroneFromHumanType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.P_SpawnDroneFromHuman", false);
                             if (spawnDroneFromHumanType != null)
                             {
                                 intDataCord.typeDict.Add("SpawnDroneFromHuman", spawnDroneFromHumanType);
@@ -1298,6 +1308,7 @@ namespace CommunityLib
                             if (seekType != null)
                             {
                                 intDataCord.typeDict.Add("SeekTask", seekType);
+                                intDataCord.methodInfoDict.Add("SeekTask.turnTick", AccessTools.Method(seekType, "turnTick", new Type[] { typeof(Unit) }));
                             }
                             else
                             {
@@ -1318,6 +1329,8 @@ namespace CommunityLib
                             if (homeType != null)
                             {
                                 intDataCord.typeDict.Add("GoHomeTask", homeType);
+                                intDataCord.methodInfoDict.Add("GoHomeTask_getShort", AccessTools.Method(homeType, "getShort", Type.EmptyTypes));
+                                intDataCord.methodInfoDict.Add("GoHomeTask_getLong", AccessTools.Method(homeType, "getLong", Type.EmptyTypes));
                             }
                             else
                             {

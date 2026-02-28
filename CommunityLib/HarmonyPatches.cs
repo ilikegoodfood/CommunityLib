@@ -1101,7 +1101,7 @@ namespace CommunityLib
 
         private static void UIMapLastList_checkData_TranspilerBody(UIMapMaskList maskList)
         {
-            ModCore.Get().data.initialiseMapMaskData();
+            ModCore.Get().data.initializeMapMaskData();
 
             foreach (object obj in maskList.listContent)
             {
