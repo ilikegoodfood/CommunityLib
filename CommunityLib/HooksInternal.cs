@@ -1376,6 +1376,13 @@ namespace CommunityLib
                             larvalMass.charge += (int)FI_Prey.GetValue(ua);
                             MI_GodEat.Invoke(ua.map.overmind.god, new object[] { (int)FI_Prey.GetValue(ua) });
                             FI_Prey.SetValue(ua, 0);
+                            foreach (Trait t in ua.person.traits.ToList())
+                            {
+                                if (t is T_CarryingPrey)
+                                {
+                                    ua.person.traits.Remove(t);
+                                }
+                            }
                         }
                     }
                 }

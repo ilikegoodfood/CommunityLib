@@ -286,21 +286,14 @@ namespace CommunityLib
         private static void Patching_Cordyceps(ModIntegrationData intData)
         {
             //Console.WriteLine("CommunityLib: Conditional Patch for Cordyceps");
-            if (intData.methodInfoDict.TryGetValue("Drone.turnTickAI", out MethodInfo MI_turnTickAI) && MI_turnTickAI != null)
-            {
-                //Console.WriteLine("CommunityLib: Replacing UAEN_Drone AI");
-                harmony.Patch(original: MI_turnTickAI, prefix: new HarmonyMethod(patchType, nameof(UAEN_Drone_turnTickAI_Prefix)));
-            }
-
             if (intData.constructorInfoDict.TryGetValue("Haematophage", out ConstructorInfo CI_Haematophage) && CI_Haematophage != null)
             {
                 harmony.Patch(original: CI_Haematophage, postfix: new HarmonyMethod(patchType, nameof(UAEN_Haematophage_ctor_Postfix)));
             }
 
-            if (intData.methodInfoDict.TryGetValue("Haematophage.turnTickAI", out MethodInfo MI_turnTickAI2) && MI_turnTickAI2 != null)
+            if (intData.methodInfoDict.TryGetValue("MotorFunctionOverride.getRestrictionText", out MethodInfo MI_MotorFunctionOverride_getRestrictionText) && MI_MotorFunctionOverride_getRestrictionText != null)
             {
-                //Console.WriteLine("CommunityLib: Replacing UAEN_Drone AI");
-                harmony.Patch(original: MI_turnTickAI2, prefix: new HarmonyMethod(patchType, nameof(UAEN_Haematophage_turnTickAI_Prefix)));
+                harmony.Patch(original: MI_MotorFunctionOverride_getRestrictionText, postfix: new HarmonyMethod(patchType, nameof(P_MotorFunctionOverride_getRestrictionText_Postfix)));
             }
 
             if (intData.methodInfoDict.TryGetValue("SpawnDroneFromHuman.cast", out MethodInfo MI_SpawnDroneFromHuman_Cast) && MI_SpawnDroneFromHuman_Cast != null)
@@ -308,18 +301,13 @@ namespace CommunityLib
                 harmony.Patch(original: MI_SpawnDroneFromHuman_Cast, transpiler: new HarmonyMethod(patchType, nameof(P_SpawnDroneFromHuman_cast_Transpiler)));
             }
 
+            if (intData.methodInfoDict.TryGetValue("SeekTask.turnTick", out MethodInfo MI_SeekPrey_TurnTick) && MI_SeekPrey_TurnTick != null)
+            {
+                harmony.Patch(original: MI_SeekPrey_TurnTick, transpiler: new HarmonyMethod(patchType, nameof(Task_SeekPrey_turnTick_Transpiler)));
+            }
+
             // Template Patch
             // harmony.Patch(original: AccessTools.Method(typeof(), nameof(), new Type[] { typeof() }), postfix: new HarmonyMethod(patchType, nameof()));
-        }
-
-        private static bool UAEN_Drone_turnTickAI_Prefix(UA __instance)
-        {
-            if (ModCore.Get().GetAgentAI().ContainsAgentType(__instance.GetType()))
-            {
-                ModCore.Get().GetAgentAI().turnTickAI(__instance);
-                return false;
-            }
-            return true;
         }
 
         private static void UAEN_Haematophage_ctor_Postfix(Location loc, UA __instance)
@@ -327,14 +315,9 @@ namespace CommunityLib
             __instance.rituals.Add(new Rt_SlowHealing(loc));
         }
 
-        private static bool UAEN_Haematophage_turnTickAI_Prefix(UA __instance)
+        private static void P_MotorFunctionOverride_getRestrictionText_Postfix(ref string __result)
         {
-            if (ModCore.Get().GetAgentAI().ContainsAgentType(__instance.GetType()))
-            {
-                ModCore.Get().GetAgentAI().turnTickAI(__instance);
-                return false;
-            }
-            return true;
+            __result = "There must be a hero with a mature (100%) infection. Must target an empty non-ocean location.";
         }
 
         private static IEnumerable<CodeInstruction> P_SpawnDroneFromHuman_cast_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
@@ -367,6 +350,58 @@ namespace CommunityLib
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> Task_SeekPrey_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Task_SeekPrey_turnTick_TranspilerBody), new Type[] { typeof(UAEN), typeof(Person) });
+
+            MethodInfo MI_getPerson = AccessTools.PropertyGetter(typeof(Unit), nameof(Unit.person));
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_3 && instructionList[i+1].opcode == OpCodes.Dup)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Leave)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldloc_3);
+                            yield return new CodeInstruction(OpCodes.Dup);
+                            yield return new CodeInstruction(OpCodes.Call, MI_getPerson);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Task_SeekPrey_turnTick_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static void Task_SeekPrey_turnTick_TranspilerBody(UAEN drone, Person person)
+        {
+            if (!person.traits.Any(t => t is T_CarryingPrey))
+            {
+                person.receiveTrait(new T_CarryingPrey(person.map, drone));
             }
         }
 

@@ -25,7 +25,7 @@ namespace CommunityLib
         {
             List<AITask> aiTasks_CaveSpider = new List<AITask>
             {
-                new AITask(taskType: typeof(Task_GoToLocation), title: "Stalk the Caverns", map: map, delegate_Instantiate: delegate_Instantiate_GoToLocation, targetCategory: AITask.TargetCategory.Location, foregroundSprite: map.world.textureStore.hex_terrain_underground[0]),
+                new AITask(taskType: typeof(Task_GoToLocation), title: "Stalk the Caverns", map: map, delegate_Instantiate: delegate_Instantiate_GoToLocation, targetCategory: AITask.TargetCategory.Location, foregroundSprite: map.world.iconStore.purpleWeb),
                 new AITask(taskType: typeof(Task_GoToWilderness), title: "Retreat to the Wilds", map: map, delegate_Instantiate: delegate_Instantiate_GoToWilderness, foregroundSprite: map.world.textureStore.hex_terrain_underground[0])
             };
 
@@ -69,18 +69,18 @@ namespace CommunityLib
         {
             double utility = 0.0;
 
-            double val = 25.0;
-            if (taskData.targetLocation.units.Any(u => u is UA && !(u is UAEN_CaveSpider)))
+            double val = 20.0;
+            if (!taskData.targetLocation.isOcean && taskData.targetLocation.settlement == null)
             {
-                reasonMsgs?.Add(new ReasonMsg("Potential prey", val));
+                reasonMsgs?.Add(new ReasonMsg("Base", val));
                 utility += val;
                 return utility;
             }
 
-            if (!taskData.targetLocation.isOcean && taskData.targetLocation.settlement == null)
+            if (taskData.targetLocation.units.Any(u => u is UA && !(u is UAEN_CaveSpider)))
             {
-                val = 20.0;
-                reasonMsgs?.Add(new ReasonMsg("Base", val));
+                val = 25.0;
+                reasonMsgs?.Add(new ReasonMsg("Potential prey", val));
                 utility += val;
                 return utility;
             }
