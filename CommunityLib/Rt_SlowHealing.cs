@@ -84,10 +84,31 @@ namespace CommunityLib
         public override double getUtility(UA ua, List<ReasonMsg> msgs)
         {
             double utility = 0.0;
+            double val = 0.0;
             if (ua.hp < ua.maxHp)
             {
-                utility = 100.0;
-                msgs?.Add(new ReasonMsg("HP Losses", utility));
+                val = 1.0 - ((double)ua.hp / (double)ua.maxHp);
+                val *= map.param.utility_UA_heal * 2;
+                msgs?.Add(new ReasonMsg("HP Losses", val));
+                utility += val;
+            }
+
+            int minionHp = 0;
+            int minionMaxHp = 0;
+            for (int i = 0; i < ua.minions.Length; i++)
+            {
+                if (ua.minions[i] != null)
+                {
+                    minionHp += ua.minions[i].hp;
+                    minionMaxHp += ua.minions[i].getMaxHP();
+                }
+            }
+
+            if (minionHp < minionMaxHp)
+            {
+                val = 1.0 - ((double)minionHp / (double)minionMaxHp);
+                val *= map.param.utility_UA_heal * 2;
+                msgs?.Add(new ReasonMsg("Minion HP Losses", val));
             }
 
             return utility;
@@ -101,12 +122,34 @@ namespace CommunityLib
         public override void turnTick(UA ua)
         {
             counter++;
+
+            int minionHp = 0;
+            int minionMaxHp = 0;
+            for (int i = 0; i < ua.minions.Length; i++)
+            {
+                if (ua.minions[i] != null)
+                {
+                    Minion minion = ua.minions[i];
+                    if (minion.hp < minion.getMaxHP())
+                    {
+                        minion.hp++;
+                    }
+
+                    minionHp += minion.hp;
+                    minionMaxHp = minion.getMaxHP();
+                }
+            }
+
             if (counter >= 3)
             {
                 counter = 0;
 
-                ua.hp++;
-                if (ua.hp >= ua.maxHp)
+                if (ua.hp < ua.maxHp)
+                {
+                    ua.hp++;
+                }
+
+                if (ua.hp >= ua.maxHp && minionHp >= minionMaxHp)
                 {
                     ua.hp = ua.maxHp;
                     ua.task = null;
@@ -116,6 +159,19 @@ namespace CommunityLib
                         map.addMessage(ua.getName() + " completes: " + getName(), map.param.ch_laylow_parameterValue5, true, ua.location.hex);
                         popCompletionMessage(ua);
                     }
+                    return;
+                }
+            }
+
+            if (ua.hp >= ua.maxHp && minionHp >= minionMaxHp)
+            {
+                ua.hp = ua.maxHp;
+                ua.task = null;
+
+                if (ua.isCommandable())
+                {
+                    map.addMessage(ua.getName() + " completes: " + getName(), map.param.ch_laylow_parameterValue5, true, ua.location.hex);
+                    popCompletionMessage(ua);
                 }
             }
         }
