@@ -1,10 +1,7 @@
 ﻿using Assets.Code;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace CommunityLib
@@ -20,7 +17,7 @@ namespace CommunityLib
             if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord))
             {
                 populateCordycepsDrone(intDataCord);
-                populateCoryceptsHaematophage(intDataCord);
+                populateCorycepsHaematophage(intDataCord);
             }
         }
 
@@ -54,9 +51,9 @@ namespace CommunityLib
                 if (intData.typeDict.TryGetValue("GoHomeTask", out Type homeType) && homeType != null)
                 {
                     //Console.WriteLine("CommunityLib: Adding Task_GoHome");
-                    AITask aiTask = new AITask(taskType: homeType, title: "Return to Hive", map: map, delegate_Instantiate: AITask.delegate_Instantiate_NOARGS, foregroundSprite: map.world.iconStore.ophanimSwiftOfFoot);
-                    aiTask.delegates_Valid.Add(delegate_Validity_GoHome);
-                    aiTask.delegates_Utility.Add(delegate_Utility_GoHome);
+                    AITask aiTask = new AITask(taskType: homeType, title: "Return to Hive", map: map, delegate_Instantiate: AITask.delegate_Instantiate_NOARGS, foregroundSprite: EventManager.getImg("insect.fungalHive.png"));
+                    aiTask.delegates_Valid.Add(delegate_Validity_ReturnToHive);
+                    aiTask.delegates_Utility.Add(delegate_Utility_ReturnToHive);
 
                     aiTasks_Cordyceps_Drone.Add(aiTask);
                 }
@@ -129,7 +126,7 @@ namespace CommunityLib
             return utility;
         }
 
-        private bool delegate_Validity_GoHome(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData taskData)
+        private bool delegate_Validity_ReturnToHive(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData taskData)
         {
             if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord))
             {
@@ -145,7 +142,7 @@ namespace CommunityLib
             return false;
         }
 
-        private double delegate_Utility_GoHome(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData taskData, List<ReasonMsg> reasonMsgs)
+        private double delegate_Utility_ReturnToHive(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData taskData, List<ReasonMsg> reasonMsgs)
         {
             double utility = 100;
             reasonMsgs?.Add(new ReasonMsg("Base", utility));
@@ -153,23 +150,31 @@ namespace CommunityLib
             return utility;
         }
 
-        private void populateCoryceptsHaematophage(ModIntegrationData intData)
+        private void populateCorycepsHaematophage(ModIntegrationData intData)
         {
             if (intData.typeDict.TryGetValue("Haematophage", out Type haematophageType) && haematophageType != null)
             {
                 List<AIChallenge> aiChallenges_Cordyceps_Haematophage = new List<AIChallenge>();
+                List<AITask> aiTasks_Cordyceps_Haematophage = new List<AITask>();
 
                 AIChallenge aiChallenge = new AIChallenge(typeof(Rt_SlowHealing), 0.0, new List<AIChallenge.ChallengeTags> { AIChallenge.ChallengeTags.BaseValid, AIChallenge.ChallengeTags.BaseUtility });
                 aiChallenge.delegates_ValidFor.Add(delegate_ValidFor_SlowHealing);
                 aiChallenges_Cordyceps_Haematophage.Add(aiChallenge);
 
+                AITask aiTask = new AITask(taskType: typeof(Task_GoToLocation), title: "Return to Hive", map: map, delegate_Instantiate: delegate_Instantiate_GoToLocation, targetCategory: AITask.TargetCategory.Location, foregroundSprite: EventManager.getImg("insect.fungalHive.png"));
+                aiTask.delegates_Valid.Add(delegate_Valid_GoToHive);
+                aiTask.delegates_Utility.Add(delegate_Utility_GoToHive);
+                aiTasks_Cordyceps_Haematophage.Add(aiTask);
+
                 AgentAI.ControlParameters controlParams = new AgentAI.ControlParameters(true);
                 controlParams.respectDanger = false;
                 controlParams.respectArmyIntercept = false;
                 controlParams.includeDangerousFoe = false;
+                controlParams.canAttack = true;
 
                 ModCore.Get().GetAgentAI().RegisterAgentType(haematophageType, controlParams);
                 ModCore.Get().GetAgentAI().AddChallengesToAgentType(haematophageType, aiChallenges_Cordyceps_Haematophage);
+                ModCore.Get().GetAgentAI().AddTasksToAgentType(haematophageType, aiTasks_Cordyceps_Haematophage);
             }
         }
 
@@ -181,6 +186,38 @@ namespace CommunityLib
             }
 
             return false;
+        }
+
+        private Assets.Code.Task delegate_Instantiate_GoToLocation(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData taskData)
+        {
+            return new Task_GoToLocation(taskData.targetLocation);
+        }
+
+        private bool delegate_Valid_GoToHive(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData taskData)
+        {
+            if (targetCategory == AITask.TargetCategory.None)
+            {
+                return ua.locIndex != ua.homeLocation;
+            }
+
+            if (targetCategory == AITask.TargetCategory.Location)
+            {
+                return taskData.targetLocation.index == ua.homeLocation;
+            }
+
+            return false;
+        }
+
+        private double delegate_Utility_GoToHive(UA ua, AITask.TargetCategory targetCategory, AgentAI.TaskData tData, List<ReasonMsg> reasons)
+        {
+            if (ua.locIndex != ua.homeLocation)
+            {
+                reasons?.Add(new ReasonMsg("Base", 10.0));
+                return 10.0;
+            }
+
+            reasons?.Add(new ReasonMsg("Already at Home Location", -10000.0));
+            return -10000.0;
         }
     }
 }

@@ -263,9 +263,14 @@ namespace CommunityLib
             // Challenge fixes //
             // Base Challenge
             harmony.Patch(original: AccessTools.Method(typeof(Challenge), nameof(Challenge.applyDangerDamage), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Challenge_applyDangerDamage_Transpiler)));
+            // Access Cache
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_AccessCache), nameof(Ch_AccessCache.complete), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Ch_AccessCache_complete_Postfix)));
             // Cultivate Vinerva's Gifts
             harmony.Patch(original: AccessTools.Method(typeof(Ch_H_CultivateHerGifts), nameof(Ch_H_CultivateHerGifts.validFor), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_H_CultivateHerGifts_validFor_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Ch_H_CultivateHerGifts), nameof(Ch_H_CultivateHerGifts.complete), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_H_CultivateHerGifts_complete_Transpiler)));
+            // Deep Ones Reproduce
+            harmony.Patch(original: AccessTools.Method(typeof(Rt_DeepOneReproduce), nameof(Rt_DeepOneReproduce.getName), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(Rt_DeepOneReproduce_getName_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(Rt_DeepOneReproduce), nameof(Rt_DeepOneReproduce.getDesc), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(Rt_DeepOneReproduce_getDesc_Postfix)));
             // Infiltrate
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Infiltrate), nameof(Ch_Infiltrate.getComplexity), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Ch_Infiltrate_getComplexity_Transpiler)));
             // Buy Item
@@ -316,6 +321,14 @@ namespace CommunityLib
             // Item Fixes
             harmony.Patch(original: AccessTools.Method(typeof(I_DarkStone), nameof(I_DarkStone.getShortDesc), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(I_DarkStone_getShortDesc_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(I_Deathstone), nameof(I_Deathstone.onDeath), new Type[] { typeof(Person) }), postfix: new HarmonyMethod(patchType, nameof(I_Deathstone_onDeath_Postfix)));
+
+            // Item Transfer Fixes
+            harmony.Patch(original: AccessTools.Constructor(typeof(ItemToOutpost), new Type[] { typeof(Map), typeof(Pr_HumanOutpost), typeof(Person) }), transpiler: new HarmonyMethod(patchType, nameof(ItemToOutpost_ctor_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(ItemToOutpost), nameof(ItemToOutpost.addGold), new Type[] { typeof(int) }), postfix: new HarmonyMethod(patchType, nameof(ItemToOutpost_addGold_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(ItemToOutpost), nameof(ItemToOutpost.endTrading), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(ItemToOutpost_endTrading_Transpiler)));
+            harmony.Patch(original: AccessTools.Constructor(typeof(ItemToHolyOrder), new Type[] { typeof(Map), typeof(HolyOrder), typeof(Person) }), transpiler: new HarmonyMethod(patchType, nameof(ItemToHolyOrder_ctor_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(ItemToHolyOrder), nameof(ItemToHolyOrder.addGold), new Type[] { typeof(int) }), postfix: new HarmonyMethod(patchType, nameof(ItemToHolyOrder_addGold_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(ItemToHolyOrder), nameof(ItemToHolyOrder.endTrading), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(ItemToHolyOrder_endTrading_Transpiler)));
 
             // Local Action Fixes
             harmony.Patch(original: AccessTools.Method(typeof(Assets.Code.Action), nameof(Assets.Code.Action.valid), new Type[] { typeof(Person), typeof(SettlementHuman) }), new HarmonyMethod(patchType, nameof(Action_valid_Postfix)));
@@ -2346,7 +2359,7 @@ namespace CommunityLib
                     {
                         if (instructionList[i].opcode == OpCodes.Ldstr && (string)instructionList[i].operand == " caused by your actions, and has taken ")
                         {
-                            instructionList[i].operand = " often caused by your actions, and has taken ";
+                            instructionList[i].operand = ", and has taken ";
                             targetIndex = 0;
                         }
                     }
@@ -2359,6 +2372,14 @@ namespace CommunityLib
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static void Ch_AccessCache_complete_Postfix(Ch_AccessCache __instance, UA u)
+        {
+            if (__instance.cache.charge > 0.0 && !u.isCommandable())
+            {
+                __instance.cache.location.properties.Remove(__instance.cache);
             }
         }
 
@@ -2440,6 +2461,16 @@ namespace CommunityLib
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
+        }
+
+        private static void Rt_DeepOneReproduce_getName_Postfix(ref string __result)
+        {
+            __result = "Develop Deep One Cult";
+        }
+
+        private static void Rt_DeepOneReproduce_getDesc_Postfix(ref string __result)
+        {
+            __result = "Developes a deep one cult presence at this location. If non exists, a new Deep One Cult will be established, otherwise the cult's presence will be boosted by 25.0.";
         }
 
         private static IEnumerable<CodeInstruction> Ch_Infiltrate_getComplexity_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
@@ -3279,6 +3310,187 @@ namespace CommunityLib
                     p.items[i] = null;
                     break;
                 }
+            }
+        }
+
+        // Item Transfer Fixes
+        private static IEnumerable<CodeInstruction> ItemToOutpost_ctor_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            int targetIndex = 1;
+            bool returnCode = true;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i+1].opcode == OpCodes.Ldarg_3)
+                        {
+                            returnCode = false;
+
+                            targetIndex++;
+                        }
+                        else if (instructionList[i].opcode == OpCodes.Ldarg_0)
+                        {
+                            returnCode = true;
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
+
+            }
+
+            Console.WriteLine("CommunityLib: Completed ItemToOutpost_ctor_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static void ItemToOutpost_addGold_Postfix(ItemToOutpost __instance, int delta)
+        {
+            __instance.delta += delta;
+        }
+
+        private static IEnumerable<CodeInstruction> ItemToOutpost_endTrading_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            int targetIndex = 1;
+            bool returnCode = true;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i+1].opcode == OpCodes.Ldarg_0)
+                        {
+                            returnCode = false;
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i-1].opcode == OpCodes.Stfld)
+                        {
+                            returnCode = true;
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
+
+            }
+
+            Console.WriteLine("CommunityLib: Completed ItemToOutpost_endTrading_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> ItemToHolyOrder_ctor_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            int targetIndex = 1;
+            bool returnCode = true;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i + 1].opcode == OpCodes.Ldarg_3)
+                        {
+                            returnCode = false;
+
+                            targetIndex++;
+                        }
+                        else if (instructionList[i].opcode == OpCodes.Ldarg_0)
+                        {
+                            returnCode = true;
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
+
+            }
+
+            Console.WriteLine("CommunityLib: Completed ItemToHolyOrder_ctor_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static void ItemToHolyOrder_addGold_Postfix(ItemToHolyOrder __instance, int delta)
+        {
+            __instance.delta += delta;
+        }
+
+        private static IEnumerable<CodeInstruction> ItemToHolyOrder_endTrading_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            int targetIndex = 1;
+            bool returnCode = true;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i+1].opcode == OpCodes.Ldarg_0)
+                        {
+                            returnCode = false;
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i-1].opcode == OpCodes.Stfld)
+                        {
+                            returnCode = true;
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
+
+            }
+
+            Console.WriteLine("CommunityLib: Completed ItemToHolyOrder_endTrading_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
@@ -6764,8 +6976,6 @@ namespace CommunityLib
                     }
                 }
             }
-
-            
         }
 
         private static void Map_adjacentMoveTo_Postfix(Unit u, Location __state)
@@ -8704,15 +8914,53 @@ namespace CommunityLib
             if (other is UAG target && !other.isCommandable())
             {
                 double attackStrength = target.getStatAttack();
-                if (target.minions[0] != null)
+                for (int i = 0; i < target.minions.Length; i++)
                 {
-                    attackStrength += target.minions[0].getAttack();
+                    if (target.minions[i] == null)
+                    {
+                        continue;
+                    }
+
+                    attackStrength += target.minions[i].getAttack();
                 }
 
                 if (ua.minions[0] != null || attackStrength < ua.hp)
                 {
                     utility = 80.0;
                     reasonMsgs?.Add(new ReasonMsg("Base", utility));
+                }
+                else
+                {
+                    utility = -10.0 + ((ua.hp - attackStrength) * 10.0);
+                    reasonMsgs?.Add(new ReasonMsg("Dangerous Foe", utility));
+                }
+            }
+            else if (other is UA targetUA && !other.isCommandable() && ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord != null && intDataCord.typeDict.TryGetValue("DestroyLarva", out Type destroyLarvaType) && destroyLarvaType != null && targetUA.task is Task_PerformChallenge performChallenge && destroyLarvaType.IsAssignableFrom(performChallenge.challenge.GetType()))
+            {
+                double attackStrength = targetUA.getStatAttack();
+                for (int i = 0; i < targetUA.minions.Length; i++)
+                {
+                    if (targetUA.minions[i] == null)
+                    {
+                        continue;
+                    }
+
+                    attackStrength += targetUA.minions[i].getAttack();
+                }
+
+                if (ua.minions.Any(m => m != null) || attackStrength < ua.hp)
+                {
+                    utility = 80.0;
+                    reasonMsgs?.Add(new ReasonMsg("Base", utility));
+
+                    double val = 40.0;
+                    reasonMsgs?.Add(new ReasonMsg("They are dstroying the larvae", val));
+                    utility += val;
+                }
+                else
+                {
+                    utility = -10.0 + ((ua.hp - attackStrength) * 10.0);
+                    reasonMsgs?.Add(new ReasonMsg("Dangerous Foe", utility));
                 }
             }
 

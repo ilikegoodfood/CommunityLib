@@ -1262,6 +1262,16 @@ namespace CommunityLib
                                 Console.WriteLine("CommunityLib: Failed to get Hive settlement Type (ShadowsInsectGod.Code.Set_Hive)");
                             }
 
+                            Type swarmType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.SG_Swarm", false);
+                            if (swarmType != null)
+                            {
+                                intDataCord.typeDict.Add("Swarm", swarmType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get swarm soial group Type (ShadowsInsectGod.Code.SG_Swarm)");
+                            }
+
                             Type larvalType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.Pr_LarvalMass", false);
                             if (larvalType != null)
                             {
@@ -1280,6 +1290,29 @@ namespace CommunityLib
                             else
                             {
                                 Console.WriteLine("CommunityLib: Failed to get Feeding pheromone property Type (ShadowsInsectGod.Code.Pr_Pheromone_Feeding)");
+                            }
+
+                            Type destroyLarvaType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.Ch_RemoveInsectStuff", false);
+                            if (destroyLarvaType != null)
+                            {
+                                intDataCord.typeDict.Add("DestroyLarva", destroyLarvaType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Destroy larva challenge Type (ShadowsInsectGod.Code.Ch_RemoveInsectStuff)");
+                            }
+
+                            Type assignGuardType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.P_AssignGuard", false);
+                            if (assignGuardType != null)
+                            {
+                                intDataCord.typeDict.Add("AssignGuard", assignGuardType);
+                                intDataCord.methodInfoDict.Add("AssignGuard.getDesc", AccessTools.Method(assignGuardType, "getDesc", Type.EmptyTypes));
+                                intDataCord.methodInfoDict.Add("AssignGuard.getRestrictionText", AccessTools.Method(assignGuardType, "getRestrictionText", Type.EmptyTypes));
+                                intDataCord.methodInfoDict.Add("AssignGuard.validTarget", AccessTools.Method(assignGuardType, "validTarget", new Type[] { typeof(Unit) }));
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Assign guard power Type (ShadowsInsectGod.Code.P_AssignGuard)");
                             }
 
                             Type motorFunctionOverrideType = intDataCord.assembly.GetType("ShadowsInsectGod.Code.P_MotorFunctionOverride", false);

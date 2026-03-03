@@ -291,6 +291,21 @@ namespace CommunityLib
                 harmony.Patch(original: CI_Haematophage, postfix: new HarmonyMethod(patchType, nameof(UAEN_Haematophage_ctor_Postfix)));
             }
 
+            if (intData.methodInfoDict.TryGetValue("AssignGuard.getDesc", out MethodInfo MI_AssignGuard_getDesc) && MI_AssignGuard_getDesc != null)
+            {
+                harmony.Patch(original: MI_AssignGuard_getDesc, postfix: new HarmonyMethod(patchType, nameof(P_AssignGuard_getDesc_Postfix)));
+            }
+
+            if (intData.methodInfoDict.TryGetValue("AssignGuard.getRestrictionText", out MethodInfo MI_AssignGuard_getRestrictionText) && MI_AssignGuard_getRestrictionText != null)
+            {
+                harmony.Patch(original: MI_AssignGuard_getRestrictionText, postfix: new HarmonyMethod(patchType, nameof(P_AssignGuard_getRestrictionText_Postfix)));
+            }
+
+            if (intData.methodInfoDict.TryGetValue("AssignGuard.validTarget", out MethodInfo MI_AssignGuard_validTarget) && MI_AssignGuard_validTarget != null)
+            {
+                harmony.Patch(original: MI_AssignGuard_validTarget, transpiler: new HarmonyMethod(patchType, nameof(P_AssignGuard_validTarget_Transpiler)));
+            }
+
             if (intData.methodInfoDict.TryGetValue("MotorFunctionOverride.getRestrictionText", out MethodInfo MI_MotorFunctionOverride_getRestrictionText) && MI_MotorFunctionOverride_getRestrictionText != null)
             {
                 harmony.Patch(original: MI_MotorFunctionOverride_getRestrictionText, postfix: new HarmonyMethod(patchType, nameof(P_MotorFunctionOverride_getRestrictionText_Postfix)));
@@ -313,6 +328,64 @@ namespace CommunityLib
         private static void UAEN_Haematophage_ctor_Postfix(Location loc, UA __instance)
         {
             __instance.rituals.Add(new Rt_SlowHealing(loc));
+        }
+
+        private static void P_AssignGuard_getDesc_Postfix(ref string __result)
+        {
+            __result = "Turns 5% <b>Larval Mass</b> into a <b>Vespid Guard</b> minion for a <b>Drone</b>, <b>Haematophage</b>, or agent with a free slot that is at a hive, reducing the risk of attack by heroes. Can exceed normal command limit.";
+        }
+
+        private static void P_AssignGuard_getRestrictionText_Postfix(ref string __result)
+        {
+            __result = "Must target a drone, haematophage, or agent at a hive with a free minion slot.";
+        }
+
+        private static IEnumerable<CodeInstruction> P_AssignGuard_validTarget_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord.typeDict.TryGetValue("Haematophage", out Type haematophageType))
+            {
+                int targetIndex = 1;
+                for (int i = 0; i < instructionList.Count; i++)
+                {
+                    if (targetIndex > 0)
+                    {
+                        if (targetIndex == 1)
+                        {
+                            if (instructionList[i].opcode == OpCodes.Brtrue_S && instructionList[i-1].opcode == OpCodes.Isinst)
+                            {
+                                Label trueLabel = (Label)instructionList[i].operand;
+
+                                yield return instructionList[i];
+                                yield return new CodeInstruction(OpCodes.Ldarg_1);
+                                yield return new CodeInstruction(OpCodes.Isinst, haematophageType);
+                                yield return new CodeInstruction(OpCodes.Brtrue_S, trueLabel);
+
+                                targetIndex = 0;
+                                i++;
+                            }
+                        }
+                    }
+
+                    yield return instructionList[i];
+                }
+
+                Console.WriteLine("CommunityLib: Completed P_AssignGuard_validTarget_Transpiler");
+                if (targetIndex != 0)
+                {
+                    Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+                }
+            }
+            else
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler P_AssignGuard_validTarget_Transpiler failed to get Haematophage type.");
+
+                for (int i = 0; i < instructionList.Count; i++)
+                {
+                    yield return instructionList[i];
+                }
+            }
         }
 
         private static void P_MotorFunctionOverride_getRestrictionText_Postfix(ref string __result)

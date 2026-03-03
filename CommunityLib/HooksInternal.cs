@@ -1,12 +1,11 @@
 ﻿using Assets.Code;
+using Assets.Code.Modding;
 using System;
 using System.Collections.Generic;
-using UnityEngine;
-using System.Reflection;
 using System.Linq;
-using Assets.Code.Modding;
+using System.Reflection;
+using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.Events;
 
 namespace CommunityLib
 {
@@ -36,6 +35,7 @@ namespace CommunityLib
             //registry.RegisterHook_onGraphicalLinkUpdated(onGraphicalLinkUpdated);
             registry.RegisterHook_interceptGetVisibleUnits(interceptGetVisibleUnits);
             registry.RegisterHook_onPopulatingTradeRoutePathfindingDelegates(onPopulatingTradeRoutePathfindingDelegates);
+            registry.RegisterHook_onMoveTaken(onMoveTaken);
             registry.RegisterHook_interceptAgentAI(interceptAgentAI);
             registry.RegisterHook_onAgentAI_EndOfProcess(onAgentAI_EndOfProcess);
 
@@ -1104,11 +1104,28 @@ namespace CommunityLib
                     {
                         visibleUnits.Clear();
 
-                        foreach (Unit unit in _map.units)
+                        if (ua.homeLocation >= 0 && ua.homeLocation < ua.map.locations.Count)
                         {
-                            if (!unit.isDead && _map.getStepDist(ua.location, unit.location) < 4)
+                            foreach (Unit unit in _map.units)
                             {
-                                visibleUnits.Add(unit);
+                                if (!(unit is UA) || unit.isDead)
+                                {
+                                    continue;
+                                }
+
+                                if (_map.getStepDist(ua.map.locations[ua.homeLocation], unit.location) < 4)
+                                {
+                                    if (!unit.isCommandable() && (unit.society == null || (unit.society != ua.map.soc_dark && intDataCord.typeDict.TryGetValue("Swarm", out Type swarmType) && !swarmType.IsAssignableFrom(unit.society.GetType()))))
+                                    {
+                                        visibleUnits.Add(unit);
+                                        continue;
+                                    }
+                                }
+
+                                if (intDataCord.typeDict.TryGetValue("DestroyLarva", out Type destroyLarvaType) && destroyLarvaType != null && unit.task is Task_PerformChallenge performChallenge && destroyLarvaType.IsAssignableFrom(performChallenge.challenge.GetType()))
+                                {
+                                    visibleUnits.Add(unit);
+                                }
                             }
                         }
 
@@ -1145,6 +1162,37 @@ namespace CommunityLib
             }
         }
 
+
+        public void onMoveTaken(Unit unit, Location locA, Location locB)
+        {
+            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord))
+            {
+                if (intDataCord.typeDict.TryGetValue("Drone", out Type droneType) && droneType != null && intDataCord.fieldInfoDict.TryGetValue("Drone.prey", out FieldInfo FI_Prey) && FI_Prey != null && intDataCord.methodInfoDict.TryGetValue("God.eat", out MethodInfo MI_GodEat) && MI_GodEat != null)
+                {
+                    if (intDataCord.typeDict.TryGetValue("Hive", out Type hiveType) && hiveType != null && intDataCord.typeDict.TryGetValue("LarvalMass", out Type larvalType) && larvalType != null)
+                    {
+                        if (droneType.IsAssignableFrom(unit.GetType()) && locB.settlement != null && hiveType.IsAssignableFrom(locB.settlement.GetType()))
+                        {
+                            Property larvalMass = locB.properties.FirstOrDefault(pr => pr.GetType() == larvalType);
+                            if (larvalMass != null)
+                            {
+                                larvalMass.charge += (int)FI_Prey.GetValue(unit);
+                                MI_GodEat.Invoke(unit.map.overmind.god, new object[] { (int)FI_Prey.GetValue(unit) });
+                                FI_Prey.SetValue(unit, 0);
+                                foreach (Trait t in unit.person.traits.ToList())
+                                {
+                                    if (t is T_CarryingPrey)
+                                    {
+                                        unit.person.traits.Remove(t);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         public bool interceptAgentAI(UA ua, AgentAI.AIData aiData, List<AgentAI.ChallengeData> challengeData, List<AgentAI.TaskData> taskData, List<Unit> visibleUnits)
         {
             switch (ua)
@@ -1161,11 +1209,7 @@ namespace CommunityLib
                 {
                     if (ua.GetType() == droneType)
                     {
-                        if (intDataCord.typeDict.TryGetValue("God", out Type godType) && godType != null && (ua.map.overmind.god.GetType() == godType || ua.map.overmind.god.GetType().IsSubclassOf(godType)))
-                        {
-                            return interceptCordycepsDrone(ua, intDataCord);
-                        }
-                        else
+                        if (!intDataCord.typeDict.TryGetValue("God", out Type godType) || godType == null || !godType.IsAssignableFrom(ua.map.overmind.god.GetType()))
                         {
                             ua.die(ua.map, "Died in Wilderness", null);
                             return true;
@@ -1184,35 +1228,6 @@ namespace CommunityLib
                 upstart.die(_map, "Died in the wilderness", null);
                 return true;
             }
-            return false;
-        }
-
-        private bool interceptCordycepsDrone(UA ua, ModIntegrationData intData)
-        {
-            if (intData.typeDict.TryGetValue("Drone", out Type droneType) && droneType != null && intData.fieldInfoDict.TryGetValue("Drone.prey", out FieldInfo FI_Prey) && FI_Prey != null && intData.methodInfoDict.TryGetValue("God.eat", out MethodInfo MI_GodEat) && MI_GodEat != null)
-            {
-                if (intData.typeDict.TryGetValue("Hive", out Type hiveType) && hiveType != null && intData.typeDict.TryGetValue("LarvalMass", out Type larvalType) && larvalType != null)
-                {
-                    if (ua.location.settlement != null && (ua.location.settlement.GetType() == hiveType || ua.location.settlement.GetType().IsSubclassOf(hiveType)))
-                    {
-                        Property larvalMass = ua.location.properties.FirstOrDefault(pr => pr.GetType() == larvalType);
-                        if (larvalMass != null)
-                        {
-                            larvalMass.charge += (int)FI_Prey.GetValue(ua);
-                            MI_GodEat.Invoke(ua.map.overmind.god, new object[] { (int)FI_Prey.GetValue(ua) });
-                            FI_Prey.SetValue(ua, 0);
-                            foreach (Trait t in ua.person.traits.ToList())
-                            {
-                                if (t is T_CarryingPrey)
-                                {
-                                    ua.person.traits.Remove(t);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
             return false;
         }
 
