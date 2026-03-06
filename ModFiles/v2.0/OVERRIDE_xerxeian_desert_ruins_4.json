@@ -1,0 +1,36 @@
+{
+	"id": "foge.exploreRuins_xerxeian_desert_4",
+	"modCredit": "Forbidden Oak Games",
+	"imgCredit": "The ruins of the temple of the sun, Palmyra - Carl Haag",
+	"image": "fog.0_xerxes.jpg",
+	
+	"type": "INERT",
+	"conditional": "($FOG_RUINS_ID = 927927) & (exploration_depth = 4)",
+	"probability": 1,
+
+	"name": "Found in the sands of time",
+    "description": "Under a palace reduced to rubble and all its subterranean corridors skewed into inaccessibility by the weight of sand and stone above, not one section had been sealed away except for this one. The masonry is fresher by a magnitude of a century in comparison to the rest of this place and bears the hallmarks of a less refined bricklayer. They sealed away this place after the downfall. To not let the corrupted knowledge out, they hunted the surviving mages and affected palacedwellers, confining them into a lightless dungeon with the texts that ended their nation's history.\n\nAs your agent begins perusing their selection of forbidden knowledge, %he muses on how they'd have been better off burning everything.",
+
+	"choices": [
+		{
+			"name": "Share the knowledge",
+			"description":"3 <b>Corrupt Arcane Secrets</b> appear at the %LOCATION_NAME, visible to heroes and acolytes.",
+			"outcomes": [
+			
+				{
+					"weight": 0.75,
+					"effects": [
+						{"command": "PLACE_ARCANE_SECRET_DANGEROUS", "argument": "Horrifying implications, sifted from the sands of time."},
+						{"command": "PLACE_ARCANE_SECRET_DANGEROUS", "argument": "Incomprihensible findings, sifted from the sands of time."},
+						{"command": "PLACE_ARCANE_SECRET_DANGEROUS", "argument": "Painful realizations, sifted from the sands of time."},
+						{"command": "EXPLORE_RUINS", "argument": "1"}
+						
+					],
+					"environment": [
+						{ "key": "FOG_RUINS_ID", "value": "927927" ,"local":"LOCATION"}
+					]
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,108 @@
+{
+	"id": "foge.exploreRuins_xerxeian_desert_1",
+	"modCredit": "Forbidden Oak Games",
+	"imgCredit": "The ruins of the temple of the sun, Palmyra - Carl Haag",
+	"image": "fog.0_xerxes.jpg",
+	
+	"type": "INERT",
+	"conditional": "($FOG_RUINS_ID = 927927) & (exploration_depth = 1)",
+	"probability": 1,
+
+	"name": "Lost in the sands of time",
+    "description": "Working in the unbearable heat of days and sleeping nights huddled by a fire as the desert practically freezes over with no humidity to store the immense heat so generously given by the sun above, %HEX_NAME is a place of the extremes. Water is scarce. %PERSON_NAME of course foresaw this. The help is overworked and many must be 'sent away.' If the workforce has noticed their camels aren't getting fewer in number with the departings, they've yet to raise their concerns, at least in your agent's presence.\n\nMore water to go around for all of them. More shallow graves to fill.\n\nWhile this keeps %his excavation in a low profile, at least for now, fear alone cannot keep the workers motivated in these circumnstances. One has already made an attempt to flee unpaid into the night.",
+
+	"choices": [
+		{
+			"name": "Proceed as things are",
+			"description":"60% chance nothing happens.\n\n20% chance your Agent is <b>Disrupted</b> for 3 Turns.\n20% chance your Agent's Menace and Profile are increased by 4.\n\nWhatever the outcome, Exploration Percentage is increased by 20%.",
+			"outcomes": [
+			
+				{
+					"weight": 0.20,
+					"description": "One morning %PERSON_NAME wakes up to several missing camels and the knowledge that the escapees are likely sharing the tales of %his excavation in the nearest town. It matters not how gruesome, tall or accurate to fact these tales are. Nobody digs in the old fort at %HEX_NAME and nobody should have a reason to keep digging sand a secret.\n\n<b>%PERSON_NAME's Menace and Profile have increased by 4.\nExploration Percentage is increased by 20%.</b>",
+					"effects": [
+						{"command": "GAIN_MENACE", "argument": "4"},
+						{"command": "GAIN_PROFILE", "argument": "4"},
+						{"command": "EXPLORE_RUINS", "argument": "1"}
+					],
+					"environment": [
+						{ "key": "FOG_RUINS_ID", "value": "927927" ,"local":"LOCATION"}
+					]
+				},
+				{
+					"weight": 0.20,
+					"description": "One morning %PERSON_NAME wakes up to several missing camels and the annoying and inescapable realization that %he must now lure in a fresh batch of workers for %his excavation from the nearest town.\n\n<b>%PERSON_NAME has been Disrupted for 3 Turns.\nExploration Percentage is increased by 20%.</b>",
+					"effects": [
+						{"command": "DISRUPT_UNIT", "argument": "3"},
+						{"command": "EXPLORE_RUINS", "argument": "1"}
+					],
+					"environment": [
+						{ "key": "FOG_RUINS_ID", "value": "927927" ,"local":"LOCATION"}
+					]
+				},
+				{
+					"weight": 0.60,
+					"effects": [
+						{"command": "EXPLORE_RUINS", "argument": "1"}
+
+					],
+					"environment": [
+						{ "key": "FOG_RUINS_ID", "value": "927927" ,"local":"LOCATION"}
+					]
+				}
+			]
+		},
+		{
+			"name": "Provide them with the feeling of security",
+			"condition": "has_minion",
+			"description":"[Requires: Agent has a minion]\n\nExploration Percentage is increased by 20%.\n\n<i>Some dig, some keep watch. All will obey.</i>",
+			"outcomes": [
+			
+				{
+					"weight": 0.75,
+					"effects": [
+						{"command": "EXPLORE_RUINS", "argument": "1"}
+					],
+					"environment": [
+						{ "key": "FOG_RUINS_ID", "value": "927927" ,"local":"LOCATION"}
+					]
+				}
+			]
+		},
+		{
+			"name": "The answer is always Gold",
+			"condition": "gold > 14",
+			"description":"[Requires: 15 Gold]\n\nExploration Percentage is increased by 20%.\n\n<i>Whether actually paying those already here, or offering forward payments in the nearby towns for more hands, Gold solves the matter of motivation.</i>",
+			"outcomes": [
+			
+				{
+					"weight": 0.75,
+					"effects": [
+						{"command": "EXPLORE_RUINS", "argument": "1"},
+						{"command": "GAIN_GOLD", "argument": "-15"}
+					],
+					"environment": [
+						{ "key": "FOG_RUINS_ID", "value": "927927" ,"local":"LOCATION"}
+					]
+				}
+			]
+		},
+		{
+			"name": "Divide and conquer",
+			"condition": "is_agent_trickster | is_agent_courtier | stat_intrigue > 3",
+			"description":"[Requires: The Trickster, The Courtier or Intrigue 4]\n\nExploration Percentage is increased by 20%.\n\n<i>In %his speech, an implication is left dangling over their heads in a simple slip of %his tongue. Their shifty eyes signal them all the same realization. There can be no planning or trust now, not with a telltale hidden in their midst...</i>",
+			"outcomes": [
+			
+				{
+					"weight": 0.75,
+					"effects": [
+						{"command": "EXPLORE_RUINS", "argument": "1"}
+					],
+					"environment": [
+						{ "key": "FOG_RUINS_ID", "value": "927927" ,"local":"LOCATION"}
+					]
+				}
+			]
+		}
+	]
+}

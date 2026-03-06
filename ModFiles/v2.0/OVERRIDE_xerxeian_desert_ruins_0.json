@@ -1,0 +1,34 @@
+{
+	"id": "foge.exploreRuins_xerxeian_desert_0",
+	"modCredit": "Forbidden Oak Games",
+	"imgCredit": "The ruins of the temple of the sun, Palmyra - Carl Haag",
+	"image": "fog.0_xerxes.jpg",
+	
+	"type": "INERT",
+	"conditional": "($FOG_RUINS_ID = 0) & (exploration_depth = 0) & has_ancient_ruins & (is_desert | is_desertlike) & !is_coastal & !is_human & $XERXES_RUINS_SET = 0",
+	"probability": 10000,
+
+	"name": "Lost in the sands of time",
+	"description": "The %LOCATION_NAME are not so much a lost city as they are a mistaken one, therein the reason why such a historically significant location hides in plain sight. In the endless wars between sovereigns and sultans and suzerains and bandit kings, the capital of the %MULTI[Circsian|Serkzan|Cselkcesseen|Cer-Rucusean|Keruxean|Xerxessian|Zsereszian|Xeruiassian|Xessian|Xerusian|Keruksiaite]%MULTI Empire is these days only known as that <i>'two hundred year old crumbling fortress in %HEX_NAME.'</i> No modern king wants to hold it. There isn't a body of water in miles of it and any wells dug there are tainted by a greasy black sludge. All scavengers, traders and adventurers alike overlook it as worthless rubble, a wide obstacle to route on long journeys under the scorching desert sun.\n\n%PERSON_NAME knows better. This was the cradle of untold number of natural sciences and arcane fields of study dating back thousands of years. Like many civilizations dabbling in such things, its end was both swift and brought on by its own hubris.",
+
+
+	"choices": [
+		{
+			"name": "Its value is not molded from gold",
+			"description":"Exploration Percentage is increased by 20%.",
+			"outcomes": [
+			
+				{
+					"weight": 0.75,
+					"effects": [
+						{"command": "EXPLORE_RUINS", "argument": "1"}
+					],
+					"environment": [
+						{ "key": "FOG_RUINS_ID", "value": "927927", "local":"LOCATION" },
+						{ "key": "XERXES_RUINS_SET", "value": "1", "local": "false" }
+					]
+				}
+			]
+		}
+	]
+}

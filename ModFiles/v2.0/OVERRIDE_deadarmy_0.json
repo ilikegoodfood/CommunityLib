@@ -1,0 +1,34 @@
+{
+    "id": "foge.exploreRuins_Deadarmy0",
+    "modCredit": "Forbidden Oak Games",
+    "imgCredit": "Offering to the God Pan - Paul Delaroche",
+    "image": "foge.0_deadarmy.jpg",
+    
+    "type": "INERT",
+    "conditional": "($FOG_RUINS_ID = 0) & (exploration_depth = 0) & is_human & (has_farms | has_holy_site) & !god_is_ophanim & $DEAD_ARMY_RUINS_SET = 0",
+    "probability": 1,
+
+    "name": "The strange %HEX_NAME burial rites",
+    "description": "%PERSON_NAME has noticed a peculiar rite being followed at the %LOCATION_NAME. Once a month, they trek to the nearby ruins, leaving a pile of food, tools, and gifts at the entrance. They claim it is for their beloved ancestors.\n\nThere would be nothing peculiar in this rite by itself, but the region's religion %MULTI[believes in reincarnation, denying the existence of spirits|believes that their souls remerge in their deity upon death|believes in the merciful cessation of their existence upon death]%MULTI. There should be little reason for the locals to be feeding their ancestry...",
+
+    "choices": [
+        {
+            "name": "Answers await in the ruins",
+            "description": "Exploration Percentage is increased by 40%.",
+            "outcomes": [
+            
+                {
+                    "weight": 0.75,
+                    "effects": [
+                        {"command": "EXPLORE_RUINS", "argument": "1"},
+                        {"command": "EXPLORE_RUINS", "argument": "1"}
+                    ],
+                    "environment": [
+                        { "key": "FOG_RUINS_ID", "value": "274539" ,"local":"LOCATION"},
+						{ "key": "DEAD_ARMY_RUINS_SET", "value": "1", "local": "false" }
+                    ]
+                }
+            ]
+        }
+    ]
+}

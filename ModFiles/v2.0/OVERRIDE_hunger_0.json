@@ -1,0 +1,34 @@
+{
+	"id": "foge.exploreRuins_Hunger0",
+	"modCredit": "Forbidden Oak Games",
+	"imgCredit": "General Washington’s Tomb at Mount Vernon - Pavel Petrovich Svinin",
+	"image": "foge.0_hunger.jpg",
+	
+	"type": "INERT",
+	"conditional": "($FOG_RUINS_ID = 0) & ($HungerGod = 0) & (exploration_depth = 0) & is_human & has_farms & $HUNGER_RUINS_SET = 0",
+	"probability": 1,
+
+	"name": "The %LOCATION_NAME hungers...",
+    "description": "%HEX_NAME has a curious regional culture centering around its fantastic food, holding feasts whenever the harvests and hunts allow them. The timing of the festivities always sways towards sooner than later, its more accurate to say they're held to months than to any strict dates. Anything worth mentioning is worth celebrating with a banquet. Their hunger borders on the unnatural.\n\nSomething is exerting influence over this place and the nearby ruins seem like a good place to start investigating.",
+
+
+	"choices": [
+		{
+			"name": "You hunger for knowledge",
+			"description": "Exploration Percentage is increased by 20%.",
+			"outcomes": [
+			
+				{
+					"weight": 0.75,
+					"effects": [
+						{"command": "EXPLORE_RUINS", "argument": "1"}
+					],
+					"environment": [
+						{ "key": "FOG_RUINS_ID", "value": "486437" ,"local":"LOCATION"},
+						{ "key": "HUNGER_RUINS_SET", "value": "1", "local": "false" }
+					]
+				}
+			]
+		}
+	]
+}

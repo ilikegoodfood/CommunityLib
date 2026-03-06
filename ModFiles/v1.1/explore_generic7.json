@@ -1,0 +1,55 @@
+{
+	"id": "CLib_plunderWreck_Generic7",
+	"modCredit": "ILikeGoodFood",
+	"imgCredit": "Cornish Shipwreck By Millson Hunt",
+	"image": "CLib.Shipwreck.jpg",
+	
+	"type": "INERT",
+	"conditional": "($FOG_WRECK_ID = 0)",
+	"probability": 1,
+
+	"name": "Exploring Shipwreck at %LOCATION_NAME",
+	"description": "%PERSON_NAME has dived deep under the shipwreck at %LOCATION_NAME and found what the sought, treasures fallen from the broken holds of the wreck. All that remains is to reach out and take what there was to be found.",
+
+
+	"choices": [
+		{
+			"name": "Reach Out",
+			"description":"Gains a random reward, either gold or item",
+			"outcomes": [
+				{
+					"weight": 0.75,
+					"description":"%PERSON_NAME gains 35 gold",
+					"effects": [
+						{"command": "EXPLORE_RUINS", "argument": "1"},
+						{"command": "GAIN_GOLD", "argument": "35"}
+					]
+				},
+				{
+					"weight": 0.25,
+					"description":"%PERSON_NAME gains a common item",
+					"effects": [
+						{"command": "EXPLORE_RUINS", "argument": "1"},
+						{"command": "GRANT_ITEM_FROM_POOL", "argument": "1"}
+					]
+				},
+				{
+					"weight": 0.10,
+					"description":"%PERSON_NAME gains a rare item",
+					"effects": [
+						{"command": "EXPLORE_RUINS", "argument": "1"},
+						{"command": "GRANT_ITEM_FROM_POOL", "argument": "2"}
+					]
+				},
+				{
+					"weight": 0.05,
+					"description":"%PERSON_NAME gains an artefact level item",
+					"effects": [
+						{"command": "EXPLORE_RUINS", "argument": "1"},
+						{"command": "GRANT_ITEM_FROM_POOL", "argument": "3"}
+					]
+				}
+			]
+		}
+	]
+}

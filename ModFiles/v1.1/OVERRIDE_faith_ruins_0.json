@@ -1,0 +1,35 @@
+{
+	"id": "foge.exploreRuins_Faith_0",
+	"modCredit": "Forbidden Oak Games",
+	"imgCredit": "Church Interior - Bartholomeus Johannes van Hove",
+	"image": "foge.0_Faith_ruin.jpg",
+	
+	"type": "INERT",
+	"conditional": "($FOG_RUINS_ID = 0) & (exploration_depth = 0) & god_is_ophanim & is_human & (!is_arctic & !is_snow & !is_drycold & !is_tundra) & $FAITH_RUINS_SET = 0",
+	"probability": 1,
+
+	"name": "Holy site discovered in %HEX_NAME",
+	"description": "Within the %LOCATION_NAME %PERSON_NAME is suddenly thrown to the ground in violent spasms, shouting in a language that brings the animals to guard %him in %his vulnerable state. %He regains consciousness surrounded by confused commoners, a collection of livestock and nervous guards.\n\nYour agent saw a vision of an intense ray of light erupting from beneath %HEX_NAME and %he wastes no time gathering tools and convincing workers to join %him in the blessed task of unearthing it.",
+
+
+	"choices": [
+		{
+			"name": "Begin the dig",
+			"description":"Exploration Percentage is increased by 20%.\nLocal <b>Faith</b> modifier is increased by 10.",
+			"outcomes": [
+			
+				{
+					"weight": 0.75,
+					"effects": [
+						{"command": "EXPLORE_RUINS", "argument": "1"},
+						{"command": "CHANGE_FAITH", "argument": "10"}
+					],
+					"environment": [
+						{ "key": "FOG_RUINS_ID", "value": "674264" ,"local":"LOCATION"},
+						{ "key": "FAITH_RUINS_SET", "value": "1", "local": "false" }
+					]
+				}
+			]
+		}
+	]
+}

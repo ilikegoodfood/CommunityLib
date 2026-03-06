@@ -1,0 +1,97 @@
+{
+	"id": "CLib.plunderWreck_Generic5",
+	"modCredit": "ILikeGoodFood",
+	"imgCredit": "Cornish Shipwreck By Millson Hunt",
+	"image": "CLib.Shipwreck.jpg",
+	
+	"type": "INERT",
+	"conditional": "($FOG_WRECK_ID = 0)",
+	"probability": 1,
+
+	"name": "Exploring Shipwreck at %LOCATION_NAME",
+	"description": "%PERSON_NAME follows a cacophony of distant shrieks and cries, until %he stumbles upon a hold filled with caged undead. They shuffle restlessly within their cages, biting at the rusting bars, climbing the walls and shrieking, or signing forgotten songs of dark gods from beyond.\n\n(Agent HP is currently %HP)",
+
+
+	"choices": [
+		{
+			"name": "Drive them into a frenzy, and then release them",
+			"description":"Release an army of Ravenous Undead, destroying the wreck in the process\n\n-25% chance to suffer 5 damage.",
+			"outcomes": [
+				{
+					"weight": 0.75,
+					"description":"%PERSON_NAME drives the undead into a frenzy before smashing the rusted locks from their cages and fleeing for their life as the incarcerated pour forth from the hold. Far more than bodies emerge from the cages than could have ever fit within. In their violent frenzy, the horde of undead tear the wreck asunder.",
+					"effects": [
+						{"command": "DESTROY_SHIPWRECK", "argument": ""},
+						{"command": "CREATE_RAVENOUS_DEAD", "argument": "75"}
+						
+					]
+				},
+				{
+					"weight": 0.25,
+					"description":"%PERSON_NAME drives the undead into a frenzy before smashing the rusted locks from their cages and fleeing for their life as the incarcerated pour forth from the hold. Momentarily overwhelmed by the impossible number of bodies that rush forth from their confinement, %PERSON_NAME failed to escape unharmed. In their violent frenzy, the horde of undead tear the wreck asunder.\n(5 HP lost)",
+					"effects": [
+						{"command": "DESTROY_SHIPWRECK", "argument": ""},
+						{"command": "CREATE_RAVENOUS_DEAD", "argument": "75"},
+						{"command": "ADD_HP", "argument": "-5"}
+					]
+				}
+			]
+		},
+		{
+			"name": "Release only those that sing of darkness",
+			"description": "Release 2 Ghasts\n\n-25% chance to suffer 2 damage.",
+			"outcomes": [
+				{
+					"weight": 0.75,
+					"description":"With some care, %PERSON_NAME manages to caox the singing undead to the front of their cage. %he quickly smashes the lock, pulls them from the cage, and then slams and binds the door before the corpses within can rush out.",
+					"effects": [
+						{"command": "PLUNDER_SHIPWRECK", "argument": "1"},
+						{"command": "CREATE_GHAST", "argument": "5"},
+						{"command": "CREATE_GHAST", "argument": "5"}
+					]
+				},
+				{
+					"weight": 0.25,
+					"description":"With some care, %PERSON_NAME manages to caox the singing undead to the front of their cage. %he quickly smashes the lock, pulls them from the cage, and then slams and binds the door. As %he does so, several of the corpses within bite and claw at their arms.\n(2 HP lost)",
+					"effects": [
+						{"command": "PLUNDER_SHIPWRECK", "argument": "1"},
+						{"command": "CREATE_GHAST", "argument": "5"},
+						{"command": "CREATE_GHAST", "argument": "5"},
+						{"command": "ADD_HP", "argument": "-2"}
+					]
+				}
+			]
+		},
+		{
+			"name": "Study the undead",
+			"condition":"stat_lore > 3",
+			"description":"[Requires: 4 Lore]\n\nIncrease your mastery of death.",
+			"outcomes": [
+				{
+					"weight": 1.0,
+					"description":"%PERSON_NAME carefully studies the undead, the cages that hold them, and the hold at large. Their efforts give great insights into the mastery of death.",
+					"effects": [
+						{"command": "PLUNDER_SHIPWRECK", "argument": "1"},
+						{"command": "INCREASE_MASTERY_DEATH", "argument": "1"}
+					]
+				}
+			]
+		},
+		{
+			"name": "Cull the undead",
+			"description":"News of this good deed will cary far and wide, increasing your profile by 5, and reducing your menace by 10. Culling so many undead in one place has also added 50 Death Magic to this location.",
+			"outcomes": [
+				{
+					"weight": 1.0,
+					"description":"%PERSON_NAME finds themselves empty handed but unharmed after the expedition",
+					"effects": [
+						{"command": "PLUNDER_SHIPWRECK", "argument": "1"},
+						{"command": "GAIN_PROFILE", "argument": "5"},
+						{"command": "GAIN_MENACE", "argument": "-10"},
+						{"command": "ADD_MODIFIER_DEATH", "argument": "50"}
+					]
+				}
+			]
+		}
+	]
+}

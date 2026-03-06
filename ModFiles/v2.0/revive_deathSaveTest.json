@@ -1,0 +1,25 @@
+{
+	"id": "ComLib.revive_deathSaveTest",
+	"modCredit": "ILikeGoodFood",
+	"imgCredit": "Man Holding a Skull (Memento Mori) - Frank Duveneck",
+	"image": "fog.lyke_man_holding_a_skull.jpg",
+	
+	"type": "INERT",
+	"conditional": "1=1",
+	"probability": 1,
+
+	"name": "Escaped death",
+	"description": "In a last, desperate attempt to stave off death, %PERSON_NAME downs the potion of perfect healing that they carried with them.",
+	"choices": [
+		{
+			"name": "%PERSON_NAME Lives",
+			"outcomes": [
+				{
+					"effects": [
+						{"command": "REVIVE_PERSON", "argument": "true"}
+					]
+				}
+			]
+		}
+	]
+}

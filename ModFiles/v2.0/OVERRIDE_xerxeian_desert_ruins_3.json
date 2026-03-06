@@ -1,0 +1,51 @@
+{
+	"id": "foge.exploreRuins_xerxeian_desert_3",
+	"modCredit": "Forbidden Oak Games",
+	"imgCredit": "The ruins of the temple of the sun, Palmyra - Carl Haag",
+	"image": "fog.0_xerxes.jpg",
+	
+	"type": "INERT",
+	"conditional": "($FOG_RUINS_ID = 927927) & (exploration_depth = 3)",
+	"probability": 1,
+
+	"name": "Lost in the sands of time",
+    "description": "Many a looter has been to the throne room of the %HEX_NAME fort that once ruled over the vast desert and beyond. Many an archeologist has marvelled at the artistry on the walls and the many kinds of pots abound in the place. %PERSON_NAME is the first one to dig where the secret passage from the palace to the divining halls can be accessed. Below %him opens the grand chamber where arcane sciences such as alchemy, geomancy and the art of summonning were discovered, furthered and driven to their catastrophic flash points by the decree of a King who already held absolute power over all things except for his own fleeting life.\n\nThe seeds from the fruits of their labours in magical learning have long since taken root and bloomed in other continents, but the knowledge here is no less useful for a burgeoning mage.",
+
+	"choices": [
+		{
+			"name": "Onwards now",
+			"description":"Exploration Percentage is increased by 20%.",
+			"outcomes": [
+			
+				{
+					"weight": 0.20,
+                    "effects": [
+						{"command": "EXPLORE_RUINS", "argument": "1"}
+					],
+					"environment": [
+						{ "key": "FOG_RUINS_ID", "value": "927927" ,"local":"LOCATION"}
+					]
+				}
+			]
+		},
+		{
+			"name": "Catalogue the findings",
+			"condition": "($XERXES_RUIN_3_2_AS_CATALOGUED < 3)",
+			"description":"An <b>Arcane Secret</b> appears at the %LOCATION_NAME, visible only to your Agents. This can be done 3 times.\n\nExploration Percentage is NOT increased.",
+			"outcomes": [
+			
+				{
+					"weight": 0.75,
+					"effects": [
+						{"command": "PLACE_ARCANE_SECRET_PLAYER_ONLY", "argument": "Magical learning sifted from the sands of time."}
+						
+					],
+					"environment": [
+						{ "key": "FOG_RUINS_ID", "value": "927927" ,"local":"LOCATION"},
+						{ "key": "XERXES_RUIN_3_2_AS_CATALOGUED", "value": "$XERXES_RUIN_3_2_AS_CATALOGUED + 1" ,"local":"LOCATION"}
+					]
+				}
+			]
+		}
+	]
+}
