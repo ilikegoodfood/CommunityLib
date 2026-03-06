@@ -1,0 +1,34 @@
+{
+    "id": "anw.exploreRuins_Vinerva1",
+    "modCredit": "BobbyTwoHands",
+    "imgCredit": "",
+    "image": "foge.0_vinerva_ruins.jpg",
+    
+    "type": "INERT",
+    "conditional": "($FOG_RUINS_ID = 552571)",
+    "probability": 1,
+
+    "name": "Vinerva",
+    "description": "Vinerva tempts humanity to sin, offering them help in their times of need or ways to achieve their wildest dreams. However, her fruit is poisoned, and her gifts are treacherous. If we take a seed here, we could tempt a ruler, someone under the influence of greed, ambition, or cruelty. The allure of ruins will quickly lead heroes here to steal Vinerva's gifts for themselves. If we wish to make the best use of these ruins, we should perhaps place a guard to increase the danger and ward them off.\n\nAn agent who takes a seed will be offered to tempt rulers.",
+
+    "choices": [
+        {
+            "name": "Take a Seed",
+            "description": "Seeds carried by agents do not appear as items, letting you carry many without dropping items. Events will occur when your seed-carrying agent reaches a location with an appropriately weak ruler.\n\nAn agent carrying a seed will trigger events while in a settlement with a ruler with particular likings, which can be exploited to certain ends:\n\n- Liking for gold can be used to add 75% shadow to the ruler.\n- Liking for ambition can be used to infiltrate a point of interest.\n- Liking for cruelty can be used to add 100% unrest to a location.\n\nTaking a seed will add 25 allure to this location, which may lead to heroes pillaging the rest of Vinerva's gifts before your agent can return to find another.\n\nThis option increases ruins exploration by 1.",
+            "outcomes": [
+            
+                {
+                    "weight": 0.75,
+                    "effects": [
+                        {"command": "INCREASE_RUINS_ALLURE", "argument": "25"},
+                        {"command": "EXPLORE_RUINS", "argument": "1"},
+						{"command": "GAIN_VINERVA_SEED", "argument": ""}
+                    ],
+                    "environment": [
+                        { "key": "FOG_VIN_RUINS_SEED", "value": "$FOG_VIN_RUINS_SEED + 1", "local": "UNIT" }
+                    ]
+                }
+            ]
+        }
+    ]
+}

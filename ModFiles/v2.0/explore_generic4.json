@@ -1,0 +1,88 @@
+{
+	"id": "CLib.plunderWreck_Generic4",
+	"modCredit": "ILikeGoodFood",
+	"imgCredit": "Cornish Shipwreck By Millson Hunt",
+	"image": "CLib.Shipwreck.jpg",
+	
+	"type": "INERT",
+	"conditional": "($FOG_WRECK_ID = 0)",
+	"probability": 1,
+
+	"name": "Exploring Shipwreck at %LOCATION_NAME",
+	"description": "In what remains of the midships, %PERSON_NAME finds a vast pile of ancient clay jars, mostly sealed. They are surrounded by the bodies of the dead, in various states of decay. Should %PERSON_NAME attempt to open the jars, or should they trick others into openning them?\n\n(Agent HP is currently %HP)",
+
+
+	"choices": [
+		{
+			"name": "Begin looting",
+			"description":"-50% chance to gain 100 gold\n\n-25% chance to suffer 2 damage, 75% chance to suffer 5 damage",
+			"outcomes": [
+			
+				{
+					"weight": 0.125,
+					"description":"%PERSON_NAME carefully examines each jar in turn, only opening those they are certain are safe. They are not always correct, but their caution prevents serious harm from the poisonous gases within.\n(100 gold gained, 2 HP lost)",
+					"effects": [
+						{"command": "PLUNDER_SHIPWRECK", "argument": "1"},
+						{"command": "GAIN_GOLD", "argument": "100"},
+						{"command": "ADD_HP", "argument": "-2"}
+					]
+				},
+				{
+					"weight": 0.375,
+					"description":"%PERSON_NAME carefully examines each jar in turn, only opening those they are certain are safe. While successful at first, their luck doesn't hold, and they are forced to withdraw after inhaling a dangerous amount of poisonous gas.\n(100 gold gained, 5 HP lost)",
+					"effects": [
+						{"command": "PLUNDER_SHIPWRECK", "argument": "1"},
+						{"command": "GAIN_GOLD", "argument": "100"},
+						{"command": "ADD_HP", "argument": "-5"}
+					]
+				},
+				{
+					"weight": 0.125,
+					"description":"%PERSON_NAME carefully examines each jar in turn, only opening those they are certain are safe. They are immediately prooven wrong, but manage to escape the rapidly expanding cloud of poisinous gas without serious harm.\n(2 HP lost)",
+					"effects": [
+						{"command": "PLUNDER_SHIPWRECK", "argument": "1"},
+						{"command": "ADD_HP", "argument": "-2"}
+					]
+				},
+				{
+					"weight": 0.375,
+					"description":"Despite their best efforts to differentiate the safe jars from the trapped ones, %PERSON_NAME immediately finds themselves engulfed in an expanding cloud of poisonous gas.\n(5 HP lost)",
+					"effects": [
+						{"command": "PLUNDER_SHIPWRECK", "argument": "1"},
+						{"command": "ADD_HP", "argument": "-5"}
+					]
+				}
+			]
+		},
+		{
+			"name": "Trick others into opening the jars",
+			"condition":"stat_intrigue > 3",
+			"description":"[Requires: 4 Intrigue]\n\nAdds 100 Death Magic to this location.",
+			"outcomes": [
+			
+				{
+					"weight": 1,
+					"description":"%PERSON_NAME convinces the populace of the nearest settlement that a vast treasure lies unclaimed in the shipwreck at %LOCATION_NAME, and an expedition is sent to retrieve it. None return alive.",
+					"effects": [
+						{"command": "PLUNDER_SHIPWRECK", "argument": "1"},
+						{"command": "ADD_MODIFIER_DEATH", "argument": "100"}
+					]
+				}
+			]
+		},
+		{
+			"name": "Best to leave this place",
+			"description":"Escape unharmed, but none the richer.",
+			"outcomes": [
+			
+				{
+					"weight": 1,
+					"description":"%PERSON_NAME finds themselves empty handed but unharmed after the expedition",
+					"effects": [
+						{"command": "PLUNDER_SHIPWRECK", "argument": "1"}
+					]
+				}
+			]
+		}
+	]
+}

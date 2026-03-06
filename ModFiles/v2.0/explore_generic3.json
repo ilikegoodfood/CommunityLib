@@ -1,0 +1,31 @@
+{
+	"id": "ComLib.plunderWreck_Generic3",
+	"modCredit": "ILikeGoodFood",
+	"imgCredit": "Cornish Shipwreck By Millson Hunt",
+	"image": "CLib.Shipwreck.jpg",
+	
+	"type": "INERT",
+	"conditional": "($FOG_WRECK_ID = 0)",
+	"probability": 0.4,
+
+	"name": "Plundering Shipwreck at %LOCATION_NAME",
+	"description": "Great treasures can be found beneath the waves, sealed away during one of the past ages, either by a civilisation long gone or by some darker power, dying and seeking to lay the seeds of its return. %PERSON_NAME has stumbled upon such a treasure.",
+
+
+	"choices": [
+		{
+			"name": "A gift from the past",
+			"description":"%PERSON_NAME has found an artifact level item",
+			"outcomes": [
+			
+				{
+					"weight": 1.0,
+					"effects": [
+						{"command": "PLUNDER_SHIPWRECK", "argument": "1"},
+						{"command": "GRANT_ITEM_FROM_POOL", "argument": "3"}
+					]
+				}
+			]
+		}
+	]
+}

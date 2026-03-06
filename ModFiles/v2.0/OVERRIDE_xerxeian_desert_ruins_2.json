@@ -1,0 +1,74 @@
+{
+	"id": "foge.exploreRuins_xerxeian_desert_2",
+	"modCredit": "Forbidden Oak Games",
+	"imgCredit": "The ruins of the temple of the sun, Palmyra - Carl Haag",
+	"image": "fog.0_xerxes.jpg",
+	
+	"type": "INERT",
+	"conditional": "($FOG_RUINS_ID = 927927) & (exploration_depth = 2)",
+	"probability": 1,
+
+	"name": "Lost in the sands of time",
+    "description": "They arrived in the dead of the night, scaring the nightwatch out of their wits. Some forty bandits and their %GENDERED2[king|queen]%GENDERED2, armed to the teeth but surprisingly affable sought an audience with the camp's leader. %HisR2 majesty of the sweeping dunes has come to collect taxes after hearing about someone actually bothering with excavating the old plateau and its dusty rubble. %HeR2 has no interest in supplies, or %PERSON_NAME's water, only what %he might've dug up from %hisR2 land.\n\nWith a hearty grin the rotund royalty then clarifies that %heR2 wants whatever Gold has been found, but your agent is not entirely sure how %hisR2 majesty can make the distinction between what was found, and what %he brought here...",
+
+	"choices": [
+		{
+			"name": "Submit to the search",
+			"description":"Your Agent loses ALL of %his Gold.\n\nExploration Percentage is increased by 20%.\n\n<i>Rummaging the tents. Peering in all the containers. They even drum the waterskins for odd clinks...</i>",
+			"outcomes": [
+			
+				{
+					"weight": 0.20,
+                    "effects": [
+						{"command": "GAIN_GOLD", "argument": "-999"},
+						{"command": "EXPLORE_RUINS", "argument": "1"}
+					],
+					"environment": [
+						{ "key": "FOG_RUINS_ID", "value": "927927" ,"local":"LOCATION"}
+					]
+				}
+			]
+		},
+		{
+			"name": "The only metals found here are steel and the taste of iron",
+			"condition": "(has_minion & stat_might > 3) & !is_agent_baroness & !is_agent_warlord & !is_agent_survivor",
+			"description":"[Requires: Agent has a minion and Might 4]\n\nYour Agent gains 30 XP and loses 4 HP.\nExploration Percentage is increased by 20%.",
+			"outcomes": [
+			
+				{
+					"weight": 0.75,
+					"description": "%PERSON_NAME knows combat and while forty bandits and their portly pretend monarch are a daunting number to face, they're also an awkward one to maneuver in here. Amidst the rubble %PERSON_NAME retreats into, an all on one melee turns into a gauntlet of duels. %MULTI[Keeping to the shadows and looping around architecture %he's grown familiar with over the month,|Swinging, weaving, stabbing and blocking, throwing sand in the eyes and biting the hands that grab,|Fighting with inhuman rage, your agent tears through the foes like paper. With their formation broken,]%MULTI eventually their numbers are halved at which point their leader wisely cuts their losses and orders a retreat.\n\nThere is nothing in the rubble that's worth this steep a price, they'll later reason to themselves, bitterly and incorrect.\n\n%PERSON_NAME gains 30 XP and loses 4 HP.",
+					"effects": [
+						{"command": "EXPLORE_RUINS", "argument": "1"},
+						{"command": "ADD_HP", "argument": "-4"},
+						{"command": "GAIN_XP", "argument": "30"}
+						
+					],
+					"environment": [
+						{ "key": "FOG_RUINS_ID", "value": "927927" ,"local":"LOCATION"}
+					]
+				}
+			]
+		},
+		{
+			"name": "Utterly outmatched",
+			"condition": "is_agent_baroness | is_agent_warlord | is_agent_survivor | stat_might > 3 & has_minion",
+			"description":"[Requires: The Survivor, The Baroness, The Warlord, or Agent has a minion and Might 4]\n\nYour Agent gains 30 XP.\nExploration Percentage is increased by 20%.",
+			"outcomes": [
+			
+				{
+					"weight": 0.75,
+					"description": "The forty bandits and their portly pretend monarch would be a daunting force to face for any mortal, but in addition to being an awkward number to maneuver in here, they face %PERSON_NAME on %his ground. Amidst the rubble %PERSON_NAME retreats into, an all on one melee turns into a slaughter. %MULTI[Keeping to the shadows and ambushing the fearful warriors one by one,|Swinging, weaving, stabbing and blocking, throwing men around left and right,|Fighting with an inhuman strength, your agent tears through %his foes like paper. With their formation broken,]%MULTI eventually their numbers are halved at which point their leader wisely cuts their losses and orders a retreat.\n\nThere is nothing in the rubble that's worth this steep a price, they'll later reason to themselves, bitterly and incorrectly.\n\n%PERSON_NAME gains 30 XP.",
+					"effects": [
+						{"command": "EXPLORE_RUINS", "argument": "1"},
+						{"command": "GAIN_XP", "argument": "30"}
+						
+					],
+					"environment": [
+						{ "key": "FOG_RUINS_ID", "value": "927927" ,"local":"LOCATION"}
+					]
+				}
+			]
+		}
+	]
+}

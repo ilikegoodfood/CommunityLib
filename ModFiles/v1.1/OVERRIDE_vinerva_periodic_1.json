@@ -1,0 +1,77 @@
+{
+    "id": "anw.exploreRuins_VinervaPeriodic1",
+    "modCredit": "BobbyTwoHands",
+    "imgCredit": "",
+    "image": "foge.0_vinerva_ruins.jpg",
+    
+    "type": "INERT",
+    "conditional": "($FOG_VIN_RUINS_SEED > 0) & (is_agent & other_person_exists & other_is_ruler & (((other_preference_ambition > 0) & has_uninfiltrated_point_of_interest) | (other_preference_cruel > 0) | ((other_preference_gold > 0) & other_shadow < 100))) & (!is_dead)",
+    "probability": 0,
+
+    "name": "Vinerva location based",
+    "description": "The ruler of this place is weak-willed, and their sins can be turned against them by offering them Vinerva's gift.",
+
+    "choices": [
+        {
+            "name": "Plant the seed of Pride",
+            "description": "Infiltrates a point of interest here.\n\nRequires the ruler to have a preference for Ambition.\n\nConsumes a Vinerva Seed. (Your agent is holding $FOG_VIN_RUINS_SEED)",
+            "condition": "(other_preference_ambition > 0) & has_uninfiltrated_point_of_interest",
+            "outcomes": [            
+                {
+                    "weight": 0.75,
+                    "effects": [
+                        {"command": "INFILTRATE_POINTS_OF_INTEREST", "argument": "1"},
+						{"command": "LOSE_VINERVA_SEED", "argument": ""}
+                    ],
+                    "environment": [
+                        { "key": "FOG_VIN_RUINS_SEED", "value": "$FOG_VIN_RUINS_SEED - 1", "local": "UNIT"}
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Plant the seed of Wrath",
+            "description": "Increases Unrest here by 100%.\n\nRequires the ruler to have a preference for Cruelty.\n\nConsumes a Vinerva Seed. (Your agent is holding $FOG_VIN_RUINS_SEED)",
+            "condition": "other_preference_cruel > 0",
+            "outcomes": [            
+                {
+                    "weight": 0.75,
+                    "effects": [
+                        {"command": "INCREASE_UNREST", "argument": "100"},
+						{"command": "LOSE_VINERVA_SEED", "argument": ""}
+                    ],
+                    "environment": [
+                        { "key": "FOG_VIN_RUINS_SEED", "value": "$FOG_VIN_RUINS_SEED - 1", "local": "UNIT"}
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Plant the seed of Greed",
+            "description": "Increases Ruler shadow by 75%.\n\nRequires the ruler to have a preference for Gold.\n\nConsumes a Vinerva Seed. (Your agent is holding $FOG_VIN_RUINS_SEED)",
+            "condition": "(other_preference_gold > 0) & (other_shadow < 100)",
+            "outcomes": [            
+                {
+                    "weight": 0.75,
+                    "effects": [
+                        {"command": "LOCATION_RULER_GAIN_SHADOW", "argument": "75"},
+						{"command": "LOSE_VINERVA_SEED", "argument": ""}
+                    ],
+                    "environment": [
+                        { "key": "FOG_VIN_RUINS_SEED", "value": "$FOG_VIN_RUINS_SEED - 1", "local": "UNIT"}
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Do nothing for now",
+            "outcomes": [            
+                {
+                    "weight": 0.75,
+                    "effects": [
+                    ]
+                }
+            ]
+        }
+    ]
+}

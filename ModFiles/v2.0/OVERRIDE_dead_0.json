@@ -1,0 +1,33 @@
+{
+    "id": "anw.exploreRuins_Dead0",
+    "modCredit": "BobbyTwoHands",
+    "imgCredit": "",
+    "image": "foge.0_volcano.jpg",
+    
+    "type": "INERT",
+    "conditional": "($FOG_RUINS_ID = 0) & (exploration_depth = 0) & $DEAD_RUINS_SET = 0",
+    "probability": 1,
+
+    "name": "The Earth God's Victims",
+    "description": "The supervising academic of the dig is bubbling with excitement. The vast fields of black stone, he says, cover the city of Vessenter. Long thought to be a myth, it was said to have been swallowed by lava flows many thousand years ago. The myth tells of a city that devoured by the Earth God as it offended him somehow. This site may reveal magical secrets to whoever reaches the bottom of the volcanic rock, but rock this hard will cost significant gold to recruit enough workers to dig to the lowest layers.",
+
+    "choices": [
+        {
+            "name": "Begin the dig",
+            "description": "The topsoil and initial obstructions can be easily removed, but it will cost 25 gold for each further dig you make.",
+            "outcomes": [
+            
+                {
+                    "weight": 0.75,
+                    "effects": [
+                        {"command": "EXPLORE_RUINS", "argument": "1"}
+                    ],
+                    "environment": [
+                        { "key": "FOG_RUINS_ID", "value": "204705", "local": "LOCATION" },
+						{ "key": "DEAD_RUINS_SET", "value": "1", "local": "false" }
+                    ]
+                }
+            ]
+        }
+    ]
+}

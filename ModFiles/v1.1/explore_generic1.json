@@ -1,0 +1,68 @@
+{
+	"id": "CLib.plunderWreck_Generic1",
+	"modCredit": "ILikeGoodFood",
+	"imgCredit": "Cornish Shipwreck By Millson Hunt",
+	"image": "CLib.Shipwreck.jpg",
+	
+	"type": "INERT",
+	"conditional": "($FOG_WRECK_ID = 0)",
+	"probability": 1,
+
+	"name": "Plundering Shipwreck at %LOCATION_NAME",
+	"description": "Hidden beneath a rotting floorboard in what must have once been a finely appointed officer's cabin, %PERSON_NAME finds a small strongbox that jangles with the sound of coins. Alongside the strongbox is a badly damage note, mentioning a second, larger cache of gold hidden in the bilge. Should %PERSON_NAME leave now with the strongbox and its contents, or try to find the second cache of gold in the shattered, flooded bilge.\n\n(Agent HP is currently %HP)",
+
+
+	"choices": [
+		{
+			"name": "Leave with the strongbox",
+			"description": "Gain 30 Gold",
+			"outcomes": [
+				{
+					"weight": 1.0,
+					"description": "%PERSON_NAME leaves the ship with the strongbox, which contains 30 gold",
+					"effects": [
+						{"command": "GAIN_GOLD", "argument": "30"},
+						{"command": "PLUNDER_SHIPWRECK", "argument": "1"}
+					]
+				}
+			]
+		},
+		{
+			"name": "Seek the cache in the bilge",
+			"description": "-25% chance to find an additional 100 gold\n\n-20% chance to suffer 2 damage\n\n-15% chance to suffer 4 damage\n\n-40% to find nothing",
+			"outcomes": [
+				{
+					"weight": 0.25,
+					"description": "%PERSON_NAME finds the second cache and gains an additional 100 gold.\n(100 gold gained)",
+					"effects": [
+						{"command": "GAIN_GOLD", "argument": "130"},
+						{"command": "PLUNDER_SHIPWRECK", "argument": "1"}
+					]
+				},
+				{
+					"weight": 0.20,
+					"description":"%PERSON_NAME recieves numerous cuts and bruises as they search through the murky water of the rubble-strewn bilge.\n(2 HP lost)",
+					"effects": [
+						{"command": "PLUNDER_SHIPWRECK", "argument": "1"},
+						{"command": "ADD_HP", "argument": "-2"}
+					]
+				},
+				{
+					"weight": 0.15,
+					"description":"%PERSON_NAME is badly wounded as they attempt to shift rubble during their search, and is forced to withdraw.\n(4 HP lost)",
+					"effects": [
+						{"command": "PLUNDER_SHIPWRECK", "argument": "1"},
+						{"command": "ADD_HP", "argument": "-4"}
+					]
+				},
+				{
+					"weight": 0.40,
+					"description": "%PERSON_NAME searches for some time, but finds nothing of value in the murky water of the rubble-strewn bilge.",
+					"effects": [
+						{"command": "PLUNDER_SHIPWRECK", "argument": "1"}
+					]
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,47 @@
+{
+	"id": "fog.MOVE_chosen_one_mentor2",
+	"modCredit": "Forbidden Oak Games",
+	"imgCredit": "",
+	"image": "",
+	
+	"type": "MOVE",
+	"conditional": "is_agent & $IMPORTANT_TO_CHOSEN_ONE_MENTOR = 1",
+	"probability": 205,
+
+	"name": "The chosen one's mentor resides here",
+	"description": "%PERSON_NAME arrives in the %LOCATION_NAME, where the Chosen One's reclusive and mysterious Mentor resides. After some time, %he finds an unremarkable home lived in by a seemingly unremarkable person. Though enjoying the comfort of anonymity amongst the commoners, deep down the elder knows there may come a day that a visitor will come bearing malice.\n\nIs today that day?",
+			
+	"choices": [
+		{
+			"name": "Death comes knocking",
+			"description": "Death of the Mentor will cost the Chosen One 9 Sanity and will <b>Disrupt</b> them for 5 Turns.\n\nAfter the murder, when they arrive at this location, there's a high chance the Chosen One will figure out %PERSON_NAME committed the murder and will then gain a <b>Hatred</b> towards %him.",
+			"outcomes": [
+			
+				{
+					"weight": 0.75,
+					"effects": [
+					{"command": "SHOW_EVENT", "argument": "fog.INERT_chosen_one_mentor2_visit" }
+					],
+					"environment": [
+					{ "key": "IMPORTANT_TO_CHOSEN_ONE_MENTOR", "value": "0","local":"LOCATION"}
+					]
+				}
+			]
+		},
+		{
+			"name": "Spared, for now",
+			"description": "Nothing happens.\nThe Challenge <b>'Kill the Chosen One's Mentor'</b> has appeared in the %LOCATION_NAME,\nfor when you might change your mind about this mercy...",
+			"outcomes": [
+			
+				{
+					"weight": 0.75,
+					"effects": [						
+					{"command": "ADD_MODIFIER", "argument": "Chosen One Mentor;fog.mentor_icon.png;Move an agent into this location to trigger this event again, and have the option to kill the mentor, harming the Chosen One;TO_MAX_CHARGE"}
+					],
+					"environment": [
+					]
+				}
+			]
+		}
+	]
+}

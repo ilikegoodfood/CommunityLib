@@ -1,0 +1,34 @@
+{
+	"id": "foge.exploreRuins_mammon0",
+	"modCredit": "Forbidden Oak Games",
+	"imgCredit": "Hagar And Ishmael In A Distant Rocky Landscape - Francis Gold",
+	"image": "foge.0_mammon.jpg",
+	
+	"type": "INERT",
+	"conditional": "($FOG_RUINS_ID = 0) & (exploration_depth = 0) & !god_is_mammon & $MAMMON_RUINS_SET = 0",
+	"probability": 1,
+
+	"name": "The monastery below a mountain",
+    "description": "The ancient monastery proved a disappointing set of ruins to explore. With no traps or a hint of lingering magic in the place, %PERSON_NAME should have known the %MULTI[Blackened Scepter|Book Pyroluminous|Crown of Horns|Unwanted Room|Gift from the Pit|Evergoing Wheel|Door to the Dreamlands|First Shadow Behind|fabled Silver Key|'book without a writer'|Mask of the Red Death]%MULTI wouldn't be found here. %He's ready to leave when %he suddenly feels an odd draft. One of the brickwalls is breathing.\n\nIt's suffered from moisture eroding it over the centuries. Water will carve a path through even the mountains given enough time. A few swings of the hammer folds the weakened wall and reveals a winding cave behind it, leading deep into the mountain behind the monastery...",
+
+
+	"choices": [
+		{
+			"name": "Perhaps there's more to %HEX_NAME...",
+			"description": "Exploration Percentage is increased by 20%.",
+			"outcomes": [
+			
+				{
+					"weight": 0.75,
+					"effects": [
+						{"command": "EXPLORE_RUINS", "argument": "1"}
+					],
+					"environment": [
+						{ "key": "FOG_RUINS_ID", "value": "626666" ,"local":"LOCATION"},
+						{ "key": "MAMMON_RUINS_SET", "value": "1" ,"local":"false"}
+					]
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,31 @@
+{
+    "id": "anw.exploreRuins_Vinerva0",
+    "modCredit": "BobbyTwoHands",
+    "imgCredit": "",
+    "image": "foge.0_vinerva_ruins.jpg",
+    
+    "type": "INERT",
+    "conditional": "($FOG_RUINS_ID = 0) & (!god_is_vinerva) & VINERVA_RUINS_SET = 0",
+    "probability": 1,
+
+    "name": "Vinerva",
+    "description": "These ruins are infiltrated by the twisting roots and tendrils of the tree-God Vinerva. Part of her sleeps here, waiting for whatever dark season will be needed to awaken her and begin her growth across the world. If we dig here, we can retrieve her seeds, which can be used to tempt rulers into damning themselves with their sins. Doing so will also draw heroes here who will pillage the ruins.",
+
+    "choices": [
+        {
+            "name": "Do nothing",
+            "outcomes": [
+            
+                {
+                    "weight": 0.75,
+                    "effects": [
+                    ],
+                    "environment": [
+                        { "key": "FOG_RUINS_ID", "value": "552571", "local": "LOCATION" },
+						{ "key": "VINERVA_RUINS_SET", "value": "1", "local": "false" }
+                    ]
+                }
+            ]
+        }
+    ]
+}

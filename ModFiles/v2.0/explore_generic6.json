@@ -1,0 +1,59 @@
+{
+	"id": "CLib.plunderWreck_Generic6",
+	"modCredit": "ILikeGoodFood",
+	"imgCredit": "Cornish Shipwreck By Millson Hunt",
+	"image": "CLib.Shipwreck.jpg",
+	
+	"type": "INERT",
+	"conditional": "($FOG_WRECK_ID = 0)",
+	"probability": 1,
+
+	"name": "Exploring Shipwreck at %LOCATION_NAME",
+	"description": "While %PERSON_NAME is completing %his work at %LOCATION_NAME, %he discovers that %he is slowly being surrounded by an ever-growing group of sailors, fishermen and opportunist loots, who must, for whatever reason, also be here seeking what the shipwreck might hold. To be seen looting the wreck would be unfortunate, and increase the agent's menace as questions are asked which have no legal answers. Violence, however, might be similarly risky, as the trail of bodies would undoubtedly lead back to %PERSON_NAME.",
+
+
+	"choices": [
+		{
+			"name": "Share the wealth",
+			"description":"Take a diplomatic approach, gaining only 5 gold, but avoiding drawing any unwanted attention.",
+			"outcomes": [
+			
+				{
+					"weight": 0.75,
+					"effects": [
+						{"command": "PLUNDER_SHIPWRECK", "argument": "1"},
+						{"command": "GAIN_GOLD", "argument": "5"}
+					]
+				}
+			]
+		},
+		{
+			"name": "Drive them by the Sword",
+			"description": "Attack the sailors, at least until they understand the wreck is not theirs and flee. Gain 40 Gold, gain 10 menace",
+			"outcomes": [
+				{
+					"weight": 0.8,
+					"effects": [
+						{"command": "PLUNDER_SHIPWRECK", "argument": "1"},
+						{"command": "GAIN_GOLD", "argument": "40"},
+						{"command": "GAIN_MENACE", "argument": "10"}
+					]
+				}
+			]
+		},
+		{
+			"name": "Loot Boldly",
+			"description": "Simply walk in, and take what is ours. The scholars might protest, and then rush in to grab what they can, but much will be acquired, at the cost of antagonising the crowd. Gain 25 gold, gain 5 menace",
+			"outcomes": [
+				{
+					"weight": 0.8,
+					"effects": [
+						{"command": "PLUNDER_SHIPWRECK", "argument": "1"},
+						{"command": "GAIN_GOLD", "argument": "25"},
+						{"command": "GAIN_MENACE", "argument": "5"}
+					]
+				}
+			]
+		}
+	]
+}

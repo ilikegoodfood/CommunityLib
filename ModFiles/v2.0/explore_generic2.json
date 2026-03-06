@@ -1,0 +1,62 @@
+{
+	"id": "CLib.plunderWreck_Generic2",
+	"modCredit": "ILikeGoodFood",
+	"imgCredit": "Cornish Shipwreck By Millson Hunt",
+	"image": "CLib.Shipwreck.jpg",
+	
+	"type": "INERT",
+	"conditional": "($FOG_WRECK_ID = 0)",
+	"probability": 1,
+
+	"name": "Plundering Shipwreck at %LOCATION_NAME",
+	"description": "%PERSON_NAME delves into the dark twisting passages of the wrecked ship. Deep within the shattered hull they find an ornate chest, partially covered by wreckage. Should %PERSON_NAME risk the wreckage collapsing further in the hopes of retrieving the chest?\n\n(Agent HP is currently %HP)",
+
+
+	"choices": [
+		{
+			"name": "Try to retrieve the chest",
+			"description":"-25% chance to find a rare item\n\n-75% chance to take 5 damage",
+			"outcomes": [
+			
+				{
+					"weight": 0.75,
+					"description":"%PERSON_NAME finds themselves sliced by needle sharp rocks, propelled by unseen forces",
+					"effects": [
+						{"command": "PLUNDER_SHIPWRECK", "argument": "1"},
+						{"command": "ADD_HP", "argument": "-5"}
+					]
+				},
+				{
+					"weight": 0.25,
+					"description":"%PERSON_NAME's efforts bear fruit, and a rare item is now yours for the taking",
+					"effects": [
+						{"command": "PLUNDER_SHIPWRECK", "argument": "1"},
+						{"command": "GRANT_ITEM_FROM_POOL", "argument": "2"}
+					]
+				}
+			]
+		},
+		{
+			"name": "Search in a safer portion on the shipwreck",
+			"description":"25% chance to find a common item",
+			"outcomes": [
+			
+				{
+					"weight": 0.75,
+					"description":"%PERSON_NAME finds themselves empty handed but unharmed after the expedition",
+					"effects": [
+						{"command": "PLUNDER_SHIPWRECK", "argument": "1"}
+					]
+				},
+				{
+					"weight": 0.25,
+					"description":"%PERSON_NAME's searches in the safer parts of the shipwreck produce a modest find, perhaps the time was not wasted",
+					"effects": [
+						{"command": "PLUNDER_SHIPWRECK", "argument": "1"},
+						{"command": "GRANT_ITEM_FROM_POOL", "argument": "1"}
+					]
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,33 @@
+{
+	"id": "anw.exploreRuins_Dragon0",
+	"modCredit": "BobbyTwoHands",
+	"imgCredit": "",
+	"image": "foge.0_dragon.jpg",
+	
+	"type": "INERT",
+	"conditional": "($FOG_RUINS_ID = 0) & ((exploration_depth = 0) | (exploration_depth = 100748)) & $DRAGON_RUINS_SET = 0",
+	"probability": 1,
+
+	"name": "Dragon",
+	"description": "The lower levels of these ruins have been taken over by a dragon. It sits inside the main chamber of what must have been a palace, atop its golden treasure. Vain, arrogant, and powerful, it spends much of its time sleeping, content in its riches and solitude. As long as heroes do not drive it away, it can be visited and made use of.",
+
+	"choices": [
+		{
+			"name": "Remove the rubble to reach the dragon",
+			"description": "Explore again to steal from, anger, or recruit the dragon.",
+			"outcomes": [
+				{
+					"weight": 0.75,
+					"effects": [
+						{"command": "EXPLORE_RUINS", "argument": "1"},
+						{"command": "ADD_MODIFIER", "argument": "Dragon Mountain;foge.dragon.jpg;These ruins were known to have a dragon nesting in them"}
+					],
+					"environment": [
+						{ "key": "FOG_RUINS_ID", "value": "100748", "local": "LOCATION"},
+						{ "key": "DRAGON_RUINS_SET", "value": "1", "local": "false" }
+					]
+				}
+			]
+		}
+	]
+}

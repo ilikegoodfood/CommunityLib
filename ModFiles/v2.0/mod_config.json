@@ -1,0 +1,250 @@
+{
+	"options":[
+		{
+			"name":"Auto-Relaunch on Mod List Change",
+			"description":"If enabled, this mod will attempt to relaunch the game, using an external batch file (relauncher.bat) stored in it's root folder.\nIt will visually appear as the system console opening for several seconds, while it waits for the application to close. If you are not comfortable with this feature, leave it disabled.",
+			"defaultBoolValue":"false"
+		},
+		{
+			"name":"Spawn Shipwrecks",
+			"description":"Enables shipwrecks as a standalone feature.\nCan be overriden by mods.",
+			"defaultBoolValue":"true"
+		},
+		{
+			"name":"Defeatable Vinerva",
+			"description":"If enabled, Vinerva will lose the game if, after having placed one or more Hearts of the Forest, she has no Hearts of the Forest remaining.\nThis option does not change AI behaviour in any way.",
+			"defaultBoolValue":"true"
+		},
+		{
+			"name":"The Evil Beneath's Max Health",
+			"description":"The maximum possible health of The Evil Beneath's Heart (default: 1000).",
+			"isInteger":"true",
+			"minValue":10,
+			"maxValue":2000,
+			"defaultValue":1000
+		},
+		{
+			"name":"Ruler Traits Effect Armies",
+			"description":"If enabled, the command stat of rulers will effect the maximum hit points of the armies that they raise.",
+			"defaultBoolValue":"false"
+		},
+		{
+			"name":"Modifier Charge Effects Cthonian Armies",
+			"description":"If enabled, the charge of the Cthonians modifier will increase the maximum hp of Cthonian armies that it spawns.",
+			"defaultBoolValue":"false"
+		},
+		{
+			"name":"Pan To Holy Order Screen",
+			"description":"If enabled, when you select \"GO TO\" from a message, and the the target is a holy order, it will automatically open the holy order screen to that holy order.",
+			"defaultBoolValue":"true"
+		},
+		{
+			"name":"Display 'No Faith' on Faith Button",
+			"description":"If enabled, the Faith button for locations with no holy order present will read 'No Faith' instead of being blank.",
+			"defaultBoolValue":"true"
+		},
+		{
+			"name":"Show Ophanim's Faith at Elder Tomb",
+			"description":"If enabled, and playing as Ophanim, the Elder Tomb will display Ophanim's faith, and Ophanim's faith will be accessible using the location's view faith button.",
+			"defaultBoolValue":"true"
+		},
+		{
+			"name":"Ophanim Perfection Event To Message",
+			"description":"If enabled, a settlement achieving perfection will fire a message instead of an event.",
+			"defaultBoolValue":"false"
+		},
+		{
+			"name":"Dark Prophets",
+			"description":"If enabled, enshadowed prophets belonging to the Dark Empire and prophets belonging to Ophanim's Theocracies will count as a player-controlled prophet for the purposes of influence gain.",
+			"defaultBoolValue":"true"
+		},
+		{
+			"name":"Prophet Trait",
+			"description":"If enabled, prophets of holy orders will be given a trait that indicates that they are a prophet and which holy order they are the prophet of.",
+			"defaultBoolValue":"false"
+		},
+		{
+			"name":"Chosen One Death Message",
+			"description":"If enabled, a message will be generated whenever the Chosen One dies.",
+			"defaultBoolValue":"true"
+		},
+		{
+			"name":"Disable Curved Links",
+			"description":"If enabled, links between locations on the same map layer will no longer display as a curve, but as a strait line.\nThis reverts the curved link rendering introduced to the DLC in the undocumented quality of life update that was released on 07/11/2025 (dd/mm/yyyy).",
+			"defaultBoolValue":"false"
+		},
+		{
+			"name":"Disable Curved Links Across Map Layers",
+			"description":"If enabled, links between locations on different map layers will no longer display as a curve, but as a strait line.\nThis reverts the curved link rendering introduced to the DLC in the undocumented quality of life update that was released on 07/11/2025 (dd/mm/yyyy).",
+			"defaultBoolValue":"false"
+		},
+		{
+			"name":"Transparent Mask Backgrounds",
+			"description":"If enabled, all vanilla map masks will use the dark-transparent colour set and full terrain sprite for hexes that are not highlighted by the active map mask. Mods need to implement this behaviour individually.",
+			"defaultBoolValue":"true"
+		},
+		{
+			"name":"Realistic Trade Routes",
+			"description":"If enabled, trade routes will be created using a modified pathfinding algorithm that priorities built up areas with markets, and avoids areas of low habitability. This should create a more realistic and varied trade network.",
+			"defaultBoolValue":"false"
+		},
+		{
+			"name":"Dense Trade Routes",
+			"description":"If enabled, additional trade routes will be created such that each trade route endpoint is always connected to its closest (cheapest) trade partner.",
+			"defaultBoolValue":"false"
+		},
+		{
+			"name":"Allow Culture-Specific Minor Settlement Graphics",
+			"description":"If enabled, culture mods can display culture specific graphics for minor human settlements, such as farms and cathedrals.",
+			"defaultBoolValue":"true"
+		},
+		{
+			"name":"Use Precise Distance Divisor",
+			"description":"If enabled, the distance-related divisor for challenge utilities will find exact paths to the challenge instead of assuming that the shortest possible path is valid. This makes the AI smarter, but it will negatively impact performance. If disabled, AI will not be able to account for modded features that change their movement speed.",
+			"defaultBoolValue":"true"
+		},
+		{
+			"name":"Enshadow in Dwarven Cities",
+			"description":"If enabled, dwarven cities will have the \"Enshadow\" challenge.",
+			"defaultBoolValue":"false"
+		},
+		{
+			"name":"Lay Low in Dwarven Cities",
+			"description":"If enabled, dwarven cities will have the \"Lay Low\" challenge.",
+			"defaultBoolValue":"false"
+		},
+		{
+			"name":"Dwarven Expansion Mechanics",
+			"description":"If enabled, dwarven civilizations will have the ability to rebuild destroyed cities, and may slightly expand their civilizations.",
+			"defaultBoolValue":"false"
+		},
+		{
+			"name":"Dwarven Surface Fortresses",
+			"description":"If enabled, in response to awareness of the underground reaching 100%, dwarven civilizations will build fortress cities on the surface end of links that connect directly to one of their settlements, if the location is not already occupied.",
+			"defaultBoolValue":"false"
+		},
+		{
+			"name":"Target Dwarven Civilization Count",
+			"description":"The approximate number of dwarven civilizations that should exist on the map (default 1). To disable dwarfs, turn them off in the new game settings.",
+			"isInteger":"true",
+			"minValue":1,
+			"maxValue":4,
+			"defaultValue":1
+		},
+		{
+			"name":"Dynamic Dwarven Civilization Count",
+			"description":"If enabled, reduces the Target Dwarven Civilization Count by 1 on small maps, and increases it by 1 on large maps.",
+			"defaultBoolValue":"false"
+		},
+		{
+			"name":"Target Orc Horde Count",
+			"description":"The number of orc hordes that should exist on the map (default 2). To disable orc hordes, turn them off in the new game settings, and, for performance benefits, disable the Orcs Plus mod if enabled (disabling Orcs Plus requires the game to be relaunched).",
+			"isInteger":"true",
+			"minValue":1,
+			"maxValue":4,
+			"defaultValue":2
+		},
+		{
+			"name":"Dynamic Orc Horde Count",
+			"description":"If enabled, reduces the Target Orc Horde Count by 1 on small maps, and increases it by 1 on large maps.",
+			"defaultBoolValue":"false"
+		},
+		{
+			"name":"Target Natural Wonder Count",
+			"description":"The number of natural wonders that should exist on the map (default 1).",
+			"isInteger":"true",
+			"minValue":1,
+			"maxValue":9,
+			"defaultValue":1
+		},
+		{
+			"name":"Dynamic Natural Wonder Count",
+			"description":"If enabled, reduces the Target Natural Wonder Count by 1 on small maps, and increases it by 1 on large maps.",
+			"defaultBoolValue":"false"
+		},
+		{
+			"name":"Allow Duplicate Wonders",
+			"description":"If enabled, a wonder may be selected more than once.",
+			"defaultBoolValue":"false"
+		},
+		{
+			"name":"Wonder Priority: The Entrance",
+			"description":"If set to 0, the wonder will not appear in your games. If set to 2, spawning this wonder will be prioritised over wonders for which this setting is 1.",
+			"isInteger":"true",
+			"minValue":0,
+			"maxValue":3,
+			"defaultValue":1
+		},
+		{
+			"name":"Wonder Priority: Brother of Sleep",
+			"description":"If set to 0, the wonder will not appear in your games. If set to 2, spawning this wonder will be prioritised over wonders for which this setting is 1.",
+			"isInteger":"true",
+			"minValue":0,
+			"maxValue":3,
+			"defaultValue":1
+		},
+		{
+			"name":"Wonder Priority: Primordial Font",
+			"description":"If set to 0, the wonder will not appear in your games. If set to 2, spawning this wonder will be prioritised over wonders for which this setting is 1.",
+			"isInteger":"true",
+			"minValue":0,
+			"maxValue":3,
+			"defaultValue":1
+		},
+		{
+			"name":"Forced Wonders Do Not Count",
+			"description":"If enabled, a wonder that has its priority set to 3 (forced to always show up), will not count against the target number of wonders to spawn.",
+			"defaultBoolValue":"false"
+		},
+		{
+			"name":"God Sort",
+			"description":"If enabled, the gods in the new game screen will be sorted according to the GoSort configuration options.",
+			"defaultBoolValue":"true"
+		},
+		{
+			"name":"God Sort: Alphabetise",
+			"description":"If enabled, the gods in the new game screen will be sorted alphabetically, within their respective blocks.",
+			"defaultBoolValue":"false"
+		},
+		{
+			"name":"God Sort: Random",
+			"description":"If enabled, the gods in the new game screen will be sorted randomly, within their respective blocks, and respecting the SWWF and las-played rules. Overrides Alphabetise option.",
+			"defaultBoolValue":"false"
+		},
+		{
+			"name":"God Sort: Keep SWWF First",
+			"description":"If enabled, She Who Will Feast will always be the first god in the list.",
+			"defaultBoolValue":"true"
+		},
+		{
+			"name":"God Sort: Last Played First",
+			"description":"If enabled, the god of the last game that you started or loaded will be first, before SWWF.",
+			"defaultBoolValue":"false"
+		},
+		{
+			"name":"God Sort: Differentiate Modded Gods",
+			"description":"If enabled, all modded gods will be listed after all base-game gods.",
+			"defaultBoolValue":"true"
+		},
+		{
+			"name":"God Sort: Bonus Gods Last",
+			"description":"If enabled, all gods whose names start with \"Bonus God:\" will be sorted after all other gods in their respective blocks (vanilla and modded).",
+			"defaultBoolValue":"true"
+		},
+		{
+			"name":"God Sort: Minor Gods After Major Gods",
+			"description":"If enabled, all gods whose names start with \"Minor God:\" will be sorted after all other gods in their respective blocks (vanilla and modded), but before all gods whose names start with \"Bonus God:\".",
+			"defaultBoolValue":"true"
+		},
+		{
+			"name":"God Sort: Ignore God-Name Prefixes",
+			"description":"If enabled, the sorting algorithm will skip prefixes to a god's name, and sort by the god's actual name. This only support prefixes that end in \": \".",
+			"defaultBoolValue":"true"
+		},
+		{
+			"name":"God Sort: Ignore \"The\" at Start of God Names",
+			"description":"If enabled, the sorting algorithm will skip the word \"The \" if it is the first word in a god's name.",
+			"defaultBoolValue":"false"
+		}
+	]
+}

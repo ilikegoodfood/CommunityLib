@@ -1,0 +1,33 @@
+{
+	"id": "anw.exploreRuins_Mad0",
+	"modCredit": "BobbyTwoHands",
+	"imgCredit": "",
+	"image": "foge.0_ruinsColumns.jpg",
+	
+	"type": "INERT",
+	"conditional": "($FOG_RUINS_ID = 0) & (exploration_depth = 0) & $MAD_RUINS_SET = 0",
+	"probability": 1,
+
+	"name": "Remnant of the Previous World",
+	"description": "These ruins are ancient indeed, older even than the hills in which they were found. When the insane creator god rebuilt this world, this temple survived, either by the god's design or by oversight. Drenched in divine lunacy, this place could serve to channel madness into the surrounding lands, but we cannot hope to avoid detection while doing so. If we dig deeper, we must expect heroes to attempt to loot this place before we do.",
+
+	"choices": [
+		{
+			"name": "Begin the dig",
+			"description": "Gather 35 gold from the antechamber and begin to explore the temple.",
+			"outcomes": [
+				{
+					"weight": 0.75,
+					"effects": [
+						{"command": "EXPLORE_RUINS", "argument": "1"},
+						{"command": "GAIN_GOLD", "argument": "35"}
+					],
+					"environment": [
+						{ "key": "FOG_RUINS_ID", "value": "555812", "local": "LOCATION" },
+						{ "key": "MAD_RUINS_SET", "value": "1" ,"local":"false"}
+					]
+				}
+			]
+		}
+	]
+}
