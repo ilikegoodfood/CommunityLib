@@ -11043,7 +11043,20 @@ namespace CommunityLib
 
         public static double UAEN_Cordyceps_Haematophage_getAttackUtility(double utility, UA ua, Unit other, List<ReasonMsg> reasonMsgs, bool includeDangerousFoe)
         {
-            if (other is UAG target && !other.isCommandable())
+            if (other.isCommandable())
+            {
+                reasonMsgs?.Add(new ReasonMsg("The Hive will not attack its own", -10000.0));
+                return -10000.0;
+            }
+
+            if (!(other is UA target))
+            {
+                reasonMsgs?.Add(new ReasonMsg("Can Only Attack Agents", -10000.0));
+                return -10000.0;
+            }
+
+            double val = 0.0;
+            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord != null && intDataCord.typeDict.TryGetValue("DestroyLarva", out Type destroyLarvaType) && destroyLarvaType != null && target.task is Task_PerformChallenge performChallenge && destroyLarvaType.IsAssignableFrom(performChallenge.challenge.GetType()))
             {
                 double attackStrength = target.getStatAttack();
                 for (int i = 0; i < target.minions.Length; i++)
@@ -11056,43 +11069,75 @@ namespace CommunityLib
                     attackStrength += target.minions[i].getAttack();
                 }
 
-                if (ua.minions[0] != null || attackStrength < ua.hp)
+                if (ua.minions.Any(m => m != null) || attackStrength < ua.hp)
                 {
-                    utility = 80.0;
-                    reasonMsgs?.Add(new ReasonMsg("Base", utility));
+                    val = 80.0;
+                    reasonMsgs?.Add(new ReasonMsg("Base", val));
+                    utility += val;
+
+                    val = 80.0;
+                    reasonMsgs?.Add(new ReasonMsg("Protect the Hive", val));
+                    utility += val;
+
+                    if (attackStrength < ua.hp)
+                    {
+                        val = attackStrength / ua.hp;
+                        val *= -40.0;
+                        reasonMsgs?.Add(new ReasonMsg("Dangerous Foe", val));
+                        utility += val;
+                    }
+                    else
+                    {
+                        val = -40.0;
+                        reasonMsgs?.Add(new ReasonMsg("Dangerous Foe", val));
+                        utility += val;
+                    }
                 }
                 else
                 {
-                    utility = -10.0 + ((ua.hp - attackStrength) * 10.0);
-                    reasonMsgs?.Add(new ReasonMsg("Dangerous Foe", utility));
+                    val = -10.0 + ((ua.hp - attackStrength) * 10.0);
+                    reasonMsgs?.Add(new ReasonMsg("Dangerous Foe", val));
+                    utility += val;
                 }
             }
-            else if (other is UA targetUA && !other.isCommandable() && ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord != null && intDataCord.typeDict.TryGetValue("DestroyLarva", out Type destroyLarvaType) && destroyLarvaType != null && targetUA.task is Task_PerformChallenge performChallenge && destroyLarvaType.IsAssignableFrom(performChallenge.challenge.GetType()))
+            else if (target is UAG)
             {
-                double attackStrength = targetUA.getStatAttack();
-                for (int i = 0; i < targetUA.minions.Length; i++)
+                double attackStrength = target.getStatAttack();
+                for (int i = 0; i < target.minions.Length; i++)
                 {
-                    if (targetUA.minions[i] == null)
+                    if (target.minions[i] == null)
                     {
                         continue;
                     }
 
-                    attackStrength += targetUA.minions[i].getAttack();
+                    attackStrength += target.minions[i].getAttack();
                 }
 
-                if (ua.minions.Any(m => m != null) || attackStrength < ua.hp)
+                if (ua.minions.Any(m => m != null) != null || attackStrength < ua.hp)
                 {
-                    utility = 80.0;
-                    reasonMsgs?.Add(new ReasonMsg("Base", utility));
-
-                    double val = 40.0;
-                    reasonMsgs?.Add(new ReasonMsg("They are dstroying the larvae", val));
+                    val = 80.0;
+                    reasonMsgs?.Add(new ReasonMsg("Base", val));
                     utility += val;
+
+                    if (attackStrength < ua.hp)
+                    {
+                        val = attackStrength / ua.hp;
+                        val *= -40.0;
+                        reasonMsgs?.Add(new ReasonMsg("Dangerous Foe", val));
+                        utility += val;
+                    }
+                    else
+                    {
+                        val = -50.0;
+                        reasonMsgs?.Add(new ReasonMsg("Dangerous Foe", val));
+                        utility += val;
+                    }
                 }
                 else
                 {
-                    utility = -10.0 + ((ua.hp - attackStrength) * 10.0);
-                    reasonMsgs?.Add(new ReasonMsg("Dangerous Foe", utility));
+                    val = -10.0 + ((ua.hp - attackStrength) * 10.0);
+                    reasonMsgs?.Add(new ReasonMsg("Dangerous Foe", val));
+                    utility += val;
                 }
             }
 
