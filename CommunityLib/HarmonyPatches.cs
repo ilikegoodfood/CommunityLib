@@ -8923,21 +8923,32 @@ namespace CommunityLib
                 return -10000.0;
             }
 
+            bool hasMinion = false;
+            for (int i = 0; i < ua.minions.Length; i++)
+            {
+                if (ua.minions[i] != null)
+                {
+                    hasMinion = true;
+                    break;
+                }
+            }
+
+            double attackStrength = target.getStatAttack();
+            for (int i = 0; i < target.minions.Length; i++)
+            {
+                if (target.minions[i] == null)
+                {
+                    continue;
+                }
+
+                attackStrength += target.minions[i].getAttack();
+            }
+
             double val = 0.0;
             if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord != null && intDataCord.typeDict.TryGetValue("DestroyLarva", out Type destroyLarvaType) && destroyLarvaType != null && target.task is Task_PerformChallenge performChallenge && destroyLarvaType.IsAssignableFrom(performChallenge.challenge.GetType()))
             {
-                double attackStrength = target.getStatAttack();
-                for (int i = 0; i < target.minions.Length; i++)
-                {
-                    if (target.minions[i] == null)
-                    {
-                        continue;
-                    }
-
-                    attackStrength += target.minions[i].getAttack();
-                }
-
-                if (ua.minions.Any(m => m != null) || attackStrength < ua.hp)
+                utility = 0.0;
+                if (hasMinion || attackStrength < ua.hp)
                 {
                     val = 80.0;
                     reasonMsgs?.Add(new ReasonMsg("Base", val));
@@ -8970,18 +8981,8 @@ namespace CommunityLib
             }
             else if (target is UAG)
             {
-                double attackStrength = target.getStatAttack();
-                for (int i = 0; i < target.minions.Length; i++)
-                {
-                    if (target.minions[i] == null)
-                    {
-                        continue;
-                    }
-
-                    attackStrength += target.minions[i].getAttack();
-                }
-
-                if (ua.minions.Any(m => m != null) != null || attackStrength < ua.hp)
+                utility = 0.0;
+                if (hasMinion || attackStrength < ua.hp)
                 {
                     val = 80.0;
                     reasonMsgs?.Add(new ReasonMsg("Base", val));
@@ -8996,7 +8997,7 @@ namespace CommunityLib
                     }
                     else
                     {
-                        val = -50.0;
+                        val = -40.0;
                         reasonMsgs?.Add(new ReasonMsg("Dangerous Foe", val));
                         utility += val;
                     }
