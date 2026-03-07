@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using UnityEngine;
 
@@ -1041,15 +1042,21 @@ namespace CommunityLib
                 return true;
             }
 
+            Type unitType = u.GetType();
             foreach (Type type in vampireTypes)
             {
-                if (type.IsAssignableFrom(u.GetType()))
+                if (type.IsAssignableFrom(unitType))
                 {
                     return true;
                 }
             }
 
             if (u.person != null && u.person.species == u.map.species_undead && u.person.traits.Any(t => t is T_VampiricCurse || t is T_TheHunger))
+            {
+                return true;
+            }
+
+            if (tryGetModIntegrationData("Ixthus", out ModIntegrationData IntDataIxthus) && IntDataIxthus != null && IntDataIxthus.typeDict.TryGetValue("DreadKnight", out Type dreadKnightType) && dreadKnightType != null && dreadKnightType.IsAssignableFrom(u.GetType()) && IntDataIxthus.fieldInfoDict.TryGetValue("DreadKnight_IsVampire", out FieldInfo isVampire) && isVampire != null && (bool)isVampire.GetValue(u))
             {
                 return true;
             }
