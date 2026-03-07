@@ -1620,6 +1620,27 @@ namespace CommunityLib
                             {
                                 Console.WriteLine("CommunityLib: Failed to get Gawain agent Type (ShadowsLib.UAE_Gawain)");
                             }
+
+                            Type dreadKnightType = intDataIxthus.assembly.GetType("ShadowsLib.UAEN_humanVestige", false);
+                            if (dreadKnightType != null)
+                            {
+                                intDataIxthus.typeDict.Add("DreadKnight", dreadKnightType);
+                                intDataIxthus.fieldInfoDict.Add("DreadKnight_IsVampire", dreadKnightType.Field("isVampire"));
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Dread knight agent Type (ShadowsLib.UAEN_humanVestige)");
+                            }
+
+                            Type immortalHungerDeathType = intDataIxthus.assembly.GetType("ShadowsLib.T_ImmortalHungerDeath", false);
+                            if (immortalHungerDeathType != null)
+                            {
+                                intDataIxthus.typeDict.Add("ImmortalHungerDeath", immortalHungerDeathType);
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Immortal Hunger death trit Type (ShadowsLib.T_ImmortalHungerDeath)");
+                            }
                         }
                         break;
                     case "God_Mirror":
