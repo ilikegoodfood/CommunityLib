@@ -6,8 +6,16 @@
 			"defaultBoolValue":"false"
 		},
 		{
+			"name":"Threats Panel Scroll Speed",
+			"description":"This setting is the percentage speed of scrolling in the threats panels. 100 is 100% of the base speed, 200 is 200%, and so on. (default: 100)",
+			"isInteger":"true",
+			"minValue":10,
+			"maxValue":10000,
+			"defaultValue":100
+		},
+		{
 			"name":"Spawn Shipwrecks",
-			"description":"Enables shipwrecks as a standalone feature.\nCan be overriden by mods.",
+			"description":"Enables shipwrecks as a standalone feature.\nCan be overridden by mods that require them, such as OrcsPlus.",
 			"defaultBoolValue":"true"
 		},
 		{
