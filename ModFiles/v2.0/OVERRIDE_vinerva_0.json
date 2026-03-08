@@ -5,7 +5,7 @@
     "image": "foge.0_vinerva_ruins.jpg",
     
     "type": "INERT",
-    "conditional": "($FOG_RUINS_ID = 0) & (!god_is_vinerva) & VINERVA_RUINS_SET = 0",
+    "conditional": "($FOG_RUINS_ID = 0) & (!god_is_vinerva) & $VINERVA_RUINS_SET = 0",
     "probability": 1,
 
     "name": "Vinerva",

@@ -64,6 +64,8 @@ namespace CommunityLib
 
         public bool VinervaDefeatable = false;
 
+        public float DefaultScrollSpeed_Threats = -1f;
+
         public ModData()
         {
             initializeModIntegrationData();

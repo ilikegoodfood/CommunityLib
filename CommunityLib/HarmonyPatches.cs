@@ -222,8 +222,9 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(PrefabStore), nameof(PrefabStore.popHolyOrder), new Type[] { typeof(HolyOrder) }), prefix: new HarmonyMethod(patchType, nameof(Prefab_popHolyOrder_Prefix)));
 
             // --- SYSTEM MODIFICATIONS --- //
-            // Mod Config Button Update
+            // Mod Config
             harmony.Patch(original: AccessTools.Method(typeof(PopupModConfig), nameof(PopupModConfig.Update), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(PopupModConfig_update_postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(World), nameof(World.load), new Type[] { typeof(string) }), prefix: new HarmonyMethod(patchType, nameof(World_load_Prefix)));
 
             // Auto Relaunch
             harmony.Patch(original: AccessTools.Method(typeof(PopupModConfig), nameof(PopupModConfig.dismiss), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(PopupModConfig_dismiss_transpiler)));
@@ -823,7 +824,7 @@ namespace CommunityLib
             }
         }
 
-        // Mod Config button update
+        // Mod Config
         private static void PopupModConfig_update_postfix(PopupModConfig __instance)
         {
             Transform textTransform = UIUtils.GetChildStrict(__instance.bDismiss.transform, "Text");
@@ -848,6 +849,11 @@ namespace CommunityLib
                     text.text = "Back";
                 }
             }
+        }
+
+        private static void World_load_Prefix(World __instance)
+        {
+            PopupModConfig.loadModConfigFromFile(__instance.ui.uiMainMenu.modsLoaded, true);
         }
 
         // Auto-Relaunch 

@@ -54,6 +54,8 @@ namespace CommunityLib
 
         public static bool opt_autoRelaunch = false;
 
+        public static int opt_scrollSpeed_threats = 100;
+
         public static bool opt_spawnShipwrecks = false;
 
         public static bool opt_forceShipwrecks = false;
@@ -292,6 +294,21 @@ namespace CommunityLib
         {
             switch (optName)
             {
+                case "Threats Panel Scroll Speed":
+                    opt_scrollSpeed_threats = value;
+
+                    ScrollRect scrollable = map?.world.ui.uiScrollables?.scrollable_threats?.GetComponentInChildren<ScrollRect>();
+                    if (scrollable != null)
+                    {
+                        if (Get().data.DefaultScrollSpeed_Threats < 0f)
+                        {
+                            Get().data.DefaultScrollSpeed_Threats = scrollable.scrollSensitivity;
+                            //Console.WriteLine($"CommunityLib: Acquired scroll sensitivity from threats scrollable ({Get().data.DefaultScrollSpeed_Threats}).");
+                        }
+                        scrollable.scrollSensitivity = Get().data.DefaultScrollSpeed_Threats * 0.01f * opt_scrollSpeed_threats;
+                        //Console.WriteLine($"CommunityLib: Scroll sensitivity for threats scrollable set to {scrollable.scrollSensitivity}.");
+                    }
+                    break;
                 case "The Evil Beneath's Max Health":
                     opt_evilBeneathMaxHp = value;
                     break;
@@ -365,6 +382,18 @@ namespace CommunityLib
         public override void afterMapGenBeforeHistorical(Map map)
         {
             Get().data.initializeHidenThoughts();
+
+            ScrollRect scrollable = map?.world.ui.uiScrollables?.scrollable_threats?.GetComponentInChildren<ScrollRect>();
+            if (scrollable != null)
+            {
+                if (Get().data.DefaultScrollSpeed_Threats < 0f)
+                {
+                    Get().data.DefaultScrollSpeed_Threats = scrollable.scrollSensitivity;
+                    //Console.WriteLine($"CommunityLib: Acquired scroll sensitivity from threats scrollable ({Get().data.DefaultScrollSpeed_Threats}).");
+                }
+                scrollable.scrollSensitivity = Get().data.DefaultScrollSpeed_Threats * 0.01f * opt_scrollSpeed_threats;
+                //Console.WriteLine($"CommunityLib: Scroll sensitivity for threats scrollable set to {scrollable.scrollSensitivity}.");
+            }
         }
 
         public override void afterLoading(Map map)
@@ -402,6 +431,18 @@ namespace CommunityLib
             eventModifications();
 
             setupMapMasks();
+
+            ScrollRect scrollable = map?.world.ui.uiScrollables?.scrollable_threats?.GetComponentInChildren<ScrollRect>();
+            if (scrollable != null)
+            {
+                if (Get().data.DefaultScrollSpeed_Threats < 0f)
+                {
+                    Get().data.DefaultScrollSpeed_Threats = scrollable.scrollSensitivity;
+                    //Console.WriteLine($"CommunityLib: Acquired scroll sensitivity from threats scrollable ({Get().data.DefaultScrollSpeed_Threats}).");
+                }
+                scrollable.scrollSensitivity = Get().data.DefaultScrollSpeed_Threats * 0.01f * opt_scrollSpeed_threats;
+                //Console.WriteLine($"CommunityLib: Scroll sensitivity for threats scrollable set to {scrollable.scrollSensitivity}.");
+            }
 
             updateSaveGameVersion(map);
         }
@@ -3106,6 +3147,18 @@ namespace CommunityLib
 
         public override void populatingThreats(Overmind overmind, List<MsgEvent> threats)
         {
+            ScrollRect scrollable = map?.world.ui.uiScrollables?.scrollable_threats?.GetComponentInChildren<ScrollRect>();
+            if (scrollable != null)
+            {
+                if (Get().data.DefaultScrollSpeed_Threats < 0f)
+                {
+                    Get().data.DefaultScrollSpeed_Threats = scrollable.scrollSensitivity;
+                    //Console.WriteLine($"CommunityLib: Acquired scroll sensitivity from threats scrollable ({Get().data.DefaultScrollSpeed_Threats}).");
+                }
+                scrollable.scrollSensitivity = Get().data.DefaultScrollSpeed_Threats * 0.01f * opt_scrollSpeed_threats;
+                //Console.WriteLine($"CommunityLib: Scroll sensitivity for threats scrollable set to {scrollable.scrollSensitivity}.");
+            }
+
             Location elderTomb = null;
             foreach (Location loc in overmind.map.locations)
             {
