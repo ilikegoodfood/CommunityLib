@@ -7,7 +7,15 @@
 		},
 		{
 			"name":"Threats Panel Scroll Speed",
-			"description":"This setting is the percentage speed of scrolling in the threats panels. 100 is 100% of the base speed, 200 is 200%, and so on. (default: 100)",
+			"description":"This setting is the percentage speed of scrolling in the threats panel. 100 is 100% of the base speed, 200 is 200%, and so on. (default: 100)",
+			"isInteger":"true",
+			"minValue":10,
+			"maxValue":10000,
+			"defaultValue":100
+		},
+		{
+			"name":"Create Agent Panel Scroll Speed",
+			"description":"This setting is the percentage speed of scrolling in the create agent panel. 100 is 100% of the base speed, 200 is 200%, and so on. (default: 100)",
 			"isInteger":"true",
 			"minValue":10,
 			"maxValue":10000,
