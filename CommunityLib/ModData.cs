@@ -66,8 +66,6 @@ namespace CommunityLib
 
         public float DefaultScrollSpeed_CreateAgent = -1f;
 
-        public Sprite securityBubble = null;
-
         public ModData()
         {
             initializeModIntegrationData();
