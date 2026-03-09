@@ -10170,17 +10170,7 @@ namespace CommunityLib
                 fitter.aspectRatio = 1f;
 
                 Image background = bubbleObj.AddComponent<Image>();
-
-                Sprite securityBubble = ModCore.Get().data.securityBubble;
-                if (securityBubble == null)
-                {
-                    PopupNameTag tag = world.prefabStore.getNameTag("Test", Color.white);
-                    securityBubble = tag.securityBubble.sprite;
-                    ModCore.Get().data.securityBubble = securityBubble;
-                    UnityEngine.Object.Destroy(tag.gameObject);
-                }
-
-                background.sprite = securityBubble;
+                background.sprite = EventManager.getImg("CLib.Texture_SecurityBubble.png");
                 background.type = Image.Type.Sliced;
 
                 costText = UnityEngine.Object.Instantiate<GameObject>(__instance.title.gameObject, bubbleObj.transform).GetComponent<Text>();
