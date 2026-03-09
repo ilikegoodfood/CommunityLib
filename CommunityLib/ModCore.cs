@@ -56,6 +56,8 @@ namespace CommunityLib
 
         public static int opt_scrollSpeed_threats = 100;
 
+        public static int opt_scrollSpeed_createAgent = 100;
+
         public static bool opt_spawnShipwrecks = false;
 
         public static bool opt_forceShipwrecks = false;
@@ -308,6 +310,9 @@ namespace CommunityLib
                         scrollable.scrollSensitivity = Get().data.DefaultScrollSpeed_Threats * 0.01f * opt_scrollSpeed_threats;
                         //Console.WriteLine($"CommunityLib: Scroll sensitivity for threats scrollable set to {scrollable.scrollSensitivity}.");
                     }
+                    break;
+                case "Create Agent Panel Scroll Speed":
+                    opt_scrollSpeed_createAgent = value;
                     break;
                 case "The Evil Beneath's Max Health":
                     opt_evilBeneathMaxHp = value;

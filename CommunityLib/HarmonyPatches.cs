@@ -203,8 +203,10 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Overmind_Automatic), nameof(Overmind_Automatic.ai_testMagic), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Overmind_Automatic_ai_testMagic_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Overmind_Automatic), nameof(Overmind_Automatic.checkSpawnAgent), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Overmind_Automatic_checkSpawnAgent_Transpiler)));
 
-            // OnAgentIsRecruitable
+            // Create Agent Hooks and Modifications
+            harmony.Patch(original: AccessTools.Method(typeof(World), nameof(World.bCreateAgent), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(World_bCreateAgent_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(PopupAgentCreation), nameof(PopupAgentCreation.populate), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(PopupAgentCreation_populate_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIE_AgentSelect), nameof(UIE_AgentSelect.setTo), new Type[] { typeof(World), typeof(UAE_Abstraction), typeof(PopupAgentCreation) }), postfix: new HarmonyMethod(patchType, nameof(UIE_AgentSelect_setTo_Postfix)));
 
             // Broken Maker creates agents using powers
             harmony.Patch(original: AccessTools.Method(typeof(P_Eternity_CreateAgent), nameof(P_Eternity_CreateAgent.createAgent), new Type[] { typeof(Person), typeof(Location) }), transpiler: new HarmonyMethod(patchType, nameof(P_Eternity_CreateAgent_createAgent_transpiler)));
@@ -9940,100 +9942,270 @@ namespace CommunityLib
             return ModCore.Get().checkIsElderTomb(location);
         }
 
-        // onAgentIsRecruitable
-        private static IEnumerable<CodeInstruction> PopupAgentCreation_populate_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        // Create Agent Hooks and Modifications
+        private static IEnumerable<CodeInstruction> World_bCreateAgent_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(PopupAgentCreation_populate_TranspilerBody), new Type[] { typeof(Unit), typeof(bool) });
-
-            Label afterChosenCheck = ilg.DefineLabel();
-            Label nextUnit = ilg.DefineLabel();
-
             int targetIndex = 1;
+            bool returnCode = true;
             for (int i = 0; i < instructionList.Count; i++)
             {
                 if (targetIndex > 0)
                 {
-                    if (targetIndex == 1 && instructionList[i].opcode == OpCodes.Isinst)
+                    if (targetIndex <= 3)
                     {
-                        targetIndex++;
-
-                        instructionList[i + 3].operand = nextUnit;
-
-                        for (int j = instructionList.Count - 1; j >= 0; j--)
+                        if (instructionList[i].opcode == OpCodes.Brfalse_S)
                         {
-                            if (instructionList[j].opcode == OpCodes.Nop && instructionList[j - 1].opcode == OpCodes.Nop && instructionList[j - 2].opcode == OpCodes.Nop)
-                            {
-                                instructionList[j].labels.Add(nextUnit);
-                                break;
-                            }
+                            targetIndex++;
                         }
                     }
-
-                    if (targetIndex == 2 && instructionList[i].opcode == OpCodes.Brfalse && instructionList[i - 1].opcode == OpCodes.Ldloc_S && instructionList[i + 1].opcode == OpCodes.Nop)
+                    else if (targetIndex == 4)
                     {
-                        targetIndex++;
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i-1].opcode == OpCodes.Callvirt)
+                        {
+                            returnCode = false;
 
-                        instructionList[i].operand = afterChosenCheck;
+                            targetIndex++;
+                        }
                     }
-
-                    if (targetIndex == 3 && instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i - 1].opcode == OpCodes.Br && instructionList[i + 1].opcode == OpCodes.Callvirt)
+                    else if (targetIndex == 5)
                     {
-                        targetIndex++;
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i-1].opcode == OpCodes.Br_S)
+                        {
+                            returnCode = true;
 
-                        instructionList[i].labels.Add(afterChosenCheck);
-                    }
-
-                    if (targetIndex == 4 && instructionList[i].opcode == OpCodes.Ceq)
-                    {
-                        targetIndex++;
-                    }
-
-                    if (targetIndex == 5 && instructionList[i].opcode == OpCodes.Ldloc_S)
-                    {
-                        targetIndex = 0;
-
-                        yield return new CodeInstruction(OpCodes.Ldloc_S, 6);
-                        yield return new CodeInstruction(OpCodes.Ldloc_S, 15);
-                        yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
-                        yield return new CodeInstruction(OpCodes.Stloc_S, 15);
+                            targetIndex = 0;
+                        }
                     }
                 }
 
-                yield return instructionList[i];
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
             }
 
-            Console.WriteLine("CommunityLib: Completed PopupAgentCreation_populate_Transpiler");
+            Console.WriteLine("CommunityLib: Completed World_bCreateAgent_Transpiler");
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
         }
 
-        private static bool PopupAgentCreation_populate_TranspilerBody(Unit unit, bool result)
+        private static IEnumerable<CodeInstruction> PopupAgentCreation_populate_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
-            if (unit is UA ua && !ua.isCommandable())
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(PopupAgentCreation_populate_TranspilerBody), new Type[] { typeof(PopupAgentCreation) });
+
+            yield return new CodeInstruction(OpCodes.Nop);
+            yield return new CodeInstruction(OpCodes.Ldarg_0);
+            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+            yield return new CodeInstruction(OpCodes.Ret);
+
+            Console.WriteLine("CommunityLib: Completed complete function replacement transpiler PopupAgentCreation_populate_Transpiler");
+        }
+
+        private static void PopupAgentCreation_populate_TranspilerBody(PopupAgentCreation instance)
+        {
+            // Set scroll speed
+            ScrollRect scrollable = instance.GetComponentInChildren<ScrollRect>();
+            if (scrollable != null)
             {
-                if (!(ua is UAG) && !(ua is UAA))
+                if (ModCore.Get().data.DefaultScrollSpeed_CreateAgent < 0f)
                 {
-                    result = false;
+                    ModCore.Get().data.DefaultScrollSpeed_CreateAgent = scrollable.scrollSensitivity;
+                    //Console.WriteLine($"CommunityLib: Acquired scroll sensitivity from threats scrollable ({Get().data.DefaultScrollSpeed_Threats}).");
+                }
+                scrollable.scrollSensitivity = ModCore.Get().data.DefaultScrollSpeed_CreateAgent * 0.01f * ModCore.opt_scrollSpeed_createAgent;
+                //Console.WriteLine($"CommunityLib: Scroll sensitivity for threats scrollable set to {scrollable.scrollSensitivity}.");
+            }
+
+            // Gather agents.
+            OrderedDictionary<string, List<UAE_Abstraction>> recruitableAgents = new OrderedDictionary<string, List<UAE_Abstraction>> {
+                { "Unique Agents", instance.ui.world.map.overmind.agentsUnique.ToList() },
+                { "Generic Agents", instance.ui.world.map.overmind.agentsGeneric.ToList() }
+            };
+            HashSet<UAE_Abstraction> agentsInDictionary = instance.ui.world.map.overmind.agentsUnique.ToHashSet();
+            foreach (UAE_Abstraction abstraction in instance.ui.world.map.overmind.agentsGeneric)
+            {
+                agentsInDictionary.Add(abstraction);
+            }
+
+            List<UAE_Abstraction> corruptableHeroes = new List<UAE_Abstraction>();
+            foreach (Unit unit in instance.ui.world.map.units)
+            {
+                if (unit.isDead)
+                {
+                    continue;
+                }
+
+                if (!(unit is UA ua) || ua.isCommandable() || ua == instance.ui.world.map.awarenessManager.getChosenOne())
+                {
+                    continue;
+                }
+
+                bool recruitable = false;
+                if (ua is UAG || ua is UAA)
+                {
+                    if (ua.person.shadow >= 0.995 || unit.person.isInsane())
+                    {
+                        recruitable = true;
+                    }
                 }
 
                 foreach (var hook in ModCore.Get().HookRegistry.Delegate_onAgentIsRecruitable)
                 {
-                    result = hook(ua, result);
+                    recruitable = hook(ua, recruitable);
                 }
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
-                    result = hook.onAgentIsRecruitable(ua, result);
+                    recruitable = hook.onAgentIsRecruitable(ua, recruitable);
                 }
+
+                if (recruitable)
+                {
+                    UAE_Abstraction abstraction = new UAE_Abstraction(instance.ui.world.map, ua);
+                    corruptableHeroes.Add(abstraction);
+                    agentsInDictionary.Add(abstraction);
+                }
+            }
+
+            recruitableAgents.Add("Corruptible Heroes", corruptableHeroes);
+
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_populatingRecruitableAgents)
+            {
+                hook(recruitableAgents, agentsInDictionary);
+            }
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            {
+                hook.populatingRecruitableAgents(recruitableAgents, agentsInDictionary);
+            }
+
+            List<UIE_AgentSelect> selectors = new List<UIE_AgentSelect>();
+            bool standardCosts = true;
+            foreach (KeyValuePair<string, List<UAE_Abstraction>> kvp in recruitableAgents)
+            {
+                string label = kvp.Key;
+                if (string.IsNullOrWhiteSpace(label))
+                {
+                    label = "ERROR: Untitled Divider Section";
+                }
+
+                GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(instance.ui.world.prefabStore.uieDivider, instance.content);
+                gameObject.GetComponent<UIE_Divider>().setTo(instance.ui.world, label);
+
+                if (kvp.Value == null || kvp.Value.Count == 0)
+                {
+                    continue;
+                }
+
+                foreach (UAE_Abstraction abstraction in kvp.Value)
+                {
+                    gameObject = UnityEngine.Object.Instantiate<GameObject>(instance.ui.world.prefabStore.uieAgentCreate, instance.content);
+                    UIE_AgentSelect selector = gameObject.GetComponent<UIE_AgentSelect>();
+                    selector.setTo(instance.ui.world, abstraction, instance);
+                    selectors.Add(selector);
+
+                    if (standardCosts && abstraction is UAE_ComLibAbstraction comLibAbstraction && comLibAbstraction.getRecruitementCost() != 1)
+                    {
+                        standardCosts = false;
+                    }
+                }
+            }
+
+            foreach (UIE_AgentSelect selector in selectors)
+            {
+                GameObject bubbleObj = selector.transform.Find("Title_Group_Transform/Cost_Bubble").gameObject;
+                bubbleObj.SetActive(!standardCosts);
+            }
+        }
+
+        private static void UIE_AgentSelect_setTo_Postfix(UIE_AgentSelect __instance, World world, UAE_Abstraction abstr)
+        {
+            // Add a space to en dof the names ot fix overhanging characters, such as 'f'.
+            __instance.title.text += " ";
+
+            // Handling for custom agent costs.
+            int cost = 1;
+            if (abstr is UAE_ComLibAbstraction comLibAbstraction)
+            {
+                cost = comLibAbstraction.getRecruitementCost();
+            }
+
+            Transform containerTransform = __instance.transform.Find("Title_Group_Transform");
+            Text costText;
+
+            if (containerTransform == null)
+            {
+                float containerHeight = __instance.title.rectTransform.rect.height;
+
+                GameObject containerObj = UnityEngine.Object.Instantiate(__instance.title.gameObject, __instance.title.transform.parent);
+                containerTransform = containerObj.transform;
+                containerObj.name = "Title_Group_Transform";
+
+                costText = containerObj.GetComponent<Text>();
+                UnityEngine.Object.DestroyImmediate(costText);
+
+                HorizontalLayoutGroup hlg = containerObj.AddComponent<HorizontalLayoutGroup>();
+                hlg.childControlWidth = true;
+                hlg.childControlHeight = true;
+                hlg.childForceExpandWidth = false;
+                hlg.spacing = 2f;
+
+                __instance.title.transform.SetParent(hlg.transform, false);
+                __instance.title.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1;
+
+                GameObject bubbleObj = new GameObject("Cost_Bubble", new Type[] { typeof(RectTransform) });
+                bubbleObj.transform.SetParent(hlg.transform);
+
+                LayoutElement bubbleLayout = bubbleObj.AddComponent<LayoutElement>();
+                bubbleLayout.flexibleHeight = 1f;
+                bubbleLayout.flexibleWidth = 0f;
+                bubbleLayout.preferredWidth = containerHeight;
+
+                AspectRatioFitter fitter = bubbleObj.AddComponent<AspectRatioFitter>();
+                fitter.aspectMode = AspectRatioFitter.AspectMode.HeightControlsWidth;
+                fitter.aspectRatio = 1f;
+
+                Image background = bubbleObj.AddComponent<Image>();
+
+                Sprite securityBubble = ModCore.Get().data.securityBubble;
+                if (securityBubble == null)
+                {
+                    PopupNameTag tag = world.prefabStore.getNameTag("Test", Color.white);
+                    securityBubble = tag.securityBubble.sprite;
+                    ModCore.Get().data.securityBubble = securityBubble;
+                    UnityEngine.Object.Destroy(tag.gameObject);
+                }
+
+                background.sprite = securityBubble;
+                background.type = Image.Type.Sliced;
+
+                costText = UnityEngine.Object.Instantiate<GameObject>(__instance.title.gameObject, bubbleObj.transform).GetComponent<Text>();
+                costText.name = "Cost_Text";
+                costText.rectTransform.anchorMin = Vector2.zero;
+                costText.rectTransform.anchorMax = Vector2.one;
+                costText.rectTransform.offsetMin = Vector2.zero;
+                costText.rectTransform.offsetMax = Vector2.zero;
+
+                costText.text = cost.ToString();
+
+                __instance.title.transform.SetAsFirstSibling();
+                bubbleObj.transform.SetAsLastSibling();
             }
             else
             {
-                return false;
+                costText = containerTransform.Find("Cost_Text").GetComponent<Text>();
+                costText.text = cost.ToString();
             }
-            return result;
+
+            if (cost > world.map.overmind.availableEnthrallments)
+            {
+                __instance.disabledMask.gameObject.SetActive(true);
+            }
+            __instance.disabledMask.transform.SetAsLastSibling();
         }
 
         private static IEnumerable<CodeInstruction> P_Eternity_CreateAgent_createAgent_transpiler(IEnumerable<CodeInstruction> codeInstructions)

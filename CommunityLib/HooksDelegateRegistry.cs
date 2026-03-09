@@ -30,12 +30,14 @@ namespace CommunityLib
             ref double utility,
             List<ReasonMsg> reasonMsgs);
 
+        public delegate void PopulatingRecruitableAgentsDelegate(OrderedDictionary<string, List<UAE_Abstraction>> recruitableAgents, HashSet<UAE_Abstraction> agentsInDictionary);
+
         //===========================================================================
         // Delegate collections and registration methods
         //===========================================================================
 
         // onMapGen_PlaceWonders (overload 1)
-        
+
         private List<Func<List<WonderData>>> _delegate_onMapGen_PlaceWonders_1 = new List<Func<List<WonderData>>>();
         public List<Func<List<WonderData>>> Delegate_onMapGen_PlaceWonders_1 { get { return _delegate_onMapGen_PlaceWonders_1; } }
         public bool RegisterHook_onMapGen_PlaceWonders_1(Func<List<WonderData>> hook)
@@ -1081,8 +1083,22 @@ namespace CommunityLib
             return true;
         }
 
+        // populatingRecruitableAgents
+
+        private List<PopulatingRecruitableAgentsDelegate> _delegate_populatingRecruitableAgents = new List<PopulatingRecruitableAgentsDelegate>();
+        public List<PopulatingRecruitableAgentsDelegate> Delegate_populatingRecruitableAgents { get { return _delegate_populatingRecruitableAgents; } }
+        public bool RegisterHook_populatingRecruitableAgents(PopulatingRecruitableAgentsDelegate hook)
+        {
+            if (hook == null)
+                return false;
+            if (_delegate_populatingRecruitableAgents.Contains(hook))
+                return false;
+            _delegate_populatingRecruitableAgents.Add(hook);
+            return true;
+        }
+
         // onBrokenMakerPowerCreatesAgent_ProcessCurse
-        
+
         private List<Func<Curse, Person, Location, string, string>> _delegate_onBrokenMakerPowerCreatesAgent_ProcessCurse = new List<Func<Curse, Person, Location, string, string>>();
         public List<Func<Curse, Person, Location, string, string>> Delegate_onBrokenMakerPowerCreatesAgent_ProcessCurse { get { return _delegate_onBrokenMakerPowerCreatesAgent_ProcessCurse; } }
         public bool RegisterHook_onBrokenMakerPowerCreatesAgent_ProcessCurse(Func<Curse, Person, Location, string, string> hook)

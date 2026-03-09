@@ -21,6 +21,8 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>
+    </DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -89,6 +91,7 @@
     <Compile Include="T_CarryingPrey.cs" />
     <Compile Include="T_Prophet.cs" />
     <Compile Include="T_VinervaSeed.cs" />
+    <Compile Include="UAE_ComLibAbstraction.cs" />
     <Compile Include="UIE_Button_ModdedCompanion.cs" />
     <Compile Include="UIScrollWrap.cs" />
     <Compile Include="UIShortLog.cs" />

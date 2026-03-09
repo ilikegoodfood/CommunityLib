@@ -930,8 +930,22 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when the Broken Maker's powers "P_Eternity_CreateAgent" and "P_Eternity_CreateAgentReusable" are used to create an agent. It recieves the curse that is being processed (curse), the person of the agent (person), their location (location), and the text of the message that will be displayed to the player (text). It returns the text that will be displayed to the player.<br></br>
-        /// If the agent waa created using the "P_Eternity_CreateAgentReusable" power, the power has already been removed from the house. If created with the "P_Eternity_CreateAgent" power, the curse count has already been halved in strength.
+        /// This hook fires after the Recruit Agent menu has collected all agents that can be recruited under the standard divider sections. These divider section labels are the keys for the key value pairs in the dictionary, in the order of "Unique Agents", "Generic Agents", and "Corruptible Heroes". Modded divider sections may have been inserted in between the vanilla ones by mods that were loaded before this one.
+        /// <para>Before adding any agent, check that it is not already present in the agentsInDictionary hash set. When adding any agent to any divider section, make sure to also add it to the agentsInDictionary hash set.</para>
+        /// <para>To add new agents to any of the existing divider sections, use 'recruitableAgents.TryGetValue' with the appropriate divider section label as the key, and add to the list that is retrieved.</para>
+        /// <para>To add a new divider section to group new recruitable agents under, add or insert a new string divider label with a new List&lt;UAE_Abstraction&gt; value. Avoid unnecessarily adding empty divider sections.</para>
+        /// <para>When removing an agent from any of the divider sections, you can block it from being re-added by another mod by not removing it from the agentsInDictionary hash set, or you can allow it to be re-added by removing it from the hash set. The recommended is the latter, but which method you use will depend on the reasons for the removal.</para>
+        /// </summary>
+        /// <param name="recruitableAgents"></param>
+        /// <param name="agentsInDictionary"></param>
+        public virtual void populatingRecruitableAgents(OrderedDictionary<string, List<UAE_Abstraction>> recruitableAgents, HashSet<UAE_Abstraction> agentsInDictionary)
+        {
+            
+        }
+
+        /// <summary>
+        /// This hook fires when the Broken Maker's powers "P_Eternity_CreateAgent" and "P_Eternity_CreateAgentReusable" are used to create an agent. It recieves the curse that is being processed (curse), the person of the agent (person), their location (location), and the text of the message that will be displayed to the player (text). It returns the text that will be displayed to the player.
+        /// <para>If the agent waa created using the "P_Eternity_CreateAgentReusable" power, the curse has already been removed from the house at the time that this hook fires. If created with the "P_Eternity_CreateAgent" power, the curse count has already been halved in strength at the time that this hook fires.</para>
         /// </summary>
         /// <param name="person"></param>
         /// <param name="location"></param>
@@ -941,8 +955,8 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires when the revivePerson function is attempting to determine what agent should be produced for a person who does not have an Agent (UA) assigned to them. It recieves the Person (person) that is being revived, and the Location (location) at which they should be revived. It should return the intended Agent for that person, or null. <br></br>
-        /// Hooks after the first to return something other than null do not fire. If all mods return null, a new agent will be selected based on hard-coded defaults.
+        /// This hook fires when the revivePerson function is attempting to determine what agent should be produced for a person who does not have an Agent (UA) assigned to them. It recieves the Person (person) that is being revived, and the Location (location) at which they should be revived. It should return the intended Agent for that person, or null.
+        /// <para>Hooks after the first to return something other than null do not fire. If all mods return null, a new agent will be selected based on hard-coded defaults.</para>
         /// </summary>
         /// <param name="person"></param>
         /// <param name="location"></param>
