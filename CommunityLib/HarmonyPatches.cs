@@ -10156,6 +10156,7 @@ namespace CommunityLib
 
                 __instance.title.transform.SetParent(hlg.transform, false);
                 __instance.title.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1;
+                __instance.title.raycastTarget = false;
 
                 GameObject bubbleObj = new GameObject("Cost_Bubble", new Type[] { typeof(RectTransform) });
                 bubbleObj.transform.SetParent(hlg.transform);
@@ -10172,6 +10173,7 @@ namespace CommunityLib
                 Image background = bubbleObj.AddComponent<Image>();
                 background.sprite = EventManager.getImg("CLib.Texture_SecurityBubble.png");
                 background.type = Image.Type.Sliced;
+                background.raycastTarget = false;
 
                 costText = UnityEngine.Object.Instantiate<GameObject>(__instance.title.gameObject, bubbleObj.transform).GetComponent<Text>();
                 costText.name = "Cost_Text";
@@ -10179,6 +10181,7 @@ namespace CommunityLib
                 costText.rectTransform.anchorMax = Vector2.one;
                 costText.rectTransform.offsetMin = Vector2.zero;
                 costText.rectTransform.offsetMax = Vector2.zero;
+                costText.raycastTarget = false;
 
                 costText.text = cost.ToString();
 
