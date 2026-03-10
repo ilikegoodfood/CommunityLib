@@ -32,7 +32,6 @@ namespace CommunityLib
         private static bool razeIsValid;
 
         private static bool gettingAvailableTraits;
-
         public static bool GettingAvailableTraits => gettingAvailableTraits;
 
         private static Tuple<Unit, Location, int, Location[]> lastPath;
@@ -98,8 +97,10 @@ namespace CommunityLib
             }
 
             // --- HOOKS --- //
-            // GraphicalHex checkData hook
-            harmony.Patch(original: AccessTools.Method(typeof(GraphicalMap), nameof(GraphicalMap.checkData), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(GraphicalMap_graphicalHexData_Postfix)));
+            // GraphicalHex hooks
+            harmony.Patch(original: AccessTools.Method(typeof(GraphicalMap), nameof(GraphicalMap.checkLoaded), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(GraphicalMap_checkLoaded_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(GraphicalMap), nameof(GraphicalMap.checkData), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(GraphicalMap_checkData_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(GraphicalMap), nameof(GraphicalMap.purge), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(GraphicalMap_purge_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(GraphicalHex), nameof(GraphicalHex.checkData), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(GraphicalHex_checkData_Transpiler)));
 
             // Graphical unit updated hook
@@ -232,7 +233,8 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView7), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPrefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView8), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPrefix)));
             harmony.Patch(original: AccessTools.Method(typeof(UIScrollableRight), nameof(UIScrollableRight.bView9), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(UIE_Threat_bGoTo_BulkPrefix)));
-            harmony.Patch(original: AccessTools.Method(typeof(UIInputs), nameof(UIInputs.hotkeys), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UIInputs_hotkeys_transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIInputs), nameof(UIInputs.hotkeys), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UIInputs_hotkeys_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(UIInputs), nameof(UIInputs.scrollKeys), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UIInputs_scrollKeys_Transpiler)));
 
             // Map Fixes
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.gen), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Map_gen_Transpiler)));
@@ -510,8 +512,251 @@ namespace CommunityLib
         }
 
         // Graphical Hex checkData hook
-        private static void GraphicalMap_graphicalHexData_Postfix()
+        private static IEnumerable<CodeInstruction> GraphicalMap_checkLoaded_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
         {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody_CalculateRadius = AccessTools.Method(patchType, nameof(GraphicalMap_checkLoaded_TranspilerBody_CalculateRadius), Type.EmptyTypes);
+            MethodInfo MI_TranspilerBody_UpdateCameraCullingData = AccessTools.Method(patchType, nameof(GraphicalMap_checkLoaded_TranspilerBody_UpdateCameraCullingData), new Type[] { typeof(int), typeof(int), typeof(int) });
+            MethodInfo MI_TranspilerBody_CleanLoaded = AccessTools.Method(patchType, nameof(GraphicalMap_checkLoaded_TranspilerBody_CleanLoaded), Type.EmptyTypes);
+
+            FieldInfo FI_Megafauna = AccessTools.Field(typeof(Map), nameof(Map.megafauna));
+
+            Label allowLabel = ilg.DefineLabel();
+            Label skipHexLoadingLabel = ilg.DefineLabel();
+
+            int targetIndex = 1;
+            bool returnCode = false;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Stloc_0)
+                        {
+                            yield return new CodeInstruction(OpCodes.Nop);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_CalculateRadius);
+
+                            instructionList[i].labels.Clear();
+                            returnCode = true;
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldloc_2);
+                            yield return new CodeInstruction(OpCodes.Ldloc_3);
+                            yield return new CodeInstruction(OpCodes.Ldloc_0);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_UpdateCameraCullingData);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, skipHexLoadingLabel);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i+1].opcode == OpCodes.Ldsfld && instructionList[i+2].opcode == OpCodes.Ldfld && (FieldInfo)instructionList[i+2].operand == FI_Megafauna)
+                        {
+                            instructionList[i].labels.Add(skipHexLoadingLabel);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 4)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Newobj)
+                        {
+                            CodeInstruction code = new CodeInstruction(OpCodes.Nop);
+                            code.labels.AddRange(instructionList[i].labels);
+                            instructionList[i].labels.Clear();
+                            yield return code;
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_CleanLoaded);
+
+                            yield return new CodeInstruction(OpCodes.Ret);
+
+                            returnCode = false;
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
+            }
+
+            Console.WriteLine("CommunityLib: Completed GraphicalMap_checkLoaded_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static int GraphicalMap_checkLoaded_TranspilerBody_CalculateRadius()
+        {
+            float radius = 7.5f / GraphicalMap.scale;
+            return Mathf.CeilToInt(radius) + 3;
+        }
+
+        private static bool GraphicalMap_checkLoaded_TranspilerBody_UpdateCameraCullingData(int x, int y, int radius)
+        {
+            CameraCullingData cullingData = ModCore.Get().data.CameraCullingData;
+
+            if (GraphicalMap.z != cullingData.Z)
+            {
+                cullingData.PreciseX = GraphicalMap.x;
+                cullingData.PreciseY = GraphicalMap.y;
+                cullingData.Z = GraphicalMap.z;
+                cullingData.Scale = GraphicalMap.scale;
+
+                cullingData.X = x;
+                cullingData.Y = y;
+                cullingData.VisibleRadius = radius;
+
+                return true;
+            }
+
+            if (GraphicalMap.x != cullingData.PreciseX || GraphicalMap.y != cullingData.PreciseY)
+            {
+                cullingData.CameraHasMoved = true;
+                cullingData.PreciseX = GraphicalMap.x;
+                cullingData.PreciseY = GraphicalMap.y;
+            }
+            else
+            {
+                cullingData.CameraHasMoved = false;
+            }
+
+            if (x == cullingData.X && y == cullingData.Y && radius == cullingData.VisibleRadius)
+            {
+                if (GraphicalMap.scale != cullingData.Scale)
+                {
+                    cullingData.CameraHasMoved = false;
+                    cullingData.BoundsHaveChanged = false;
+                    cullingData.Scale = GraphicalMap.scale;
+                }
+
+                return false;
+            }
+
+            cullingData.X = x;
+            cullingData.Y = y;
+            cullingData.VisibleRadius = radius;
+
+            if (GraphicalMap.scale != cullingData.Scale)
+            {
+                cullingData.CameraHasMoved = false;
+                cullingData.BoundsHaveChanged = false;
+                cullingData.Scale = GraphicalMap.scale;
+            }
+
+            return true;
+        }
+
+        private static void GraphicalMap_checkLoaded_TranspilerBody_CleanLoaded()
+        {
+            LinkedListNode<GraphicalHex> node = GraphicalMap.loaded.First;
+            while (node != null)
+            {
+                LinkedListNode<GraphicalHex> next = node.Next;
+                if (!node.Value.needed)
+                {
+                    node.Value.hex.outer = null;
+                    GraphicalMap.loaded.Remove(node);
+                }
+
+                node = next;
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> GraphicalMap_checkData_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(GraphicalMap_checkData_TranspilerBody), Type.EmptyTypes);
+
+            yield return new CodeInstruction(OpCodes.Nop);
+            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+            yield return new CodeInstruction(OpCodes.Ret);
+
+            Console.WriteLine("CommunityLib: Completed complete function replacement transpiler GraphicalMap_graphicalHexData_Transpiler");
+        }
+
+        private static void GraphicalMap_checkData_TranspilerBody()
+        {
+            GraphicalMap.checkLoaded();
+
+            CameraCullingData cullingData = ModCore.Get().data.CameraCullingData;
+            if (cullingData.CameraHasMoved)
+            {
+                if (!cullingData.BoundsHaveChanged)
+                {
+                    return;
+                }
+
+                foreach (GraphicalHex graphicalHex in GraphicalMap.loaded)
+                {
+                    if (cullingData.Loaded.Contains(graphicalHex))
+                    {
+                        continue;
+                    }
+
+                    graphicalHex.checkData();
+                    bool flag = graphicalHex.hex.location != null;
+                    if (flag)
+                    {
+                        foreach (Unit unit in graphicalHex.hex.location.units)
+                        {
+                            bool flag2 = unit.outer != null;
+                            if (flag2)
+                            {
+                                unit.outer.checkData();
+                            }
+                        }
+                    }
+                }
+
+                foreach (ModKernel mod in EnumerateModsThatApplyGraphicalHexUpdate(World.staticMap))
+                {
+                    foreach (GraphicalHex graphicalHex in GraphicalMap.loaded)
+                    {
+                        if (cullingData.Loaded.Contains(graphicalHex))
+                        {
+                            continue;
+                        }
+
+                        mod.onGraphicalHexUpdated(graphicalHex);
+                    }
+                }
+
+                cullingData.Loaded.Clear();
+                cullingData.Loaded.UnionWith(GraphicalMap.loaded);
+                return;
+            }
+
+            foreach (GraphicalHex graphicalHex in GraphicalMap.loaded)
+            {
+                graphicalHex.checkData();
+                bool flag = graphicalHex.hex.location != null;
+                if (flag)
+                {
+                    foreach (Unit unit in graphicalHex.hex.location.units)
+                    {
+                        bool flag2 = unit.outer != null;
+                        if (flag2)
+                        {
+                            unit.outer.checkData();
+                        }
+                    }
+                }
+            }
+
             foreach (ModKernel mod in EnumerateModsThatApplyGraphicalHexUpdate(World.staticMap))
             {
                 foreach (GraphicalHex graphicalHex in GraphicalMap.loaded)
@@ -562,6 +807,11 @@ namespace CommunityLib
             {
                 mod.onGraphicalHexUpdated(graphicalHex);
             }
+        }
+
+        private static void GraphicalMap_purge_Postfix()
+        {
+            ModCore.Get().data.CameraCullingData.Clear();
         }
 
         private static IEnumerable<CodeInstruction> GraphicalHex_checkData_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
@@ -1479,7 +1729,7 @@ namespace CommunityLib
                 
         }
 
-        public static IEnumerable<CodeInstruction> UIInputs_hotkeys_transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        public static IEnumerable<CodeInstruction> UIInputs_hotkeys_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
@@ -1510,11 +1760,57 @@ namespace CommunityLib
                 yield return instructionList[i];
             }
 
-            Console.WriteLine("CommunityLib: Completed UIInputs_hotkeys_transpiler");
+            Console.WriteLine("CommunityLib: Completed UIInputs_hotkeys_Transpiler");
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
             }
+        }
+
+        public static IEnumerable<CodeInstruction> UIInputs_scrollKeys_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(UIInputs_scrollKeys_TranspilerBody), new Type[] { typeof(UIInputs) });
+
+            FieldInfo FI_ScrollSpeed = AccessTools.Field(typeof(UIInputs), nameof(UIInputs.scrollSpeed));
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex <= 8)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i+1].opcode == OpCodes.Ldfld && (FieldInfo)instructionList[i+1].operand == FI_ScrollSpeed)
+                        {
+                            yield return instructionList[i];
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+
+                            i += 2;
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 9)
+                    {
+                        targetIndex = 0;
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed UIInputs_scrollKeys_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static float UIInputs_scrollKeys_TranspilerBody(UIInputs inputs)
+        {
+            return Math.Min(2f, Time.unscaledDeltaTime * 60f) * inputs.scrollSpeed / Math.Max(1f, GraphicalMap.scale + 0.5f);
         }
 
         // Map Fixes

@@ -22,6 +22,8 @@ namespace CommunityLib
 
         private string dataFileName = "UserData.json";
 
+        public CameraCullingData CameraCullingData = new CameraCullingData();
+
         public bool isClean = true;
 
         #region InternalCaches
@@ -265,6 +267,8 @@ namespace CommunityLib
             hiddenThoughts = null;
 
             isPlayerTurn = false;
+
+            CameraCullingData.Clear();
 
             isClean = true;
         }

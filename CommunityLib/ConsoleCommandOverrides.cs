@@ -183,7 +183,6 @@ namespace CommunityLib
                     }
 
                     GraphicalMap.selectedUnit.person.shadow = value / 100.0;
-                    GraphicalMap.checkLoaded();
                     map.world.ui.checkData();
                 }
 
@@ -232,7 +231,6 @@ namespace CommunityLib
                         hex.purity = purity;
                     }
 
-                    GraphicalMap.checkLoaded();
                     map.world.ui.checkData();
                     return;
                 }
@@ -240,7 +238,6 @@ namespace CommunityLib
                 if (force)
                 {
                     GraphicalMap.selectedHex.purity = purity;
-                    GraphicalMap.checkLoaded();
                     map.world.ui.checkData();
                     return;
                 }
@@ -348,7 +345,6 @@ namespace CommunityLib
                 }
             }
 
-            GraphicalMap.checkLoaded();
             map.world.ui.checkData();
         }
     }
