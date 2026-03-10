@@ -3018,6 +3018,11 @@ namespace CommunityLib
                 data.BrokenMakerSleepDuration = 50;
             }
 
+            if (Get().data.CameraCullingData == null)
+            {
+                Get().data.CameraCullingData = new CameraCullingData();
+            }
+
             HashSet<Person> processedProphets = new HashSet<Person>();
             foreach (SocialGroup sg in map.socialGroups)
             {
