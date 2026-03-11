@@ -597,6 +597,7 @@ namespace CommunityLib
 
             MethodInfo MI_TranspilerBody_CalculateRadius = AccessTools.Method(patchType, nameof(GraphicalMap_checkLoaded_TranspilerBody_CalculateRadius), Type.EmptyTypes);
             MethodInfo MI_TranspilerBody_UpdateCameraCullingData = AccessTools.Method(patchType, nameof(GraphicalMap_checkLoaded_TranspilerBody_UpdateCameraCullingData), new Type[] { typeof(int), typeof(int), typeof(int) });
+            MethodInfo MI_TRanspilerBody_CheckXInBounds = AccessTools.Method(patchType, nameof(GraphicalMap_checkLoaded_TranspilerBody_CheckXInBounds), new Type[] { typeof(int) });
             MethodInfo MI_TranspilerBody_CleanLoaded = AccessTools.Method(patchType, nameof(GraphicalMap_checkLoaded_TranspilerBody_CleanLoaded), Type.EmptyTypes);
 
             FieldInfo FI_Megafauna = AccessTools.Field(typeof(Map), nameof(Map.megafauna));
@@ -638,6 +639,47 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 3)
                     {
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i-1].opcode == OpCodes.Br)
+                        {
+                            Label continueLabel = (Label)instructionList[i-1].operand;
+
+                            yield return instructionList[i];
+                            yield return new CodeInstruction(OpCodes.Ldloc_2);
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 7);
+                            yield return new CodeInstruction(OpCodes.Add);
+                            yield return new CodeInstruction(OpCodes.Ldloc_0);
+                            yield return new CodeInstruction(OpCodes.Sub);
+                            yield return new CodeInstruction(OpCodes.Stloc_S, 9);
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 9);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TRanspilerBody_CheckXInBounds);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, continueLabel);
+                            yield return new CodeInstruction(OpCodes.Nop);
+
+                            i++;
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 4)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_2)
+                        {
+                            returnCode = false;
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 5)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_3)
+                        {
+                            returnCode = true;
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 6)
+                    {
                         if (instructionList[i].opcode == OpCodes.Nop && instructionList[i+1].opcode == OpCodes.Ldsfld && instructionList[i+2].opcode == OpCodes.Ldfld && (FieldInfo)instructionList[i+2].operand == FI_Megafauna)
                         {
                             instructionList[i].labels.Add(skipHexLoadingLabel);
@@ -645,7 +687,7 @@ namespace CommunityLib
                             targetIndex++;
                         }
                     }
-                    else if (targetIndex == 4)
+                    else if (targetIndex == 7)
                     {
                         if (instructionList[i].opcode == OpCodes.Newobj)
                         {
@@ -736,6 +778,11 @@ namespace CommunityLib
             }
 
             return true;
+        }
+
+        private static bool GraphicalMap_checkLoaded_TranspilerBody_CheckXInBounds(int coordinate)
+        {
+            return coordinate >= 0 || coordinate < GraphicalMap.map.sizeX;
         }
 
         private static void GraphicalMap_checkLoaded_TranspilerBody_CleanLoaded()
