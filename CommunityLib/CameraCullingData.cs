@@ -11,7 +11,6 @@ namespace CommunityLib
 
         public int X = -1;
         public int Y = -1;
-        public int Z = -1;
         public int VisibleRadius = -1;
 
         public bool BoundsHaveChanged = false;
@@ -27,7 +26,6 @@ namespace CommunityLib
 
             X = -1;
             Y = -1;
-            Z = -1;
             VisibleRadius = -1;
             BoundsHaveChanged = false;
             CameraHasMoved = false;

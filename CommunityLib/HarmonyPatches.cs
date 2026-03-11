@@ -520,8 +520,6 @@ namespace CommunityLib
             MethodInfo MI_TranspilerBody_UpdateCameraCullingData = AccessTools.Method(patchType, nameof(GraphicalMap_checkLoaded_TranspilerBody_UpdateCameraCullingData), new Type[] { typeof(int), typeof(int), typeof(int) });
             MethodInfo MI_TranspilerBody_CleanLoaded = AccessTools.Method(patchType, nameof(GraphicalMap_checkLoaded_TranspilerBody_CleanLoaded), Type.EmptyTypes);
 
-            FieldInfo FI_Megafauna = AccessTools.Field(typeof(Map), nameof(Map.megafauna));
-
             Label allowLabel = ilg.DefineLabel();
             Label skipHexLoadingLabel = ilg.DefineLabel();
 
@@ -559,19 +557,11 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 3)
                     {
-                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i+1].opcode == OpCodes.Ldsfld && instructionList[i+2].opcode == OpCodes.Ldfld && (FieldInfo)instructionList[i+2].operand == FI_Megafauna)
-                        {
-                            instructionList[i].labels.Add(skipHexLoadingLabel);
-
-                            targetIndex++;
-                        }
-                    }
-                    else if (targetIndex == 4)
-                    {
                         if (instructionList[i].opcode == OpCodes.Newobj)
                         {
                             CodeInstruction code = new CodeInstruction(OpCodes.Nop);
                             code.labels.AddRange(instructionList[i].labels);
+                            code.labels.Add(skipHexLoadingLabel);
                             instructionList[i].labels.Clear();
                             yield return code;
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_CleanLoaded);
@@ -607,20 +597,6 @@ namespace CommunityLib
         private static bool GraphicalMap_checkLoaded_TranspilerBody_UpdateCameraCullingData(int x, int y, int radius)
         {
             CameraCullingData cullingData = ModCore.Get().data.CameraCullingData;
-
-            if (GraphicalMap.z != cullingData.Z)
-            {
-                cullingData.PreciseX = GraphicalMap.x;
-                cullingData.PreciseY = GraphicalMap.y;
-                cullingData.Z = GraphicalMap.z;
-                cullingData.Scale = GraphicalMap.scale;
-
-                cullingData.X = x;
-                cullingData.Y = y;
-                cullingData.VisibleRadius = radius;
-
-                return true;
-            }
 
             if (GraphicalMap.x != cullingData.PreciseX || GraphicalMap.y != cullingData.PreciseY)
             {
