@@ -1928,7 +1928,7 @@ namespace CommunityLib
 
         private static float UIInputs_scrollKeys_TranspilerBody(UIInputs inputs)
         {
-            return Math.Min(2f, Time.unscaledDeltaTime * 60f) * inputs.scrollSpeed / Math.Max(1f, GraphicalMap.scale + 0.5f);
+            return Math.Min(1f, Time.unscaledDeltaTime * 60f) * inputs.scrollSpeed / Math.Max(1f, GraphicalMap.scale + 0.5f);
         }
 
         // Map Fixes
