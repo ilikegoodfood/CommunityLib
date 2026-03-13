@@ -308,6 +308,10 @@ namespace CommunityLib
             // Deep Ones Reproduce
             harmony.Patch(original: AccessTools.Method(typeof(Rt_DeepOneReproduce), nameof(Rt_DeepOneReproduce.getName), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(Rt_DeepOneReproduce_getName_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(Rt_DeepOneReproduce), nameof(Rt_DeepOneReproduce.getDesc), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(Rt_DeepOneReproduce_getDesc_Postfix)));
+            // Duty to the World
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_Elf_DutyToTheWorld), nameof(Ch_Elf_DutyToTheWorld.getProgressPerTurnInner), new Type[] { typeof(UA), typeof(List<ReasonMsg>) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_Elf_DutyToTheWorld_getProgressPerTurnInner_Transpiler)));
+            // Temptation Of Eternity
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_Elf_TemptationOfEternity), nameof(Ch_Elf_TemptationOfEternity.getProgressPerTurnInner), new Type[] { typeof(UA), typeof(List<ReasonMsg>) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_Elf_TemptationOfEternity_getProgressPerTurnInner_Transpiler)));
             // Infiltrate
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Infiltrate), nameof(Ch_Infiltrate.getComplexity), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Ch_Infiltrate_getComplexity_Transpiler)));
             // Buy Item
@@ -316,8 +320,6 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Rti_CorruptElfstone), nameof(Rti_CorruptElfstone.validFor), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Rti_CorruptElfstone_validFor_Postfix)));
             // Dark Empire
             harmony.Patch(original: AccessTools.Method(typeof(Rt_DarkEmpire), nameof(Rt_DarkEmpire.getDesc), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(Rt_DarkEmpire_getDesc_Postfix)));
-            // Death of The Sun
-            harmony.Patch(original: AccessTools.Method(typeof(Mg_DeathOfTheSun), nameof(Mg_DeathOfTheSun.turnTick), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Mg_DeathOfTheSun_turnTick_Transpiler)));
             // Disrupt Conclave
             harmony.Patch(original: AccessTools.Method(typeof(Ch_DisruptConclave), nameof(Ch_DisruptConclave.getProgressPerTurnInner), new Type[] { typeof(UA), typeof(List<ReasonMsg>) }), postfix: new HarmonyMethod(patchType, nameof(Ch_DisruptConclave_getProgressPerTurnInner_Postfix)));
             // Orcish Expansion
@@ -355,6 +357,26 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Rt_EscalateIntoVendetta), nameof(Rt_EscalateIntoVendetta.complete), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Rt_EscalateIntoVendetta_complete_Transpiler)));
             // Prophecy Step
             harmony.Patch(original: AccessTools.Method(typeof(Ch_ProphecyStep), nameof(Ch_ProphecyStep.validFor), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_ProphecyStep_validFor_Transpiler)));
+
+            // Per Turn Challenge Fixes //
+            // onBegin Patches
+            harmony.Patch(original: AccessTools.Method(typeof(Challenge), nameof(Challenge.onBegin), new Type[] { typeof(Unit) }), postfix: new HarmonyMethod(patchType, nameof(Challenge_onBegin_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(Mg_BringTheSnows), nameof(Mg_BringTheSnows.onBegin), new Type[] { typeof(Unit) }), postfix: new HarmonyMethod(patchType, nameof(Challenge_onBegin_BulkPostfix_ResetProgressTracker)));
+            harmony.Patch(original: AccessTools.Method(typeof(Mg_DeathOfTheSun), nameof(Mg_DeathOfTheSun.onBegin), new Type[] { typeof(Unit) }), postfix: new HarmonyMethod(patchType, nameof(Challenge_onBegin_BulkPostfix_ResetProgressTracker)));
+            harmony.Patch(original: AccessTools.Method(typeof(Mg_G_BountifulHarvest), nameof(Mg_G_BountifulHarvest.onBegin), new Type[] { typeof(Unit) }), postfix: new HarmonyMethod(patchType, nameof(Challenge_onBegin_BulkPostfix_ResetProgressTracker)));
+            harmony.Patch(original: AccessTools.Method(typeof(Mg_G_Nurture), nameof(Mg_G_Nurture.onBegin), new Type[] { typeof(Unit) }), postfix: new HarmonyMethod(patchType, nameof(Challenge_onBegin_BulkPostfix_ResetProgressTracker)));
+            harmony.Patch(original: AccessTools.Method(typeof(Mg_Tremor), nameof(Mg_Tremor.onBegin), new Type[] { typeof(Unit) }), postfix: new HarmonyMethod(patchType, nameof(Challenge_onBegin_BulkPostfix_ResetProgressTracker)));
+            // trunTick patches
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_Elf_DutyToTheWorld), nameof(Ch_Elf_DutyToTheWorld.turnTick), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_Elf_DutyToTheWorld_turnTick_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_Elf_TemptationOfEternity), nameof(Ch_Elf_TemptationOfEternity.turnTick), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_Elf_TemptationOfEternity_turnTick_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_LayLow), nameof(Ch_LayLow.turnTick), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_LayLow_turnTick_BulkTranspiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_LayLowWilderness), nameof(Ch_LayLowWilderness.turnTick), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_LayLow_turnTick_BulkTranspiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Mg_BringTheSnows), nameof(Mg_BringTheSnows.turnTick), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Mg_Geomancy_turnTick_BulkTranspiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Mg_DeathOfTheSun), nameof(Mg_DeathOfTheSun.turnTick), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Mg_Geomancy_turnTick_BulkTranspiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Mg_G_BountifulHarvest), nameof(Mg_G_BountifulHarvest.turnTick), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Mg_Geomancy_turnTick_BulkTranspiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Mg_G_Nurture), nameof(Mg_G_Nurture.turnTick), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Mg_Geomancy_turnTick_BulkTranspiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Mg_Tremor), nameof(Mg_Tremor.turnTick), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Mg_Geomancy_turnTick_BulkTranspiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Rt_GhastEnshadow), nameof(Rt_GhastEnshadow.turnTick), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Rt_GhastEnshadow_turnTick_Transpiler)));
 
             // Task Fixes
             // Follow
@@ -3173,6 +3195,82 @@ namespace CommunityLib
             __result = "Developes a deep one cult presence at this location. If non exists, a new Deep One Cult will be established, otherwise the cult's presence will be boosted by 25.0.";
         }
 
+        private static IEnumerable<CodeInstruction> Ch_Elf_DutyToTheWorld_getProgressPerTurnInner_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Ch_Elf_DutyToTheWorld_getProgressPerTurnInner_TranspilerBody), new Type[] { typeof(Ch_Elf_DutyToTheWorld), typeof(UA), typeof(List<ReasonMsg>) });
+
+            yield return new CodeInstruction(OpCodes.Nop);
+            yield return new CodeInstruction(OpCodes.Ldarg_0);
+            yield return new CodeInstruction(OpCodes.Ldarg_1);
+            yield return new CodeInstruction(OpCodes.Ldarg_2);
+            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+            yield return new CodeInstruction(OpCodes.Ret);
+
+            Console.WriteLine("CommunityLib: Completed complete function replacement transpiler Ch_Elf_DutyToTheWorld_getProgressPerTurnInner_Transpiler");
+        }
+
+        private static double Ch_Elf_DutyToTheWorld_getProgressPerTurnInner_TranspilerBody(Ch_Elf_DutyToTheWorld instance, UA ua, List<ReasonMsg> msgs)
+        {
+            int lore = ua.getStatLore();
+            int command = ua.getStatCommand();
+            if (lore + command < 1)
+            {
+                msgs?.Add(new ReasonMsg("Base", 1.0));
+                return 1.0;
+            }
+
+            if (lore > 0)
+            {
+                msgs?.Add(new ReasonMsg("Stat: Lore", lore));
+            }
+            if (command > 0)
+            {
+                msgs?.Add(new ReasonMsg("Stat: Commnad", command));
+            }
+
+            return lore + command;
+        }
+
+        private static IEnumerable<CodeInstruction> Ch_Elf_TemptationOfEternity_getProgressPerTurnInner_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Ch_Elf_TemptationOfEternity_getProgressPerTurnInner_TranspilerBody), new Type[] { typeof(Ch_Elf_TemptationOfEternity), typeof(UA), typeof(List<ReasonMsg>) });
+
+            yield return new CodeInstruction(OpCodes.Nop);
+            yield return new CodeInstruction(OpCodes.Ldarg_0);
+            yield return new CodeInstruction(OpCodes.Ldarg_1);
+            yield return new CodeInstruction(OpCodes.Ldarg_2);
+            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+            yield return new CodeInstruction(OpCodes.Ret);
+
+            Console.WriteLine("CommunityLib: Completed complete function replacement transpiler Ch_Elf_TemptationOfEternity_getProgressPerTurnInner_Transpiler");
+        }
+
+        private static double Ch_Elf_TemptationOfEternity_getProgressPerTurnInner_TranspilerBody(Ch_Elf_TemptationOfEternity instance, UA ua, List<ReasonMsg> msgs)
+        {
+            int lore = ua.getStatLore();
+            int command = ua.getStatCommand();
+            if (lore + command < 1)
+            {
+                msgs?.Add(new ReasonMsg("Base", 1.0));
+                return 1.0;
+            }
+
+            if (lore > 0)
+            {
+                msgs?.Add(new ReasonMsg("Stat: Lore", lore));
+            }
+            if (command > 0)
+            {
+                msgs?.Add(new ReasonMsg("Stat: Commnad", command));
+            }
+
+            return lore + command;
+        }
+
         private static IEnumerable<CodeInstruction> Ch_Infiltrate_getComplexity_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
@@ -3245,43 +3343,6 @@ namespace CommunityLib
         private static void Rt_DarkEmpire_getDesc_Postfix(ref string __result)
         {
             __result = "Converts a human, elven, or dwarven nation into the Dark Empire, the focal point for enshadowed corrupted nations. It can be called to war against other human nations, and all nobles will gain shadow over time. All rulers of human cities with personal and location shadow below 90% will immediately rebel.";
-        }
-
-        // Death of the Sun
-        private static IEnumerable<CodeInstruction> Mg_DeathOfTheSun_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
-        {
-            List<CodeInstruction> instructionList = codeInstructions.ToList();
-
-            MethodInfo MI_progress = AccessTools.Method(typeof(Challenge), nameof(Challenge.getProgressPerTurn), new Type[] { typeof(UA), typeof(List<ReasonMsg>) });
-
-            int targetIndex = 1;
-            for (int i = 0; i < instructionList.Count; i++)
-            {
-                if (targetIndex > 0)
-                {
-                    if (targetIndex == 1)
-                    {
-                        if (instructionList[i].opcode == OpCodes.Ldarg_1 && instructionList[i+1].opcode == OpCodes.Callvirt)
-                        {
-                            yield return new CodeInstruction(OpCodes.Ldarg_0);
-                            yield return new CodeInstruction(OpCodes.Ldarg_1);
-                            yield return new CodeInstruction(OpCodes.Ldnull);
-                            yield return new CodeInstruction(OpCodes.Callvirt, MI_progress);
-
-                            i += 2;
-                            targetIndex = 0;
-                        }
-                    }
-                }
-
-                yield return instructionList[i];
-            }
-
-            Console.WriteLine("CommunityLib: Completed Mg_DeathOfTheSun_turnTick_Transpiler");
-            if (targetIndex != 0)
-            {
-                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
-            }
         }
 
         private static void Ch_DisruptConclave_getProgressPerTurnInner_Postfix(UA unit, List<ReasonMsg> msgs, ref double __result)
@@ -4054,6 +4115,329 @@ namespace CommunityLib
             }
 
             Console.WriteLine("CommunityLib: Completed Ch_ProphecyStep_validFor_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        // Per Turn Challenge Fixes
+        private static void Challenge_onBegin_Postfix(Challenge __instance, Unit unit)
+        {
+            bool reset = false;
+            switch(__instance)
+            {
+                case Ch_Elf_DutyToTheWorld _:
+                    reset = true;
+                    break;
+                case Ch_Elf_TemptationOfEternity _:
+                    reset = true;
+                    break;
+                case Ch_LayLow _:
+                    reset = true;
+                    break;
+                case Ch_LayLowWilderness _:
+                    reset = true;
+                    break;
+                case Mg_DeathOfTheSun _:
+                    reset = true;
+                    break;
+                case Rt_GhastEnshadow _:
+                    reset = true;
+                    break;
+            }
+
+            if (reset)
+            {
+                if (!ModCore.Get().data.perTurnChallengeProcessTracking.TryGetValue(__instance, out Dictionary<Unit, double> progressTracker))
+                {
+                    progressTracker = new Dictionary<Unit, double>();
+                    ModCore.Get().data.perTurnChallengeProcessTracking.Add(__instance, progressTracker);
+                }
+
+                if (progressTracker.ContainsKey(unit))
+                {
+                    progressTracker[unit] = 0.0;
+                }
+                else
+                {
+                    progressTracker.Add(unit, 0.0);
+                }
+            }
+        }
+
+        private static void Challenge_onBegin_BulkPostfix_ResetProgressTracker(Challenge __instance, Unit unit)
+        {
+            if (ModCore.Get().data.perTurnChallengeProcessTracking.TryGetValue(__instance, out Dictionary<Unit, double> progressTracker) && progressTracker != null && progressTracker.ContainsKey(unit))
+            {
+                progressTracker[unit] = 0.0;
+            }
+        }
+
+        private static double CalculateScaledProgressPerTurn(Challenge challenge, Unit unit, bool useEstimateOnBacktrack = true, bool preserveProgressOnBacktrack = false)
+        {
+            double oldProgress = 0.0;
+            if (!ModCore.Get().data.perTurnChallengeProcessTracking.TryGetValue(challenge, out Dictionary<Unit, double> progressTracker))
+            {
+                progressTracker = new Dictionary<Unit, double>();
+            }
+            else if (!progressTracker.TryGetValue(unit, out double progress))
+            {
+                progressTracker.Add(unit, 0.0);
+            }
+            else
+            {
+                oldProgress = progress;
+            }
+
+            double newProgress = (unit.task as Task_PerformChallenge)?.progress ?? 0.0;
+            double progressMade = newProgress - oldProgress;
+            
+            if (!challenge.isIndefinite())
+            {
+                double complexityAfterDiificulty = challenge.getComplexityAfterDifficulty();
+
+                double progressEstimate = 0.0;
+                if (unit is UA ua)
+                {
+                    progressEstimate = challenge.getProgressPerTurn(ua, null);
+                }
+                else if (unit is UM um)
+                {
+                    progressEstimate = challenge.getProgressPerTurn(um, null);
+                }
+
+                if (newProgress < oldProgress + progressEstimate)
+                {
+                    if (useEstimateOnBacktrack)
+                    {
+                        if (!preserveProgressOnBacktrack)
+                        {
+                            progressTracker[unit] = newProgress;
+                        }
+
+                        progressMade = progressEstimate;
+                    }
+                    else
+                    {
+                        if (newProgress >= complexityAfterDiificulty)
+                        {
+                            progressMade = complexityAfterDiificulty;
+                            progressTracker.Remove(unit);
+                            if (progressTracker.Count == 0)
+                            {
+                                ModCore.Get().data.perTurnChallengeProcessTracking.Remove(challenge);
+                            }
+                        }
+                        else if (!preserveProgressOnBacktrack)
+                        {
+                            progressTracker[unit] = newProgress;
+                        }
+
+                        progressMade = newProgress - oldProgress;
+                    }
+                }
+                else
+                {
+                    if (newProgress >= complexityAfterDiificulty)
+                    {
+                        progressMade = complexityAfterDiificulty;
+                        progressTracker.Remove(unit);
+                        if (progressTracker.Count == 0)
+                        {
+                            ModCore.Get().data.perTurnChallengeProcessTracking.Remove(challenge);
+                        }
+                    }
+                    else
+                    {
+                        progressTracker[unit] = newProgress;
+                    }
+
+                    progressMade = newProgress - oldProgress;
+                }
+
+                progressMade /= challenge.getComplexity() / complexityAfterDiificulty;
+            }
+
+            return progressMade;
+        }
+
+        private static IEnumerable<CodeInstruction> Ch_Elf_DutyToTheWorld_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Ch_Elf_DutyToTheWorld_turnTick_TranspilerBody), new Type[] { typeof(Ch_Elf_DutyToTheWorld), typeof(UA) });
+
+            yield return new CodeInstruction(OpCodes.Nop);
+            yield return new CodeInstruction(OpCodes.Ldarg_0);
+            yield return new CodeInstruction(OpCodes.Ldarg_1);
+            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+            yield return new CodeInstruction(OpCodes.Ret);
+
+            Console.WriteLine("CommunityLib: Completed complete function replacement transpiler Ch_Elf_DutyToTheWorld_turnTick_Transpiler");
+        }
+
+        private static void Ch_Elf_DutyToTheWorld_turnTick_TranspilerBody(Ch_Elf_DutyToTheWorld instance, UA ua)
+        {
+            double progressMade = CalculateScaledProgressPerTurn(instance, ua);
+
+            instance.city.arrogance.influences.Add(new ReasonMsg($"{ua.getName()}: {instance.getName()}", -0.75 * progressMade));
+        }
+
+        private static IEnumerable<CodeInstruction> Ch_Elf_TemptationOfEternity_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Ch_Elf_TemptationOfEternity_turnTick_TranspilerBody), new Type[] { typeof(Ch_Elf_TemptationOfEternity), typeof(UA) });
+
+            yield return new CodeInstruction(OpCodes.Nop);
+            yield return new CodeInstruction(OpCodes.Ldarg_0);
+            yield return new CodeInstruction(OpCodes.Ldarg_1);
+            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+            yield return new CodeInstruction(OpCodes.Ret);
+
+            Console.WriteLine("CommunityLib: Completed complete function replacement transpiler Ch_Elf_TemptationOfEternity_turnTick_Transpiler");
+        }
+
+        private static void Ch_Elf_TemptationOfEternity_turnTick_TranspilerBody(Ch_Elf_TemptationOfEternity instance, UA ua)
+        {
+            double progressMade = CalculateScaledProgressPerTurn(instance, ua);
+
+            instance.city.arrogance.influences.Add(new ReasonMsg($"{ua.getName()}: {instance.getName()}", 0.75 * progressMade));
+        }
+
+        private static IEnumerable<CodeInstruction> Ch_LayLow_turnTick_BulkTranspiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_CalculateProgress = AccessTools.Method(patchType, nameof(CalculateScaledProgressPerTurn), new Type[] { typeof(Challenge), typeof(Unit), typeof(bool), typeof(bool) });
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldnull && instructionList[i+1].opcode == OpCodes.Call)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_1);
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_0);
+                            yield return new CodeInstruction(OpCodes.Call, MI_CalculateProgress);
+
+                            i += 2;
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldnull && instructionList[i+1].opcode == OpCodes.Call)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_1);
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_0);
+                            yield return new CodeInstruction(OpCodes.Call, MI_CalculateProgress);
+
+                            i += 2;
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Ch_LayLow_turnTick_BulkTranspiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> Mg_Geomancy_turnTick_BulkTranspiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_GetComplexity = AccessTools.Method(typeof(Challenge), nameof(Challenge.getComplexity));
+            MethodInfo MI_CalculateProgress = AccessTools.Method(patchType, nameof(CalculateScaledProgressPerTurn), new Type[] { typeof(Challenge), typeof(Unit), typeof(bool), typeof(bool) });
+
+            Label skipLabel = ilg.DefineLabel();
+            
+
+            int targetIndex = 1;
+            bool returnCode = false;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Stloc_0)
+                        {
+                            yield return new CodeInstruction(OpCodes.Nop);
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_1);
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_0);
+                            yield return new CodeInstruction(OpCodes.Call, MI_CalculateProgress);
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_GetComplexity);
+                            yield return new CodeInstruction(OpCodes.Div);
+
+                            returnCode = true;
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
+            }
+
+            Console.WriteLine("CommunityLib: Completed Mg_Geomancy_turnTick_BulkTranspiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> Rt_GhastEnshadow_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_GetComplexity = AccessTools.Method(typeof(Challenge), nameof(Challenge.getComplexity));
+            MethodInfo MI_CalculateProgress = AccessTools.Method(patchType, nameof(CalculateScaledProgressPerTurn), new Type[] { typeof(Challenge), typeof(Unit), typeof(bool), typeof(bool) });
+
+            Label skipLabel = ilg.DefineLabel();
+            
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Mul && instructionList[i-1].opcode == OpCodes.Conv_R8)
+                        {
+                            yield return new CodeInstruction(OpCodes.Pop);
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_1);
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_0);
+                            yield return new CodeInstruction(OpCodes.Call, MI_CalculateProgress);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Rt_GhastEnshadow_turnTick_Transpiler");
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);

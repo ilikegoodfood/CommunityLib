@@ -58,6 +58,8 @@ namespace CommunityLib
 
         public Dictionary<HolyOrder, List<ReasonMsg>> influenceGainHuman;
 
+        public Dictionary<Challenge, Dictionary<Unit, double>> perTurnChallengeProcessTracking;
+
         private bool _acceleratedTime = false;
 
         private bool _brokenMakerSleeps = false;
@@ -86,6 +88,7 @@ namespace CommunityLib
             initializeVampireTypes();
 
             initializeInfluenceGain();
+            initializePerTurnProgressTracking();
         }
 
         #region Individual Initialisers
@@ -242,6 +245,14 @@ namespace CommunityLib
             }
         }
 
+        public void initializePerTurnProgressTracking()
+        {
+            if (perTurnChallengeProcessTracking == null)
+            {
+                perTurnChallengeProcessTracking = new Dictionary<Challenge, Dictionary<Unit, double>>();
+            }
+        }
+
         internal void initializeHidenThoughts()
         {
             if (hiddenThoughts == null)
@@ -275,6 +286,7 @@ namespace CommunityLib
 
             influenceGainElder?.Clear();
             influenceGainHuman?.Clear();
+            perTurnChallengeProcessTracking?.Clear();
 
             hiddenThoughts = null;
 
@@ -362,6 +374,7 @@ namespace CommunityLib
             initializeVampireTypes();
 
             initializeInfluenceGain();
+            initializePerTurnProgressTracking();
             initializeHidenThoughts();
 
             // Broken Maker Handling
@@ -373,6 +386,35 @@ namespace CommunityLib
         public void onTurnStart(Map map)
         {
             isPlayerTurn = true;
+
+            List<Unit> innerKeysToRemove = new List<Unit>();
+            List<Challenge> outerKeysToRemove = new List<Challenge>();
+            foreach (KeyValuePair<Challenge, Dictionary<Unit, double>> kvp in perTurnChallengeProcessTracking)
+            {
+                innerKeysToRemove.Clear();
+                foreach (KeyValuePair<Unit, double> progressTracker in kvp.Value)
+                {
+                    if (!(progressTracker.Key.task is Task_PerformChallenge pChallenge) || pChallenge.challenge != kvp.Key)
+                    {
+                        innerKeysToRemove.Add(progressTracker.Key);
+                    }
+                }
+
+                foreach (Unit unit in innerKeysToRemove)
+                {
+                    kvp.Value.Remove(unit);
+                }
+
+                if (kvp.Value == null)
+                {
+                    outerKeysToRemove.Add(kvp.Key);
+                }
+            }
+
+            foreach (Challenge challenge in outerKeysToRemove)
+            {
+                perTurnChallengeProcessTracking.Remove(challenge);
+            }
         }
 
         public void onTurnEnd(Map map)

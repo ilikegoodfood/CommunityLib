@@ -1,15 +1,14 @@
 ﻿using Assets.Code;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace CommunityLib
 {
     public class Rt_SlowHealing : Ritual
     {
+        public double PreciseCount = 0.0;
+
         public int counter = 0;
 
         public Rt_SlowHealing(Location loc)
@@ -45,8 +44,8 @@ namespace CommunityLib
 
         public override double getProgressPerTurnInner(UA unit, List<ReasonMsg> msgs)
         {
-            int result = 1;
-            msgs?.Add(new ReasonMsg("Base", 1));
+            double result = 1.0;
+            msgs?.Add(new ReasonMsg("Base", 1.0));
 
             return result;
         }
@@ -119,9 +118,51 @@ namespace CommunityLib
             return 0;
         }
 
+        public double progressTracker = 0.0;
+
+        public override void onBegin(Unit unit)
+        {
+            progressTracker = 0.0;
+        }
+
         public override void turnTick(UA ua)
         {
-            counter++;
+            double oldProgress = progressTracker; // Get oldProgress from tracker
+            double newProgress = (ua.task as Task_PerformChallenge)?.progress ?? 0.0; // Get new progress from agent's task, including a null check.
+            double progressMade = newProgress - oldProgress; // Indefinite challenges don't need progress scaling.
+
+            if (!isIndefinite()) // If it's not indeifnite, we need progress scaling.
+            {
+                double complexityAfterDifficulty = Math.Ceiling(getComplexityAfterDifficulty()); // Get the complexity after difficulty.
+
+                double expectedProgress = getProgressPerTurn(ua, null);
+                if (newProgress < oldProgress + expectedProgress) // Something has reduced the progress between the last turn and this turn.
+                {
+                    progressTracker = newProgress;
+                    progressMade = expectedProgress; // Use an estimate.
+                }
+                else
+                {
+                    if (newProgress >= complexityAfterDifficulty) // Check if this completes the challenge
+                    {
+
+                        newProgress = complexityAfterDifficulty; // clamp the new progress.
+                        progressTracker = 0.0;
+                    }
+
+                    progressMade = newProgress - oldProgress; // recalculate the progress made.
+                }
+                
+                progressMade /= getComplexity() / complexityAfterDifficulty; // Scale the progress made to turn it back into base complexity progress
+            }
+
+            PreciseCount += progressMade; // Use that instead of getProgressPerTurnInner to determine the strength of the effect.
+
+            int singleProgresses = (int)PreciseCount;
+            PreciseCount -= singleProgresses;
+            counter += singleProgresses;
+            int tripleProgresses = counter / 3;
+            counter -= tripleProgresses * 3;
 
             int minionHp = 0;
             int minionMaxHp = 0;
@@ -130,28 +171,36 @@ namespace CommunityLib
                 if (ua.minions[i] != null)
                 {
                     Minion minion = ua.minions[i];
-                    if (minion.hp < minion.getMaxHP())
+                    int maxHp = minion.getMaxHP();
+                    if (minion.hp < maxHp)
                     {
-                        minion.hp++;
+                        minion.hp += singleProgresses;
+
+                        if (minion.hp > maxHp)
+                        {
+                            minion.hp = maxHp;
+                        }
                     }
 
                     minionHp += minion.hp;
-                    minionMaxHp = minion.getMaxHP();
+                    minionMaxHp = maxHp;
                 }
             }
 
-            if (counter >= 3)
+            if (tripleProgresses > 0)
             {
-                counter = 0;
-
                 if (ua.hp < ua.maxHp)
                 {
-                    ua.hp++;
+                    ua.hp += tripleProgresses;
+
+                    if (ua.hp > ua.maxHp)
+                    {
+                        ua.hp = ua.maxHp;
+                    }
                 }
 
                 if (ua.hp >= ua.maxHp && minionHp >= minionMaxHp)
                 {
-                    ua.hp = ua.maxHp;
                     ua.task = null;
 
                     if (ua.isCommandable())
@@ -172,6 +221,7 @@ namespace CommunityLib
                 {
                     map.addMessage(ua.getName() + " completes: " + getName(), map.param.ch_laylow_parameterValue5, true, ua.location.hex);
                     popCompletionMessage(ua);
+                    return;
                 }
             }
         }
