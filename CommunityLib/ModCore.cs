@@ -337,10 +337,7 @@ namespace CommunityLib
             orcExpansionDefaults();
             eventModifications();
             setupMapMasks();
-        }
 
-        public override void afterMapGenBeforeHistorical(Map map)
-        {
             Get().data.initializeHidenThoughts();
 
             ScrollRect scrollable = map?.world.ui.uiScrollables?.scrollable_threats?.GetComponentInChildren<ScrollRect>();
