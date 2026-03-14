@@ -3025,15 +3025,24 @@ namespace CommunityLib
                         return;
                     }
 
+                    bool anyValidOutcome = false;
                     for (int i = 0; i < data.choices.Count; i++)
                     {
                         EventData.Choice c = data.choices[i];
-                        bool valid = true;
+                        bool outcomeIsValid = true;
                         try
                         {
                             if (c.condition != null)
                             {
-                                valid = EventRuntime.evaluate(EventParser.parse(EventParser.tokenize(c.condition)), ctx);
+                                outcomeIsValid = EventRuntime.evaluate(EventParser.parse(EventParser.tokenize(c.condition)), ctx);
+                                if (outcomeIsValid)
+                                {
+                                    anyValidOutcome = true;
+                                }
+                            }
+                            else
+                            {
+                                anyValidOutcome = true;
                             }
                         }
                         catch (Exception ex)
@@ -3041,7 +3050,7 @@ namespace CommunityLib
                             Console.WriteLine($"CommunityLib: ERROR: Exception while parsing event option conditions: {ex}");
                         }
 
-                        if (!valid)
+                        if (!outcomeIsValid)
                         {
                             if (component.options[i].interactable == true)
                             {
@@ -3068,6 +3077,14 @@ namespace CommunityLib
                                 component.options[i].interactable = true;
                             }
                         }
+                    }
+
+                    if (!anyValidOutcome)
+                    {
+                        Console.WriteLine($"CommunityLib: Event '{component.name}' has no valid outcomes. Discarding Popup Event.");
+                        blocker.SetActive(false);
+                        map.world.ui.removeBlocker(blocker);
+                        return;
                     }
                 }
             }
