@@ -4120,6 +4120,116 @@ namespace CommunityLib
 
             return true;
         }
+
+        public void ResetTrackedPerTurnChallengeProgress(Challenge challenge, Unit unit)
+        {
+            if (!Get().data.perTurnChallengeProcessTracking.TryGetValue(challenge, out Dictionary<Unit, double> progressTracker) || progressTracker == null)
+            {
+                progressTracker = new Dictionary<Unit, double>();
+                Get().data.perTurnChallengeProcessTracking.Add(challenge, progressTracker);
+            }
+
+            if (!progressTracker.ContainsKey(unit))
+            {
+                progressTracker.Add(unit, 0.0);
+            }
+            else
+            {
+                progressTracker[unit] = 0.0;
+            }
+        }
+
+        public double CalculateScaledProgressPerTurn(Challenge challenge, Unit unit, bool useEstimateOnBacktrack = true, bool preserveProgressOnBacktrack = false)
+        {
+            double oldProgress = 0.0;
+            if (!Get().data.perTurnChallengeProcessTracking.TryGetValue(challenge, out Dictionary<Unit, double> progressTracker))
+            {
+                progressTracker = new Dictionary<Unit, double>();
+                Get().data.perTurnChallengeProcessTracking.Add(challenge, progressTracker);
+            }
+            else if (!progressTracker.TryGetValue(unit, out double progress))
+            {
+                progressTracker.Add(unit, 0.0);
+            }
+            else
+            {
+                oldProgress = progress;
+            }
+
+            double newProgress = (unit.task as Task_PerformChallenge)?.progress ?? 0.0;
+            double progressMade = newProgress - oldProgress;
+
+            double progressEstimate = 0.0;
+            if (unit is UA ua)
+            {
+                progressEstimate = challenge.getProgressPerTurn(ua, null);
+            }
+            else if (unit is UM um)
+            {
+                progressEstimate = challenge.getProgressPerTurn(um, null);
+            }
+
+            if (newProgress <= oldProgress + progressEstimate)
+            {
+
+                if (!preserveProgressOnBacktrack)
+                {
+                    if (useEstimateOnBacktrack)
+                    {
+                        if (newProgress < oldProgress)
+                        {
+                            progressMade = progressEstimate;
+                            if (!preserveProgressOnBacktrack)
+                            {
+                                progressTracker[unit] = newProgress;
+                            }
+                        }
+                        else
+                        {
+                            progressMade = progressEstimate;
+                            progressTracker[unit] = newProgress;
+                        }
+                    }
+                    else
+                    {
+                        progressTracker[unit] = newProgress;
+                    }
+                }
+            }
+            else
+            {
+                progressTracker[unit] = newProgress;
+            }
+
+            if (!challenge.isIndefinite())
+            {
+                double complexityAfterDifficulty = challenge.getComplexityAfterDifficulty();
+
+                if (newProgress >= complexityAfterDifficulty)
+                {
+                    newProgress = complexityAfterDifficulty;
+                    progressTracker.Remove(unit);
+                    if (progressTracker.Count == 0)
+                    {
+                        Get().data.perTurnChallengeProcessTracking.Remove(challenge);
+                    }
+
+                    progressMade = Math.Max(newProgress - oldProgress, 0.0); // The new minus old progress will be negative if the complexity has dropped, resulting in no new progress being made before completion.
+                }
+
+                double baseComplexity = challenge.getComplexity();
+                if (complexityAfterDifficulty > 0 && baseComplexity > 0)
+                {
+                    progressMade *= (baseComplexity / complexityAfterDifficulty); // SCale the diffulty-adjusted progress back into base progress values.
+                }
+                else
+                {
+                    progressMade = 0.0; // Or handle as an instant-completion case
+                }
+            }
+
+            return progressMade;
+        }
         #endregion
     }
 }

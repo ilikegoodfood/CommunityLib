@@ -386,35 +386,6 @@ namespace CommunityLib
         public void onTurnStart(Map map)
         {
             isPlayerTurn = true;
-
-            List<Unit> innerKeysToRemove = new List<Unit>();
-            List<Challenge> outerKeysToRemove = new List<Challenge>();
-            foreach (KeyValuePair<Challenge, Dictionary<Unit, double>> kvp in perTurnChallengeProcessTracking)
-            {
-                innerKeysToRemove.Clear();
-                foreach (KeyValuePair<Unit, double> progressTracker in kvp.Value)
-                {
-                    if (!(progressTracker.Key.task is Task_PerformChallenge pChallenge) || pChallenge.challenge != kvp.Key)
-                    {
-                        innerKeysToRemove.Add(progressTracker.Key);
-                    }
-                }
-
-                foreach (Unit unit in innerKeysToRemove)
-                {
-                    kvp.Value.Remove(unit);
-                }
-
-                if (kvp.Value == null)
-                {
-                    outerKeysToRemove.Add(kvp.Key);
-                }
-            }
-
-            foreach (Challenge challenge in outerKeysToRemove)
-            {
-                perTurnChallengeProcessTracking.Remove(challenge);
-            }
         }
 
         public void onTurnEnd(Map map)
@@ -438,6 +409,35 @@ namespace CommunityLib
                         dwarfExpansionCooldowns[kvp.Key] = kvp.Value - 1;
                     }
                 }
+            }
+
+            List<Unit> innerKeysToRemove = new List<Unit>();
+            List<Challenge> outerKeysToRemove = new List<Challenge>();
+            foreach (KeyValuePair<Challenge, Dictionary<Unit, double>> kvp in perTurnChallengeProcessTracking)
+            {
+                innerKeysToRemove.Clear();
+                foreach (KeyValuePair<Unit, double> progressTracker in kvp.Value)
+                {
+                    if (!(progressTracker.Key.task is Task_PerformChallenge pChallenge) || pChallenge.challenge != kvp.Key)
+                    {
+                        innerKeysToRemove.Add(progressTracker.Key);
+                    }
+                }
+
+                foreach (Unit unit in innerKeysToRemove)
+                {
+                    kvp.Value.Remove(unit);
+                }
+
+                if (kvp.Value.Count == 0)
+                {
+                    outerKeysToRemove.Add(kvp.Key);
+                }
+            }
+
+            foreach (Challenge challenge in outerKeysToRemove)
+            {
+                perTurnChallengeProcessTracking.Remove(challenge);
             }
 
             if (map.acceleratedTime != _acceleratedTime)
