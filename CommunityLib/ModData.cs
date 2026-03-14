@@ -373,6 +373,15 @@ namespace CommunityLib
         public void onTurnStart(Map map)
         {
             isPlayerTurn = true;
+        }
+
+        public void onTurnEnd(Map map)
+        {
+            isPlayerTurn = false;
+
+            influenceGainElder.Clear();
+            influenceGainHuman.Clear();
+            eventPopupData.Clear();
 
             List<Unit> innerKeysToRemove = new List<Unit>();
             List<Challenge> outerKeysToRemove = new List<Challenge>();
@@ -392,7 +401,7 @@ namespace CommunityLib
                     kvp.Value.Remove(unit);
                 }
 
-                if (kvp.Value == null)
+                if (kvp.Value.Count == 0)
                 {
                     outerKeysToRemove.Add(kvp.Key);
                 }
@@ -402,15 +411,6 @@ namespace CommunityLib
             {
                 perTurnChallengeProcessTracking.Remove(challenge);
             }
-        }
-
-        public void onTurnEnd(Map map)
-        {
-            isPlayerTurn = false;
-
-            influenceGainElder.Clear();
-            influenceGainHuman.Clear();
-            eventPopupData.Clear();
 
             if (map.acceleratedTime != _acceleratedTime)
             {

@@ -118,43 +118,14 @@ namespace CommunityLib
             return 0;
         }
 
-        public double progressTracker = 0.0;
-
         public override void onBegin(Unit unit)
         {
-            progressTracker = 0.0;
+            CommunityLib.ModCore.Get().ResetTrackedPerTurnChallengeProgress(this, unit);
         }
 
         public override void turnTick(UA ua)
         {
-            double oldProgress = progressTracker; // Get oldProgress from tracker
-            double newProgress = (ua.task as Task_PerformChallenge)?.progress ?? 0.0; // Get new progress from agent's task, including a null check.
-            double progressMade = newProgress - oldProgress; // Indefinite challenges don't need progress scaling.
-
-            if (!isIndefinite()) // If it's not indeifnite, we need progress scaling.
-            {
-                double complexityAfterDifficulty = Math.Ceiling(getComplexityAfterDifficulty()); // Get the complexity after difficulty.
-
-                double expectedProgress = getProgressPerTurn(ua, null);
-                if (newProgress < oldProgress + expectedProgress) // Something has reduced the progress between the last turn and this turn.
-                {
-                    progressTracker = newProgress;
-                    progressMade = expectedProgress; // Use an estimate.
-                }
-                else
-                {
-                    if (newProgress >= complexityAfterDifficulty) // Check if this completes the challenge
-                    {
-
-                        newProgress = complexityAfterDifficulty; // clamp the new progress.
-                        progressTracker = 0.0;
-                    }
-
-                    progressMade = newProgress - oldProgress; // recalculate the progress made.
-                }
-                
-                progressMade /= getComplexity() / complexityAfterDifficulty; // Scale the progress made to turn it back into base complexity progress
-            }
+            double progressMade = CommunityLib.ModCore.Get().CalculateScaledProgressPerTurn(this, ua);
 
             PreciseCount += progressMade; // Use that instead of getProgressPerTurnInner to determine the strength of the effect.
 

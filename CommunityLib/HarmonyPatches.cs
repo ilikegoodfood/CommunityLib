@@ -3524,117 +3524,18 @@ namespace CommunityLib
 
             if (reset)
             {
-                if (!ModCore.Get().data.perTurnChallengeProcessTracking.TryGetValue(__instance, out Dictionary<Unit, double> progressTracker))
-                {
-                    progressTracker = new Dictionary<Unit, double>();
-                    ModCore.Get().data.perTurnChallengeProcessTracking.Add(__instance, progressTracker);
-                }
-
-                if (progressTracker.ContainsKey(unit))
-                {
-                    progressTracker[unit] = 0.0;
-                }
-                else
-                {
-                    progressTracker.Add(unit, 0.0);
-                }
+                ModCore.Get().ResetTrackedPerTurnChallengeProgress(__instance, unit);
             }
         }
 
         private static void Challenge_onBegin_BulkPostfix_ResetProgressTracker(Challenge __instance, Unit unit)
         {
-            if (ModCore.Get().data.perTurnChallengeProcessTracking.TryGetValue(__instance, out Dictionary<Unit, double> progressTracker) && progressTracker != null && progressTracker.ContainsKey(unit))
-            {
-                progressTracker[unit] = 0.0;
-            }
+            ModCore.Get().ResetTrackedPerTurnChallengeProgress(__instance, unit);
         }
 
         private static double CalculateScaledProgressPerTurn(Challenge challenge, Unit unit, bool useEstimateOnBacktrack = true, bool preserveProgressOnBacktrack = false)
         {
-            double oldProgress = 0.0;
-            if (!ModCore.Get().data.perTurnChallengeProcessTracking.TryGetValue(challenge, out Dictionary<Unit, double> progressTracker))
-            {
-                progressTracker = new Dictionary<Unit, double>();
-            }
-            else if (!progressTracker.TryGetValue(unit, out double progress))
-            {
-                progressTracker.Add(unit, 0.0);
-            }
-            else
-            {
-                oldProgress = progress;
-            }
-
-            double newProgress = (unit.task as Task_PerformChallenge)?.progress ?? 0.0;
-            double progressMade = newProgress - oldProgress;
-            
-            if (!challenge.isIndefinite())
-            {
-                double complexityAfterDiificulty = challenge.getComplexityAfterDifficulty();
-
-                double progressEstimate = 0.0;
-                if (unit is UA ua)
-                {
-                    progressEstimate = challenge.getProgressPerTurn(ua, null);
-                }
-                else if (unit is UM um)
-                {
-                    progressEstimate = challenge.getProgressPerTurn(um, null);
-                }
-
-                if (newProgress < oldProgress + progressEstimate)
-                {
-                    if (useEstimateOnBacktrack)
-                    {
-                        if (!preserveProgressOnBacktrack)
-                        {
-                            progressTracker[unit] = newProgress;
-                        }
-
-                        progressMade = progressEstimate;
-                    }
-                    else
-                    {
-                        if (newProgress >= complexityAfterDiificulty)
-                        {
-                            progressMade = complexityAfterDiificulty;
-                            progressTracker.Remove(unit);
-                            if (progressTracker.Count == 0)
-                            {
-                                ModCore.Get().data.perTurnChallengeProcessTracking.Remove(challenge);
-                            }
-                        }
-                        else if (!preserveProgressOnBacktrack)
-                        {
-                            progressTracker[unit] = newProgress;
-                        }
-
-                        progressMade = newProgress - oldProgress;
-                    }
-                }
-                else
-                {
-                    if (newProgress >= complexityAfterDiificulty)
-                    {
-                        progressMade = complexityAfterDiificulty;
-                        progressTracker.Remove(unit);
-                        if (progressTracker.Count == 0)
-                        {
-                            ModCore.Get().data.perTurnChallengeProcessTracking.Remove(challenge);
-                        }
-                    }
-                    else
-                    {
-                        progressTracker[unit] = newProgress;
-                    }
-
-                    progressMade = newProgress - oldProgress;
-                }
-
-                progressMade /= challenge.getComplexity() / complexityAfterDiificulty;
-            }
-
-            return progressMade;
+            return ModCore.Get().CalculateScaledProgressPerTurn(challenge, unit, useEstimateOnBacktrack, preserveProgressOnBacktrack);
         }
 
         private static IEnumerable<CodeInstruction> Ch_Elf_DutyToTheWorld_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
