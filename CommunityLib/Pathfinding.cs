@@ -65,7 +65,7 @@ namespace CommunityLib
 
         public static double delegate_SAFE_MOVE(Location[] currentPath, Location location, Unit u)
         {
-            if (u == null || location.soc == null || !location.soc.hostileTo(u))
+            if (u == null || location.soc == null || !location.soc.hostileTo(u) || u.isCommandable())
             {
                 return 0.0;
             }
@@ -246,7 +246,8 @@ namespace CommunityLib
                         pathfindingDelegates.Add(delegate_SAFE_MOVE);
                     }
                 }
-                else if (u is UM)
+
+                if (u is UM)
                 {
                     if (!pathfindingDelegates.Contains(delegate_AVOID_TRESSPASS))
                     {
@@ -434,7 +435,8 @@ namespace CommunityLib
                         pathfindingDelegates.Add(delegate_SAFE_MOVE);
                     }
                 }
-                else if (u is UM)
+                
+                if (u is UM)
                 {
                     if (!pathfindingDelegates.Contains(delegate_AVOID_TRESSPASS))
                     {
@@ -642,7 +644,8 @@ namespace CommunityLib
                         pathfindingDelegates.Add(delegate_SAFE_MOVE);
                     }
                 }
-                else if (u is UM)
+                
+                if (u is UM)
                 {
                     if (!pathfindingDelegates.Contains(delegate_AVOID_TRESSPASS))
                     {
