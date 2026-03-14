@@ -3,6 +3,7 @@ using Assets.Code.Modding;
 using HarmonyLib;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -6603,12 +6604,15 @@ namespace CommunityLib
             }
         }
 
-        private static IEnumerable<CodeInstruction> Task_RazeLocation_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        private static IEnumerable<CodeInstruction> Task_RazeLocation_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
             MethodInfo MI_TranspilerBody_Hook = AccessTools.Method(patchType, nameof(Task_RazeLocation_turnTick_TranspilerBody_Hook), new Type[] { typeof(Unit) });
+            MethodInfo MI_TranspilerBody_AmAttackingLarvae = AccessTools.Method(patchType, nameof(Task_RazeLocation_turnTick_TranspilerBody_AmAttackingLarvae), new Type[] { typeof(UM) });
             MethodInfo MI_TranspilerBody_Kill = AccessTools.Method(patchType, nameof(Task_RazeLocation_turnTick_TranspilerBody_Kill), new Type[] { typeof(UM) });
+
+            Label notAttackingLarvaeLabel = ilg.DefineLabel();
 
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
@@ -6626,7 +6630,28 @@ namespace CommunityLib
                             targetIndex++;
                         }
                     }
-                    if (targetIndex == 2)
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i-1].opcode == OpCodes.Brfalse)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_0 && instructionList[i-1].opcode == OpCodes.Stfld)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldloc_0);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_AmAttackingLarvae);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, notAttackingLarvaeLabel);
+                            yield return new CodeInstruction(OpCodes.Ret);
+
+                            instructionList[i].labels.Add(notAttackingLarvaeLabel);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 4)
                     {
                         if (instructionList[i].opcode == OpCodes.Ldloc_0 && instructionList[i+1].opcode == OpCodes.Callvirt && instructionList[i-1].opcode == OpCodes.Stfld && instructionList[i-2].opcode == OpCodes.Ldnull)
                         {
@@ -6663,6 +6688,40 @@ namespace CommunityLib
                     hook?.onRazeLocation_StartOfProcess(um);
                 }
             }
+        }
+
+        private static bool Task_RazeLocation_turnTick_TranspilerBody_AmAttackingLarvae(UM um)
+        {
+            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord) && intDataCord != null && intDataCord.typeDict.TryGetValue("Hive", out Type hiveType) & hiveType != null && intDataCord.typeDict.TryGetValue("LarvalMass", out Type larvalMassType) && larvalMassType != null)
+            {
+                if (um.location.settlement != null && hiveType.IsAssignableFrom(um.location.settlement.GetType()))
+                {
+                    Property larvalMass = null;
+                    foreach (Property property in um.location.properties)
+                    {
+                        if (larvalMassType.IsAssignableFrom(property.GetType()))
+                        {
+                            larvalMass = property;
+                            break;
+                        }
+                    }
+
+                    if (larvalMass == null || larvalMass.charge <= 0.0)
+                    {
+                        return false;
+                    }
+
+                    larvalMass.charge -= (um.hp / 5) + 1;
+                    if (larvalMass.charge < 0.0)
+                    {
+                        larvalMass.charge = 0.0;
+                    }
+
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static void Task_RazeLocation_turnTick_TranspilerBody_Kill(UM um)
