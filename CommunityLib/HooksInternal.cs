@@ -47,6 +47,11 @@ namespace CommunityLib
             {
                 registry.RegisterHook_appliesGraphicalHexUpdate(intDataVoid.kernel, LivingVoid_appliesGraphicalHexUpdate);
             }
+
+            if (ModCore.Get().data.tryGetModIntegrationData("Cordyceps", out ModIntegrationData intDataCord))
+            {
+                registry.RegisterHook_appliesGraphicalHexUpdate(intDataCord.kernel, Cordyceps_appliesGraphicalHexUpdate);
+            }
         }
 
         public bool LivingVoid_appliesGraphicalHexUpdate(Map map)
@@ -57,6 +62,11 @@ namespace CommunityLib
             }
 
             return map.overmind.god.GetType() == godType && map.overmind.god.awake;
+        }
+
+        public bool Cordyceps_appliesGraphicalHexUpdate(Map map)
+        {
+            return false;
         }
 
         public List<WonderData> onMapGen_PlaceWonders()
