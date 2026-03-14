@@ -13,8 +13,8 @@ namespace CommunityLib
         public int Y = -1;
         public int VisibleRadius = -1;
 
-        public bool BoundsHaveChanged = false;
         public bool CameraHasMoved = false;
+        public bool BoundsHaveChanged = false;
 
         public readonly HashSet<GraphicalHex> Loaded = new HashSet<GraphicalHex>();
 
@@ -27,8 +27,9 @@ namespace CommunityLib
             X = -1;
             Y = -1;
             VisibleRadius = -1;
-            BoundsHaveChanged = false;
+            
             CameraHasMoved = false;
+            BoundsHaveChanged = false;
 
             Loaded.Clear();
         }

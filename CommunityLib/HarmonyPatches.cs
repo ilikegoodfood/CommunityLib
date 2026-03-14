@@ -573,7 +573,8 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Ldloc_3);
                             yield return new CodeInstruction(OpCodes.Ldloc_0);
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_UpdateCameraCullingData);
-                            yield return new CodeInstruction(OpCodes.Brfalse_S, skipHexLoadingLabel);
+                            //yield return new CodeInstruction(OpCodes.Brfalse_S, skipHexLoadingLabel);
+                            yield return new CodeInstruction(OpCodes.Pop);
 
                             targetIndex++;
                         }
@@ -662,11 +663,12 @@ namespace CommunityLib
         {
             CameraCullingData cullingData = ModCore.Get().data.CameraCullingData;
 
-            if (GraphicalMap.x != cullingData.PreciseX || GraphicalMap.y != cullingData.PreciseY)
+            if (GraphicalMap.x != cullingData.PreciseX || GraphicalMap.y != cullingData.PreciseY || cullingData.Scale != GraphicalMap.scale)
             {
                 cullingData.CameraHasMoved = true;
                 cullingData.PreciseX = GraphicalMap.x;
                 cullingData.PreciseY = GraphicalMap.y;
+                cullingData.Scale = GraphicalMap.scale;
             }
             else
             {
@@ -675,12 +677,7 @@ namespace CommunityLib
 
             if (x == cullingData.X && y == cullingData.Y && radius == cullingData.VisibleRadius)
             {
-                if (GraphicalMap.scale != cullingData.Scale)
-                {
-                    cullingData.CameraHasMoved = false;
-                    cullingData.BoundsHaveChanged = false;
-                    cullingData.Scale = GraphicalMap.scale;
-                }
+                cullingData.BoundsHaveChanged = false;
 
                 return false;
             }
@@ -688,13 +685,6 @@ namespace CommunityLib
             cullingData.X = x;
             cullingData.Y = y;
             cullingData.VisibleRadius = radius;
-
-            if (GraphicalMap.scale != cullingData.Scale)
-            {
-                cullingData.CameraHasMoved = false;
-                cullingData.BoundsHaveChanged = false;
-                cullingData.Scale = GraphicalMap.scale;
-            }
 
             return true;
         }
@@ -740,14 +730,11 @@ namespace CommunityLib
             CameraCullingData cullingData = ModCore.Get().data.CameraCullingData;
             if (cullingData.CameraHasMoved)
             {
-                if (!cullingData.BoundsHaveChanged)
-                {
-                    return;
-                }
-
                 foreach (GraphicalHex graphicalHex in GraphicalMap.loaded)
                 {
-                    if (cullingData.Loaded.Contains(graphicalHex))
+                    graphicalHex.gameObject.transform.localScale = new Vector3(GraphicalMap.scale, GraphicalMap.scale, 1f);
+
+                    if (!cullingData.BoundsHaveChanged || cullingData.Loaded.Contains(graphicalHex))
                     {
                         continue;
                     }
