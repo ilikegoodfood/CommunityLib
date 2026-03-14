@@ -337,20 +337,11 @@ namespace CommunityLib
             orcExpansionDefaults();
             eventModifications();
             setupMapMasks();
+        }
 
+        public override void afterMapGenBeforeHistorical(Map map)
+        {
             Get().data.initializeHidenThoughts();
-
-            ScrollRect scrollable = map?.world.ui.uiScrollables?.scrollable_threats?.GetComponentInChildren<ScrollRect>();
-            if (scrollable != null)
-            {
-                if (Get().data.DefaultScrollSpeed_Threats < 0f)
-                {
-                    Get().data.DefaultScrollSpeed_Threats = scrollable.scrollSensitivity;
-                    //Console.WriteLine($"CommunityLib: Acquired scroll sensitivity from threats scrollable ({Get().data.DefaultScrollSpeed_Threats}).");
-                }
-                scrollable.scrollSensitivity = Get().data.DefaultScrollSpeed_Threats * 0.01f * opt_scrollSpeed_threats;
-                //Console.WriteLine($"CommunityLib: Scroll sensitivity for threats scrollable set to {scrollable.scrollSensitivity}.");
-            }
         }
 
         public override void afterLoading(Map map)
@@ -388,18 +379,6 @@ namespace CommunityLib
             eventModifications();
 
             setupMapMasks();
-
-            ScrollRect scrollable = map?.world.ui.uiScrollables?.scrollable_threats?.GetComponentInChildren<ScrollRect>();
-            if (scrollable != null)
-            {
-                if (Get().data.DefaultScrollSpeed_Threats < 0f)
-                {
-                    Get().data.DefaultScrollSpeed_Threats = scrollable.scrollSensitivity;
-                    //Console.WriteLine($"CommunityLib: Acquired scroll sensitivity from threats scrollable ({Get().data.DefaultScrollSpeed_Threats}).");
-                }
-                scrollable.scrollSensitivity = Get().data.DefaultScrollSpeed_Threats * 0.01f * opt_scrollSpeed_threats;
-                //Console.WriteLine($"CommunityLib: Scroll sensitivity for threats scrollable set to {scrollable.scrollSensitivity}.");
-            }
 
             updateSaveGameVersion(map);
         }
