@@ -1172,6 +1172,11 @@ namespace CommunityLib
 
         public void onPopulatingPathfindingDelegates(Location loc, Unit u, List<int> expectedMapLayers, List<Func<Location[], Location, Unit, List<int>, double>> pathfindingDelegates, List<Func<Location[], Location, Unit, List<int>, List<Location>>> getNeighbourDelegates)
         {
+            if (loc.map.awarenessOfUnderground >= 1.0)
+            {
+                pathfindingDelegates.Remove(Pathfinding.delegate_LAYERBOUND);
+            }
+
 
             if (loc.map.overmind.god.awake && ModCore.Get().data.tryGetModIntegrationData("LivingVoid", out ModIntegrationData intDataVoid) && intDataVoid.typeDict.TryGetValue("LivingVoid", out Type godType) && godType != null && godType.IsAssignableFrom(loc.map.overmind.god.GetType()))
             {
@@ -1188,7 +1193,7 @@ namespace CommunityLib
 
             if (locA.map.awarenessOfUnderground >= 1.0)
             {
-                result = true;
+                return false;
             }
             else if (u != null)
             {
