@@ -124,7 +124,7 @@ namespace CommunityLib
             return true;
         }
 
-        public double checkTaskUtility(AgentAI.TaskData taskData, UA ua, AgentAI.ControlParameters controlParams, List<ReasonMsg> reasonMsgs = null)
+        public double checkTaskUtility(AgentAI.TaskData taskData, UA ua, AgentAI.ControlParameters controlParams, Dictionary<Location, Location[]> allReachableLocations, List<ReasonMsg> reasonMsgs = null)
         {
             double utility = 0.0;
 
@@ -133,8 +133,7 @@ namespace CommunityLib
                 case TargetCategory.Location:
                     if (taskData.targetLocation != null && taskData.targetLocation != ua.location)
                     {
-                        Location[] pathTo;
-                        pathTo = ua.location.map.getPathTo(ua.location, taskData.targetLocation, ua);
+                        allReachableLocations.TryGetValue(taskData.targetLocation, out Location[] pathTo);
                         if (pathTo == null || pathTo.Length < 2)
                         {
                             reasonMsgs?.Add(new ReasonMsg("Cannot find path to target location", -10000.0));
@@ -145,7 +144,34 @@ namespace CommunityLib
                 case TargetCategory.SocialGroup:
                     if (taskData.targetSocialGroup != null && ua.location.soc != taskData.targetSocialGroup)
                     {
-                        Location[] pathTo = ua.location.map.getPathTo(ua.location, taskData.targetSocialGroup, ua);
+                        Location[] pathTo = null;
+                        int distance = int.MaxValue;
+                        int variationCounter = 0;
+                        foreach (KeyValuePair<Location, Location[]> kvp in allReachableLocations)
+                        {
+                            if (kvp.Key.soc != taskData.targetSocialGroup)
+                            {
+                                continue;
+                            }
+
+                            if (distance >= kvp.Value.Length)
+                            {
+                                if (distance == kvp.Value.Length)
+                                {
+                                    variationCounter++;
+                                    if (Eleven.random.Next(variationCounter) == 0)
+                                    {
+                                        pathTo = kvp.Value;
+                                    }
+                                }
+                                else
+                                {
+                                    variationCounter = 1;
+                                    pathTo = kvp.Value;
+                                }
+                            }
+                        }
+
                         if (pathTo == null || pathTo.Length < 2)
                         {
                             reasonMsgs?.Add(new ReasonMsg("Cannot find path to target social group", -10000.0));
@@ -156,7 +182,7 @@ namespace CommunityLib
                 case TargetCategory.Unit:
                     if (taskData.targetUnit != null && ! ua.location.units.Contains(taskData.targetUnit))
                     {
-                        Location[] pathTo = ua.location.map.getPathTo(ua.location, taskData.targetUnit.location, ua);
+                        allReachableLocations.TryGetValue(taskData.targetUnit.location, out Location[] pathTo);
                         if (pathTo == null || pathTo.Length < 2)
                         {
                             reasonMsgs?.Add(new ReasonMsg("Cannot find path to target location", -10000.0));

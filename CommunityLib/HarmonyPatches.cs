@@ -13,6 +13,7 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using static CommunityLib.AgentAI;
 
 namespace CommunityLib
 {
@@ -29,6 +30,8 @@ namespace CommunityLib
         private static Dictionary<UIE_Challenge, Hooks.TaskUIData> umTaskUIData;
 
         private static bool populatedUM;
+
+        internal static Tuple<Unit, int, Location, Dictionary<Location, Location[]>> lastAllReachableLocations;
 
         private static bool razeIsValid;
 
@@ -8981,7 +8984,24 @@ namespace CommunityLib
                 return distance;
             }
 
-            distance = ModCore.Get().getTravelTimeTo(ua, c.location);
+            Dictionary<Location, Location[]> allReachableLocations = null;
+            if (lastAllReachableLocations != null && ua == lastAllReachableLocations.Item1 && ua.map.turn == lastAllReachableLocations.Item2 && lastAllReachableLocations.Item3 == ua.location && lastAllReachableLocations.Item4 != null)
+            {
+                allReachableLocations = lastAllReachableLocations.Item4;
+            }
+            else
+            {
+                allReachableLocations = Pathfinding.getPathsFrom(ua.location, null, null, ua, !ua.society.isAtWar());
+                lastAllReachableLocations = new Tuple<Unit, int, Location, Dictionary<Location, Location[]>>(ua, ua.map.turn, ua.location, allReachableLocations);
+            }
+
+            if (!allReachableLocations.TryGetValue(c.location, out Location[] pathTo))
+            {
+                Console.WriteLine("CommunityLib: WARNING: Travel Time was requested to inaccessable challenge.");
+                return 10000;
+            }
+
+            distance = ModCore.Get().getTravelTimeAlong(ua, pathTo);
             if (distance < 0)
             {
                 Console.WriteLine("CommunityLib: WARNING: Travel Time was requested to inaccessable challenge.");
@@ -9163,14 +9183,26 @@ namespace CommunityLib
                     return true;
                 }
 
+
+                Dictionary<Location, Location[]> allReachableLocations = null;
+                if (lastAllReachableLocations != null && ua == lastAllReachableLocations.Item1 && ua.map.turn == lastAllReachableLocations.Item2 && lastAllReachableLocations.Item3 == ua.location && lastAllReachableLocations.Item4 != null)
+                {
+                    allReachableLocations = lastAllReachableLocations.Item4;
+                }
+                else
+                {
+                    allReachableLocations = Pathfinding.getPathsFrom(ua.location, null, null, ua, aiData.controlParameters.forceSafeMove || !ua.society.isAtWar());
+                    lastAllReachableLocations = new Tuple<Unit, int, Location, Dictionary<Location, Location[]>>(ua, ua.map.turn, ua.location, allReachableLocations);
+                }
+
                 List<UIScroll_Unit.SortableTaskBlock> blocks = new List<UIScroll_Unit.SortableTaskBlock>();
                 //Console.WriteLine("CommunityLib: Got valid challenges and rituals");
-                foreach (AgentAI.ChallengeData challengeData in ModCore.Get().GetAgentAI().getAllValidChallengesAndRituals(ua))
+                foreach (AgentAI.ChallengeData challengeData in ModCore.Get().GetAgentAI().getAllValidChallengesAndRituals(ua, allReachableLocations))
                 {
                     //Console.WriteLine("CommunityLib: Iterating " + challengeData.challenge.getName());
                     SortableTaskBlock_Advanced block = new SortableTaskBlock_Advanced();
                     block.challenge = challengeData.challenge;
-                    block.utility = ModCore.Get().GetAgentAI().getChallengeUtility(challengeData, ua, aiData, aiData.controlParameters, block.msgs);
+                    block.utility = ModCore.Get().GetAgentAI().getChallengeUtility(challengeData, ua, aiData, aiData.controlParameters, allReachableLocations[challengeData.location], block.msgs);
                     block.challengeData = challengeData;
                     blocks.Add(block);
 
@@ -9181,12 +9213,12 @@ namespace CommunityLib
                     //Console.WriteLine("CommunityLib: Added " + challengeData.challenge.getName());
                 }
 
-                foreach (AgentAI.TaskData taskData in ModCore.Get().GetAgentAI().getAllValidTasks(ua))
+                foreach (AgentAI.TaskData taskData in ModCore.Get().GetAgentAI().getAllValidTasks(ua, allReachableLocations))
                 {
                     SortableTaskBlock_Advanced blockTask = new SortableTaskBlock_Advanced();
                     blockTask.challenge = null;
                     blockTask.taskType = taskData.aiTask.taskType;
-                    blockTask.utility = ModCore.Get().GetAgentAI().checkTaskUtility(taskData, ua, aiData, aiData.controlParameters, blockTask.msgs);
+                    blockTask.utility = ModCore.Get().GetAgentAI().checkTaskUtility(taskData, ua, aiData, aiData.controlParameters, allReachableLocations, blockTask.msgs);
                     blockTask.taskData = taskData;
 
                     switch (taskData.targetCategory)
@@ -9374,7 +9406,6 @@ namespace CommunityLib
             UM um = GraphicalMap.selectedUnit as UM;
 
             List<Hooks.TaskUIData> data = new List<Hooks.TaskUIData>();
-
             if (um != null && um.isCommandable())
             {
                 foreach (var hook in ModCore.Get().HookRegistry.Delegate_onUIScroll_Unit_populateUM)
