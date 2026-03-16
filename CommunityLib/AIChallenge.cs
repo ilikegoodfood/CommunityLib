@@ -185,7 +185,7 @@ namespace CommunityLib
             return result;
         }
 
-        public bool checkChallengeVisibility(AgentAI.ChallengeData challengeData, UA ua, AgentAI.ControlParameters controlParams)
+        public bool checkChallengeVisibility(AgentAI.ChallengeData challengeData, UA ua, AgentAI.ControlParameters controlParams, Location[] pathTo)
         {
             if (challengeData.challenge.GetType() != challengeType && (!challengeData.aiChallenge.supportSubtypes || !challengeData.challenge.GetType().IsSubclassOf(challengeData.aiChallenge.challengeType)))
             {
@@ -200,7 +200,7 @@ namespace CommunityLib
             }
 
             double profile = checkChallengeProfile(challengeData, ua, controlParams);
-            int dist = ua.map.getStepDist(ua.location, challengeData.location);
+            int dist = pathTo.Length - 1;
             if (profile / 10 >= dist)
             {
                 if (debugInternal.debug && !debugInternal.outputProfile_AllChallenges && debugInternal.outputProfile_VisibleChallenges)

@@ -219,7 +219,18 @@ namespace CommunityLib
                     cData.location = __instance.location;
                 }
 
-                __result = agentAI.getChallengeUtility(cData, __instance, aiData, aiData.controlParameters, reasons);
+                Dictionary<Location, Location[]> allReachableLocations = null;
+                if (HarmonyPatches.lastAllReachableLocations != null && __instance == HarmonyPatches.lastAllReachableLocations.Item1 && __instance.map.turn == HarmonyPatches.lastAllReachableLocations.Item2 && HarmonyPatches.lastAllReachableLocations.Item3 == __instance.location && HarmonyPatches.lastAllReachableLocations.Item4 != null)
+                {
+                    allReachableLocations = HarmonyPatches.lastAllReachableLocations.Item4;
+                }
+                else
+                {
+                    allReachableLocations = Pathfinding.getPathsFrom(__instance.location, null, null, __instance, aiData.controlParameters.forceSafeMove || cData.aiChallenge.safeMove || !__instance.society.isAtWar());
+                    HarmonyPatches.lastAllReachableLocations = new Tuple<Unit, int, Location, Dictionary<Location, Location[]>>(__instance, __instance.map.turn, __instance.location, allReachableLocations);
+                }
+
+                __result = agentAI.getChallengeUtility(cData, __instance, aiData, aiData.controlParameters, null, reasons);
                 return false;
             }
 

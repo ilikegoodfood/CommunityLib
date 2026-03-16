@@ -320,7 +320,7 @@ namespace CommunityLib
             HashSet<Location> neighbours = new HashSet<Location>();
             for (int pass = 0; pass < 2; pass++)
             {
-                HashSet<Location> locationHashes = new HashSet<Location> { locA };
+                Dictionary<Location, double> locationHashes = new Dictionary<Location, double> { { locA, 0.0 } };
                 PriorityQueue<Location[], double> paths = new PriorityQueue<Location[], double>();
                 paths.Enqueue(new Location[1] { locA }, 0.0);
 
@@ -330,13 +330,24 @@ namespace CommunityLib
                     i++;
 
                     ValuePriorityPair<Location[], double> pair = paths.DequeueWithPriority();
+                    Location currentLocation = pair.Value[pair.Value.Length - 1];
+                    if (currentLocation == locB)
+                    {
+                        return pair.Value;
+                    }
+
+                    if (!locationHashes.TryGetValue(currentLocation, out double cachedPathCost) || pair.Priority > cachedPathCost)
+                    {
+                        continue;
+                    }
+
                     neighbours.Clear();
                     foreach (var getNeighbourDelegate in getNeighboursDelegates)
                     {
-                        List<Location> neighbourResukts = getNeighbourDelegate(pair.Value, pair.Value[pair.Value.Length - 1], u, expectedMapLayers);
-                        if (neighbourResukts != null)
+                        List<Location> neighbourResults = getNeighbourDelegate(pair.Value, currentLocation, u, expectedMapLayers);
+                        if (neighbourResults != null)
                         {
-                            foreach (Location neighbour in neighbourResukts)
+                            foreach (Location neighbour in neighbourResults)
                             {
                                 neighbours.Add(neighbour);
                             }
@@ -345,38 +356,38 @@ namespace CommunityLib
 
                     foreach (Location neighbour in neighbours)
                     {
-                        if (!locationHashes.Contains(neighbour))
+                        double stepCost = 10.0;
+                        foreach (Func<Location[], Location, Unit, List<int>, double> pathfindingDelegate in pathfindingDelegates)
                         {
-                            double stepCost = 10.0;
-                            foreach (Func<Location[], Location, Unit, List<int>, double> pathfindingDelegate in pathfindingDelegates)
+                            double cost = pathfindingDelegate(pair.Value, neighbour, u, expectedMapLayers);
+                            if (cost >= 10000.0)
                             {
-                                double cost = pathfindingDelegate(pair.Value, neighbour, u, expectedMapLayers);
-                                if (cost >= 10000.0)
-                                {
-                                    stepCost = cost;
-                                    break;
-                                }
-                                stepCost += cost;
+                                stepCost = cost;
+                                break;
                             }
+                            stepCost += cost;
+                        }
 
-                            if (stepCost >= 10000.0)
-                            {
-                                continue;
-                            }
+                        if (stepCost >= 10000.0)
+                        {
+                            continue;
+                        }
 
-                            Location[] newPathArray = new Location[pair.Value.Length + 1];
-                            Array.Copy(pair.Value, newPathArray, pair.Value.Length);
-                            newPathArray[newPathArray.Length - 1] = neighbour;
+                        Location[] newPathArray = new Location[pair.Value.Length + 1];
+                        Array.Copy(pair.Value, newPathArray, pair.Value.Length);
+                        newPathArray[newPathArray.Length - 1] = neighbour;
 
-                            if (neighbour == locB)
-                            {
-                                return newPathArray;
-                            }
+                        double newPathCost = pair.Priority + stepCost;
 
-                            double newPathCost = pair.Priority + stepCost;
-
+                        if (!locationHashes.TryGetValue(neighbour, out cachedPathCost))
+                        {
+                            locationHashes.Add(neighbour, newPathCost);
                             paths.Enqueue(newPathArray, newPathCost);
-                            locationHashes.Add(neighbour);
+                        }
+                        else if (cachedPathCost > newPathCost)
+                        {
+                            locationHashes[neighbour] = newPathCost;
+                            paths.Enqueue(newPathArray, newPathCost);
                         }
                     }
                 }
@@ -542,12 +553,9 @@ namespace CommunityLib
             HashSet<Location> neighbours = new HashSet<Location>();
             for (int pass = 0; pass < 2; pass++)
             {
-                HashSet<Location> locationHashes = new HashSet<Location> { loc };
+                Dictionary<Location, double> locationHashes = new Dictionary<Location, double> { { loc, 0.0 } };
                 PriorityQueue<Location[], double> paths = new PriorityQueue<Location[], double>();
                 paths.Enqueue(new Location[1] { loc }, 0.0);
-
-                PriorityQueue<Location[], double> destinations = new PriorityQueue<Location[], double>();
-                double destinationPriority = -1.0;
 
                 int i = 0;
                 while (i < 5 * loc.map.locations.Count && paths.Count > 0)
@@ -555,13 +563,48 @@ namespace CommunityLib
                     i++;
 
                     ValuePriorityPair<Location[], double> pair = paths.DequeueWithPriority();
+                    Location currentLocation = pair.Value[pair.Value.Length - 1];
+
+                    if (currentLocation.soc == sg)
+                    {
+                        List<Location[]> destinationPaths = new List<Location[]>();
+                        ValuePriorityPair<Location[], double> potentialPair;
+                        while (paths.Count > 0)
+                        {
+                            potentialPair = paths.DequeueWithPriority();
+                            if (potentialPair.Priority > pair.Priority)
+                            {
+                                break;
+                            }
+
+                            if (potentialPair.Value[potentialPair.Value.Length - 1].soc == sg)
+                            {
+                                destinationPaths.Add(potentialPair.Value);
+                            }
+                        }
+
+                        if (destinationPaths.Count == 1)
+                        {
+                            return pair.Value;
+                        }
+                        else
+                        {
+                            return destinationPaths[Eleven.random.Next(destinationPaths.Count)];
+                        }
+                    }
+
+                    if (!locationHashes.TryGetValue(currentLocation, out double cachedPathCost) || pair.Priority > cachedPathCost)
+                    {
+                        continue;
+                    }
+
                     neighbours.Clear();
                     foreach (var getNeighbourDelegate in getNeighboursDelegates)
                     {
-                        List<Location> neighbourResukts = getNeighbourDelegate(pair.Value, pair.Value[pair.Value.Length - 1], u, expectedMapLayers);
-                        if (neighbourResukts != null)
+                        List<Location> neighbourResults = getNeighbourDelegate(pair.Value, currentLocation, u, expectedMapLayers);
+                        if (neighbourResults != null)
                         {
-                            foreach (Location neighbour in neighbourResukts)
+                            foreach (Location neighbour in neighbourResults)
                             {
                                 neighbours.Add(neighbour);
                             }
@@ -570,62 +613,39 @@ namespace CommunityLib
 
                     foreach (Location neighbour in neighbours)
                     {
-                        if (!locationHashes.Contains(neighbour))
+                        double stepCost = 10.0;
+                        foreach (Func<Location[], Location, Unit, List<int>, double> pathfindingDelegate in pathfindingDelegates)
                         {
-                            double stepCost = 10.0;
-                            foreach (Func<Location[], Location, Unit, List<int>, double> pathfindingDelegate in pathfindingDelegates)
+                            double cost = pathfindingDelegate(pair.Value, neighbour, u, expectedMapLayers);
+                            if (cost >= 10000.0)
                             {
-                                double cost = pathfindingDelegate(pair.Value, neighbour, u, expectedMapLayers);
-                                if (cost >= 10000.0)
-                                {
-                                    stepCost = cost;
-                                    break;
-                                }
-                                stepCost += cost;
-                            }
-
-                            if (stepCost >= 10000.0)
-                            {
-                                continue;
-                            }
-
-                            Location[] newPathArray = new Location[pair.Value.Length + 1];
-                            Array.Copy(pair.Value, newPathArray, pair.Value.Length);
-                            newPathArray[newPathArray.Length - 1] = neighbour;
-
-                            double newPathCost = pair.Priority + stepCost;
-
-                            if (neighbour.soc == sg && delegate_VALID_LAYERBOUND(newPathArray, neighbour, u, targetMapLayers))
-                            {
-                                if (destinations.Count == 0 || newPathCost < destinationPriority)
-                                {
-                                    destinationPriority = newPathCost;
-                                }
-                                destinations.Enqueue(newPathArray, newPathCost);
-                            }
-
-                            locationHashes.Add(neighbour);
-                            paths.Enqueue(newPathArray, newPathCost);
-                        }
-                    }
-
-                    if (destinations.Count > 0 && (!paths.TryPeekWithPriority(out _, out double nextPairPriority) || nextPairPriority > destinationPriority))
-                    {
-                        List<Location[]> destinationPaths = new List<Location[]>();
-                        while (destinations.Count > 0)
-                        {
-                            ValuePriorityPair<Location[], double> destinationPair = destinations.DequeueWithPriority();
-                            if (destinationPair.Priority == destinationPriority)
-                            {
-                                destinationPaths.Add(destinationPair.Value);
-                            }
-                            else
-                            {
+                                stepCost = cost;
                                 break;
                             }
+                            stepCost += cost;
                         }
 
-                        return destinationPaths[Eleven.random.Next(destinationPaths.Count)];
+                        if (stepCost >= 10000.0)
+                        {
+                            continue;
+                        }
+
+                        Location[] newPathArray = new Location[pair.Value.Length + 1];
+                        Array.Copy(pair.Value, newPathArray, pair.Value.Length);
+                        newPathArray[newPathArray.Length - 1] = neighbour;
+
+                        double newPathCost = pair.Priority + stepCost;
+
+                        if (!locationHashes.TryGetValue(neighbour, out cachedPathCost))
+                        {
+                            locationHashes.Add(neighbour, newPathCost);
+                            paths.Enqueue(newPathArray, newPathCost);
+                        }
+                        else if (cachedPathCost > newPathCost)
+                        {
+                            locationHashes[neighbour] = newPathCost;
+                            paths.Enqueue(newPathArray, newPathCost);
+                        }
                     }
                 }
 
@@ -767,12 +787,9 @@ namespace CommunityLib
             HashSet<Location> neighbours = new HashSet<Location>();
             for (int pass = 0; pass < 2; pass++)
             {
-                HashSet<Location> locationHashes = new HashSet<Location> { loc };
+                Dictionary<Location, double> locationHashes = new Dictionary<Location, double> { { loc, 0.0 } };
                 PriorityQueue<Location[], double> paths = new PriorityQueue<Location[], double>();
                 paths.Enqueue(new Location[] { loc }, 0.0);
-
-                PriorityQueue<Location[], double> destinations = new PriorityQueue<Location[], double>();
-                double destinationPriority = -1.0;
 
                 int i = 0;
                 while (i < 5 * loc.map.locations.Count && paths.Count > 0)
@@ -780,13 +797,67 @@ namespace CommunityLib
                     i++;
 
                     ValuePriorityPair<Location[], double> pair = paths.DequeueWithPriority();
+                    Location currentLocation = pair.Value[pair.Value.Length - 1];
+
+                    bool isValid = true;
+                    foreach (Func<Location[], Location, Unit, List<int>, bool> validityDelegtae in destinationValidityDelegates)
+                    {
+                        if (!validityDelegtae(pair.Value, currentLocation, u, targetMapLayers))
+                        {
+                            isValid = false;
+                            break;
+                        }
+                    }
+                    if (isValid)
+                    {
+                        List<Location[]> destinationPaths = new List<Location[]>();
+                        ValuePriorityPair<Location[], double> potentialPair;
+                        while (paths.Count > 0)
+                        {
+                            potentialPair = paths.DequeueWithPriority();
+                            if (potentialPair.Priority > pair.Priority)
+                            {
+                                break;
+                            }
+
+                            isValid = true;
+                            Location currentPotentialLocation = potentialPair.Value[potentialPair.Value.Length - 1];
+                            foreach (Func<Location[], Location, Unit, List<int>, bool> validityDelegtae in destinationValidityDelegates)
+                            {
+                                if (!validityDelegtae(pair.Value, currentPotentialLocation, u, targetMapLayers))
+                                {
+                                    isValid = false;
+                                    break;
+                                }
+                            }
+                            if (isValid)
+                            {
+                                destinationPaths.Add(potentialPair.Value);
+                            }
+                        }
+
+                        if (destinationPaths.Count == 1)
+                        {
+                            return pair.Value;
+                        }
+                        else
+                        {
+                            return destinationPaths[Eleven.random.Next(destinationPaths.Count)];
+                        }
+                    }
+
+                    if (!locationHashes.TryGetValue(currentLocation, out double cachedPathCost) || pair.Priority > cachedPathCost)
+                    {
+                        continue;
+                    }
+
                     neighbours.Clear();
                     foreach (var getNeighbourDelegate in getNeighboursDelegates)
                     {
-                        List<Location> neighbourResukts = getNeighbourDelegate(pair.Value, pair.Value[pair.Value.Length - 1], u, targetMapLayers);
-                        if (neighbourResukts != null)
+                        List<Location> neighbourResults = getNeighbourDelegate(pair.Value, currentLocation, u, targetMapLayers);
+                        if (neighbourResults != null)
                         {
-                            foreach (Location neighbour in neighbourResukts)
+                            foreach (Location neighbour in neighbourResults)
                             {
                                 neighbours.Add(neighbour);
                             }
@@ -795,72 +866,39 @@ namespace CommunityLib
 
                     foreach (Location neighbour in neighbours)
                     {
-                        if (!locationHashes.Contains(neighbour))
+                        double stepCost = 10.0;
+                        foreach (Func<Location[], Location, Unit, List<int>, double> pathfindingDelegate in pathfindingDelegates)
                         {
-                            double stepCost = 10.0;
-                            foreach (Func<Location[], Location, Unit, List<int>, double> pathfindingDelegate in pathfindingDelegates)
+                            double cost = pathfindingDelegate(pair.Value, neighbour, u, targetMapLayers);
+                            if (cost >= 10000.0)
                             {
-                                double cost = pathfindingDelegate(pair.Value, neighbour, u, targetMapLayers);
-                                if (cost >= 10000.0)
-                                {
-                                    stepCost = cost;
-                                    break;
-                                }
-                                stepCost += cost;
-                            }
-
-                            if (stepCost >= 10000.0)
-                            {
-                                continue;
-                            }
-
-                            Location[] newPathArray = new Location[pair.Value.Length + 1];
-                            Array.Copy(pair.Value, newPathArray, pair.Value.Length);
-                            newPathArray[newPathArray.Length - 1] = neighbour;
-
-                            double newPathCost = pair.Priority + stepCost;
-
-                            bool valid = true;
-                            foreach (Func<Location[], Location, Unit, List<int>, bool> validDelegate in destinationValidityDelegates)
-                            {
-                                if (!destinationValidityDelegate(pair.Value, neighbour, u, targetMapLayers))
-                                {
-                                    valid = false;
-                                    break;
-                                }
-                            }
-
-                            if (valid)
-                            {
-                                if (destinations.Count == 0 || newPathCost < destinationPriority)
-                                {
-                                    destinationPriority = newPathCost;
-                                }
-                                destinations.Enqueue(newPathArray, newPathCost);
-                            }
-
-                            locationHashes.Add(neighbour);
-                            paths.Enqueue(newPathArray, newPathCost);
-                        }
-                    }
-
-                    if (destinations.Count > 0 && (!paths.TryPeekWithPriority(out _, out double nextPairPriority) || nextPairPriority > destinationPriority))
-                    {
-                        List<Location[]> destinationPaths = new List<Location[]>();
-                        while (destinations.Count > 0)
-                        {
-                            ValuePriorityPair<Location[], double> destinationPair = destinations.DequeueWithPriority();
-                            if (destinationPair.Priority <= destinationPriority)
-                            {
-                                destinationPaths.Add(destinationPair.Value);
-                            }
-                            else
-                            {
+                                stepCost = cost;
                                 break;
                             }
+                            stepCost += cost;
                         }
 
-                        return destinationPaths[Eleven.random.Next(destinationPaths.Count)];
+                        if (stepCost >= 10000.0)
+                        {
+                            continue;
+                        }
+
+                        Location[] newPathArray = new Location[pair.Value.Length + 1];
+                        Array.Copy(pair.Value, newPathArray, pair.Value.Length);
+                        newPathArray[newPathArray.Length - 1] = neighbour;
+
+                        double newPathCost = pair.Priority + stepCost;
+
+                        if (!locationHashes.TryGetValue(neighbour, out cachedPathCost))
+                        {
+                            locationHashes.Add(neighbour, newPathCost);
+                            paths.Enqueue(newPathArray, newPathCost);
+                        }
+                        else if (cachedPathCost > newPathCost)
+                        {
+                            locationHashes[neighbour] = newPathCost;
+                            paths.Enqueue(newPathArray, newPathCost);
+                        }
                     }
                 }
 
@@ -887,6 +925,322 @@ namespace CommunityLib
             }
 
             return null;
+        }
+
+        public static Dictionary<Location, Location[]> getPathsFrom(Location locA, List<Func<Location[], Location, Unit, List<int>, double>> pathfindingDelegates, List<Func<Location[], Location, Unit, List<int>, List<Location>>> getNeighboursDelegates, Unit u = null, bool safeMove = false)
+        {
+            if (locA == null)
+            {
+                return null;
+            }
+
+            Dictionary<Location, Location[]> allPaths = new Dictionary<Location, Location[]> { { locA, new Location[0] } };
+            if (locA.getNeighbours().Count == 0)
+            {
+                return allPaths;
+            }
+
+            List<int> expectedMapLayers = new List<int> { locA.hex.z };
+
+            if (pathfindingDelegates == null)
+            {
+                pathfindingDelegates = new List<Func<Location[], Location, Unit, List<int>, double>> { delegate_LAYERBOUND };
+            }
+            else if (!pathfindingDelegates.Contains(delegate_LAYERBOUND))
+            {
+                pathfindingDelegates.Add(delegate_LAYERBOUND);
+            }
+
+            if (getNeighboursDelegates == null)
+            {
+                getNeighboursDelegates = new List<Func<Location[], Location, Unit, List<int>, List<Location>>> { delegate_NEIGHBOURS_VANILLA };
+            }
+            else if (!getNeighboursDelegates.Contains(delegate_NEIGHBOURS_VANILLA))
+            {
+                getNeighboursDelegates.Add(delegate_NEIGHBOURS_VANILLA);
+            }
+
+            if (u != null)
+            {
+                if (u is UA && u.isCommandable())
+                {
+                    if (!pathfindingDelegates.Contains(delegate_FAVOURABLE_WIND))
+                    {
+                        pathfindingDelegates.Add(delegate_FAVOURABLE_WIND);
+                    }
+
+                    if (!getNeighboursDelegates.Contains(delegate_NEIGHBOURS_THEENTRACE))
+                    {
+                        getNeighboursDelegates.Add(delegate_NEIGHBOURS_THEENTRACE);
+                    }
+                }
+
+                if (u.getMaxMoves() <= 0)
+                {
+                    if (!pathfindingDelegates.Contains(delegate_IMMOBILE))
+                    {
+                        pathfindingDelegates.Add(delegate_IMMOBILE);
+                    }
+                }
+
+                if (u.moveType == Unit.MoveType.AQUAPHIBIOUS)
+                {
+                    if (!pathfindingDelegates.Contains(delegate_AQUAPHIBIOUS))
+                    {
+                        pathfindingDelegates.Add(delegate_AQUAPHIBIOUS);
+                    }
+                }
+                else if (u.moveType == Unit.MoveType.DESERT_ONLY)
+                {
+                    if (!pathfindingDelegates.Contains(delegate_DESERT_ONLY))
+                    {
+                        pathfindingDelegates.Add(delegate_DESERT_ONLY);
+                    }
+                }
+
+                if (safeMove)
+                {
+                    if (!pathfindingDelegates.Contains(delegate_SAFE_MOVE))
+                    {
+                        pathfindingDelegates.Add(delegate_SAFE_MOVE);
+                    }
+                }
+
+                if (u is UM)
+                {
+                    if (!pathfindingDelegates.Contains(delegate_AVOID_TRESSPASS))
+                    {
+                        pathfindingDelegates.Add(delegate_AVOID_TRESSPASS);
+                    }
+                }
+
+                if (u.person != null && u.person.traits.Any(t => t is T_WithTheWind))
+                {
+                    if (!pathfindingDelegates.Contains(delegate_TRAIT_WITHTHEWIND))
+                    {
+                        pathfindingDelegates.Add(delegate_TRAIT_WITHTHEWIND);
+                    }
+                }
+            }
+
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onPopulatingPathfindingDelegates)
+            {
+                hook(locA, null, u, expectedMapLayers, pathfindingDelegates, getNeighboursDelegates);
+            }
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            {
+                hook.onPopulatingPathfindingDelegates(locA, null, u, expectedMapLayers, pathfindingDelegates, getNeighboursDelegates);
+            }
+
+            Dictionary<Location, int> pathVariantCount = new Dictionary<Location, int>();
+            HashSet<Location> neighbours = new HashSet<Location>();
+            Dictionary<Location, double> locationHashes = new Dictionary<Location, double> { { locA, 0.0 } };
+            PriorityQueue<Location[], double> paths = new PriorityQueue<Location[], double>();
+            paths.Enqueue(new Location[1] { locA }, 0.0);
+
+            int i = 0;
+            while (i < 5 * locA.map.locations.Count && paths.Count > 0)
+            {
+                i++;
+
+                ValuePriorityPair<Location[], double> pair = paths.DequeueWithPriority();
+                Location currentLocation = pair.Value[pair.Value.Length - 1];
+
+                if (!locationHashes.TryGetValue(currentLocation, out double cachedPathCost) || pair.Priority > cachedPathCost)
+                {
+                    continue;
+                }
+
+                neighbours.Clear();
+                foreach (var getNeighbourDelegate in getNeighboursDelegates)
+                {
+                    List<Location> neighbourResults = getNeighbourDelegate(pair.Value, currentLocation, u, expectedMapLayers);
+                    if (neighbourResults != null)
+                    {
+                        foreach (Location neighbour in neighbourResults)
+                        {
+                            neighbours.Add(neighbour);
+                        }
+                    }
+                }
+
+                foreach (Location neighbour in neighbours)
+                {
+                    double stepCost = 10.0;
+                    foreach (Func<Location[], Location, Unit, List<int>, double> pathfindingDelegate in pathfindingDelegates)
+                    {
+                        double cost = pathfindingDelegate(pair.Value, neighbour, u, expectedMapLayers);
+                        if (cost >= 10000.0)
+                        {
+                            stepCost = cost;
+                            break;
+                        }
+                        stepCost += cost;
+                    }
+
+                    if (stepCost >= 10000.0)
+                    {
+                        continue;
+                    }
+
+                    Location[] newPathArray = new Location[pair.Value.Length + 1];
+                    Array.Copy(pair.Value, newPathArray, pair.Value.Length);
+                    newPathArray[newPathArray.Length - 1] = neighbour;
+
+                    double newPathCost = pair.Priority + stepCost;
+
+                    if (!locationHashes.TryGetValue(neighbour, out cachedPathCost))
+                    {
+                        locationHashes.Add(neighbour, newPathCost);
+                        allPaths.Add(neighbour, newPathArray);
+                        pathVariantCount.Add(neighbour, 1);
+                        paths.Enqueue(newPathArray, newPathCost);
+                    }
+                    else if (cachedPathCost > newPathCost)
+                    {
+                        if (cachedPathCost > newPathCost)
+                        {
+                            locationHashes[neighbour] = newPathCost;
+                            allPaths[neighbour] = newPathArray;
+                            pathVariantCount[neighbour] = 1;
+                            paths.Enqueue(newPathArray, newPathCost);
+                        }
+                        else
+                        {
+                            locationHashes[neighbour] = newPathCost;
+                            paths.Enqueue(newPathArray, newPathCost);
+                            pathVariantCount[neighbour]++;
+                            if (Eleven.random.Next(pathVariantCount[neighbour]) == 0)
+                            {
+                                allPaths[neighbour] = newPathArray;
+                            }
+                        }
+                        
+                    }
+                }
+            }
+
+            bool allowPass = false;
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onPathfinding_AllowSecondPass)
+            {
+                if (hook(locA, null, u, expectedMapLayers, pathfindingDelegates, getNeighboursDelegates))
+                {
+                    allowPass = true;
+                }
+            }
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            {
+                if (hook.onPathfinding_AllowSecondPass(locA, null, u, expectedMapLayers, pathfindingDelegates, getNeighboursDelegates))
+                {
+                    allowPass = true;
+                }
+            }
+
+            if (!allowPass)
+            {
+                return allPaths;
+            }
+
+            locationHashes.Clear();
+            paths.Clear();
+            paths.Enqueue(new Location[1] { locA }, 0.0);
+            HashSet<Location> previouslyFound = allPaths.Keys.ToHashSet();
+
+            i = 0;
+            while (i < 5 * locA.map.locations.Count && paths.Count > 0)
+            {
+                i++;
+
+                ValuePriorityPair<Location[], double> pair = paths.DequeueWithPriority();
+                Location currentLocation = pair.Value[pair.Value.Length - 1];
+
+                if (!locationHashes.TryGetValue(currentLocation, out double cachedPathCost) || pair.Priority > cachedPathCost)
+                {
+                    continue;
+                }
+
+                neighbours.Clear();
+                foreach (var getNeighbourDelegate in getNeighboursDelegates)
+                {
+                    List<Location> neighbourResults = getNeighbourDelegate(pair.Value, currentLocation, u, expectedMapLayers);
+                    if (neighbourResults != null)
+                    {
+                        foreach (Location neighbour in neighbourResults)
+                        {
+                            neighbours.Add(neighbour);
+                        }
+                    }
+                }
+
+                foreach (Location neighbour in neighbours)
+                {
+                    double stepCost = 10.0;
+                    foreach (Func<Location[], Location, Unit, List<int>, double> pathfindingDelegate in pathfindingDelegates)
+                    {
+                        double cost = pathfindingDelegate(pair.Value, neighbour, u, expectedMapLayers);
+                        if (cost >= 10000.0)
+                        {
+                            stepCost = cost;
+                            break;
+                        }
+                        stepCost += cost;
+                    }
+
+                    if (stepCost >= 10000.0)
+                    {
+                        continue;
+                    }
+
+                    Location[] newPathArray = new Location[pair.Value.Length + 1];
+                    Array.Copy(pair.Value, newPathArray, pair.Value.Length);
+                    newPathArray[newPathArray.Length - 1] = neighbour;
+
+                    double newPathCost = pair.Priority + stepCost;
+
+                    if (!locationHashes.TryGetValue(neighbour, out cachedPathCost))
+                    {
+                        locationHashes.Add(neighbour, newPathCost);
+                        paths.Enqueue(newPathArray, newPathCost);
+
+                        if (!previouslyFound.Contains(neighbour))
+                        {
+                            allPaths.Add(neighbour, newPathArray);
+                            pathVariantCount.Add(neighbour, 1);
+                        }
+                    }
+                    else if (cachedPathCost > newPathCost)
+                    {
+                        if (cachedPathCost > newPathCost)
+                        {
+                            locationHashes[neighbour] = newPathCost;
+                            paths.Enqueue(newPathArray, newPathCost);
+
+                            if (!previouslyFound.Contains(neighbour))
+                            {
+                                allPaths[neighbour] = newPathArray;
+                                pathVariantCount[neighbour] = 1;
+                            }
+                        }
+                        else
+                        {
+                            locationHashes[neighbour] = newPathCost;
+                            paths.Enqueue(newPathArray, newPathCost);
+
+                            if (!previouslyFound.Contains(neighbour))
+                            {
+                                pathVariantCount[neighbour]++;
+                                if (Eleven.random.Next(pathVariantCount[neighbour]) == 0)
+                                {
+                                    allPaths[neighbour] = newPathArray;
+                                }
+                            }
+                        }
+
+                    }
+                }
+            }
+
+            return allPaths;
         }
 
         #region Trade Route Pathfnding Delegates
@@ -1186,7 +1540,7 @@ namespace CommunityLib
 
             for (int pass = 0; pass < 2; pass++)
             {
-                HashSet<Location> locationHashes = new HashSet<Location> { start };
+                Dictionary<Location, double> locationHashes = new Dictionary<Location, double> { { start, 0.0 } };
                 PriorityQueue<Location[], double> paths = new PriorityQueue<Location[], double>();
                 paths.Enqueue(new Location[] { start }, 0.0);
 
@@ -1196,54 +1550,64 @@ namespace CommunityLib
                     i++;
 
                     ValuePriorityPair<Location[], double> pair = paths.DequeueWithPriority();
+                    Location currentLocation = pair.Value[pair.Value.Length - 1];
+
+                    if (currentLocation == end)
+                    {
+                        bool isValid = true;
+                        foreach (Func<Location[], Location, List<int>, bool> validityDelegate in destinationValidityDelegates)
+                        {
+                            if (!validityDelegate(pair.Value, currentLocation, expectedMapLayers))
+                            {
+                                isValid = false;
+                            }
+                        }
+
+                        if (isValid)
+                        {
+                            return pair.Value;
+                        }
+                    }
+
+                    if (!locationHashes.TryGetValue(currentLocation, out double cachedPathCost) || pair.Priority > cachedPathCost)
+                    {
+                        continue;
+                    }
+
                     foreach (Location neighbour in pair.Value[pair.Value.Length - 1].getNeighbours())
                     {
-                        if (!locationHashes.Contains(neighbour))
+                        double stepCost = 0.0;
+                        foreach (Func<Location[], Location, List<int>, double> pathfindingDelegate in pathfindingDelegates)
                         {
-                            double stepCost = 0.0;
-                            foreach (Func<Location[], Location, List<int>, double> pathfindingDelegate in pathfindingDelegates)
+                            double cost = pathfindingDelegate(pair.Value, neighbour, endPointMapLayers);
+                            if (cost >= 10000.0)
                             {
-                                double cost = pathfindingDelegate(pair.Value, neighbour, endPointMapLayers);
-                                if (cost >= 10000.0)
-                                {
-                                    stepCost = cost;
-                                    break;
-                                }
-                                stepCost += cost;
+                                stepCost = cost;
+                                break;
                             }
+                            stepCost += cost;
+                        }
 
-                            if (stepCost >= 10000.0)
-                            {
-                                continue;
-                            }
+                        if (stepCost >= 10000.0)
+                        {
+                            continue;
+                        }
 
-                            Location[] newPathArray = new Location[pair.Value.Length + 1];
-                            Array.Copy(pair.Value, newPathArray, pair.Value.Length);
-                            newPathArray[newPathArray.Length - 1] = neighbour;
+                        Location[] newPathArray = new Location[pair.Value.Length + 1];
+                        Array.Copy(pair.Value, newPathArray, pair.Value.Length);
+                        newPathArray[newPathArray.Length - 1] = neighbour;
 
-                            double newPathCost = pair.Priority + stepCost;
+                        double newPathCost = pair.Priority + stepCost;
 
-                            if (neighbour == end)
-                            {
-                                bool valid = true;
-                                foreach (Func<Location[], Location, List<int>, bool> validDelegate in destinationValidityDelegates)
-                                {
-                                    if (!validDelegate(newPathArray, neighbour, endPointMapLayers))
-                                    {
-                                        valid = false;
-                                        break;
-                                    }
-                                }
-
-                                if (valid)
-                                {
-                                    return newPathArray;
-                                }
-                                return null;
-                            }
-
+                        if (!locationHashes.TryGetValue(neighbour, out cachedPathCost))
+                        {
+                            locationHashes.Add(neighbour, newPathCost);
                             paths.Enqueue(newPathArray, newPathCost);
-                            locationHashes.Add(neighbour);
+                        }
+                        else if (cachedPathCost > newPathCost)
+                        {
+                            locationHashes[neighbour] = newPathCost;
+                            paths.Enqueue(newPathArray, newPathCost);
                         }
                     }
                 }
@@ -1391,12 +1755,9 @@ namespace CommunityLib
 
             for (int pass = 0; pass < 2; pass++)
             {
-                HashSet<Location> locationHashes = new HashSet<Location> { start };
+                Dictionary<Location, double> locationHashes = new Dictionary<Location, double> { { start, 0.0 } };
                 PriorityQueue<Location[], double> paths = new PriorityQueue<Location[], double>();
                 paths.Enqueue(new Location[] { start }, 0.0);
-
-                PriorityQueue<Location[], double> destinations = new PriorityQueue<Location[], double>();
-                double destinationPriority = -1.0;
 
                 int i = 0;
                 while (i < 5 * start.map.locations.Count && paths.Count > 0)
@@ -1404,78 +1765,100 @@ namespace CommunityLib
                     i++;
 
                     ValuePriorityPair<Location[], double> pair = paths.DequeueWithPriority();
-                    foreach (Location neighbour in pair.Value[pair.Value.Length - 1].getNeighbours())
+                    Location currentLocation = pair.Value[pair.Value.Length - 1];
+
+                    if (endpointsAll.Contains(currentLocation))
                     {
-                        if (!locationHashes.Contains(neighbour))
+                        bool isValid = true;
+                        foreach (Func<Location[], Location, List<int>, bool> validityDelegate in destinationValidityDelegates)
                         {
-                            double stepCost = 0.0;
-                            foreach (Func<Location[], Location, List<int>, double> pathfindingDelegate in pathfindingDelegates)
+                            if (!validityDelegate(pair.Value, currentLocation, expectedMapLayers))
                             {
-                                double cost = pathfindingDelegate(pair.Value, neighbour, endPointMapLayers);
-                                if (cost >= 10000.0)
-                                {
-                                    stepCost = cost;
-                                    break;
-                                }
-                                stepCost += cost;
-                            }
-
-                            if (stepCost >= 10000.0)
-                            {
-                                continue;
-                            }
-
-                            Location[] newPathArray = new Location[pair.Value.Length + 1];
-                            Array.Copy(pair.Value, newPathArray, pair.Value.Length);
-                            newPathArray[newPathArray.Length - 1] = neighbour;
-
-                            double newPathCost = pair.Priority + stepCost;
-
-                            if (endpointsAll.Contains(neighbour))
-                            {
-                                bool valid = true;
-                                foreach (Func<Location[], Location, List<int>, bool> validDelegate in destinationValidityDelegates)
-                                {
-                                    if (!validDelegate(newPathArray, neighbour, endPointMapLayers))
-                                    {
-                                        valid = false;
-                                        break;
-                                    }
-                                }
-
-                                if (valid)
-                                {
-                                    //Console.WriteLine($"Found valid trade route from {start.getName()} ({start.hex.z}) to {newPathArray[newPathArray.Length - 1].getName()} ({newPathArray[newPathArray.Length - 1].hex.z})");
-                                    if (destinations.Count == 0 || newPathCost < destinationPriority)
-                                    {
-                                        destinationPriority = newPathCost;
-                                    }
-                                    destinations.Enqueue(new ValuePriorityPair<Location[], double>(newPathArray, newPathCost));
-                                }
-                            }
-
-                            paths.Enqueue(newPathArray, newPathCost);
-                            locationHashes.Add(neighbour);
-                        }
-                    }
-
-                    if (destinations.Count > 0 && (!paths.TryPeekWithPriority(out _, out double nextPairPriority) || nextPairPriority > destinationPriority))
-                    {
-                        List<Location[]> destinationPaths = new List<Location[]>();
-                        while (destinations.Count > 0)
-                        {
-                            ValuePriorityPair<Location[], double> destinationPair = destinations.DequeueWithPriority();
-                            if (destinationPriority == -1.0 || destinationPair.Priority == destinationPriority)
-                            {
-                                destinationPaths.Add(destinationPair.Value);
-                            }
-                            else
-                            {
+                                isValid = false;
                                 break;
                             }
                         }
 
-                        return destinationPaths[Eleven.random.Next(destinationPaths.Count)];
+                        if (isValid)
+                        {
+                            List<Location[]> destinationPaths = new List<Location[]> { pair.Value };
+                            ValuePriorityPair<Location[], double> potentialPair;
+                            while (paths.Count > 0)
+                            {
+                                potentialPair = paths.DequeueWithPriority();
+                                if (potentialPair.Priority > pair.Priority)
+                                {
+                                    break;
+                                }
+
+                                isValid = true;
+                                Location potentialCurrentLocation = potentialPair.Value[potentialPair.Value.Length - 1];
+                                foreach (Func<Location[], Location, List<int>, bool> validityDelegate in destinationValidityDelegates)
+                                {
+                                    if (!validityDelegate(pair.Value, potentialCurrentLocation, expectedMapLayers))
+                                    {
+                                        isValid = false;
+                                        break;
+                                    }
+                                }
+                                if (isValid)
+                                {
+                                    destinationPaths.Add(potentialPair.Value);
+                                }
+                            }
+
+                            if (destinationPaths.Count == 1)
+                            {
+                                return pair.Value;
+                            }
+                            else
+                            {
+                                return destinationPaths[Eleven.random.Next(destinationPaths.Count)];
+                            }
+                            
+                        }
+                    }
+
+                    if (!locationHashes.TryGetValue(currentLocation, out double cachedPathCost) || pair.Priority > cachedPathCost)
+                    {
+                        continue;
+                    }
+
+                    foreach (Location neighbour in pair.Value[pair.Value.Length - 1].getNeighbours())
+                    {
+                        double stepCost = 0.0;
+                        foreach (Func<Location[], Location, List<int>, double> pathfindingDelegate in pathfindingDelegates)
+                        {
+                            double cost = pathfindingDelegate(pair.Value, neighbour, endPointMapLayers);
+                            if (cost >= 10000.0)
+                            {
+                                stepCost = cost;
+                                break;
+                            }
+                            stepCost += cost;
+                        }
+
+                        if (stepCost >= 10000.0)
+                        {
+                            continue;
+                        }
+
+                        Location[] newPathArray = new Location[pair.Value.Length + 1];
+                        Array.Copy(pair.Value, newPathArray, pair.Value.Length);
+                        newPathArray[newPathArray.Length - 1] = neighbour;
+
+                        double newPathCost = pair.Priority + stepCost;
+
+                        if (!locationHashes.TryGetValue(neighbour, out cachedPathCost))
+                        {
+                            locationHashes.Add(neighbour, newPathCost);
+                            paths.Enqueue(newPathArray, newPathCost);
+                        }
+                        else if (cachedPathCost > newPathCost)
+                        {
+                            locationHashes[neighbour] = newPathCost;
+                            paths.Enqueue(newPathArray, newPathCost);
+                        }
                     }
                 }
 

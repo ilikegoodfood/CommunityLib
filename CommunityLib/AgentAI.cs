@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using UnityEngine;
-using Assets.Code;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Assets.Code;
 using HarmonyLib;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
-using static CommunityLib.AgentAI;
 
 namespace CommunityLib
 {
@@ -994,8 +991,9 @@ namespace CommunityLib
             {
                 Console.WriteLine("CommunityLib: Running Agent AI for " + ua.getName());
             }
+            Dictionary<Location, Location[]> allReachableLocations = Pathfinding.getPathsFrom(ua.location, null, null, ua, !ua.society.isAtWar());
             isDuringIntercept = false;
-            List<ChallengeData> validChallengeData = getAllValidChallengesAndRituals(ua);
+            List<ChallengeData> validChallengeData = getAllValidChallengesAndRituals(ua, allReachableLocations);
             List<Unit> visibleUnits;
             MethodInfo MI_getVisibleUnits = AccessTools.DeclaredMethod(ua.GetType(), "getVisibleUnits", new Type[0]);
             if (MI_getVisibleUnits != null)
@@ -1006,7 +1004,7 @@ namespace CommunityLib
             {
                 visibleUnits = ua.getVisibleUnits();
             }
-            List<TaskData> validTasks = getAllValidTasks(ua);
+            List<TaskData> validTasks = getAllValidTasks(ua, allReachableLocations);
 
             bool result = false;
             isDuringIntercept = true;
@@ -1062,7 +1060,7 @@ namespace CommunityLib
                     reasonMsgs = new List<ReasonMsg>();
                 }
 
-                utility2 = getChallengeUtility(cData, ua, aiData, aiData.controlParameters, reasonMsgs);
+                utility2 = getChallengeUtility(cData, ua, aiData, aiData.controlParameters, allReachableLocations[cData.location], reasonMsgs);
 
                 if (debugInternal.debug && debugInternal.outputValidity_ValidChallenges && reasonMsgs != null)
                 {
@@ -1093,6 +1091,11 @@ namespace CommunityLib
             {
                 foreach (Unit unit in visibleUnits)
                 {
+                    if (!allReachableLocations.TryGetValue(unit.location, out Location[] pathToUnit))
+                    {
+                        continue;
+                    }
+
                     UA agent = unit as UA;
                     if (agent != null && !agent.isDead)
                     {
@@ -1231,7 +1234,7 @@ namespace CommunityLib
                     reasonMsgs = new List<ReasonMsg>();
                 }
 
-                utility2 = checkTaskUtility(taskData, ua, aiData, aiData.controlParameters, reasonMsgs);
+                utility2 = checkTaskUtility(taskData, ua, aiData, aiData.controlParameters, allReachableLocations, reasonMsgs);
 
                 if (debugInternal.debug && debugInternal.outputUtility_ValidTasks && reasonMsgs != null)
                 {
@@ -1271,7 +1274,7 @@ namespace CommunityLib
                 {
                     List<ReasonMsg> reasonMsgs = new List<ReasonMsg>();
                     Console.WriteLine("CommunityLib: " + ua.getName() + " is going to perform task of type " + targetTask.aiTask.taskType);
-                    targetTask.aiTask.checkTaskUtility(targetTask, ua, aiData.controlParameters, reasonMsgs);
+                    targetTask.aiTask.checkTaskUtility(targetTask, ua, aiData.controlParameters, allReachableLocations, reasonMsgs);
                     if (reasonMsgs != null)
                     {
                         foreach (ReasonMsg reasonMsg in reasonMsgs)
@@ -1389,7 +1392,7 @@ namespace CommunityLib
                     Console.WriteLine("CommunityLib: " + ua.getName() + " is going to perform challenge " + targetChallenge.challenge.getName() + " at " + targetChallenge.location.getName() + " (" + (targetChallenge.location.soc?.getName() ?? "No Society") + ")");
 
                     List<ReasonMsg> reasonMsgs = new List<ReasonMsg>();
-                    getChallengeUtility(targetChallenge, ua,aiData, aiData.controlParameters, reasonMsgs);
+                    getChallengeUtility(targetChallenge, ua,aiData, aiData.controlParameters, allReachableLocations[targetChallenge.location], reasonMsgs);
 
                     foreach (ReasonMsg reasonMsg in reasonMsgs)
                     {
@@ -1445,7 +1448,7 @@ namespace CommunityLib
             aiRunning = false;
         }
 
-        public List<ChallengeData> getAllValidChallengesAndRituals(UA ua)
+        public List<ChallengeData> getAllValidChallengesAndRituals(UA ua, Dictionary<Location, Location[]> allReachableLocations)
         {
             List<ChallengeData> result = new List<ChallengeData>();
             List<ChallengeData> ritualData = new List<ChallengeData>();
@@ -1529,7 +1532,7 @@ namespace CommunityLib
                         {
                             d.location = ua.location;
 
-                            if (getChallengeIsValid(ua, d, aiData.controlParameters))
+                            if (getChallengeIsValid(ua, d, aiData.controlParameters, allReachableLocations[d.location]))
                             {
                                 result.Add(d);
                             }
@@ -1552,7 +1555,7 @@ namespace CommunityLib
                             universalDelegates_Utility = aiData.aiChallenges_UniversalDelegates_Utility
                         };
 
-                        if (getChallengeIsValid(ua, d, aiData.controlParameters))
+                        if (getChallengeIsValid(ua, d, aiData.controlParameters, allReachableLocations[d.location]))
                         {
                             result.Add(d);
                         }
@@ -1562,7 +1565,7 @@ namespace CommunityLib
 
             if (aiData.controlParameters.considerAllChallenges || aiChallenges.Count > 0 || aiRituals.Count > 0)
             {
-                foreach (Location location in ua.map.locations)
+                foreach (Location location in allReachableLocations.Keys)
                 {
                     List<Challenge> challenges = location.GetChallenges();
 
@@ -1610,7 +1613,7 @@ namespace CommunityLib
                                 universalDelegates_Utility = aiData.aiChallenges_UniversalDelegates_Utility
                             };
 
-                            if (getChallengeIsValid(ua, d, aiData.controlParameters))
+                            if (getChallengeIsValid(ua, d, aiData.controlParameters, allReachableLocations[d.location]))
                             {
                                 result.Add(d);
                             }
@@ -1638,7 +1641,7 @@ namespace CommunityLib
                                     universalDelegates_Utility = aiData.aiChallenges_UniversalDelegates_Utility
                                 };
 
-                                if (getChallengeIsValid(ua, d, aiData.controlParameters))
+                                if (getChallengeIsValid(ua, d, aiData.controlParameters, allReachableLocations[d.location]))
                                 {
                                     result.Add(d);
                                 }
@@ -1655,7 +1658,7 @@ namespace CommunityLib
                                     universalDelegates_ValidFor = aiData.aiChallenges_UniversalDelegates_ValidFor,
                                     universalDelegates_Utility = aiData.aiChallenges_UniversalDelegates_Utility
                                 };
-                                if (getChallengeIsValid(ua, d, aiData.controlParameters))
+                                if (getChallengeIsValid(ua, d, aiData.controlParameters, allReachableLocations[d.location]))
                                 {
                                     result.Add(d);
                                 }
@@ -1667,7 +1670,7 @@ namespace CommunityLib
                     {
                         ChallengeData d = new ChallengeData(rData) { location = location };
 
-                        if (getChallengeIsValid(ua, d, aiData.controlParameters))
+                        if (getChallengeIsValid(ua, d, aiData.controlParameters, allReachableLocations[d.location]))
                         {
                             result.Add(d);
                         }
@@ -1678,9 +1681,9 @@ namespace CommunityLib
             return result;
         }
 
-        public bool getChallengeIsValid(UA ua, Challenge challenge, Location location = null)
+        public bool getChallengeIsValid(UA ua, Challenge challenge, Dictionary<Location, Location[]> allReachableLocations, Location location = null)
         {
-            if (ua == null || challenge == null)
+            if (ua == null || challenge == null || location == null)
             {
                 return false;
             }
@@ -1712,7 +1715,7 @@ namespace CommunityLib
                     }
                 }
 
-                return getChallengeIsValid(ua, challengeData, aiData.controlParameters);
+                return getChallengeIsValid(ua, challengeData, aiData.controlParameters, allReachableLocations[challengeData.location]);
             }
             else
             {
@@ -1720,9 +1723,9 @@ namespace CommunityLib
             }
         }
 
-        public bool getChallengeIsValid(UA ua, ChallengeData challengeData, ControlParameters controlParams)
+        public bool getChallengeIsValid(UA ua, ChallengeData challengeData, ControlParameters controlParams, Location[] pathTo)
         {
-            if (challengeData.challenge.claimedBy != null && challengeData.challenge.claimedBy.isDead)
+            if (challengeData.challenge.claimedBy != null && (challengeData.challenge.claimedBy.isDead || !(challengeData.challenge.claimedBy.task is Task_PerformChallenge pChallenge) || pChallenge.challenge != challengeData.challenge))
             {
                 challengeData.challenge.claimedBy = null;
             }
@@ -1733,8 +1736,8 @@ namespace CommunityLib
             }
 
             if (!controlParams.respectChallengeVisibility
-                || (challengeData.aiChallenge != null && challengeData.aiChallenge.checkChallengeVisibility(challengeData, ua, controlParams))
-                || (challengeData.aiChallenge == null && controlParams.considerAllChallenges && ua.map.getStepDist(ua.location, challengeData.location) <= (challengeData.challenge.getProfile() / 10)))
+                || (challengeData.aiChallenge != null && challengeData.aiChallenge.checkChallengeVisibility(challengeData, ua, controlParams, pathTo))
+                || (challengeData.aiChallenge == null && controlParams.considerAllChallenges && Math.Max(0, pathTo.Length - 1) <= (challengeData.challenge.getProfile() / 10)))
             {
                 if (!controlParams.respectChallengeAlignment || !(challengeData.challenge.isGoodTernary() == -1 && (ua is UAG || ua is UAA) && !ua.isCommandable()))
                 {
@@ -1772,7 +1775,7 @@ namespace CommunityLib
             return false;
         }
 
-        public double getChallengeUtility(UA ua, Challenge challenge, List<ReasonMsg> reasonMsgs, Location location = null)
+        public double getChallengeUtility(UA ua, Challenge challenge, List<ReasonMsg> reasonMsgs, Location location = null, Location[] pathTo = null)
         {
             double utility = 0.0;
 
@@ -1806,7 +1809,7 @@ namespace CommunityLib
                         }
                     }
 
-                    utility = getChallengeUtility(cData, ua, aiData, aiData.controlParameters, reasonMsgs);
+                    utility = getChallengeUtility(cData, ua, aiData, aiData.controlParameters, pathTo, reasonMsgs);
                 }
                 else if (challenge is Ritual)
                 {
@@ -1880,7 +1883,7 @@ namespace CommunityLib
             return utility;
         }
 
-        public double getChallengeUtility(ChallengeData challengeData, UA ua, AIData aiData, ControlParameters controlParams, List<ReasonMsg> reasonMsgs = null)
+        public double getChallengeUtility(ChallengeData challengeData, UA ua, AIData aiData, ControlParameters controlParams, Location[] pathTo, List<ReasonMsg> reasonMsgs = null)
         {
             double utility = 0.0;
 
@@ -1968,7 +1971,12 @@ namespace CommunityLib
 
             if (controlParams.valueTimeCost)
             {
-                double distance = getDistanceDivisor(challengeData, aiData, ua);
+                if (pathTo == null)
+                {
+                    pathTo = Pathfinding.getPathTo(ua.location, challengeData.location, ua, aiData.controlParameters.forceSafeMove || challengeData.aiChallenge.safeMove || !ua.society.isAtWar());
+                }
+
+                double distance = getDistanceDivisor(challengeData, aiData, ua, pathTo);
                 int duration = Math.Max(1, (int)Math.Ceiling(challenge.getCompletionMenaceAfterDifficulty() / challenge.getProgressPerTurn(ua, null)));
                 int timeCost = (int)Math.Ceiling((ua.map.param.ua_flatTimeCostUtility + distance + duration) / 10.0);
             }
@@ -2035,7 +2043,15 @@ namespace CommunityLib
             return (map.param.ua_flatTimeCostUtility + distance + duration) / 10.0;
         }
 
-        public List<TaskData> getAllValidTasks(UA ua)
+        private double getDistanceDivisor(ChallengeData challengeData, AIData aiData, UA ua, Location[] pathTo)
+        {
+            int distance = ModCore.Get().getTravelTimeAlong(ua, pathTo);
+
+            int duration = (int)Math.Max(1.0, Math.Ceiling(challengeData.challenge.getCompletionMenaceAfterDifficulty() / challengeData.challenge.getProgressPerTurn(ua, null)));
+            return (map.param.ua_flatTimeCostUtility + distance + duration) / 10.0;
+        }
+
+        public List<TaskData> getAllValidTasks(UA ua, Dictionary<Location, Location[]> allReachableLocations)
         {
             List<TaskData> results = new List<TaskData>();
 
@@ -2078,7 +2094,7 @@ namespace CommunityLib
                     {
                         case AITask.TargetCategory.Location:
                             taskData.targetCategory = AITask.TargetCategory.Location;
-                            foreach (Location location in ua.map.locations)
+                            foreach (Location location in allReachableLocations.Keys)
                             {
                                 TaskData taskDataLoc = new TaskData(taskData);
                                 taskDataLoc.targetLocation = location;
@@ -2146,7 +2162,7 @@ namespace CommunityLib
             }
         }
 
-        public double checkTaskUtility(TaskData taskData, UA ua, AIData aiData, ControlParameters controlParams, List<ReasonMsg> reasonMsgs = null)
+        public double checkTaskUtility(TaskData taskData, UA ua, AIData aiData, ControlParameters controlParams, Dictionary<Location, Location[]> allReachableLocations, List<ReasonMsg> reasonMsgs = null)
         {
             double utility = 0.0;
 
@@ -2171,7 +2187,7 @@ namespace CommunityLib
                 return utility;
             }
 
-            utility = taskData.aiTask.checkTaskUtility(taskData, ua, controlParams, reasonMsgs);
+            utility = taskData.aiTask.checkTaskUtility(taskData, ua, controlParams, allReachableLocations, reasonMsgs);
 
             foreach (var hook in ModCore.Get().HookRegistry.Delegate_onAgentAI_GetTaskUtility)
             {
