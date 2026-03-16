@@ -488,7 +488,7 @@ namespace CommunityLib
 
                     if (currentLocation.soc == sg)
                     {
-                        List<Location[]> destinationPaths = new List<Location[]>();
+                        List<Location[]> destinationPaths = new List<Location[]> { pair.Value };
                         ValuePriorityPair<Location[], double> potentialPair;
                         while (paths.Count > 0)
                         {
@@ -717,7 +717,7 @@ namespace CommunityLib
                     }
                     if (isValid)
                     {
-                        List<Location[]> destinationPaths = new List<Location[]>();
+                        List<Location[]> destinationPaths = new List<Location[]> { pair.Value };
                         ValuePriorityPair<Location[], double> potentialPair;
                         while (paths.Count > 0)
                         {
