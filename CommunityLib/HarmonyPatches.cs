@@ -11113,47 +11113,15 @@ namespace CommunityLib
 
         private static int UA_distanceDivisor_TranspilerBody(UA ua, Challenge c, int distance)
         {
-            if (!ModCore.opt_usePreciseDistanceDivisor)
+            if (!ModCore.opt_usePreciseDistanceDivisor || c is Ritual)
             {
                 return distance;
             }
 
-            if (distance > 0 && !(c is Ritual))
+            distance = ModCore.Get().getTravelTimeTo(ua, c.location);
+            if (distance < 0)
             {
-                Location[] pathTo;
-
-                if (lastPath != null && lastPath.Item1 == ua && lastPath.Item2 == c.location && lastPath.Item3 == ua.map.turn)
-                {
-                    pathTo = lastPath.Item4;
-                }
-                else
-                {
-                    pathTo = ua.map.getPathTo(ua.location, c.location);
-                    lastPath = new Tuple<Unit, Location, int, Location[]>(ua, c.location, ua.map.turn, pathTo);
-                }
-
-                if (pathTo == null || pathTo.Length < 2)
-                {
-                    distance = (int)Math.Ceiling((double)distance / ua.getMaxMoves());
-                }
-                else
-                {
-                    distance = (int)Math.Ceiling((double)pathTo.Length - 1 / ua.getMaxMoves());
-                }
-
-                if (distance > 0 && ua != null)
-                {
-                    foreach (var hook in ModCore.Get().HookRegistry.Delegate_onUnitAI_GetsDistanceToLocation)
-                    {
-                        distance = hook(ua, c.location, pathTo, distance);
-                    }
-                    foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
-                    {
-                        distance = hook.onUnitAI_GetsDistanceToLocation(ua, c.location, pathTo, distance);
-                    }
-                }
-
-                distance = Math.Max(0, distance);
+                Console.WriteLine("CommunityLib: WARNING: Travel Time was requested to inaccessable challenge.");
             }
 
             return distance;
