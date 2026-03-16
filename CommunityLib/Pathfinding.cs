@@ -300,7 +300,7 @@ namespace CommunityLib
                     neighbours.Clear();
                     foreach (var getNeighbourDelegate in getNeighboursDelegates)
                     {
-                        List<Location> neighbourResults = getNeighbourDelegate(pair.Value, currentLocation, u, expectedMapLayers);
+                        List<Location> neighbourResults = getNeighbourDelegate(pair.Value, currentLocation, u);
                         if (neighbourResults != null)
                         {
                             foreach (Location neighbour in neighbourResults)
@@ -310,11 +310,12 @@ namespace CommunityLib
                         }
                     }
 
+                    double stepCost = 10.0;
                     foreach (Location neighbour in neighbours)
                     {
-                        foreach (Func<Location[], Location, Unit, List<int>, double> pathfindingDelegate in pathfindingDelegates)
+                        foreach (Func<Location[], Location, Unit, double> pathfindingDelegate in pathfindingDelegates)
                         {
-                            double cost = pathfindingDelegate(pair.Value, neighbour, u, expectedMapLayers);
+                            double cost = pathfindingDelegate(pair.Value, neighbour, u);
                             if (cost >= 10000.0)
                             {
                                 stepCost = cost;
@@ -534,9 +535,9 @@ namespace CommunityLib
                     foreach (Location neighbour in neighbours)
                     {
                         double stepCost = 10.0;
-                        foreach (Func<Location[], Location, Unit, List<int>, double> pathfindingDelegate in pathfindingDelegates)
+                        foreach (Func<Location[], Location, Unit, double> pathfindingDelegate in pathfindingDelegates)
                         {
-                            double cost = pathfindingDelegate(pair.Value, neighbour, u, expectedMapLayers);
+                            double cost = pathfindingDelegate(pair.Value, neighbour, u);
                             if (cost >= 10000.0)
                             {
                                 stepCost = cost;
@@ -706,9 +707,9 @@ namespace CommunityLib
                     Location currentLocation = pair.Value[pair.Value.Length - 1];
 
                     bool isValid = true;
-                    foreach (Func<Location[], Location, Unit, List<int>, bool> validityDelegtae in destinationValidityDelegates)
+                    foreach (Func<Location[], Location, Unit, bool> validityDelegtae in destinationValidityDelegates)
                     {
-                        if (!validityDelegtae(pair.Value, currentLocation, u, targetMapLayers))
+                        if (!validityDelegtae(pair.Value, currentLocation, u))
                         {
                             isValid = false;
                             break;
@@ -728,9 +729,9 @@ namespace CommunityLib
 
                             isValid = true;
                             Location currentPotentialLocation = potentialPair.Value[potentialPair.Value.Length - 1];
-                            foreach (Func<Location[], Location, Unit, List<int>, bool> validityDelegtae in destinationValidityDelegates)
+                            foreach (Func<Location[], Location, Unit, bool> validityDelegtae in destinationValidityDelegates)
                             {
-                                if (!validityDelegtae(pair.Value, currentPotentialLocation, u, targetMapLayers))
+                                if (!validityDelegtae(pair.Value, currentPotentialLocation, u))
                                 {
                                     isValid = false;
                                     break;
@@ -773,9 +774,9 @@ namespace CommunityLib
                     foreach (Location neighbour in neighbours)
                     {
                         double stepCost = 10.0;
-                        foreach (Func<Location[], Location, Unit, List<int>, double> pathfindingDelegate in pathfindingDelegates)
+                        foreach (Func<Location[], Location, Unit, double> pathfindingDelegate in pathfindingDelegates)
                         {
-                            double cost = pathfindingDelegate(pair.Value, neighbour, u, targetMapLayers);
+                            double cost = pathfindingDelegate(pair.Value, neighbour, u);
                             if (cost >= 10000.0)
                             {
                                 stepCost = cost;
@@ -811,14 +812,14 @@ namespace CommunityLib
                 bool allowPass = false;
                 foreach (var hook in ModCore.Get().HookRegistry.Delegate_onPathfinding_AllowSecondPass)
                 {
-                    if (hook(loc, null, u, targetMapLayers, pathfindingDelegates, getNeighboursDelegates))
+                    if (hook(loc, null, u, pathfindingDelegates, getNeighboursDelegates))
                     {
                         allowPass = true;
                     }
                 }
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
-                    if (hook.onPathfinding_AllowSecondPass(loc, null, u, targetMapLayers, pathfindingDelegates, getNeighboursDelegates))
+                    if (hook.onPathfinding_AllowSecondPass(loc, null, u, pathfindingDelegates, getNeighboursDelegates))
                     {
                         allowPass = true;
                     }
@@ -951,7 +952,7 @@ namespace CommunityLib
                 neighbours.Clear();
                 foreach (var getNeighbourDelegate in getNeighboursDelegates)
                 {
-                    List<Location> neighbourResults = getNeighbourDelegate(pair.Value, currentLocation, u, expectedMapLayers);
+                    List<Location> neighbourResults = getNeighbourDelegate(pair.Value, currentLocation, u);
                     if (neighbourResults != null)
                     {
                         foreach (Location neighbour in neighbourResults)
@@ -966,7 +967,7 @@ namespace CommunityLib
                     double stepCost = 10.0;
                     foreach (Func<Location[], Location, Unit, double> pathfindingDelegate in pathfindingDelegates)
                     {
-                        double cost = pathfindingDelegate(pair.Value, neighbour, u, expectedMapLayers);
+                        double cost = pathfindingDelegate(pair.Value, neighbour, u);
                         if (cost >= 10000.0)
                         {
                             stepCost = cost;
@@ -1017,21 +1018,21 @@ namespace CommunityLib
                 }
             }
 
-                bool allowPass = false;
-                foreach (var hook in ModCore.Get().HookRegistry.Delegate_onPathfinding_AllowSecondPass)
+            bool allowPass = false;
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onPathfinding_AllowSecondPass)
+            {
+                if (hook(locA, null, u, pathfindingDelegates, getNeighboursDelegates))
                 {
-                    if (hook(loc, null, u, pathfindingDelegates, getNeighboursDelegates))
-                    {
-                        allowPass = true;
-                    }
+                    allowPass = true;
                 }
-                foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            }
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            {
+                if (hook.onPathfinding_AllowSecondPass(locA, null, u, pathfindingDelegates, getNeighboursDelegates))
                 {
-                    if (hook.onPathfinding_AllowSecondPass(loc, null, u, pathfindingDelegates, getNeighboursDelegates))
-                    {
-                        allowPass = true;
-                    }
+                    allowPass = true;
                 }
+            }
 
             if (!allowPass)
             {
@@ -1059,7 +1060,7 @@ namespace CommunityLib
                 neighbours.Clear();
                 foreach (var getNeighbourDelegate in getNeighboursDelegates)
                 {
-                    List<Location> neighbourResults = getNeighbourDelegate(pair.Value, currentLocation, u, expectedMapLayers);
+                    List<Location> neighbourResults = getNeighbourDelegate(pair.Value, currentLocation, u);
                     if (neighbourResults != null)
                     {
                         foreach (Location neighbour in neighbourResults)
@@ -1415,7 +1416,7 @@ namespace CommunityLib
                         double stepCost = 0.0;
                         foreach (Func<Location[], Location, double> pathfindingDelegate in pathfindingDelegates)
                         {
-                            double cost = pathfindingDelegate(pair.Value, neighbour, endPointMapLayers);
+                            double cost = pathfindingDelegate(pair.Value, neighbour);
                             if (cost >= 10000.0)
                             {
                                 stepCost = cost;
@@ -1617,9 +1618,9 @@ namespace CommunityLib
                     foreach (Location neighbour in pair.Value[pair.Value.Length - 1].getNeighbours())
                     {
                         double stepCost = 0.0;
-                        foreach (Func<Location[], Location, List<int>, double> pathfindingDelegate in pathfindingDelegates)
+                        foreach (Func<Location[], Location, double> pathfindingDelegate in pathfindingDelegates)
                         {
-                            double cost = pathfindingDelegate(pair.Value, neighbour, endPointMapLayers);
+                            double cost = pathfindingDelegate(pair.Value, neighbour);
                             if (cost >= 10000.0)
                             {
                                 stepCost = cost;
