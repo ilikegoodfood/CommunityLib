@@ -3928,18 +3928,20 @@ namespace CommunityLib
                 return -1;
             }
 
+            if (u.location == location)
+            {
+                return 0;
+            }
+
             int travelTime;
 
             Location[] path = Pathfinding.getPathTo(u.location, location, u);
             if (path == null || path.Length < 2)
             {
-                travelTime = (int)Math.Ceiling(u.map.getStepDist(u.location, location) / (double)u.getMaxMoves());
-            }
-            else
-            {
-                travelTime = (int)Math.Ceiling((path.Length - 1) / (double)u.getMaxMoves());
+                return -1;
             }
 
+            travelTime = (int)Math.Ceiling((double)(path.Length - 1) / (double)u.getMaxMoves());
             if (travelTime > 0)
             {
                 foreach (var hook in HookRegistry.Delegate_onUnitAI_GetsDistanceToLocation)
@@ -3949,6 +3951,34 @@ namespace CommunityLib
                 foreach (Hooks hook in GetRegisteredHooks())
                 {
                     travelTime = hook.onUnitAI_GetsDistanceToLocation(u, location, path, travelTime);
+                }
+            }
+
+            return Math.Max(0, travelTime);
+        }
+
+        public int getTravelTimeAlong(Unit u, Location[] path)
+        {
+            if (u == null || path == null)
+            {
+                return -1;
+            }
+
+            if (path.Length == 0)
+            {
+                return 0;
+            }
+
+            int travelTime = (int)Math.Ceiling((double)(path.Length - 1) / (double)u.getMaxMoves());
+            if (travelTime > 0)
+            {
+                foreach (var hook in HookRegistry.Delegate_onUnitAI_GetsDistanceToLocation)
+                {
+                    travelTime = hook(u, path[path.Length - 1], path, travelTime);
+                }
+                foreach (Hooks hook in GetRegisteredHooks())
+                {
+                    travelTime = hook.onUnitAI_GetsDistanceToLocation(u, path[path.Length - 1], path, travelTime);
                 }
             }
 
