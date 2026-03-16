@@ -2029,25 +2029,7 @@ namespace CommunityLib
 
         private double getDistanceDivisor(ChallengeData challengeData, AIData aiData, UA ua)
         {
-            int distance = 0;
-
-            Location[] pathTo = ua.map.getPathTo(ua.location, challengeData.location);
-
-            if (pathTo == null || pathTo.Length < 2)
-            {
-                return distance;
-            }
-
-            distance = (int)Math.Ceiling((double)(pathTo.Length - 1) / (double)ua.getMaxMoves());
-
-            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onUnitAI_GetsDistanceToLocation)
-            {
-                distance = hook(ua, challengeData.location, pathTo, distance);
-            }
-            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
-            {
-                distance = hook.onUnitAI_GetsDistanceToLocation(ua, challengeData.location, pathTo, distance);
-            }
+            int distance = ModCore.Get().getTravelTimeTo(ua, challengeData.location);
 
             int duration = (int)Math.Max(1.0, Math.Ceiling(challengeData.challenge.getCompletionMenaceAfterDifficulty() / challengeData.challenge.getProgressPerTurn(ua, null)));
             return (map.param.ua_flatTimeCostUtility + distance + duration) / 10.0;
