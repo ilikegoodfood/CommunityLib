@@ -115,6 +115,14 @@
 			"defaultBoolValue":"false"
 		},
 		{
+			"name":"Orc Horde Respawn Limit",
+			"description":"The number of replacement orc hordes that may be spawned in to replace those that have been wiped out. If set to -1, replacement orc hordes can be spawned in an unlimited number of times. (Default -1)",
+			"isInteger":"true",
+			"minValue":-1,
+			"maxValue":100,
+			"defaultValue":-1
+		},
+		{
 			"name":"Target Natural Wonder Count",
 			"description":"The number of natural wonders that should exist on the map (default 1).",
 			"isInteger":"true",

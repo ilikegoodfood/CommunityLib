@@ -95,6 +95,8 @@ namespace CommunityLib
 
         public static int opt_targetOrcCount = 2;
 
+        public static int opt_OrcRespawnLimit = -1;
+
         public static bool opt_DynamicNaturalWonderCount = false;
 
         public static bool opt_DuplicateWonders = false;
@@ -275,6 +277,17 @@ namespace CommunityLib
                 case "Create Agent Panel Scroll Speed":
                     opt_scrollSpeed_createAgent = value;
                     break;
+                case "Orc Horde Respawn Limit":
+                    opt_OrcRespawnLimit = value;
+                    if (Get().data.RemainingOrcRespawns == -1)
+                    {
+                        Get().data.RemainingOrcRespawns = value;
+                    }
+                    else if (value == -1)
+                    {
+                        Get().data.RemainingOrcRespawns = value;
+                    }
+                    break;
                 case "Target Orc Horde Count":
                     opt_targetOrcCount = value;
                     break;
@@ -315,6 +328,7 @@ namespace CommunityLib
             core = this;
             this.map = map;
             data.map = map;
+            data.RemainingOrcRespawns = opt_OrcRespawnLimit;
             data.isClean = false;
 
             data.getSaveData().lastPlayedGod = map.overmind.god.getName();
