@@ -11155,12 +11155,9 @@ namespace CommunityLib
                 }
             }
 
-            if (map.burnInComplete && ModCore.opt_OrcRespawnLimit != -1)
+            if (ModCore.Get().data.RemainingOrcRespawns == 0)
             {
-                if (result > ModCore.Get().data.RemainingOrcRespawns)
-                {
-                    result = ModCore.Get().data.RemainingOrcRespawns;
-                }
+                result = 0;
             }
 
             return result;
