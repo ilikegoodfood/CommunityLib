@@ -591,8 +591,8 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(PrefabStore), nameof(PrefabStore.getScrollSetGods), new Type[] { typeof(List<God>) }), prefix: new HarmonyMethod(patchType, nameof(PrefabStore_getScrollSetGods_Prefix)));
 
             // Orc Horde Count //
-            // Patches for ManagerMajorThreats
             harmony.Patch(original: AccessTools.Method(typeof(ManagerMajorThreats), nameof(ManagerMajorThreats.turnTick), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(ManagerMajorThreats_turnTick_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(ManagerMajorThreats), nameof(ManagerMajorThreats.placeOrcs), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(ManagerMajorThreats_placeOrcs_Transpiler)));
 
             // Natural Wonder Count //
             // Patches for Map
@@ -13407,7 +13407,70 @@ namespace CommunityLib
                 }
             }
 
+            if (map.burnInComplete && ModCore.opt_OrcRespawnLimit != -1)
+            {
+                if (result > ModCore.Get().data.RemainingOrcRespawns)
+                {
+                    result = ModCore.Get().data.RemainingOrcRespawns;
+                }
+            }
+
             return result;
+        }
+
+        private static IEnumerable<CodeInstruction> ManagerMajorThreats_placeOrcs_Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            List<CodeInstruction> instructionList = instructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(ManagerMajorThreats_placeOrcs_TranspilerBody), new Type[] { typeof(Map) });
+
+            int targetIndex = 1;
+
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Brfalse_S)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_1 && instructionList[i-1].opcode == OpCodes.Stloc_S)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed ManagerMajorThreats_placeOrcs_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static void ManagerMajorThreats_placeOrcs_TranspilerBody(ManagerMajorThreats threats)
+        {
+            if (threats.map.burnInComplete && ModCore.opt_OrcRespawnLimit != -1)
+            {
+                if (ModCore.Get().data.RemainingOrcRespawns > 0)
+                {
+                    Console.WriteLine($"CommunityLib: Orc Spespawn limit is in effect. Remaining respawns reduced from {ModCore.Get().data.RemainingOrcRespawns} to {ModCore.Get().data.RemainingOrcRespawns - 1}.");
+                    ModCore.Get().data.RemainingOrcRespawns--;
+                }
+                else
+                {
+                    Console.WriteLine($"CommunityLib: Orc Spespawn limit is in effect. {ModCore.Get().data.RemainingOrcRespawns} remaining.");
+                }
+            }
         }
 
         // Natural Wonder Count Patches

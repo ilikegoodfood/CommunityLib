@@ -72,6 +72,8 @@ namespace CommunityLib
 
         public float DefaultScrollSpeed_CreateAgent = -1f;
 
+        public int RemainingOrcRespawns = -1;
+
         public ModData()
         {
             initializeModIntegrationData();
