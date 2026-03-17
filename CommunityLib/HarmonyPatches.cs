@@ -58,8 +58,6 @@ namespace CommunityLib
         private static bool gettingAvailableTraits;
         public static bool GettingAvailableTraits => gettingAvailableTraits;
 
-        private static Tuple<Unit, Location, int, Location[]> lastPath;
-
         private static Dictionary<string, Dictionary<string, MethodInfo>> declaredMethodCache;
 
         private static bool TryCacheDeclaredMethod(string typeName, string methodName, MethodInfo methodInfo)
@@ -13467,7 +13465,7 @@ namespace CommunityLib
                 }
                 else
                 {
-                    Console.WriteLine($"CommunityLib: Orc Spespawn limit is in effect. {ModCore.Get().data.RemainingOrcRespawns} remaining.");
+                    Console.WriteLine($"CommunityLib: Orc Respawn limit is in effect. {ModCore.Get().data.RemainingOrcRespawns} remaining.");
                 }
             }
         }
