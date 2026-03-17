@@ -8997,14 +8997,14 @@ namespace CommunityLib
 
             if (!allReachableLocations.TryGetValue(c.location, out Location[] pathTo))
             {
-                Console.WriteLine("CommunityLib: WARNING: Travel Time was requested to inaccessable challenge.");
+                Console.WriteLine("CommunityLib: WARNING: Travel Time was requested to inaccessible challenge.");
                 return 10000;
             }
 
             distance = ModCore.Get().getTravelTimeAlong(ua, pathTo);
             if (distance < 0)
             {
-                Console.WriteLine("CommunityLib: WARNING: Travel Time was requested to inaccessable challenge.");
+                Console.WriteLine("CommunityLib: WARNING: Travel Time was requested to inaccessible challenge.");
             }
 
             return distance;
@@ -11191,6 +11191,8 @@ namespace CommunityLib
                         {
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+
+                            targetIndex = 0;
                         }
                     }
                 }
@@ -11211,7 +11213,7 @@ namespace CommunityLib
             {
                 if (ModCore.Get().data.RemainingOrcRespawns > 0)
                 {
-                    Console.WriteLine($"CommunityLib: Orc Spespawn limit is in effect. Remaining respawns reduced from {ModCore.Get().data.RemainingOrcRespawns} to {ModCore.Get().data.RemainingOrcRespawns - 1}.");
+                    Console.WriteLine($"CommunityLib: Orc Respawn limit is in effect. Remaining respawns reduced from {ModCore.Get().data.RemainingOrcRespawns} to {ModCore.Get().data.RemainingOrcRespawns - 1}.");
                     ModCore.Get().data.RemainingOrcRespawns--;
                 }
                 else
