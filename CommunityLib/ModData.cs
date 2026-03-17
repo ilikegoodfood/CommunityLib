@@ -370,6 +370,16 @@ namespace CommunityLib
             _acceleratedTime = map.acceleratedTime;
             _brokenMakerSleeps = false;
             BrokenMakerSleepDuration = 50;
+
+            int orcRespawnLimit = ModCore.opt_OrcRespawnLimit;
+            if (orcRespawnLimit == -1)
+            {
+                RemainingOrcRespawns = -1;
+            }
+            else if (RemainingOrcRespawns == -1)
+            {
+                RemainingOrcRespawns = orcRespawnLimit;
+            }
         }
 
         public void onTurnStart(Map map)
