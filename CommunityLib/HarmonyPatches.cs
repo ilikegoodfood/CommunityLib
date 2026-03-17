@@ -11170,7 +11170,7 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = instructions.ToList();
 
-            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(ManagerMajorThreats_placeOrcs_TranspilerBody), new Type[] { typeof(Map) });
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(ManagerMajorThreats_placeOrcs_TranspilerBody), new Type[] { typeof(ManagerMajorThreats) });
 
             int targetIndex = 1;
 
