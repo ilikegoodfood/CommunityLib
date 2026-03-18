@@ -1261,14 +1261,9 @@ namespace CommunityLib
 
         public void onPopulatingTradeRoutePathfindingDelegates(Location start, List<int> endPointMapLayers, List<Func<Location[], Location, List<int>, double>> pathfindingDelegates, List<Func<Location[], Location, List<int>, bool>> destinationValidityDelegates)
         {
-            if (start.settlement is Set_TombOfGods && start.map.overmind.god is God_Mammon)
+            if (start.map.awarenessOfUnderground >= 1.0 || (start.settlement is Set_TombOfGods && start.map.overmind.god is God_Mammon))
             {
                 pathfindingDelegates.Remove(Pathfinding.delegate_TRADE_UNDERGROUNDAWARENESS);
-            }
-
-            if (ModCore.opt_denseTradeRoutes && DensifyingTradeRoutes)
-            {
-                destinationValidityDelegates.Remove(Pathfinding.delegate_TRADEVALID_NODUPLICATES);
             }
 
             if (start.map.overmind.god.awake && ModCore.Get().data.tryGetModIntegrationData("LivingVoid", out ModIntegrationData intDataVoid) && intDataVoid.typeDict.TryGetValue("LivingVoid", out Type godType) && godType != null && godType.IsAssignableFrom(start.map.overmind.god.GetType()))

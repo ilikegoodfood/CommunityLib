@@ -1,7 +1,8 @@
-﻿using System;
+﻿using Assets.Code;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using Assets.Code;
+using System.Net;
 
 namespace CommunityLib
 {
@@ -1291,44 +1292,58 @@ namespace CommunityLib
             Location locLast = currentPath[currentPath.Length - 1];
             if (location.soc == null)
             {
+                if (location.settlement != null && location.settlement.subs.Any(sub => sub is Sub_Market))
+                {
+                    result += 2.5; // Travel to Market is half-base (5.0)
+                }
+                else
+                {
+                    result += 10.0; // Base for wilderness is 10.0
+                }
+
                 if (location.isOcean != locLast.isOcean)
                 {
-                    if (locLast.settlement != null && locLast.settlement.subs.Any(sub => sub is Sub_Docks))
+                    if ((!locLast.isOcean && locLast.settlement != null && locLast.settlement.subs.Any(sub => sub is Sub_Docks)) || (!location.isOcean && location.settlement != null && location.settlement.subs.Any(sub => sub is Sub_Docks)))
                     {
-                        result += 2.5;
+                        result += 2.5; // Switching from land to water at a dock is cheaper than staying on one or the other. 12.5 Cost.
                     }
                     else
                     {
-                        result += 30.0;
+                        result += 20.0; // If travelling to ocean from land, or vice versa, and there is no dock on the land, increase cost by 20.0, to 30.0
                     }
                 }
                 else if (location.isOcean)
                 {
-                    result += 15.0;
+                    result += 5.0; // Travelling over water costs 15.0
                 }
                 else
                 {
-                    result += 15.0;
+                    result += 7.5; // Travelling over land cosst 17.5.
                 }
             }
             else
             {
                 if (location.soc.isDark())
                 {
-                    result += 2.5;
+                    result += 2.5; // Travelling through player-aligned territory is more dangerous.
                 }
 
                 if (location.soc is Society society)
                 {
-                    if (location.isOcean != locLast.isOcean && location.settlement != null && location.settlement.subs.Any(sub => sub is Sub_Docks))
+                    if (location.settlement != null && location.settlement.subs.Any(sub => sub is Sub_Market))
+                    {
+                        result += 2.5; // Travel to Market is 2.5
+                    }
+                    else
+                    {
+                        result += 5.0; // Base through a human society is 5.0
+                    }
+
+                    if (location.isOcean != locLast.isOcean && ((locLast.settlement != null && locLast.settlement.subs.Any(sub => sub is Sub_Docks)) || (location.settlement != null && location.settlement.subs.Any(sub => sub is Sub_Docks))))
                     {
                         result += 2.5;
                     }
-                    else if (location.settlement.subs.Any(sub => sub is Sub_Market))
-                    {
-                        result += 2.5;
-                    }
-                    else if (location.settlement is Set_City || location.settlement is Set_DwarvenCity)
+                    else if (location.settlement is Set_City || location.settlement is Set_DwarvenCity) // Travelling to a city is cheaper than a non-ciy
                     {
                         if (location.isOcean != locLast.isOcean)
                         {
@@ -1339,7 +1354,7 @@ namespace CommunityLib
                             result += 5.0;
                         }
                     }
-                    else if (locLast.settlement is SettlementHuman)
+                    else if (locLast.settlement is SettlementHuman || location.settlement is SettlementHuman) // Travellibng to a settlement is cheaper than no settlement
                     {
                         if (location.isOcean != locLast.isOcean)
                         {
@@ -1356,21 +1371,45 @@ namespace CommunityLib
                         {
                             result += 20.0;
                         }
+                        else if (location.isOcean)
+                        {
+                            result += 5.0; // Travelling over water costs 10.0
+                        }
                         else
                         {
-                            result += 10.0;
+                            result += 7.5; // Travelling over land cosst 7.5.
                         }
                     }
                 }
                 else
                 {
-                    if (location.isOcean != locLast.isOcean)
+                    if (location.settlement != null && location.settlement.subs.Any(sub => sub is Sub_Market))
                     {
-                        result += 45.0;
+                        result += 15; // Travel to Market is half base (15)
                     }
                     else
                     {
-                        result += 30.0;
+                        result += 30.0; // Base through a non-human society is 30.0
+                    }
+
+                    if (location.isOcean != locLast.isOcean)
+                    {
+                        if ((!locLast.isOcean && locLast.settlement != null && locLast.settlement.subs.Any(sub => sub is Sub_Docks)) || (!location.isOcean && location.settlement != null && location.settlement.subs.Any(sub => sub is Sub_Docks)))
+                        {
+                            result += 2.5; // Switching from land to water at a dock is cheaper than staying on one or the other. 32.5 Cost.
+                        }
+                        else
+                        {
+                            result += 20.0; // If travelling to ocean from land, or vice versa, and there is no dock on the land, increase cost by 20.0, to 50.0
+                        }
+                    }
+                    else if (location.isOcean)
+                    {
+                        result += 5.0;
+                    }
+                    else
+                    {
+                        result += 7.5;
                     }
                 }
             }
@@ -1379,16 +1418,16 @@ namespace CommunityLib
             if (!location.isOcean)
             {
                 float habitability = location.hex.getHabilitability();
-                if (habitability < currentPath[0].map.param.mapGen_minHabitabilityForHumans)
+                if (habitability < location.map.param.mapGen_minHabitabilityForHumans)
                 {
                     result += 30.0;
                 }
-                else if (habitability < currentPath[0].map.param.mapGen_minHabitabilityForHumans * 2)
+                else if (habitability < location.map.param.mapGen_minHabitabilityForHumans * 2.0)
                 {
                     result += 10.0;
                 }
             }
-            else if (location.hex.getTemperature() < 0.2)
+            else if (location.hex.getTemperature() < 0.2) // Strong avoidabnce for arctic waters
             {
                 double tempModifier = (0.2 - location.hex.getTemperature()) * 20;
                 tempModifier *= tempModifier;
@@ -1418,11 +1457,6 @@ namespace CommunityLib
             Location start = currentPath[0];
             if (start.map.awarenessOfUnderground < 1.0)
             {
-                if (start.map.overmind.god is God_Mammon && start.settlement is Set_TombOfGods)
-                {
-                    return 0.0;
-                }
-
                 if ((start.hex.z == 0 && location.hex.z == 1) || (start.hex.z == 1 && location.hex.z == 0))
                 {
                     //Console.WriteLine($"CommunityLib: Location {location.getName()} ({location.hex.z}) violates Underground Awareness rules for trade route originating from {currentPath[0].getName()} ({currentPath[0].hex.z})");
@@ -1674,10 +1708,9 @@ namespace CommunityLib
                 return null;
             }
 
-            List<int> expectedMapLayers = new List<int>();
-            if (endPointMapLayers != null && endPointMapLayers.Count == 0)
+            List<int> expectedMapLayers = new List<int> { start.hex.z };
+            if (endPointMapLayers == null || endPointMapLayers.Count == 0)
             {
-                expectedMapLayers.Add(start.hex.z);
                 foreach (Location endpoint in endpointsAll)
                 {
                     if (!expectedMapLayers.Contains(endpoint.hex.z))
@@ -1686,30 +1719,30 @@ namespace CommunityLib
                     }
                 }
             }
+            else
+            {
+                foreach (int layer in endPointMapLayers)
+                {
+                    if (!expectedMapLayers.Contains(layer))
+                    {
+                        expectedMapLayers.Add(layer);
+                    }
+                }
+            }
 
             if (pathfindingDelegates == null)
             {
                 if (ModCore.opt_realisticTradeRoutes)
                 {
-                    pathfindingDelegates = new List<Func<Location[], Location, List<int>, double>> { delegate_TRADE_REALISTIC, delegate_TRADE_LAYERBOUND, delegate_TRADE_UNDERGROUNDAWARENESS };
+                    pathfindingDelegates = new List<Func<Location[], Location, List<int>, double>>() { delegate_TRADE_REALISTIC, delegate_TRADE_LAYERBOUND, delegate_TRADE_UNDERGROUNDAWARENESS };
                 }
                 else
                 {
-                    pathfindingDelegates = new List<Func<Location[], Location, List<int>, double>> { delegate_TRADE_VANILLA, delegate_TRADE_LAYERBOUND, delegate_TRADE_UNDERGROUNDAWARENESS };
+                    pathfindingDelegates = new List<Func<Location[], Location, List<int>, double>>() { delegate_TRADE_VANILLA, delegate_TRADE_LAYERBOUND, delegate_TRADE_UNDERGROUNDAWARENESS };
                 }
             }
             else
             {
-                if (!pathfindingDelegates.Contains(delegate_TRADE_LAYERBOUND))
-                {
-                    pathfindingDelegates.Add(delegate_TRADE_LAYERBOUND);
-                }
-
-                if (!pathfindingDelegates.Contains(delegate_TRADE_UNDERGROUNDAWARENESS))
-                {
-                    pathfindingDelegates.Add(delegate_TRADE_UNDERGROUNDAWARENESS);
-                }
-
                 if (ModCore.opt_realisticTradeRoutes)
                 {
                     if (!pathfindingDelegates.Contains(delegate_TRADE_REALISTIC))
@@ -1723,6 +1756,16 @@ namespace CommunityLib
                     {
                         pathfindingDelegates.Add(delegate_TRADE_VANILLA);
                     }
+                }
+
+                if (!pathfindingDelegates.Contains(delegate_TRADE_LAYERBOUND))
+                {
+                    pathfindingDelegates.Add(delegate_TRADE_LAYERBOUND);
+                }
+
+                if (!pathfindingDelegates.Contains(delegate_TRADE_UNDERGROUNDAWARENESS))
+                {
+                    pathfindingDelegates.Add(delegate_TRADE_UNDERGROUNDAWARENESS);
                 }
             }
 
@@ -1767,7 +1810,7 @@ namespace CommunityLib
                     ValuePriorityPair<Location[], double> pair = paths.DequeueWithPriority();
                     Location currentLocation = pair.Value[pair.Value.Length - 1];
 
-                    if (endpointsAll.Contains(currentLocation))
+                    if (currentLocation != start && endpointsAll.Contains(currentLocation))
                     {
                         bool isValid = true;
                         foreach (Func<Location[], Location, List<int>, bool> validityDelegate in destinationValidityDelegates)
@@ -1791,11 +1834,16 @@ namespace CommunityLib
                                     break;
                                 }
 
-                                isValid = true;
                                 Location potentialCurrentLocation = potentialPair.Value[potentialPair.Value.Length - 1];
+                                if (potentialCurrentLocation == start || !endpointsAll.Contains(currentLocation))
+                                {
+                                    continue;
+                                }
+
+                                isValid = true;
                                 foreach (Func<Location[], Location, List<int>, bool> validityDelegate in destinationValidityDelegates)
                                 {
-                                    if (!validityDelegate(pair.Value, potentialCurrentLocation, expectedMapLayers))
+                                    if (!validityDelegate(potentialPair.Value, potentialCurrentLocation, expectedMapLayers))
                                     {
                                         isValid = false;
                                         break;
@@ -1815,7 +1863,6 @@ namespace CommunityLib
                             {
                                 return destinationPaths[Eleven.random.Next(destinationPaths.Count)];
                             }
-                            
                         }
                     }
 
@@ -1829,7 +1876,7 @@ namespace CommunityLib
                         double stepCost = 0.0;
                         foreach (Func<Location[], Location, List<int>, double> pathfindingDelegate in pathfindingDelegates)
                         {
-                            double cost = pathfindingDelegate(pair.Value, neighbour, endPointMapLayers);
+                            double cost = pathfindingDelegate(pair.Value, neighbour, expectedMapLayers);
                             if (cost >= 10000.0)
                             {
                                 stepCost = cost;
@@ -1871,7 +1918,7 @@ namespace CommunityLib
                 }
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
-                    if (hook.onPathfindingTadeRoute_AllowSecondPass(start, endPointMapLayers, pathfindingDelegates, destinationValidityDelegates))
+                    if (hook.onPathfindingTadeRoute_AllowSecondPass(start, expectedMapLayers, pathfindingDelegates, destinationValidityDelegates))
                     {
                         allowPass = true;
                     }
