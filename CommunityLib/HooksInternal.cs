@@ -1266,6 +1266,11 @@ namespace CommunityLib
                 pathfindingDelegates.Remove(Pathfinding.delegate_TRADE_UNDERGROUNDAWARENESS);
             }
 
+            if (ModCore.opt_denseTradeRoutes && DensifyingTradeRoutes)
+            {
+                destinationValidityDelegates.Remove(Pathfinding.delegate_TRADEVALID_NODUPLICATES);
+            }
+
             if (start.map.overmind.god.awake && ModCore.Get().data.tryGetModIntegrationData("LivingVoid", out ModIntegrationData intDataVoid) && intDataVoid.typeDict.TryGetValue("LivingVoid", out Type godType) && godType != null && godType.IsAssignableFrom(start.map.overmind.god.GetType()))
             {
                 pathfindingDelegates.Add(Pathfinding.delegate_TRADE_LIVINGVOID_AVOIDVOID);
