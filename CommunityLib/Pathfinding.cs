@@ -1622,7 +1622,7 @@ namespace CommunityLib
                                 }
 
                                 Location potentialCurrentLocation = potentialPair.Value[potentialPair.Value.Length - 1];
-                                if (potentialCurrentLocation == start || !endpointsAll.Contains(currentLocation))
+                                if (potentialCurrentLocation == start || !endpointsAll.Contains(potentialCurrentLocation))
                                 {
                                     continue;
                                 }
