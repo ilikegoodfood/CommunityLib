@@ -50,6 +50,8 @@ namespace CommunityLib
         private HashSet<Type> naturalWonderTypes;
 
         private HashSet<Type> vampireTypes;
+
+        private HashSet<Type> vampireTraitTypes;
         #endregion
 
         public bool isPlayerTurn = false;
@@ -231,6 +233,15 @@ namespace CommunityLib
             if(vampireTypes == null)
             {
                 vampireTypes = new HashSet<Type>();
+            }
+            if (vampireTraitTypes == null)
+            {
+                vampireTraitTypes = new HashSet<Type> { typeof(T_TheHunger), typeof(T_VampiricCurse) };
+            }
+            else
+            {
+                vampireTraitTypes.Add(typeof(T_TheHunger));
+                vampireTraitTypes.Add(typeof(T_VampiricCurse));
             }
         }
 
@@ -1084,16 +1095,14 @@ namespace CommunityLib
 
         internal void addVampireType(Type t)
         {
-            if(!t.IsSubclassOf(typeof(Unit)))
-            {
-                return;
-            }
-
             initializeVampireTypes();
-
-            if (!vampireTypes.Contains(t))
+            if (t.IsSubclassOf(typeof(Unit)))
             {
                 vampireTypes.Add(t);
+            }
+            else if (t.IsSubclassOf(typeof(Trait)))
+            {
+                vampireTraitTypes.Add(t);
             }
         }
 
@@ -1113,7 +1122,7 @@ namespace CommunityLib
                 }
             }
 
-            if (u.person != null && u.person.species == u.map.species_undead && u.person.traits.Any(t => t is T_VampiricCurse || t is T_TheHunger))
+            if (u.person != null && u.person.species == u.map.species_undead && u.person.traits.Any(t => vampireTraitTypes.Any(vtType => vtType.IsAssignableFrom(t.GetType()))))
             {
                 return true;
             }
@@ -1121,6 +1130,38 @@ namespace CommunityLib
             if (tryGetModIntegrationData("Ixthus", out ModIntegrationData IntDataIxthus) && IntDataIxthus != null && IntDataIxthus.typeDict.TryGetValue("DreadKnight", out Type dreadKnightType) && dreadKnightType != null && dreadKnightType.IsAssignableFrom(u.GetType()) && IntDataIxthus.fieldInfoDict.TryGetValue("DreadKnight_IsVampire", out FieldInfo isVampire) && isVampire != null && (bool)isVampire.GetValue(u))
             {
                 return true;
+            }
+
+            return false;
+        }
+
+        internal bool isVampireType(Person p)
+        {
+            if (p != null && p.species == p.map.species_undead && p.traits.Any(t => vampireTraitTypes.Any(vtType => vtType.IsAssignableFrom(t.GetType()))))
+            {
+                return true;
+            }
+
+            if (p.unit != null)
+            {
+                if (p.unit is UAE_Baroness || p.unit is UAEN_Vampire)
+                {
+                    return true;
+                }
+
+                Type unitType = p.unit.GetType();
+                foreach (Type type in vampireTypes)
+                {
+                    if (type.IsAssignableFrom(unitType))
+                    {
+                        return true;
+                    }
+                }
+
+                if (tryGetModIntegrationData("Ixthus", out ModIntegrationData IntDataIxthus) && IntDataIxthus != null && IntDataIxthus.typeDict.TryGetValue("DreadKnight", out Type dreadKnightType) && dreadKnightType != null && dreadKnightType.IsAssignableFrom(p.unit.GetType()) && IntDataIxthus.fieldInfoDict.TryGetValue("DreadKnight_IsVampire", out FieldInfo isVampire) && isVampire != null && (bool)isVampire.GetValue(p.unit))
+                {
+                    return true;
+                }
             }
 
             return false;

@@ -3973,6 +3973,8 @@ namespace CommunityLib
         public void registerVampireType(Type type) => data.addVampireType(type);
 
         public bool checkIsVampire(Unit unit) => data.isVampireType(unit);
+
+        public bool checkIsVampire(Person person) => data.isVampireType(person);
         #endregion
 
         #region Helper Functions
