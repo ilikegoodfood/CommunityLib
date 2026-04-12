@@ -3431,7 +3431,7 @@ namespace CommunityLib
                     {
                         //Console.WriteLine("CommunityLib: re-adding to overmind");
                         map.overmind.agents.Add(agent);
-                        map.overmind.nEnthralled++;
+                        map.overmind.calculateAgentsUsed();
                     }
                 }
             }
