@@ -145,6 +145,8 @@ namespace CommunityLib
 
         public static bool opt_dwarven_fortresses = false;
 
+        public static bool opt_dwarvesEnabled = true;
+
         public static int opt_targetDwarfCount = 1;
 
         public static bool opt_dynamicDwarfCount = false;
@@ -186,6 +188,9 @@ namespace CommunityLib
                     break;
                 case "Modifier Charge Effects Cthonian Armies":
                     opt_cthonianHPFromCharge = value;
+                    break;
+                case "Dwarves Enabled":
+                    opt_dwarvesEnabled = value;
                     break;
                 case "Enshadow in Dwarven Cities":
                     opt_dwarven_enshadow = value;

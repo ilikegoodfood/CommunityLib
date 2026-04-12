@@ -13755,7 +13755,7 @@ namespace CommunityLib
 
         private static void Map_placeDwarves_TranspilerBody(Map map)
         {
-            if (!map.opt_allowDwarves)
+            if (!map.opt_allowDwarves || !ModCore.opt_dwarvesEnabled)
             {
                 return;
             }
