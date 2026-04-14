@@ -302,7 +302,7 @@ namespace CommunityLib
             switch (optName)
             {
                 case "Threats Panel Scroll Speed":
-                    Console.WriteLine($"CommunityLib: Receiving setting value {value} for 'Threats Panel Scroll Speed'.");
+                    //Console.WriteLine($"CommunityLib: Receiving setting value {value} for 'Threats Panel Scroll Speed'.");
                     opt_scrollSpeed_threats = value;
 
                     ScrollRect scrollable = World.staticMap?.world?.ui?.uiScrollables?.scrollable_threats?.GetComponentInChildren<ScrollRect>();
@@ -324,7 +324,7 @@ namespace CommunityLib
                     opt_evilBeneathMaxHp = value;
                     break;
                 case "Orc Horde Respawn Limit":
-                    Console.WriteLine($"CommunityLib: Receiving setting value {value} for 'Orc Horde Respawn Limit'.");
+                    //Console.WriteLine($"CommunityLib: Receiving setting value {value} for 'Orc Horde Respawn Limit'.");
                     opt_OrcRespawnLimit = value;
                     if (Get().data.RemainingOrcRespawns == -1)
                     {
