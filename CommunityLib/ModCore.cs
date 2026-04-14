@@ -302,27 +302,29 @@ namespace CommunityLib
             switch (optName)
             {
                 case "Threats Panel Scroll Speed":
+                    Console.WriteLine($"CommunityLib: Receiving setting value {value} for 'Threats Panel Scroll Speed'.");
                     opt_scrollSpeed_threats = value;
 
-                    ScrollRect scrollable = World.staticMap?.world.ui.uiScrollables?.scrollable_threats?.GetComponentInChildren<ScrollRect>();
+                    ScrollRect scrollable = World.staticMap?.world?.ui?.uiScrollables?.scrollable_threats?.GetComponentInChildren<ScrollRect>();
                     if (scrollable != null)
                     {
                         if (Get().data.DefaultScrollSpeed_Threats < 0f)
                         {
                             Get().data.DefaultScrollSpeed_Threats = scrollable.scrollSensitivity;
-                            //Console.WriteLine($"CommunityLib: Acquired scroll sensitivity from threats scrollable ({Get().data.DefaultScrollSpeed_Threats}).");
                         }
                         scrollable.scrollSensitivity = Get().data.DefaultScrollSpeed_Threats * 0.01f * opt_scrollSpeed_threats;
-                        //Console.WriteLine($"CommunityLib: Scroll sensitivity for threats scrollable set to {scrollable.scrollSensitivity}.");
                     }
                     break;
                 case "Create Agent Panel Scroll Speed":
+                    //Console.WriteLine($"CommunityLib: Receiving setting value {value} for 'Create Agent Panel Scroll Speed'.");
                     opt_scrollSpeed_createAgent = value;
                     break;
                 case "The Evil Beneath's Max Health":
+                    //Console.WriteLine($"CommunityLib: Receiving setting value {value} for 'The Evil Beneath's Max Health'.");
                     opt_evilBeneathMaxHp = value;
                     break;
                 case "Orc Horde Respawn Limit":
+                    Console.WriteLine($"CommunityLib: Receiving setting value {value} for 'Orc Horde Respawn Limit'.");
                     opt_OrcRespawnLimit = value;
                     if (Get().data.RemainingOrcRespawns == -1)
                     {
@@ -334,21 +336,27 @@ namespace CommunityLib
                     }
                     break;
                 case "Target Dwarven Civilization Count":
+                    //Console.WriteLine($"CommunityLib: Receiving setting value {value} for 'Target Dwarven Civilization Count'.");
                     opt_targetDwarfCount = value;
                     break;
                 case "Target Orc Horde Count":
+                    //Console.WriteLine($"CommunityLib: Receiving setting value {value} for 'Target Orc Horde Count'.");
                     opt_targetOrcCount = value;
                     break;
                 case "Target Natural Wonder Count":
+                    //Console.WriteLine($"CommunityLib: Receiving setting value {value} for 'Target Natural Wonder Count'.");
                     opt_targetNaturalWonderCount = value;
                     break;
                 case "Wonder Priority: The Entrance":
+                    //Console.WriteLine($"CommunityLib: Receiving setting value {value} for 'Wonder Priority: The Entrance'.");
                     opt_wonderPriority_entrance = value;
                     break;
                 case "Wonder Priority: Brother of Sleep":
+                    //Console.WriteLine($"CommunityLib: Receiving setting value {value} for 'Wonder Priority: Brother of Sleep'.");
                     opt_wonderPriority_brother = value;
                     break;
                 case "Wonder Priority: Primordial Font":
+                    //Console.WriteLine($"CommunityLib: Receiving setting value {value} for 'Wonder Priority: Primordial Font'.");
                     opt_wonderPriority_font = value;
                     break;
                 default:
