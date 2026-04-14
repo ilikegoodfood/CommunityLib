@@ -1856,6 +1856,7 @@ namespace CommunityLib
         // Tutorial Fixes
         private static void UIMainMenu_startProperTutorial_Postfix(UIMainMenu __instance)
         {
+            PopupModConfig.loadModConfigFromFile(__instance.modsLoaded, true);
             foreach (ModKernel modKernel in __instance.world.loadedModKernels)
             {
                 modKernel.onStartGamePresssed(__instance.world.map, new List<God>());
