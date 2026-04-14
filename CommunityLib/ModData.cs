@@ -12,8 +12,6 @@ namespace CommunityLib
 {
     public class ModData
     {
-        public Map map;
-
         public Rt_HiddenThoughts hiddenThoughts;
 
         private SaveData saveData = null;
@@ -152,7 +150,7 @@ namespace CommunityLib
                 {
                     StringBuilder textBuilder = new StringBuilder();
                     int assignedID = (int)maskMappings[action];
-                    string title = map.masker.getTitleText((MapMaskManager.maskType)assignedID);
+                    string title = World.staticMap.masker.getTitleText((MapMaskManager.maskType)assignedID);
                     foreach (char c in title)
                     {
                         if (c == '(')
@@ -270,7 +268,7 @@ namespace CommunityLib
         {
             if (hiddenThoughts == null)
             {
-                hiddenThoughts = new Rt_HiddenThoughts(map.locations[0]);
+                hiddenThoughts = new Rt_HiddenThoughts(World.staticMap.locations[0]);
             }
         }
         #endregion
@@ -282,7 +280,6 @@ namespace CommunityLib
                 return;
             }
 
-            map = null;
             modIntegrationData?.Clear();
             modCultureData?.Clear();
             reviveAgentCreationFunctons?.Clear();
@@ -365,7 +362,6 @@ namespace CommunityLib
         public void onLoad(Map map)
         {
             isClean = false;
-            this.map = map;
             isPlayerTurn = true;
 
             if (saveData == null)
@@ -659,7 +655,7 @@ namespace CommunityLib
             }
 
             mapMaskData.Add(new Tuple<ModKernel, int>(maskingMod, nextAvailableID), new MapMaskData(maskingMod, title, buttonLabel, description, nextAvailableID, needsSimplifiedTerrain));
-            map.world.ui.checkData();
+            World.staticMap.world.ui.checkData();
             return nextAvailableID;
         }
 

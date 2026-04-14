@@ -24,8 +24,6 @@ namespace CommunityLib
 
         public Dictionary<Unit, Dictionary<object, Dictionary<string, double>>> randStore;
 
-        private Map map;
-
         private List<Hooks> registeredHooks = new List<Hooks>();
 
         public HooksDelegateRegistry HookRegistry;
@@ -306,7 +304,7 @@ namespace CommunityLib
                 case "Threats Panel Scroll Speed":
                     opt_scrollSpeed_threats = value;
 
-                    ScrollRect scrollable = map?.world.ui.uiScrollables?.scrollable_threats?.GetComponentInChildren<ScrollRect>();
+                    ScrollRect scrollable = World.staticMap?.world.ui.uiScrollables?.scrollable_threats?.GetComponentInChildren<ScrollRect>();
                     if (scrollable != null)
                     {
                         if (Get().data.DefaultScrollSpeed_Threats < 0f)
@@ -376,12 +374,10 @@ namespace CommunityLib
         {
             opt_forceShipwrecks = false;
             core = this;
-            this.map = map;
-            data.map = map;
             data.RemainingOrcRespawns = opt_OrcRespawnLimit;
             data.isClean = false;
 
-            data.getSaveData().lastPlayedGod = map.overmind.god.getName();
+            data.getSaveData().lastPlayedGod = World.staticMap.overmind.god.getName();
             data.saveUserData();
 
             // Set local variables;
@@ -411,7 +407,6 @@ namespace CommunityLib
         public override void afterLoading(Map map)
         {
             core = this;
-            this.map = map;
 
             if (Get().data == null)
             {
@@ -456,7 +451,7 @@ namespace CommunityLib
 
             maskID_potentialVendettas = tryRegisterMapMask(Get(), "Potential Vendettas", "Potential Vendettas", "Shows mourners that can be exploited to create a blood feud between houses, grouped by source and target houses.", false);
 
-            if (Get().data.tryGetModIntegrationData("Chandalor", out ModIntegrationData intDataChand) && intDataChand.typeDict.TryGetValue("Chandalor", out Type godType) && godType.IsAssignableFrom(map.overmind.god.GetType()))
+            if (Get().data.tryGetModIntegrationData("Chandalor", out ModIntegrationData intDataChand) && intDataChand.typeDict.TryGetValue("Chandalor", out Type godType) && godType.IsAssignableFrom(World.staticMap.overmind.god.GetType()))
             {
                 Get().maskid_Bachelors = tryRegisterMapMask(Get(), "Bachelors", "Bachelors", "Rulers that can marry.", false);
                 if (maskid_Bachelors == -1)
@@ -476,7 +471,7 @@ namespace CommunityLib
 
         public override string mapMask_getTitleText()
         {
-            int maskID = (int)map.masker.mask;
+            int maskID = (int)World.staticMap.masker.mask;
             if (maskID == -1)
             {
                 return "Unknown Map Mask";
@@ -492,7 +487,7 @@ namespace CommunityLib
 
         public override bool mapMask_shouldApplyMask(Hex hex)
         {
-            int maskID = (int)map.masker.mask;
+            int maskID = (int)World.staticMap.masker.mask;
             if (maskID == -1)
             {
                 return false;
@@ -508,7 +503,7 @@ namespace CommunityLib
 
         public override void mapMask_applyMaskNow(Unit unit, GraphicalUnit graphicalUnit) // TEST ITEM
         {
-            int maskID = (int)map.masker.mask;
+            int maskID = (int)World.staticMap.masker.mask;
             if (maskID == -1 || unit == null || graphicalUnit == null)
             {
                 return;
@@ -793,7 +788,7 @@ namespace CommunityLib
 
         public override Color mapMask_getColour(Hex hex)
         {
-            int maskID = (int)map.masker.mask;
+            int maskID = (int)World.staticMap.masker.mask;
             if (maskID == -1 || MapMaskManager.maskingMod != Get())
             {
                 if (opt_transparentMaskBackgrounds)
@@ -1180,7 +1175,7 @@ namespace CommunityLib
 
         private void getModKernels (Map map)
         {
-            foreach (ModKernel kernel in map.mods)
+            foreach (ModKernel kernel in World.staticMap.mods)
             {
                 Type t = kernel.GetType();
                 Type[] onGraphicalHexUpdatedParameters = new Type[] { typeof(GraphicalHex) };
@@ -3019,7 +3014,7 @@ namespace CommunityLib
             }
 
             HashSet<Person> processedProphets = new HashSet<Person>();
-            foreach (SocialGroup sg in map.socialGroups)
+            foreach (SocialGroup sg in World.staticMap.socialGroups)
             {
                 if (sg is HolyOrder order && order.prophet != null && order.prophet.person != null)
                 {
@@ -3057,7 +3052,7 @@ namespace CommunityLib
                 }
             }
 
-            foreach (Person p in map.persons)
+            foreach (Person p in World.staticMap.persons)
             {
                 if (processedProphets.Contains(p))
                 {
@@ -3076,7 +3071,7 @@ namespace CommunityLib
 
         public override void afterMapGenAfterHistorical(Map map)
         {
-            if (map.overmind.god is God_Underground evilBeneath && evilBeneath.heart != null)
+            if (World.staticMap.overmind.god is God_Underground evilBeneath && evilBeneath.heart != null)
             {
                 evilBeneath.heart.maxHp = opt_evilBeneathMaxHp;
             }
@@ -3098,7 +3093,7 @@ namespace CommunityLib
                     {
                         Console.WriteLine($"CommunityLib: Event '{component.name}' is invalid. Discarding Popup Event.");
                         blocker.SetActive(false);
-                        map.world.ui.removeBlocker(blocker);
+                        World.staticMap.world.ui.removeBlocker(blocker);
                         return;
                     }
 
@@ -3160,7 +3155,7 @@ namespace CommunityLib
                     {
                         Console.WriteLine($"CommunityLib: Event '{component.name}' has no valid outcomes. Discarding Popup Event.");
                         blocker.SetActive(false);
-                        map.world.ui.removeBlocker(blocker);
+                        World.staticMap.world.ui.removeBlocker(blocker);
                         return;
                     }
                 }
@@ -3169,7 +3164,7 @@ namespace CommunityLib
 
         public override void populatingThreats(Overmind overmind, List<MsgEvent> threats)
         {
-            ScrollRect scrollable = map?.world.ui.uiScrollables?.scrollable_threats?.GetComponentInChildren<ScrollRect>();
+            ScrollRect scrollable = World.staticMap?.world.ui.uiScrollables?.scrollable_threats?.GetComponentInChildren<ScrollRect>();
             if (scrollable != null)
             {
                 if (Get().data.DefaultScrollSpeed_Threats < 0f)
@@ -3304,10 +3299,10 @@ namespace CommunityLib
 
             victim.isDead = false;
 
-            if (!map.persons.Contains(victim))
+            if (!World.staticMap.persons.Contains(victim))
             {
                 //Console.WriteLine("CommunityLib: re-adding to map.person");
-                map.persons.Add(victim);
+                World.staticMap.persons.Add(victim);
             }
 
             if (!victim.society.people.Contains(victim.index))
@@ -3328,7 +3323,7 @@ namespace CommunityLib
                 else if (unit is UM um)
                 {
                     //Console.WriteLine("CommunityLib: victim is commanding military unit");
-                    if (!um.isDead && map.units.Contains(um) && um.location.units.Contains(um))
+                    if (!um.isDead && World.staticMap.units.Contains(um) && um.location.units.Contains(um))
                     {
                         //Console.WriteLine("CommunityLib: reassigning person to military unit");
                         unit.person = victim;
@@ -3344,10 +3339,10 @@ namespace CommunityLib
                 }
             }
 
-            if (victim.rulerOf > -1 && victim.rulerOf < map.locations.Count)
+            if (victim.rulerOf > -1 && victim.rulerOf < World.staticMap.locations.Count)
             {
                 //Console.WriteLine("CommunityLib: victim is ruler");
-                Location rulerLocation = map.locations[victim.rulerOf];
+                Location rulerLocation = World.staticMap.locations[victim.rulerOf];
                 if (location == null)
                 {
                     location = rulerLocation;
@@ -3426,7 +3421,7 @@ namespace CommunityLib
                         //Console.WriteLine("CommunityLib: Victim become acolyte");
                         agent = new UAA(location, hO, victim);
                     }
-                    else if (victim.species == map.species_human)
+                    else if (victim.species == World.staticMap.species_human)
                     {
                         //Console.WriteLine("CommunityLib: victim is human");
                         if (victim.stat_command + victim.stat_might >= victim.stat_lore + victim.stat_intrigue)
@@ -3440,17 +3435,17 @@ namespace CommunityLib
                             agent = new UAG_Mage(location, victim.society, victim);
                         }
                     }
-                    else if (victim.species == map.species_elf)
+                    else if (victim.species == World.staticMap.species_elf)
                     {
                         //Console.WriteLine("CommunityLib: victim is elf, becomes Warrior");
                         agent = new UAG_Warrior(location, victim.society, victim);
                     }
-                    else if (victim.species == map.species_deepOne)
+                    else if (victim.species == World.staticMap.species_deepOne)
                     {
                         //Console.WriteLine("CommunityLib: victim is DeepOne");
-                        agent = new UAEN_DeepOne(location, map.soc_dark, victim);
+                        agent = new UAEN_DeepOne(location, World.staticMap.soc_dark, victim);
                     }
-                    else if (victim.species == map.species_orc && unit != null && unit.society is SG_Orc orcs)
+                    else if (victim.species == World.staticMap.species_orc && unit != null && unit.society is SG_Orc orcs)
                     {
                         //Console.WriteLine("CommunityLib: victim is orc commanding a military unit, becomes upstart");
                         agent = new UAEN_OrcUpstart(location, orcs, victim);
@@ -3481,20 +3476,20 @@ namespace CommunityLib
                     location.units.Add(agent);
                 }
 
-                if (!map.units.Contains(agent))
+                if (!World.staticMap.units.Contains(agent))
                 {
                     //Console.WriteLine("CommunityLib: re-adding to map.units");
-                    map.units.Add(agent);
+                    World.staticMap.units.Add(agent);
                 }
 
                 if (agent.isCommandable())
                 {
                     //Console.WriteLine("CommunityLib: victim is commandable");
-                    if (!map.overmind.agents.Contains(agent))
+                    if (!World.staticMap.overmind.agents.Contains(agent))
                     {
                         //Console.WriteLine("CommunityLib: re-adding to overmind");
-                        map.overmind.agents.Add(agent);
-                        map.overmind.calculateAgentsUsed();
+                        World.staticMap.overmind.agents.Add(agent);
+                        World.staticMap.overmind.calculateAgentsUsed();
                     }
                 }
             }
@@ -3513,7 +3508,7 @@ namespace CommunityLib
         {
             data.onTurnStart(map);
 
-            foreach (Power power in map.overmind.god.powers)
+            foreach (Power power in World.staticMap.overmind.god.powers)
             {
                 if (power is PowerDelayed delayedPower)
                 {
@@ -3526,12 +3521,12 @@ namespace CommunityLib
         {
             cleanRandStore(map);
 
-            if (!map.burnInComplete)
+            if (!World.staticMap.burnInComplete)
             {
-                if (map.awarenessOfUnderground > 0.0)
+                if (World.staticMap.awarenessOfUnderground > 0.0)
                 {
-                    Console.WriteLine($"CommunityLib: Awareness of Underground was greater than 0 ({map.awarenessOfUnderground}). Resetting.");
-                    map.awarenessOfUnderground = 0.0;
+                    Console.WriteLine($"CommunityLib: Awareness of Underground was greater than 0 ({World.staticMap.awarenessOfUnderground}). Resetting.");
+                    World.staticMap.awarenessOfUnderground = 0.0;
                 }
             }
 
@@ -3545,7 +3540,7 @@ namespace CommunityLib
 
         public override void onCheatEntered(string command)
         {
-            ConsoleCommands.parseCommand(command, map);
+            ConsoleCommands.parseCommand(command, World.staticMap);
         }
 
         public override int adjustHolyInfluenceDark(HolyOrder order, int inf, List<ReasonMsg> msgs)
@@ -3659,7 +3654,7 @@ namespace CommunityLib
             {
                 if (graphicalHex.map.masker.mask == MapMaskManager.maskType.RELIGION)
                 {
-                    if (map.overmind.god is God_Ophanim opha && opha.faith != null)
+                    if (World.staticMap.overmind.god is God_Ophanim opha && opha.faith != null)
                     {
                         Location location = graphicalHex.hex.location;
                         if (location != null && location.settlement is Set_TombOfGods)
@@ -3780,7 +3775,7 @@ namespace CommunityLib
             List<Tuple<Unit, Unit>> innerKeys = new List<Tuple<Unit, Unit>>();
             foreach (Unit outerKey in randStore.Keys)
             {
-                if (outerKey.isDead || !map.units.Contains(outerKey))
+                if (outerKey.isDead || !World.staticMap.units.Contains(outerKey))
                 {
                     outerKeys.Add(outerKey);
                 }
@@ -3788,7 +3783,7 @@ namespace CommunityLib
                 {
                     foreach (object innerKey in randStore[outerKey])
                     {
-                        if (innerKey is Unit unit && (unit.isDead || !map.units.Contains(outerKey)))
+                        if (innerKey is Unit unit && (unit.isDead || !World.staticMap.units.Contains(outerKey)))
                         {
                             innerKeys.Add(new Tuple<Unit, Unit>(outerKey, unit));
                         }
@@ -4128,18 +4123,18 @@ namespace CommunityLib
 
         public bool TryCreateLink(Map map, int locationIndexA, int locationndexB)
         {
-            if (locationIndexA < 0 || locationIndexA >= map.locations.Count)
+            if (locationIndexA < 0 || locationIndexA >= World.staticMap.locations.Count)
             {
                 return false;
             }
 
-            if (locationndexB < 0 || locationndexB >= map.locations.Count)
+            if (locationndexB < 0 || locationndexB >= World.staticMap.locations.Count)
             {
                 return false;
             }
 
-            Location locA = map.locations[locationIndexA];
-            Location locB = map.locations[locationndexB];
+            Location locA = World.staticMap.locations[locationIndexA];
+            Location locB = World.staticMap.locations[locationndexB];
             if (locA.links.Any(l => l.other(locA) == locB) || locB.links.Any(l => l.other(locB) == locA))
             {
                 return false;
@@ -4152,25 +4147,25 @@ namespace CommunityLib
 
             GraphicalMap.purge();
             GraphicalMap.checkLoaded();
-            map.recomputeStepDistMap();
+            World.staticMap.recomputeStepDistMap();
 
             return true;
         }
 
         public bool TryDestroyLink(Map map, int locationIndexA, int locationndexB)
         {
-            if (locationIndexA < 0 || locationIndexA >= map.locations.Count)
+            if (locationIndexA < 0 || locationIndexA >= World.staticMap.locations.Count)
             {
                 return false;
             }
 
-            if (locationndexB < 0 || locationndexB >= map.locations.Count)
+            if (locationndexB < 0 || locationndexB >= World.staticMap.locations.Count)
             {
                 return false;
             }
 
-            Location locA = map.locations[locationIndexA];
-            Location locB = map.locations[locationndexB];
+            Location locA = World.staticMap.locations[locationIndexA];
+            Location locB = World.staticMap.locations[locationndexB];
             Link linkA = locA.links.FirstOrDefault(l => l.other(locA) == locB);
             Link linkB = locB.links.FirstOrDefault(l => l.other(locB) == locA);
 
@@ -4184,7 +4179,7 @@ namespace CommunityLib
 
             GraphicalMap.purge();
             GraphicalMap.checkLoaded();
-            map.recomputeStepDistMap();
+            World.staticMap.recomputeStepDistMap();
 
             return true;
         }
