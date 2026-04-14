@@ -238,6 +238,12 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(UIInputs), nameof(UIInputs.hotkeys), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UIInputs_hotkeys_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(UIInputs), nameof(UIInputs.scrollKeys), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UIInputs_scrollKeys_Transpiler)));
 
+            // Tutorial Fixes
+            harmony.Patch(original: AccessTools.Method(typeof(UIMainMenu), nameof(UIMainMenu.startProperTutorial), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(UIMainMenu_startProperTutorial_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.genEmptyMap), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(Map_genMap_BulkPrefix)), postfix: new HarmonyMethod(patchType, nameof(Map_genMap_BulkPostfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.genMapFromCustom), new Type[] { typeof(string) }), prefix: new HarmonyMethod(patchType, nameof(Map_genMap_BulkPrefix)), postfix: new HarmonyMethod(patchType, nameof(Map_genMap_BulkPostfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.genTutorialMap), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(Map_genMap_BulkPrefix)), postfix: new HarmonyMethod(patchType, nameof(Map_genMap_BulkPostfix)));
+
             // Map Fixes
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.gen), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Map_gen_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Map), nameof(Map.placeTomb), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Map_placeTomb_transpiler)));
@@ -1845,6 +1851,31 @@ namespace CommunityLib
         private static float UIInputs_scrollKeys_TranspilerBody(UIInputs inputs)
         {
             return Math.Min(1f, Time.unscaledDeltaTime * 60f) * inputs.scrollSpeed / Math.Max(1f, GraphicalMap.scale + 0.5f);
+        }
+
+        // Tutorial Fixes
+        private static void UIMainMenu_startProperTutorial_Postfix(UIMainMenu __instance)
+        {
+            foreach (ModKernel modKernel in __instance.world.loadedModKernels)
+            {
+                modKernel.onStartGamePresssed(__instance.world.map, new List<God>());
+            }
+        }
+
+        private static void Map_genMap_BulkPrefix(Map __instance)
+        {
+            foreach (ModKernel modKernel in __instance.world.loadedModKernels)
+            {
+                modKernel.beforeMapGen(__instance);
+            }
+        }
+
+        private static void Map_genMap_BulkPostfix(Map __instance)
+        {
+            foreach (ModKernel modKernel in __instance.world.loadedModKernels)
+            {
+                modKernel.afterMapGenBeforeHistorical(__instance);
+            }
         }
 
         // Map Fixes
