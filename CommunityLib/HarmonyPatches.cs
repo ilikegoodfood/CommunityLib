@@ -811,15 +811,6 @@ namespace CommunityLib
             cullingData.Loaded.UnionWith(GraphicalMap.loaded);
         }
 
-            foreach (ModKernel mod in EnumerateModsThatApplyGraphicalHexUpdate(World.staticMap))
-            {
-                foreach (GraphicalHex graphicalHex in GraphicalMap.loaded)
-                {
-                    mod.onGraphicalHexUpdated(graphicalHex);
-                }
-            }
-        }
-
         private static IEnumerable<CodeInstruction> PrefabStore_GetGraphicalHex_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
