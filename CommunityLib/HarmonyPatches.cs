@@ -634,6 +634,7 @@ namespace CommunityLib
 
             Label allowLabel = ilg.DefineLabel();
             Label skipHexLoadingLabel = ilg.DefineLabel();
+            Label xBoundsContinueLabel = ilg.DefineLabel();
 
             int targetIndex = 1;
             bool returnCode = false;
@@ -661,8 +662,8 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Ldloc_2);
                             yield return new CodeInstruction(OpCodes.Ldloc_3);
                             yield return new CodeInstruction(OpCodes.Ldloc_0);
-                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_UpdateCameraCullingData);
-                            //yield return new CodeInstruction(OpCodes.Brfalse_S, skipHexLoadingLabel);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_UpdateCameraCullingData); // Returns bool
+                            //yield return new CodeInstruction(OpCodes.Brfalse_S, skipHexLoadingLabel); // GraphicalHex values are set to null by other processes, so they need to be recreated even if the camera and map views have not changed.
                             yield return new CodeInstruction(OpCodes.Pop);
 
                             targetIndex++;
@@ -672,8 +673,6 @@ namespace CommunityLib
                     {
                         if (instructionList[i].opcode == OpCodes.Nop && instructionList[i-1].opcode == OpCodes.Br)
                         {
-                            Label continueLabel = (Label)instructionList[i-1].operand;
-
                             yield return instructionList[i];
                             yield return new CodeInstruction(OpCodes.Ldloc_2);
                             yield return new CodeInstruction(OpCodes.Ldloc_S, 7);
@@ -683,7 +682,7 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Stloc_S, 9);
                             yield return new CodeInstruction(OpCodes.Ldloc_S, 9);
                             yield return new CodeInstruction(OpCodes.Call, MI_TRanspilerBody_CheckXInBounds);
-                            yield return new CodeInstruction(OpCodes.Brfalse_S, continueLabel);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, xBoundsContinueLabel);
                             yield return new CodeInstruction(OpCodes.Nop);
 
                             i++;
@@ -711,6 +710,14 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 6)
                     {
+                        if (instructionList[i].opcode == OpCodes.Brtrue && instructionList[i+1].opcode == OpCodes.Nop)
+                        {
+                            instructionList[i+1].labels.Add(xBoundsContinueLabel);
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 7)
+                    {
                         if (instructionList[i].opcode == OpCodes.Nop && instructionList[i+1].opcode == OpCodes.Ldsfld && instructionList[i+2].opcode == OpCodes.Ldfld && (FieldInfo)instructionList[i+2].operand == FI_Megafauna)
                         {
                             instructionList[i].labels.Add(skipHexLoadingLabel);
@@ -718,7 +725,7 @@ namespace CommunityLib
                             targetIndex++;
                         }
                     }
-                    else if (targetIndex == 7)
+                    else if (targetIndex == 8)
                     {
                         if (instructionList[i].opcode == OpCodes.Newobj)
                         {
@@ -752,8 +759,7 @@ namespace CommunityLib
 
         private static int GraphicalMap_checkLoaded_TranspilerBody_CalculateRadius()
         {
-            float radius = 7.5f / GraphicalMap.scale;
-            return Mathf.CeilToInt(radius) + 3;
+            return Mathf.CeilToInt(7.5f / GraphicalMap.scale) + 3;
         }
 
         private static bool GraphicalMap_checkLoaded_TranspilerBody_UpdateCameraCullingData(int x, int y, int radius)
@@ -762,6 +768,7 @@ namespace CommunityLib
 
             if (GraphicalMap.z != cullingData.Z)
             {
+                cullingData.CameraHasMoved = false;
                 cullingData.PreciseX = GraphicalMap.x;
                 cullingData.PreciseY = GraphicalMap.y;
                 cullingData.Z = GraphicalMap.z;
@@ -802,7 +809,7 @@ namespace CommunityLib
 
         private static bool GraphicalMap_checkLoaded_TranspilerBody_CheckXInBounds(int coordinate)
         {
-            return coordinate >= 0 || coordinate < GraphicalMap.map.sizeX;
+            return coordinate >= 0 && coordinate < GraphicalMap.map.sizeX;
         }
 
         private static void GraphicalMap_checkLoaded_TranspilerBody_CleanLoaded()
@@ -851,13 +858,11 @@ namespace CommunityLib
                     }
 
                     graphicalHex.checkData();
-                    bool flag = graphicalHex.hex.location != null;
-                    if (flag)
+                    if (graphicalHex.hex.location != null)
                     {
                         foreach (Unit unit in graphicalHex.hex.location.units)
                         {
-                            bool flag2 = unit.outer != null;
-                            if (flag2)
+                            if (unit.outer != null)
                             {
                                 unit.outer.checkData();
                             }
@@ -886,13 +891,11 @@ namespace CommunityLib
             foreach (GraphicalHex graphicalHex in GraphicalMap.loaded)
             {
                 graphicalHex.checkData();
-                bool flag = graphicalHex.hex.location != null;
-                if (flag)
+                if (graphicalHex.hex.location != null)
                 {
                     foreach (Unit unit in graphicalHex.hex.location.units)
                     {
-                        bool flag2 = unit.outer != null;
-                        if (flag2)
+                        if (unit.outer != null)
                         {
                             unit.outer.checkData();
                         }
@@ -907,6 +910,9 @@ namespace CommunityLib
                     mod.onGraphicalHexUpdated(graphicalHex);
                 }
             }
+
+            cullingData.Loaded.Clear();
+            cullingData.Loaded.UnionWith(GraphicalMap.loaded);
         }
 
         private static void GraphicalMap_panTo_Hex_Prefix(Hex hex, out bool __state)
@@ -12894,15 +12900,6 @@ namespace CommunityLib
                         return new Color(infiltration, infiltration, infiltration, 0.9f);
                     }
                     break;
-                case MapMaskManager.maskType.POI_VIEWER: //8
-                    if (hex != null && hex.location != null && hex.location.settlement != null)
-                    {
-                        if (hex.map.world.ui.uiScrollables.scrollable_threats.targetSub != null && hex.location.settlement.subs.Any(sub => sub.GetType() == hex.map.world.ui.uiScrollables.scrollable_threats.targetSub.GetType()))
-                        {
-                            return new Color(0f, 0f, 1f, 0.9f);
-                        }
-                    }
-                    break;
                 case MapMaskManager.maskType.AWARENESS: //9
                     if (hex.location != null && hex.location.person() != null)
                     {
@@ -12948,6 +12945,15 @@ namespace CommunityLib
                         }
                     }
                     break;
+                case MapMaskManager.maskType.POI_VIEWER: //11
+                    if (hex != null && hex.location != null && hex.location.settlement != null)
+                    {
+                        if (hex.map.world.ui.uiScrollables.scrollable_threats.targetSub != null && hex.location.settlement.subs.Any(sub => sub.GetType() == hex.map.world.ui.uiScrollables.scrollable_threats.targetSub.GetType()))
+                        {
+                            return new Color(0f, 0f, 1f, 0.9f);
+                        }
+                    }
+                    break;
                 case MapMaskManager.maskType.HERO_VIEWER: //12
                     UA targetHero = masker.map.world.ui.uiScrollables.scrollable_threats.targetHero;
                     if (hex.location != null)
@@ -12972,6 +12978,24 @@ namespace CommunityLib
                         }
                     }
                     break;
+                case MapMaskManager.maskType.TESTING:
+                    if (hex.location != null)
+                    {
+                        float weight = (float)masker.map.tradeManager.getTradeWeight(hex.location);
+                        if (weight > 0.5f)
+                        {
+                            weight = weight * 0.5f + 0.2f;
+
+                            if (weight > 1f)
+                            {
+                                weight = 1f;
+                            }
+
+                            return new Color(weight, weight, weight, 0.9f);
+                        }
+                    }
+                    lightLevel = 1;
+                    break;
                 case MapMaskManager.maskType.SPECIFIC_NATION: //14
                     if (hex.territoryOf >= 0 && hex.territoryOf < hex.map.locations.Count)
                     {
@@ -12993,9 +13017,9 @@ namespace CommunityLib
                             {
                                 if (targetRoute.path[0] == hex.location || targetRoute.path[targetRoute.path.Count - 1] == hex.location)
                                 {
-                                    return new Color(0.36f, 1f, 1f, 0.9f);
+                                    return new Color(0f, 0.7f, 0.7f, 0.9f);
                                 }
-                                return new Color(0.25f, 0.7f, 0.7f, 0.9f);
+                                return new Color(1f, 1f, 1f, 0.9f);
                             }
                         }
                         else
@@ -13244,24 +13268,6 @@ namespace CommunityLib
                     if (hex.location == MapMaskManager.focusLocation)
                     {
                         return new Color(0.2f, 0.9f, 1f, 0.9f);
-                    }
-                    lightLevel = 1;
-                    break;
-                case MapMaskManager.maskType.TESTING:
-                    if (hex.location != null)
-                    {
-                        float weight = (float)masker.map.tradeManager.getTradeWeight(hex.location);
-                        if (weight > 0.5f)
-                        {
-                            weight = weight * 0.5f + 0.2f;
-
-                            if (weight > 1f)
-                            {
-                                weight = 1f;
-                            }
-
-                            return new Color(weight, weight, weight, 0.9f);
-                        }
                     }
                     lightLevel = 1;
                     break;
