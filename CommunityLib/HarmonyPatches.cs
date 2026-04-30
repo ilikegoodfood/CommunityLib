@@ -2792,7 +2792,7 @@ namespace CommunityLib
         {
             if (loc.map.awarenessOfUnderground < 1.0)
             {
-                if ((refugees.location.hex.z == 0 && loc.hex.z == 1) || (refugees.location.hex.z == 1 && loc.hex.z == 0))
+                if ((refugees.location.hex.z != 1 && loc.hex.z == 1) || (refugees.location.hex.z == 1 && loc.hex.z != 1))
                 {
                     return false;
                 }
@@ -3606,12 +3606,12 @@ namespace CommunityLib
         {
             if (loc.soc is SG_Orc orcs && !orcs.canGoUnderground())
             {
-                if (loc.hex.z == 0 && neighbour.hex.z == 1)
+                if (loc.hex.z != 1 && neighbour.hex.z == 1)
                 {
                     return false;
                 }
 
-                if (loc.hex.z == 1 && neighbour.hex.z == 0)
+                if (loc.hex.z == 1 && neighbour.hex.z != 1)
                 {
                     return false;
                 }
@@ -4614,7 +4614,7 @@ namespace CommunityLib
                 //Console.WriteLine($"CommunityLib: Surface Fortresses are enabled and awareness of the underground is at 100%.");
                 foreach (Location neighbour in __instance.location.getNeighbours())
                 {
-                    if (neighbour.hex.z == 0 && !neighbour.isOcean && neighbour.soc == null && (neighbour.settlement == null || neighbour.settlement is Set_CityRuins) && (double)neighbour.hex.getHabilitability() >= 0.1)
+                    if (neighbour.hex.z != 1 && !neighbour.isOcean && neighbour.soc == null && (neighbour.settlement == null || neighbour.settlement is Set_CityRuins) && (double)neighbour.hex.getHabilitability() >= 0.1)
                     {
                         bool alreadyUnderway = false;
                         foreach(Unit unit in __instance.map.units)
@@ -5106,7 +5106,7 @@ namespace CommunityLib
                     return;
                 }
 
-                if ((targetZ == 0 && sourceZ == 1) || (targetZ == 1 && sourceZ == 0))
+                if ((targetZ != 1 && sourceZ == 1) || (targetZ == 1 && sourceZ != 1))
                 {
                     if (sg != null)
                     {
@@ -8443,7 +8443,7 @@ namespace CommunityLib
                 return true;
             }
 
-            if ((capitol.z == 0 && targetHex.z == 1) || (capitol.z == 1 && targetHex.z == 0))
+            if ((capitol.z != 1 && targetHex.z == 1) || (capitol.z == 1 && targetHex.z != 1))
             {
                 if (sgLayers.TryGetValue(soc, out HashSet<int> layers) && layers.Contains(sub.settlement.location.hex.z))
                 {
@@ -9918,10 +9918,10 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Ldloc_S, 24);
                             yield return new CodeInstruction(OpCodes.Ldfld, FI_Hex);
                             yield return new CodeInstruction(OpCodes.Ldfld, FI_Z);
-                            yield return new CodeInstruction(OpCodes.Ldc_I4_0);
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_1);
                             yield return new CodeInstruction(OpCodes.Ceq);
-                            // Skip all temperature calculations for hexes where Z != 0.
-                            yield return new CodeInstruction(OpCodes.Brfalse_S, skipLabel); // Continue;
+                            // Skip all temperature calculations for hexes where Z == 1.
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, skipLabel); // Continue;
 
                             yield return new CodeInstruction(OpCodes.Ldloc_S, surfaceLocationCountIndex);
                             yield return new CodeInstruction(OpCodes.Ldc_I4_1);
@@ -10117,7 +10117,7 @@ namespace CommunityLib
                 bool removed = false;
                 if (location.settlement == null || location.settlement is Set_MinorOther)
                 {
-                    if (!orcs.canGoUnderground() && (location.hex.z == 0 || location.hex.z == 1) && !orcMapLayers.Item2.Contains(location.hex.z))
+                    if (!orcs.canGoUnderground() && !orcMapLayers.Item2.Contains(location.hex.z))
                     {
                         location.soc = null;
                         removed = true;
@@ -10148,7 +10148,7 @@ namespace CommunityLib
                         {
                             if (ModCore.Get().checkIsNaturalWonder(neighbour) || (neighbour.settlement is Set_MinorOther && neighbour.settlement.subs.Any(sub => sub is Sub_Temple temple && temple.order is HolyOrder_Witches)))
                             {
-                                if (orcs.canGoUnderground() || ((location.hex.z == 0 || location.hex.z == 1) && orcMapLayers.Item2.Contains(location.hex.z)))
+                                if (orcs.canGoUnderground() || orcMapLayers.Item2.Contains(location.hex.z))
                                 {
                                     if (neighbour.hex.getHabilitability() >= map.param.orc_habRequirement * map.opt_orcHabMult)
                                     {
@@ -10278,15 +10278,9 @@ namespace CommunityLib
                 return false;
             }
 
-            if (!orcs.canGoUnderground())
+            if (!orcs.canGoUnderground() && !OrcMapLayers(orcs).Item2.Contains(location.hex.z))
             {
-                if (location.hex.z == 0 || location.hex.z == 1)
-                {
-                    if (OrcMapLayers(orcs).Item2.Count > 0 && !OrcMapLayers(orcs).Item2.Contains(location.hex.z))
-                    {
-                        return false;
-                    }
-                }
+                return false;
             }
 
             if (location.settlement != null)
@@ -10352,15 +10346,9 @@ namespace CommunityLib
                 return false;
             }
 
-            if (!orcSociety.canGoUnderground())
+            if (!orcSociety.canGoUnderground() && !OrcMapLayers(orcSociety).Item2.Contains(ua.location.hex.z))
             {
-                if (ua.location.hex.z == 0|| ua.location.hex.z == 1)
-                {
-                    if (OrcMapLayers(orcSociety).Item2.Count > 0 && !OrcMapLayers(orcSociety).Item2.Contains(ua.location.hex.z))
-                    {
-                        return false;
-                    }
-                }
+                return false;
             }
 
             if (ua.location.settlement != null)
@@ -10405,20 +10393,17 @@ namespace CommunityLib
             {
                 if (!orcSociety.canGoUnderground())
                 {
-                    if (ua.location.hex.z == 0 || ua.location.hex.z == 1)
+                    foreach (Location location in ua.map.locations)
                     {
-                        foreach (Location location in ua.map.locations)
+                        if (location.hex.z != ua.location.hex.z)
                         {
-                            if (location.hex.z != ua.location.hex.z)
-                            {
-                                continue;
-                            }
+                            continue;
+                        }
 
-                            if (location.soc == orcSociety && location.settlement is Set_OrcCamp camp && camp.specialism == 5)
-                            {
-                                //Console.WriteLine("CommunityLib: orc society has shipyard");
-                                return true;
-                            }
+                        if (location.soc == orcSociety && location.settlement is Set_OrcCamp camp && camp.specialism == 5)
+                        {
+                            //Console.WriteLine("CommunityLib: orc society has shipyard");
+                            return true;
                         }
                     }
                 }

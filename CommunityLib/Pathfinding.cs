@@ -1457,7 +1457,7 @@ namespace CommunityLib
             Location start = currentPath[0];
             if (start.map.awarenessOfUnderground < 1.0)
             {
-                if ((start.hex.z == 0 && location.hex.z == 1) || (start.hex.z == 1 && location.hex.z == 0))
+                if ((start.hex.z != 1 && location.hex.z == 1) || (start.hex.z == 1 && location.hex.z != 1))
                 {
                     //Console.WriteLine($"CommunityLib: Location {location.getName()} ({location.hex.z}) violates Underground Awareness rules for trade route originating from {currentPath[0].getName()} ({currentPath[0].hex.z})");
                     return 10000.0;
