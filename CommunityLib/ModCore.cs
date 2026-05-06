@@ -1131,6 +1131,10 @@ namespace CommunityLib
 
         private void getModKernels (Map map)
         {
+            ModIntegrationData coreData = new ModIntegrationData(null);
+            data.addModIntegrationData("Core", coreData);
+            coreData.methodInfoDict.Add("getGraphicalUnit", AccessTools.Method(typeof(PrefabStore), "getGraphicalUnit"));
+
             foreach (ModKernel kernel in World.staticMap.mods)
             {
                 Type t = kernel.GetType();

@@ -13,7 +13,6 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using static CommunityLib.AgentAI;
 
 namespace CommunityLib
 {
@@ -102,7 +101,7 @@ namespace CommunityLib
             // GraphicalHex hooks
             harmony.Patch(original: AccessTools.Method(typeof(GraphicalMap), nameof(GraphicalMap.checkLoaded), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(GraphicalMap_checkLoaded_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(GraphicalMap), nameof(GraphicalMap.checkData), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(GraphicalMap_checkData_Transpiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(GraphicalMap), nameof(GraphicalMap.purge), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(GraphicalMap_purge_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(GraphicalMap), nameof(GraphicalMap.purge), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(GraphicalMap_purge_Prefix)));
             harmony.Patch(original: AccessTools.Method(typeof(GraphicalHex), nameof(GraphicalHex.checkData), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(GraphicalHex_checkData_Transpiler)));
 
             // Graphical unit updated hook
@@ -753,17 +752,7 @@ namespace CommunityLib
                         continue;
                     }
 
-                    graphicalHex.checkData();
-                    if (graphicalHex.hex.location != null)
-                    {
-                        foreach (Unit unit in graphicalHex.hex.location.units)
-                        {
-                            if (unit.outer != null)
-                            {
-                                unit.outer.checkData();
-                            }
-                        }
-                    }
+                    GraphicalHex_CheckData_TranspilerBody(graphicalHex, false);
                 }
 
                 foreach (ModKernel mod in EnumerateModsThatApplyGraphicalHexUpdate(World.staticMap))
@@ -848,13 +837,13 @@ namespace CommunityLib
 
         private static void PrefabStore_GetGraphicalHex_TranspilerBody(GraphicalHex graphicalHex)
         {
-            foreach(ModKernel mod in EnumerateModsThatApplyGraphicalHexUpdate(graphicalHex.world.map))
+            foreach(ModKernel mod in EnumerateModsThatApplyGraphicalHexUpdate(graphicalHex.map))
             {
                 mod.onGraphicalHexUpdated(graphicalHex);
             }
         }
 
-        private static void GraphicalMap_purge_Postfix()
+        private static void GraphicalMap_purge_Prefix()
         {
             ModCore.Get().data.CameraCullingData.Clear();
         }
@@ -863,7 +852,18 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            int startIndex = -1;
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(GraphicalHex_CheckData_TranspilerBody), new Type[] { typeof(GraphicalHex), typeof(bool) });
+
+            yield return new CodeInstruction(OpCodes.Nop);
+            yield return new CodeInstruction(OpCodes.Ldarg_0);
+            yield return new CodeInstruction(OpCodes.Ldc_I4_1);
+            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+            yield return new CodeInstruction(OpCodes.Ret);
+
+            Console.WriteLine("CommunityLib: Completed complete function replacement transpiler GraphicalHex_checkData_Transpiler");
+
+            // Surgical alteration transpiler that removes modded interaction for all GraphicalHex.checkData calls.
+            /*int startIndex = -1;
             for (int i = instructionList.Count - 1; i >= 0; i--)
             {
                 if (instructionList[i].opcode == OpCodes.Nop && instructionList[i+1].opcode == OpCodes.Ldarg_0)
@@ -916,7 +916,7 @@ namespace CommunityLib
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
-            }
+            }*/
         }
 
         public static IEnumerable<ModKernel> EnumerateModsThatApplyGraphicalHexUpdate(Map map)
@@ -927,6 +927,804 @@ namespace CommunityLib
                 {
                     yield return kvp.Key;
                 }
+            }
+        }
+
+        private static void GraphicalHex_CheckData_TranspilerBody(GraphicalHex instance, bool isSingular)
+        {
+            StringBuilder sB = new StringBuilder();
+
+            try
+            {
+                // Recieve a validate base inputs
+                Hex hex = instance.hex;
+                if (hex == null)
+                {
+                    Console.WriteLine("CommunityLib: ERROR: GraphicalHex_checkData called with null hex.");
+                    return;
+                }
+                sB.AppendLine($"Hex: {hex.x}, {hex.y}, {hex.z}.");
+
+                instance.map = hex.map;
+                if (instance.map == null)
+                {
+                    Console.WriteLine("CommunityLib: ERROR: GraphicalHex_checkData called with null map.");
+                    return;
+                }
+                if (instance.map != World.staticMap)
+                {
+                    Console.WriteLine("CommunityLib: ERROR: GraphicalHex_checkData called with map that is not the world map.");
+                    return;
+                }
+                sB.AppendLine($"Validated map.");
+
+                instance.gameObject.transform.localScale = new Vector3(GraphicalMap.scale, GraphicalMap.scale, 1f);
+                sB.AppendLine($"Set local scale: {instance.gameObject.transform.localScale}.");
+
+                // Perform variable acquisition and base preperation.
+                Location location = hex.location;
+                float purity;
+                if (location != null)
+                {
+                    purity = (float)(1.0 - location.getShadow());
+                }
+                else
+                {
+                    purity = hex.purity;
+                }
+                sB.AppendLine($"Hex Purity: {purity}.");
+                MapMaskManager.maskType mask = MapMaskManager.maskType.NONE;
+
+                instance.floraLayer.enabled = true;
+                instance.busyLayer.color = Color.clear;
+                instance.busyLayer.sprite = null;
+                instance.cloudLayer.enabled = false;
+                instance.locLayer.color = Color.white;
+                instance.mask.enabled = false;
+                instance.mask.color = Color.clear;
+                sB.AppendLine($"Layers reset.");
+
+                instance.flag?.masterHider.SetActive(false);
+                sB.AppendLine($"Nation flag reset.");
+
+                // Calculate purity colour and assign terrain layer sprite.
+                float colourValue = 0.1f + 0.5f * purity;
+                Color colour;
+                Hex.terrainType terrain = hex.terrain;
+
+                sB.AppendLine($"Assigning terrin sprite and colour.");
+                if (terrain == Hex.terrainType.SEA)
+                {
+                    colourValue *= 0.5f;
+                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_sea[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_sea.Length];
+                    colour = new Color(colourValue, colourValue, colourValue);
+                }
+                else
+                {
+                    if (terrain == Hex.terrainType.JUNGLE || terrain == Hex.terrainType.SWAMP || terrain == Hex.terrainType.DESERT || terrain == Hex.terrainType.ARID)
+                    {
+                        colourValue *= 1.2f;
+                    }
+                    colour = new Color(colourValue, colourValue, colourValue);
+
+                    if (hex.isMountain)
+                    {
+                        if (hex.volcanicDamage > 0)
+                        {
+                            instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_volcanicMountain[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_volcanicMountain.Length];
+                        }
+                        else if (terrain == Hex.terrainType.ARCTIC || terrain == Hex.terrainType.SNOW || terrain == Hex.terrainType.TUNDRA)
+                        {
+                            instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_mountain_cold[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_mountain_cold.Length];
+                        }
+                        else
+                        {
+                            instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_mountain[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_mountain.Length];
+                        }
+                    }
+                    else if (terrain == Hex.terrainType.UNDERGROUND)
+                    {
+                        instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_underground[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_underground.Length];
+                    }
+                    else if (terrain == Hex.terrainType.BLACK)
+                    {
+                        instance.terrainLayer.sprite = instance.world.textureStore.hex_black;
+                    }
+                    else
+                    {
+                        switch (terrain)
+                        {
+                            case Hex.terrainType.VOLCANO:
+                                instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_volcanic[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_volcanic.Length];
+                                break;
+                            case Hex.terrainType.GRASS:
+                                if (hex.isHills)
+                                {
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_grassHills[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_grassHills.Length];
+                                }
+                                else if (hex.isForest)
+                                {
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_forest[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_forest.Length];
+                                }
+                                else
+                                {
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_grass[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_grass.Length];
+                                }
+                                break;
+                            case Hex.terrainType.PLAINS:
+                                if (hex.isForest)
+                                {
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_forest[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_forest.Length];
+                                }
+                                else
+                                {
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_plains[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_plains.Length];
+                                }
+                                break;
+                            case Hex.terrainType.SWAMP:
+                                if (hex.isForest)
+                                {
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_swampForest[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_swampForest.Length];
+                                }
+                                else
+                                {
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_swamp[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_swamp.Length];
+                                }
+                                break;
+                            case Hex.terrainType.JUNGLE:
+                                if (hex.isForest)
+                                {
+                                    // Vanilla game uses swamp forest for both swamp and jungle, despite there being a jungle set.
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_swampForest[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_swampForest.Length];
+                                }
+                                else
+                                {
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_swamp[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_swamp.Length];
+                                }
+                                break;
+                            case Hex.terrainType.MUD:
+                                instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_path;
+                                break;
+                            case Hex.terrainType.HIGHLAND:
+                                if (hex.isForest)
+                                {
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_pineForest[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_pineForest.Length];
+                                }
+                                else
+                                {
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_highland[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_highland.Length];
+                                }
+                                break;
+                            case Hex.terrainType.ARID:
+                                // Arid uses the Desert tiles, while Desert uses the arid tiles.
+                                if (hex.isHills)
+                                {
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_desertHills[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_desertHills.Length];
+                                }
+                                else if (hex.isForest)
+                                {
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_desertForest[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_desertForest.Length];
+                                }
+                                else
+                                {
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_desert[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_desert.Length];
+                                }
+                                break;
+                            case Hex.terrainType.DESERT:
+                                // Desert uses the arid tiles, while arid uses the desert tiles.
+                                if (hex.isHills)
+                                {
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_aridHills[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_aridHills.Length];
+                                }
+                                else if (hex.isForest)
+                                {
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_aridForest[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_aridForest.Length];
+                                }
+                                else
+                                {
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_arid[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_arid.Length];
+                                }
+                                break;
+                            case Hex.terrainType.DRY:
+                                if (hex.isHills || !hex.isForest)
+                                {
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_dry[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_dry.Length];
+                                }
+                                else
+                                {
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_forest[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_forest.Length];
+                                }
+                                break;
+                            case Hex.terrainType.DRYCOLD:
+                                if (hex.isForest)
+                                {
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_pineForest[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_pineForest.Length];
+                                }
+                                else if (hex.isHills)
+                                {
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_dryColdHills[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_dryColdHills.Length];
+                                }
+                                else
+                                {
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_dryCold[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_dryCold.Length];
+                                }
+                                break;
+                            case Hex.terrainType.SNOW:
+                                if (hex.isHills)
+                                {
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_snowHills[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_snowHills.Length];
+                                }
+                                else if (hex.isForest)
+                                {
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_snowForest[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_snowForest.Length];
+                                }
+                                else
+                                {
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_snow[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_snow.Length];
+                                }
+                                break;
+                            case Hex.terrainType.TUNDRA:
+                                if (hex.isHills)
+                                {
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_tundraHills[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_tundraHills.Length];
+                                }
+                                else if (hex.isForest)
+                                {
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_tundraForest[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_tundraForest.Length];
+                                }
+                                else
+                                {
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_tundra[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_tundra.Length];
+                                }
+                                break;
+                            case Hex.terrainType.ARCTIC:
+                                if (hex.isHills)
+                                {
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_tundraHills[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_tundraHills.Length];
+                                }
+                                else
+                                {
+                                    instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_arctic[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_arctic.Length];
+                                }
+                                break;
+                            default:
+                                instance.terrainLayer.sprite = instance.world.textureStore.hex_base;
+                                break;
+                        }
+                    }
+                }
+
+                if (instance.terrainLayer == null)
+                {
+                    Console.WriteLine($"CommunityLib: ERROR: GraphicalHex_checkData could not assign terrain layer sprite for terrain {terrain}, isForest {hex.isForest}, isHill {hex.isHills}, isMountain {hex.isMountain}.");
+                    return;
+                }
+                instance.terrainLayer.color = colour;
+                sB.AppendLine($"Assigned terrain sprite and colour.");
+
+                if (location != null)
+                {
+                    sB.AppendLine($"Location: {location.getName(true)}.");
+                    instance.locLayer.enabled = true;
+                    instance.locLayer.sprite = location.getSprite();
+
+                    if (instance.nameTag == null)
+                    {
+                        sB.AppendLine($"Instantiating nametag.");
+                        instance.nameTag = instance.world.prefabStore.getNameTag(location.getName(true), Color.white);
+                        instance.nameTag.transform.SetParent(instance.transform);
+                        instance.nameTag.gameObject.transform.localPosition = new Vector3(0f, -0.6f, -3.02f);
+                        instance.nameTag.gameObject.transform.localScale = new Vector3(0.015f, 0.015f, 1f);
+                    }
+                    else
+                    {
+                        sB.AppendLine($"Updating nametag.");
+                        instance.nameTag.gameObject.SetActive(true);
+                        instance.nameTag.gameObject.transform.localScale = new Vector3(0.015f, 0.015f, 1f);
+                    }
+                    sB.AppendLine($"Nametag updated.");
+
+                    if (MapMaskManager.maskingMod == null)
+                    {
+                        sB.AppendLine($"Managing vanilla masks");
+                        mask = instance.map.masker.mask;
+                        if (mask == MapMaskManager.maskType.SHADOW || mask == MapMaskManager.maskType.RULER_SHADOW || mask == MapMaskManager.maskType.MODIFIER_VIEWER)
+                        {
+                            if (instance.modifierStrength == null)
+                            {
+                                sB.AppendLine($"Instantiating modifier strength.");
+                                instance.modifierStrength = instance.world.prefabStore.getModifierStrength(location.getName(true), Color.white);
+                                instance.modifierStrength.gameObject.transform.SetParent(instance.transform);
+                                instance.modifierStrength.gameObject.transform.localPosition = new Vector3(0f, 0f, -3.02f);
+                                instance.modifierStrength.gameObject.transform.localScale = new Vector3(0.015f, 0.015f, 1f); // This should never need to be set more than once, but the base game does it every time.
+                            }
+                            else
+                            {
+                                sB.AppendLine($"Activating modifier strength.");
+                                instance.modifierStrength.gameObject.SetActive(true);
+                            }
+                            instance.modifierStrength.words.text = "";
+                            sB.AppendLine($"Modifier strength prepared.");
+
+                            switch (instance.map.masker.mask)
+                            {
+                                case MapMaskManager.maskType.SHADOW:
+                                    instance.modifierStrength.words.text = $"{(int)((1f - purity) * 100f)}%";
+                                    break;
+                                case MapMaskManager.maskType.MODIFIER_VIEWER:
+                                    if (instance.world.ui.uiScrollables?.scrollable_threats?.targetProperty != null)
+                                    {
+                                        foreach (Property pr in location.properties)
+                                        {
+                                            if (pr.GetType() == instance.world.ui.uiScrollables.scrollable_threats.targetProperty.GetType())
+                                            {
+                                                instance.modifierStrength.words.text = $"{(int)pr.charge}%";
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    else if (instance.world.ui.uiScrollables?.scrollable_threats?.pinnedProperty != null)
+                                    {
+                                        foreach (Property pr in location.properties)
+                                        {
+                                            if (pr.GetType() == instance.world.ui.uiScrollables.scrollable_threats.pinnedProperty.GetType())
+                                            {
+                                                instance.modifierStrength.words.text = $"{(int)pr.charge}%";
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    break;
+                                default:
+                                    break;
+                            }
+                            sB.AppendLine($"`Shadow` and `Modifier Viewer` masks processed.");
+                        }
+                        else if (instance.modifierStrength != null)
+                        {
+                            sB.AppendLine($"Deactivating modifier strength.");
+                            instance.modifierStrength.gameObject.SetActive(false);
+                        }
+                        sB.AppendLine($"Vanilla masks processed");
+                    }
+                    else if (instance.modifierStrength != null)
+                    {
+                        sB.AppendLine($"Deactivating modifier strength.");
+                        instance.modifierStrength.gameObject.SetActive(false);
+                    }
+
+                    if (location.settlement != null)
+                    {
+                        sB.AppendLine($"Settlement: {location.getName(true)}.");
+                        if (location.soc == null)
+                        {
+                            sB.AppendLine($"Social Group: NULL.");
+                            instance.nameTag.words.color = new Color(0.7f, 0.7f, 0.5f);
+                        }
+                        else
+                        {
+                            sB.AppendLine($"Social Group: {location.soc.getName()}.");
+                            Color socColour = location.soc.color;
+                            float colourBrightness = socColour.r + socColour.g + socColour.b;
+                            if (colourBrightness > 0.5f)
+                            {
+                                instance.nameTag.words.color = socColour;
+                            }
+                            else
+                            {
+                                instance.nameTag.words.color = new Color(0.7f, 0.7f, 0.5f);
+                            }
+                            sB.AppendLine($"Assigned nametag colour: {instance.nameTag.words.color}");
+
+                            if (hex == location.soc.getCapitalHex())
+                            {
+                                sB.AppendLine($"Capital.");
+                                if (instance.flag == null)
+                                {
+                                    sB.AppendLine($"Instantiating national flag.");
+                                    instance.flag = instance.world.prefabStore.getNationFlag(location.soc);
+                                    instance.flag.gameObject.transform.SetParent(instance.transform);
+                                    instance.flag.gameObject.transform.localPosition = new Vector3(0f, -0.61f, -3.03f);
+                                    instance.flag.gameObject.transform.localScale = new Vector3(0.005f, 0.005f, 1f);
+                                }
+                                else
+                                {
+                                    sB.AppendLine($"Updating national flag.");
+                                    instance.flag.masterHider.SetActive(true);
+                                    instance.flag.setTo(hex.location.soc);
+                                }
+                                sB.AppendLine($"National flag processed.");
+                            }
+                        }
+
+                        if (location.settlement is SettlementHuman settlementHuman)
+                        {
+                            sB.AppendLine($"Settleemnt is SettlementHuman");
+                            instance.nameTag.securityBubble.gameObject.SetActive(true);
+                            instance.nameTag.securityNumber.text = settlementHuman.getSecurity(null).ToString();
+                            sB.AppendLine($"Security bubble set.");
+
+                            if (mask == MapMaskManager.maskType.RULER_SHADOW && settlementHuman.ruler != null)
+                            {
+                                sB.AppendLine($"Ruler shadow mask applies");
+                                instance.modifierStrength.words.text = $"{(int)(settlementHuman.ruler.shadow * 100.0)}%";
+                            }
+                            sB.AppendLine($"`Ruler Shadow` mask procssed.");
+                        }
+                        else
+                        {
+                            sB.AppendLine($"Deactivatin security bubble.");
+                            instance.nameTag.securityBubble.gameObject.SetActive(false);
+                        }
+                        sB.AppendLine($"SettlementHuman processed.");
+                    }
+                    else
+                    {
+                        sB.AppendLine($"Deactivating name tag.");
+                        instance.nameTag.words.text = hex.location.getName(true);
+                        instance.nameTag.words.color = new Color(0.7f, 0.7f, 0.5f);
+                        instance.nameTag.securityBubble.gameObject.SetActive(false);
+                    }
+                    sB.AppendLine($"Settleemnt Processed");
+
+                    God_Mammon mammon = instance.map.overmind.god as God_Mammon;
+                    Pr_MammonsInfluence mammonsInfluence = null;
+                    double foregroundCharge = 50.0;
+                    Color foregroundColour = Color.white;
+                    Sprite foregroundSprite = null;
+                    double backgroundCharge = 50.0;
+                    Color backgroundColour = Color.white;
+                    Sprite backgroundSprite = null;
+
+                    sB.AppendLine($"Processing units.");
+                    foreach (Unit unit in location.units)
+                    {
+                        if (unit.outer == null)
+                        {
+                            if (ModCore.Get().data.tryGetModIntegrationData("Core", out ModIntegrationData coreIntData) && coreIntData != null && coreIntData.methodInfoDict.TryGetValue("getGraphicalUnit", out MethodInfo MI_getGraphicalUnit) && MI_getGraphicalUnit != null)
+                            {
+                                unit.outer = (GraphicalUnit)MI_getGraphicalUnit.Invoke(instance.world.prefabStore, new object[] { instance.map, unit });
+                                unit.outer.checkData();
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLibrary: ERROR: Could not resolve core method PrefabStore.getGraphicalUnit.");
+                            }
+                        }
+
+                        if (unit.isDead || unit.task == null)
+                        {
+                            continue;
+                        }
+
+                        if (foregroundSprite == null)
+                        {
+                            if (unit.task is Task_InBattle)
+                            {
+                                foregroundSprite = instance.world.textureStore.icon_combat;
+                                foregroundCharge = double.MaxValue;
+                            }
+                            else if (unit.task is Task_PerformChallenge challenge && challenge.challenge.isChannelled())
+                            {
+                                foregroundSprite = instance.world.textureStore.cloud_magicChannelling;
+                                foregroundCharge = double.MaxValue;
+                            }
+                        }
+                    }
+
+                    sB.AppendLine($"Processing properties.");
+                    foreach (Property property in location.properties)
+                    {
+                        if (property.charge > 0.0)
+                        {
+                            if (property is Pr_MammonsInfluence influence)
+                            {
+                                mammonsInfluence = influence;
+                                if (influence.hasBackgroundHexView())
+                                {
+                                    backgroundCharge = property.charge;
+                                    backgroundColour = new Color(1f, 1f, 1f, property.getHexBackgroundViewOpacity());
+                                    backgroundSprite = property.getHexBackgroundSprite();
+                                }
+                                else
+                                {
+                                    backgroundCharge = property.charge;
+                                    backgroundColour = new Color(1f, 1f, 1f, (float)Math.Min(1.0, property.charge / 100.0));
+                                    backgroundSprite = instance.world.textureStore.loc_icon_mammon;
+                                }
+                                break;
+                            }
+
+                            if (property.hasBackgroundHexView())
+                            {
+                                if (property.charge > backgroundCharge)
+                                {
+                                    backgroundCharge = property.charge;
+                                    backgroundColour = new Color(1f, 1f, 1f, property.getHexBackgroundViewOpacity());
+                                    backgroundSprite = property.getHexBackgroundSprite();
+                                }
+                            }
+                            else if (property.charge > backgroundCharge)
+                            {
+                                switch (property)
+                                {
+                                    case Pr_Devastation _:
+                                        backgroundCharge = property.charge;
+                                        backgroundColour = new Color(1f, 1f, 1f, (float)Math.Min(1.0, property.charge / 100.0));
+                                        backgroundSprite = instance.world.textureStore.loc_icon_devastation;
+                                        break;
+                                    case Pr_Ward _:
+                                        backgroundCharge = property.charge;
+                                        backgroundColour = new Color(1f, 1f, 1f, (float)Math.Min(0.8, property.charge / 130.0));
+                                        backgroundSprite = instance.world.textureStore.loc_icon_ward;
+                                        break;
+                                    case Pr_Opha_Faith _:
+                                        backgroundCharge = property.charge;
+                                        backgroundColour = new Color(1f, 1f, 1f, (float)Math.Min(0.8, property.charge / 130.0));
+                                        if (location.settlement is SettlementHuman settlementHuman && settlementHuman.ophanimTakeOver)
+                                        {
+                                            backgroundSprite = instance.world.textureStore.loc_icon_ophaPerfect;
+                                        }
+                                        else
+                                        {
+                                            backgroundSprite = instance.world.textureStore.loc_icon_opha;
+                                        }
+                                        break;
+                                    case Pr_Opha_Doubt _:
+                                        backgroundCharge = property.charge;
+                                        backgroundColour = new Color(1f, 1f, 1f, (float)Math.Min(1.0, (property.charge + 50.0) / 100.0));
+                                        backgroundSprite = instance.world.textureStore.loc_icon_ophaDoubt;
+                                        break;
+                                }
+                            }
+
+                            if (World.showLocStatuses && !ModCore.Get().checkIsElderTomb(location) && mammon == null)
+                            {
+                                if (property.charge > foregroundCharge && property.hasHexView())
+                                {
+                                    foregroundCharge = property.charge;
+                                    foregroundSprite = property.hexViewSprite();
+                                }
+                            }
+                        }
+                    }
+
+                    if (mammon != null && mammonsInfluence == null)
+                    {
+                        sB.AppendLine($"Processing Mammon's Influence background sprite.");
+                        foreach (Location neighbour in location.getNeighbours())
+                        {
+                            Pr_MammonsInfluence influence = (Pr_MammonsInfluence)neighbour.properties.FirstOrDefault(pr => pr is Pr_MammonsInfluence);
+                            if (influence != null)
+                            {
+                                if (influence.hasBackgroundHexView())
+                                {
+                                    backgroundCharge = influence.charge;
+                                    backgroundColour = new Color(1f, 1f, 1f, influence.getHexBackgroundViewOpacity());
+                                    backgroundSprite = influence.getHexBackgroundSprite();
+                                }
+                                else
+                                {
+                                    backgroundCharge = influence.charge;
+                                    backgroundColour = Color.white;
+                                    backgroundSprite = instance.world.textureStore.loc_icon_mammonOther;
+                                }
+                            }
+                        }
+                    }
+
+                    if (backgroundSprite != null)
+                    {
+                        instance.busyLayer.sprite = backgroundSprite;
+                        instance.busyLayer.color = backgroundColour;
+                        sB.AppendLine($"Background sprite assigned.");
+                    }
+
+                    if (foregroundSprite != null)
+                    {
+                        instance.cloudLayer.sprite = foregroundSprite;
+                        instance.cloudLayer.enabled = true;
+                        sB.AppendLine($"Foreground sprite assigned.");
+                    }
+                }
+                else
+                {
+                    instance.floraLayer.enabled = false;
+                    instance.locLayer.enabled = false;
+                    instance.nameTag?.gameObject.SetActive(false);
+                    instance.modifierStrength?.gameObject.SetActive(false);
+                    sB.AppendLine($"Disabled loc layer.");
+                }
+                sB.AppendLine($"Location processed.");
+
+                sB.AppendLine($"Processing borders.");
+                mask = instance.map.masker.mask;
+                Hex neighbourHex = null;
+                for (int i = 0; i < 6; i++)
+                {
+                    switch (i)
+                    {
+                        case 0:
+                            neighbourHex = instance.map.getNeighbourRelative(hex, 0, false); // Left Hex
+                            sB.AppendLine($"Processing left borders.");
+                            break;
+                        case 1:
+                            neighbourHex = instance.map.getNeighbourRelative(hex, -1, false); // Lower-Left Hex
+                            sB.AppendLine($"Processing lower-left borders.");
+                            break;
+                        case 2:
+                            neighbourHex = instance.map.getNeighbourRelative(hex, -1, true); // Lower-Right Hex
+                            sB.AppendLine($"Processing lower-right borders.");
+                            break;
+                        case 3:
+                            neighbourHex = instance.map.getNeighbourRelative(hex, 0, true); // Right Hex
+                            sB.AppendLine($"Processing right borders.");
+                            break;
+                        case 4:
+                            neighbourHex = instance.map.getNeighbourRelative(hex, 1, true); // Upper-Right Hex
+                            sB.AppendLine($"Processing upper-right borders.");
+                            break;
+                        case 5:
+                            neighbourHex = instance.map.getNeighbourRelative(hex, 1, false); // Upper-Left Hex
+                            sB.AppendLine($"Processing upper-left borders.");
+                            break;
+                    }
+
+                    bool displayBorder = true;
+                    if (mask != MapMaskManager.maskType.NONE && MapMaskManager.maskingMod == null)
+                    {
+                        displayBorder = false;
+                    }
+                    else if (neighbourHex == null)
+                    {
+                        displayBorder = false;
+                    }
+                    else if (hex.owner == null)
+                    {
+                        displayBorder = false;
+                    }
+                    else if (neighbourHex.owner == hex.owner)
+                    {
+                        displayBorder = false;
+                    }
+                    else if (neighbourHex.territoryOf == hex.territoryOf)
+                    {
+                        displayBorder = false;
+                    }
+                    else if (terrain == Hex.terrainType.SEA && hex.owner == null)
+                    {
+                        displayBorder = false;
+                    }
+                    else if (neighbourHex.terrain == Hex.terrainType.SEA && neighbourHex.owner == null)
+                    {
+                        displayBorder = false;
+                    }
+
+                    if (displayBorder)
+                    {
+                        if (instance.borders[i] == null)
+                        {
+                            sB.AppendLine($"Instantiating border 1.");
+                            instance.borders[i] = instance.world.prefabStore.getHexEdgeSprite();
+                            instance.borders[i].transform.SetParent(instance.transform);
+                            instance.borders[i].transform.localPosition = new Vector3(0f, 0f, -0.21f);
+                            instance.borders[i].transform.Rotate(new Vector3(0f, 0f, 60 * (i + 3)));
+                        }
+
+                        if (instance.borders2[i] == null)
+                        {
+                            sB.AppendLine($"Instantiating border 2.");
+                            instance.borders2[i] = instance.world.prefabStore.getHexEdge2Sprite();
+                            instance.borders2[i].transform.SetParent(instance.transform);
+                            instance.borders2[i].transform.localPosition = new Vector3(0f, 0f, -0.21f);
+                            instance.borders2[i].transform.Rotate(new Vector3(0f, 0f, 60 * (i + 3)));
+                        }
+
+                        sB.AppendLine($"Updating borders.");
+                        instance.borders[i].SetActive(true);
+                        instance.borders[i].GetComponent<SpriteRenderer>().color = hex.owner.color;
+                        instance.borders[i].gameObject.transform.localScale = Vector3.one;
+
+                        instance.borders2[i].SetActive(true);
+                        instance.borders2[i].GetComponent<SpriteRenderer>().color = hex.owner.color2;
+                        instance.borders2[i].gameObject.transform.localScale = Vector3.one;
+                        sB.AppendLine($"Borders processed.");
+                    }
+                    else
+                    {
+                        sB.AppendLine($"Deactivating borders.");
+                        instance.borders[i]?.SetActive(false);
+                        instance.borders2[i]?.SetActive(false);
+                    }
+                }
+                sB.AppendLine($"Borders processed.");
+
+                if (instance.world.selector != null)
+                {
+                    sB.AppendLine($"Cast selector is not null.");
+                    if (!instance.world.selector.canTarget(hex))
+                    {
+                        sB.AppendLine($"Can target hex.");
+                        instance.locLayer.color = new Color(0.2f, 0.2f, 0.2f);
+                        instance.terrainLayer.color = new Color(0.2f, 0.2f, 0.2f);
+                        for (int i = 0; i < 6; i++)
+                        {
+                            if (instance.borders[i] != null)
+                            {
+                                SpriteRenderer renderer = instance.borders[i]?.GetComponent<SpriteRenderer>();
+                                if (renderer != null)
+                                {
+                                    renderer.color = Color.black;
+                                }
+                            }
+                            if (instance.borders2[i] != null)
+                            {
+                                SpriteRenderer renderer = instance.borders2[i]?.GetComponent<SpriteRenderer>();
+                                if (renderer != null)
+                                {
+                                    renderer.color = Color.black;
+                                }
+                            }
+                        }
+                    }
+                }
+                sB.AppendLine($"Cast selector processed.");
+
+                if ((mask != MapMaskManager.maskType.NONE || MapMaskManager.maskingMod != null) && instance.map.masker.applyMask(hex))
+                {
+                    sB.AppendLine($"Processing mask colour.");
+                    if (mask == MapMaskManager.maskType.NATION)
+                    {
+                        instance.mask.color = instance.map.masker.getColor(hex);
+                        instance.mask.enabled = true;
+                        sB.AppendLine($"Nation colours assigned: {instance.mask.color}.");
+                    }
+                    else
+                    {
+                        if (instance.map.masker.needSimpleTerrainBackground(hex))
+                        {
+                            sB.AppendLine($"Simplifying terrain sprite.");
+                            instance.terrainLayer.sprite = instance.world.textureStore.hex_simplified;
+                        }
+
+                        Color maskColour = instance.map.masker.getColor(hex);
+                        if (maskColour.a != 0f || maskColour.r != 0f || maskColour.g != 0f || maskColour.b != 0f)
+                        {
+                            instance.terrainLayer.color = maskColour;
+                            instance.locLayer.color = maskColour;
+                            sB.AppendLine($"Mask colour assigned: {instance.terrainLayer.color}.");
+                        }
+                    }
+                }
+                else if (instance.map.locations[hex.territoryOf].soc != null && GraphicalMap.selectedUnit != null && instance.map.locations[hex.territoryOf].soc != GraphicalMap.selectedUnit.society && instance.map.locations[hex.territoryOf].soc.getRel(GraphicalMap.selectedUnit.society).state == DipRel.dipState.war)
+                {
+                    instance.mask.enabled = true;
+                    instance.mask.color = new Color(0.8f, 0f, 0f, 0.25f);
+                    sB.AppendLine($"Hostility colour assigned: {instance.mask.color}.");
+                }
+                sB.AppendLine($"Mask colour processed.");
+
+                if (isSingular)
+                {
+                    sB.AppendLine($"Calling mod updates.");
+                    CameraCullingData cullingData = ModCore.Get().data.CameraCullingData;
+                    foreach (ModKernel mod in EnumerateModsThatApplyGraphicalHexUpdate(instance.map))
+                    {
+                        if (cullingData.Loaded.Contains(instance))
+                        {
+                            continue;
+                        }
+
+                        mod.onGraphicalHexUpdated(instance);
+                    }
+                }
+                sB.AppendLine($"Mod updates processed.");
+                sB.AppendLine($"Method complete.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(sB.ToString());
+                throw ex;
             }
         }
 
