@@ -17,9 +17,18 @@ namespace CommunityLib
         public ModIntegrationData(ModKernel modKernel)
         {
             kernel = modKernel;
-            assembly = modKernel.GetType().Assembly;
-            
-            typeDict = new Dictionary<string, Type> { { "Kernel", kernel.GetType() } };
+            if (kernel != null)
+            {
+                assembly = modKernel.GetType().Assembly;
+
+                typeDict = new Dictionary<string, Type> { { "Kernel", kernel.GetType() } };
+            }
+            else
+            {
+                assembly = typeof(Assets.Code.World).Assembly;
+                typeDict = new Dictionary<string, Type>();
+            }
+
             methodInfoDict = new Dictionary<string, MethodInfo>();
             fieldInfoDict = new Dictionary<string, FieldInfo>();
             constructorInfoDict = new Dictionary<string, ConstructorInfo>();
