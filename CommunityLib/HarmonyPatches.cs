@@ -943,7 +943,7 @@ namespace CommunityLib
                     Console.WriteLine("CommunityLib: ERROR: GraphicalHex_checkData called with null hex.");
                     return;
                 }
-                sB.AppendLine($"Hex: {hex.x}, {hex.y}, {hex.z}.");
+                sB.AppendLine($"Hex: {hex.x}, {hex.y}.");
 
                 instance.map = hex.map;
                 if (instance.map == null)
@@ -1021,14 +1021,6 @@ namespace CommunityLib
                         {
                             instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_mountain[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_mountain.Length];
                         }
-                    }
-                    else if (terrain == Hex.terrainType.UNDERGROUND)
-                    {
-                        instance.terrainLayer.sprite = instance.world.textureStore.hex_terrain_underground[hex.graphicalIndexer % instance.world.textureStore.hex_terrain_underground.Length];
-                    }
-                    else if (terrain == Hex.terrainType.BLACK)
-                    {
-                        instance.terrainLayer.sprite = instance.world.textureStore.hex_black;
                     }
                     else
                     {
