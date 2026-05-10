@@ -85,6 +85,9 @@
     <Compile Include="HexGridUtils.cs" />
     <Compile Include="HooksDelegateRegistry.cs" />
     <Compile Include="MapMaskData.cs" />
+    <Compile Include="Serilialization\MarkovModelConverter.cs" />
+    <Compile Include="Serilialization\NDimensionalArrayConverter.cs" />
+    <Compile Include="Serilialization\PathTraceObjectProcessor.cs" />
     <Compile Include="Pair.cs" />
     <Compile Include="PowerDelayed.cs" />
     <Compile Include="Rt_TemptRuler.cs" />
