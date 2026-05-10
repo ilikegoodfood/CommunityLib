@@ -1,5 +1,7 @@
 ﻿using Assets.Code;
 using Assets.Code.Modding;
+using CommunityLib.Serialization;
+using FullSerializer;
 using HarmonyLib;
 using System;
 using System.Collections.Generic;
@@ -232,6 +234,9 @@ namespace CommunityLib
 
             // Auto Relaunch
             harmony.Patch(original: AccessTools.Method(typeof(PopupModConfig), nameof(PopupModConfig.dismiss), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(PopupModConfig_dismiss_transpiler)));
+
+            // Save Load Fixes
+            harmony.Patch(original: AccessTools.Method(typeof(World), nameof(World.save), new Type[] { typeof(string), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(World_save_Transpiler)));
 
             // Event Fixes
             harmony.Patch(original: AccessTools.Method(typeof(EventManager), "chooseContext", new Type[] { typeof(EventManager.ActiveEvent), typeof(IEnumerable<EventContext>) }), transpiler: new HarmonyMethod(patchType, nameof(EventManager_chooseContext_Transpiler)));
@@ -617,6 +622,94 @@ namespace CommunityLib
 
             // Template Patch
             // harmony.Patch(original: AccessTools.Method(typeof(), nameof(), new Type[] { typeof() }), postfix: new HarmonyMethod(patchType, nameof()));
+        }
+
+        // Save Game Fixes
+        private static IEnumerable<CodeInstruction> World_save_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody_Serializer = AccessTools.Method(patchType, nameof(World_save_TranspilerBody_Serializer), new Type[] { typeof(fsSerializer) });
+            MethodInfo MI_TranspilerBody_Log = AccessTools.Method(patchType, nameof(World_save_TranspilerBody_Log), Type.EmptyTypes);
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i+1].opcode == OpCodes.Ldtoken)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 5);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Serializer);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Leave_S)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Leave_S)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 4)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i-1].opcode == OpCodes.Call)
+                        {
+                            yield return new CodeInstruction(OpCodes.Nop);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Log);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed World_save_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static void World_save_TranspilerBody_Serializer(fsSerializer serializer)
+        {
+            serializer.AddProcessor(new PathTraceObjectProcessor());
+            serializer.AddConverter(new NDimensionalArrayConverter());
+            serializer.AddConverter(new MarkovModelConverter());
+        }
+
+        private static void World_save_TranspilerBody_Log()
+        {
+            Stack<(Type ObjectType, Type StorageType)> pathStack = PathTraceObjectProcessor.PathStack;
+            StringBuilder pathBuilder = new StringBuilder();
+
+            while (pathStack.Count > 0)
+            {
+                (Type ObjectType, Type StorageType) pathData = pathStack.Pop();
+                pathBuilder.Append(pathData.ObjectType?.FullName ?? "NULL");
+                pathBuilder.Append(" - ");
+                pathBuilder.AppendLine(pathData.StorageType.FullName);
+            }
+
+            string path = pathBuilder.ToString();
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                path = "Root";
+            }
+
+            Console.WriteLine($"CommunityLib: Serialization Type Stack: {path}");
         }
 
         // Graphical Hex checkData hook
