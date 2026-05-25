@@ -5713,7 +5713,10 @@ namespace CommunityLib
 
                             targetIndex++;
                         }
-                        else if (instructionList[i].opcode == OpCodes.Ldarg_0)
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0)
                         {
                             returnCode = true;
 
@@ -5803,7 +5806,10 @@ namespace CommunityLib
 
                             targetIndex++;
                         }
-                        else if (instructionList[i].opcode == OpCodes.Ldarg_0)
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0)
                         {
                             returnCode = true;
 
