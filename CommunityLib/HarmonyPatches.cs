@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -359,7 +360,8 @@ namespace CommunityLib
             // CaptureLocation
             harmony.Patch(original: AccessTools.Method(typeof(Task_CaptureLocation), nameof(Task_CaptureLocation.turnTick), new Type[] { typeof(Unit) }), transpiler: new HarmonyMethod(patchType, nameof(Task_CaptureLocation_turnTick_Transpiler)));
             // PerformChallenge
-            harmony.Patch(original: AccessTools.Method(typeof(Task_PerformChallenge), nameof(Task_PerformChallenge.getLong), new Type[] { typeof(Unit) }), transpiler: new HarmonyMethod(patchType, nameof(Task_PerformChallenge_getLong_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Task_PerformChallenge), nameof(Task_PerformChallenge.getShort), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(Task_PerformChallenge_getShort_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(Task_PerformChallenge), nameof(Task_PerformChallenge.getLong), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Task_PerformChallenge_getLong_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Task_PerformChallenge), nameof(Task_PerformChallenge.turnTick), new Type[] { typeof(Unit) }), transpiler: new HarmonyMethod(patchType, nameof(Task_PerformChallenge_turnTick_Transpiler)));
 
             // Item Fixes
@@ -4878,6 +4880,18 @@ namespace CommunityLib
         }
 
         // Perform Challenge
+        private static void Task_PerformChallenge_getShort_Postfix(ref string __result, Task_PerformChallenge __instance)
+        {
+            if (__instance.challenge.GetType().Name.ToLower(CultureInfo.InvariantCulture).StartsWith("mg_"))
+            {
+                __result = $"Spell {__instance.challenge.getName()}";
+            }
+            else if (__instance.challenge is Ritual)
+            {
+                __result = $"Ritual {__instance.challenge.getName()}";
+            }
+        }
+
         private static IEnumerable<CodeInstruction> Task_PerformChallenge_getLong_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
