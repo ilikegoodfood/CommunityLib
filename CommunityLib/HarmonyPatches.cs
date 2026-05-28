@@ -359,6 +359,7 @@ namespace CommunityLib
             // CaptureLocation
             harmony.Patch(original: AccessTools.Method(typeof(Task_CaptureLocation), nameof(Task_CaptureLocation.turnTick), new Type[] { typeof(Unit) }), transpiler: new HarmonyMethod(patchType, nameof(Task_CaptureLocation_turnTick_Transpiler)));
             // PerformChallenge
+            harmony.Patch(original: AccessTools.Method(typeof(Task_PerformChallenge), nameof(Task_PerformChallenge.getLong), new Type[] { typeof(Unit) }), transpiler: new HarmonyMethod(patchType, nameof(Task_PerformChallenge_getLong_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Task_PerformChallenge), nameof(Task_PerformChallenge.turnTick), new Type[] { typeof(Unit) }), transpiler: new HarmonyMethod(patchType, nameof(Task_PerformChallenge_turnTick_Transpiler)));
 
             // Item Fixes
@@ -4877,6 +4878,108 @@ namespace CommunityLib
         }
 
         // Perform Challenge
+        private static IEnumerable<CodeInstruction> Task_PerformChallenge_getLong_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_ConcatStringPair = AccessTools.Method(typeof(string), nameof(string.Concat), new Type[] { typeof(string), typeof(string) });
+            MethodInfo MI_ConcatStringQuaretet = AccessTools.Method(typeof(string), nameof(string.Concat), new Type[] { typeof(string), typeof(string), typeof(string), typeof(string) });
+            MethodInfo MI_IntToString = AccessTools.Method(typeof(int), nameof(int.ToString), Type.EmptyTypes);
+
+            FieldInfo FI_TurnsTaken = AccessTools.Field(typeof(Task_PerformChallenge), nameof(Task_PerformChallenge.turnsTaken));
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldstr && (string)instructionList[i].operand == "This agent is performing challenge [")
+                        {
+                            instructionList[i].operand = "This agent is performing challenge ";
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldstr && (string)instructionList[i].operand == "] at ")
+                        {
+                            instructionList[i].operand = " at ";
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Call && instructionList[i+1].opcode == OpCodes.Stloc_1)
+                        {
+                            yield return instructionList[i];
+
+                            yield return new CodeInstruction(OpCodes.Ldstr, " (turns: ");
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_TurnsTaken);
+                            yield return new CodeInstruction(OpCodes.Call, MI_IntToString);
+                            yield return new CodeInstruction(OpCodes.Ldstr, ").");
+                            yield return new CodeInstruction(OpCodes.Call, MI_ConcatStringQuaretet);
+
+                            i++;
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 4)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldstr && (string)instructionList[i].operand == "This agent is performing challenge [")
+                        {
+                            instructionList[i].operand = "This agent is performing challenge ";
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 5)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldstr && (string)instructionList[i].operand == "] at ")
+                        {
+                            instructionList[i].operand = " at ";
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 4)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldstr && (string)instructionList[i].operand == " Progress: ")
+                        {
+                            instructionList[i].operand = " (progress: ";
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 5)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Call && instructionList[i-1].opcode == OpCodes.Stelem_Ref)
+                        {
+                            yield return instructionList[i];
+                            yield return new CodeInstruction(OpCodes.Ldstr, ").");
+                            yield return new CodeInstruction(OpCodes.Call, MI_ConcatStringPair);
+
+                            i++;
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+
+            }
+
+            Console.WriteLine("CommunityLib: Completed Task_PerformChallenge_getLong_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
         private static IEnumerable<CodeInstruction> Task_PerformChallenge_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
@@ -4902,6 +5005,41 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
+                        if (instructionList[i].opcode == OpCodes.Ldstr && (string)instructionList[i].operand == ": No Longer Valid")
+                        {
+                            instructionList[i].operand = ": No longer valid.";
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldstr && (string)instructionList[i].operand == ") cancelling")
+                        {
+                            instructionList[i].operand = ") cancelling.";
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldstr && (string)instructionList[i].operand == ": No Longer Valid for ")
+                        {
+                            instructionList[i].operand = ": No longer valid for ";
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 4)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldc_I4_S)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldstr, ".");
+                            yield return new CodeInstruction(OpCodes.Call, MI_ConcatStringPair);
+                        }
+                    }
+                    else if (targetIndex == 5)
+                    {
                         if (i > 4 && instructionList[i].opcode == OpCodes.Ldfld && instructionList[i-1].opcode == OpCodes.Ldarg_0 && instructionList[i+1].opcode == OpCodes.Ldc_R8) // Find if (progress == 0.0)
                         {
                             instructionList[i].operand = FI_turnsTaken; // Change to if (turnsTaken == 0)
@@ -4912,14 +5050,14 @@ namespace CommunityLib
                             targetIndex++;
                         }
                     }
-                    else if (targetIndex == 2)
+                    else if (targetIndex == 6)
                     {
                         if (instructionList[i].opcode == OpCodes.Isinst) // Inside the turnsTaken == 0 block, find the first isinst UA check
                         {
                             targetIndex++;
                         }
                     }
-                    else if (targetIndex == 3) // After the isinst, find the following brfalse and change it to so that it goes to the else block for non-UA units that we are adding
+                    else if (targetIndex == 7) // After the isinst, find the following brfalse and change it to so that it goes to the else block for non-UA units that we are adding
                     {
                         if (instructionList[i].opcode == OpCodes.Brfalse_S)
                         {
@@ -4929,14 +5067,15 @@ namespace CommunityLib
                             targetIndex++;
                         }
                     }
-                    else if (targetIndex == 4)
+                    else if (targetIndex == 8)
                     {
                         if (instructionList[i].opcode == OpCodes.Nop && instructionList[i+1].opcode == OpCodes.Nop) // Find the end of the isInst UA block, to insert the new isInst UM block
                         {
-                            instructionList[i].labels.Add(notUALabel);
-                            yield return instructionList[i];
                             yield return new CodeInstruction(OpCodes.Br_S, notUMLabel); // When the is UA block ends, skip past the is UM check and block.
 
+                            instructionList[i].labels.Add(notUALabel);
+                            yield return instructionList[i];
+                            
                             yield return new CodeInstruction(OpCodes.Ldarg_1); // Load Unit
                             yield return new CodeInstruction(OpCodes.Isinst, typeof(UM)); // unit is UM
                             yield return new CodeInstruction(OpCodes.Stloc_S, umIndex); // store UM
@@ -4957,7 +5096,7 @@ namespace CommunityLib
                             i++;
                         }
                     }
-                    else if (targetIndex == 5)
+                    else if (targetIndex == 9)
                     {
                         if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i-1].opcode == OpCodes.Nop && instructionList[i-2].opcode == OpCodes.Nop) // Immediately after the turnsTaken == 0 block
                         {
@@ -4972,7 +5111,7 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Stfld, FI_turnsTaken);
                         }
                     }
-                    else if (targetIndex <= 11)
+                    else if (targetIndex <= 15)
                     {
                         if (instructionList[i].opcode == OpCodes.Ldc_I4_S) // Append "." to the end of each of the six "you may loose soon" messages.
                         {
@@ -4982,7 +5121,26 @@ namespace CommunityLib
                             targetIndex++;
                         }
                     }
-                    else if (targetIndex == 12)
+                    else if (targetIndex == 16)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldstr && (string)instructionList[i].operand == " completes: ")
+                        {
+                            instructionList[i].operand = " completes ";
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 17)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldstr, ".");
+                            yield return new CodeInstruction(OpCodes.Call, MI_ConcatStringPair);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 18)
                     {
                         if (instructionList[i].opcode == OpCodes.Stfld && instructionList[i-1].opcode == OpCodes.Add && instructionList[i-2].opcode == OpCodes.Ldc_I4_1 && (FieldInfo)instructionList[i].operand == FI_turnsTaken)
                         {
@@ -4992,14 +5150,14 @@ namespace CommunityLib
                             targetIndex++;
                         }
                     }
-                    else if (targetIndex == 13)
+                    else if (targetIndex == 19)
                     {
                         if (instructionList[i].opcode == OpCodes.Isinst && (Type)instructionList[i].operand == typeof(UM))
                         {
                             targetIndex++;
                         }
                     }
-                    else if (targetIndex == 14)
+                    else if (targetIndex == 20)
                     {
                         if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i+1].opcode == OpCodes.Ldarg_0)
                         {
@@ -5011,7 +5169,7 @@ namespace CommunityLib
                             targetIndex++;
                         }
                     }
-                    else if (targetIndex == 15)
+                    else if (targetIndex == 21)
                     {
                         if (instructionList[i].opcode == OpCodes.Ldloc_S)
                         {
@@ -5020,7 +5178,7 @@ namespace CommunityLib
                             targetIndex++;
                         }
                     }
-                    else if (targetIndex == 16)
+                    else if (targetIndex == 22)
                     {
                         if (instructionList[i].opcode == OpCodes.Stfld && instructionList[i-1].opcode == OpCodes.Add && instructionList[i-2].opcode == OpCodes.Ldc_I4_1 && (FieldInfo)instructionList[i].operand == FI_turnsTaken)
                         {
