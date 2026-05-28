@@ -285,6 +285,9 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(UA), nameof(UA.getAllValidChallenges), new Type[] { typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(UA_getAllValidChallenges_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(UAEN_OrcUpstart), nameof(UAEN_OrcUpstart.spendSkillPoint), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UAEN_OrcUpstart_spendSkillPoint_Transpiler)));
 
+            // Army Fixes
+            harmony.Patch(original: AccessTools.Method(typeof(UM_Refugees), nameof(UM_Refugees.mergeInto), new Type[] { typeof(UM_Refugees) }), transpiler: new HarmonyMethod(patchType, nameof(UM_Refugees_mergeInto_Transpiler)));
+
             // PortraitForeground Fixes
             harmony.Patch(original: AccessTools.Method(typeof(UM_HumanArmy), nameof(UM_HumanArmy.getPortraitForeground), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UM_HumanArmy_getPortraitForeground_Transpiler)));
 
@@ -397,6 +400,8 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Task_GoRazeSubsettlement), nameof(Task_GoRazeSubsettlement.turnTick), new Type[] { typeof(Unit) }), transpiler: new HarmonyMethod(patchType, nameof(Task_GoRazeSubsettlement_turnTick_Transpiler)));
             // CaptureLocation
             harmony.Patch(original: AccessTools.Method(typeof(Task_CaptureLocation), nameof(Task_CaptureLocation.turnTick), new Type[] { typeof(Unit) }), transpiler: new HarmonyMethod(patchType, nameof(Task_CaptureLocation_turnTick_Transpiler)));
+            // PerformChallenge
+            harmony.Patch(original: AccessTools.Method(typeof(Task_PerformChallenge), nameof(Task_PerformChallenge.turnTick), new Type[] { typeof(Unit) }), transpiler: new HarmonyMethod(patchType, nameof(Task_PerformChallenge_turnTick_Transpiler)));
 
             // Dwarven Changes //
             harmony.Patch(original: AccessTools.Constructor(typeof(Set_DwarvenCity), new Type[] { typeof(Location) }), postfix: new HarmonyMethod(patchType, nameof(Set_DwarvenCity_ctor_Postfix)));
@@ -622,6 +627,8 @@ namespace CommunityLib
 
             // Template Patch
             // harmony.Patch(original: AccessTools.Method(typeof(), nameof(), new Type[] { typeof() }), postfix: new HarmonyMethod(patchType, nameof()));
+
+            Harmony.DEBUG = false;
         }
 
         // Save Game Fixes
@@ -3352,7 +3359,6 @@ namespace CommunityLib
                 }
 
                 yield return instructionList[i];
-
             }
 
             Console.WriteLine("CommunityLib: Completed UA_getAllValidChallenges_Transpiler");
@@ -3363,6 +3369,59 @@ namespace CommunityLib
         }
 
         // Army Fixes
+        private static IEnumerable<CodeInstruction> UM_Refugees_mergeInto_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(UM_Refugees_mergeInto_TranspilerBody), new Type[] { typeof(UM_Refugees), typeof(UM_Refugees) });
+
+            int targetIndex = 1;
+            bool returnCode = true;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_1)
+                        {
+                            yield return instructionList[i];
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+
+                            targetIndex++;
+                            returnCode = false;
+                        }
+                    }
+                    if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Stfld)
+                        {
+                            returnCode = true;
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
+            }
+
+            Console.WriteLine("CommunityLib: Completed UM_Refugees_mergeInto_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static double UM_Refugees_mergeInto_TranspilerBody(UM_Refugees instance, UM_Refugees other)
+        {
+            return ((instance.shadow * instance.hp) + (other.shadow * other.hp)) / Math.Max(1, instance.hp + other.hp);
+        }
+
         private static IEnumerable<CodeInstruction> UM_HumanArmy_getPortraitForeground_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
@@ -3539,7 +3598,7 @@ namespace CommunityLib
                             Label stepsIsLessThanLabel = ilg.DefineLabel();
                             int stepDistanceIndex = ilg.DeclareLocal(typeof(int)).LocalIndex;
 
-                            // Insert a Br_s beofre the current line to skip the if else we are adding after the current line.
+                            // Insert a Br_s before the current line to skip the if else we are adding after the current line.
                             yield return new CodeInstruction(OpCodes.Br_S, skipIfElse);
 
                             // return the current line that has the break label attached.
@@ -5444,6 +5503,173 @@ namespace CommunityLib
             }
 
             Console.WriteLine("CommunityLib: Completed Task_CaptureLocation_turnTick_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        // Perform Challenge
+        private static IEnumerable<CodeInstruction> Task_PerformChallenge_turnTick_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_ConcatStringPair = AccessTools.Method(typeof(string), nameof(string.Concat), new Type[] { typeof(string), typeof(string) });
+            MethodInfo MI_GetCompletionMenace = AccessTools.Method(typeof(Challenge), nameof(Challenge.getCompletionMenaceAfterDifficulty), Type.EmptyTypes);
+            MethodInfo MI_IsChannelled = AccessTools.Method(typeof(Challenge), nameof(Challenge.isChannelled), Type.EmptyTypes);
+            MethodInfo MI_AddMenace = AccessTools.Method(typeof(Unit), nameof(Unit.addMenace), new Type[] { typeof(double) });
+
+            FieldInfo FI_turnsTaken = AccessTools.Field(typeof(Task_PerformChallenge), nameof(Task_PerformChallenge.turnsTaken));
+            FieldInfo FI_Challenge = AccessTools.Field(typeof(Task_PerformChallenge), nameof(Task_PerformChallenge.challenge));
+
+            int umIndex = ilg.DeclareLocal(typeof(UM)).LocalIndex;
+
+            Label notUALabel = ilg.DefineLabel();
+            Label notUMLabel = ilg.DefineLabel();
+            Label isChannelledUMLabel = ilg.DefineLabel();
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (i > 4 && instructionList[i].opcode == OpCodes.Ldfld && instructionList[i-1].opcode == OpCodes.Ldarg_0 && instructionList[i+1].opcode == OpCodes.Ldc_R8) // Find if (progress == 0.0)
+                        {
+                            instructionList[i].operand = FI_turnsTaken; // Change to if (turnsTaken == 0)
+                            yield return instructionList[i];
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_0);
+
+                            i += 2;
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Isinst) // Inside the turnsTaken == 0 block, find the first isinst UA check
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3) // After the isinst, find the following brfalse and change it to so that it goes to the else block for non-UA units that we are adding
+                    {
+                        if (instructionList[i].opcode == OpCodes.Brfalse_S)
+                        {
+                            notUMLabel = (Label)instructionList[i].operand; // Store the old false label as we will need to jump to it if the unit is not a UM
+                            instructionList[i].operand = notUALabel; // Change the operand to the new jump label.
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 4)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i+1].opcode == OpCodes.Nop) // Find the end of the isInst UA block, to insert the new isInst UM block
+                        {
+                            instructionList[i].labels.Add(notUALabel);
+                            yield return instructionList[i];
+                            yield return new CodeInstruction(OpCodes.Br_S, notUMLabel); // When the is UA block ends, skip past the is UM check and block.
+
+                            yield return new CodeInstruction(OpCodes.Ldarg_1); // Load Unit
+                            yield return new CodeInstruction(OpCodes.Isinst, typeof(UM)); // unit is UM
+                            yield return new CodeInstruction(OpCodes.Stloc_S, umIndex); // store UM
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, umIndex); // Load UM
+                            yield return new CodeInstruction(OpCodes.Ldnull);
+                            yield return new CodeInstruction(OpCodes.Cgt_Un);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, notUMLabel); // If null, jump to original false label
+
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, umIndex); // If true, load UM
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Challenge);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_GetCompletionMenace); // Get menace for challenge
+                            yield return new CodeInstruction(OpCodes.Conv_R8);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_AddMenace); // Apply to UM
+                            yield return new CodeInstruction(OpCodes.Nop);
+
+                            targetIndex++;
+                            i++;
+                        }
+                    }
+                    else if (targetIndex == 5)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i-1].opcode == OpCodes.Nop && instructionList[i-2].opcode == OpCodes.Nop) // Immediately after the turnsTaken == 0 block
+                        {
+                            CodeInstruction code = new CodeInstruction(OpCodes.Ldarg_0); // Increment turnTaken
+                            code.labels.AddRange(instructionList[i].labels);
+                            instructionList[i].labels.Clear();
+                            yield return code;
+                            yield return new CodeInstruction(OpCodes.Dup);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_turnsTaken);
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_1);
+                            yield return new CodeInstruction(OpCodes.Add);
+                            yield return new CodeInstruction(OpCodes.Stfld, FI_turnsTaken);
+                        }
+                    }
+                    else if (targetIndex <= 11)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldc_I4_S) // Append "." to the end of each of the six "you may loose soon" messages.
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldstr, ".");
+                            yield return new CodeInstruction(OpCodes.Call, MI_ConcatStringPair);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 12)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Stfld && instructionList[i-1].opcode == OpCodes.Add && instructionList[i-2].opcode == OpCodes.Ldc_I4_1 && (FieldInfo)instructionList[i].operand == FI_turnsTaken)
+                        {
+                            yield return new CodeInstruction(OpCodes.Pop);
+
+                            i++;
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 13)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Isinst && (Type)instructionList[i].operand == typeof(UM))
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 14)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i+1].opcode == OpCodes.Ldarg_0)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Challenge);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_IsChannelled);
+                            yield return new CodeInstruction(OpCodes.Brtrue_S, isChannelledUMLabel);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 15)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S)
+                        {
+                            instructionList[i].labels.Add(isChannelledUMLabel);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 16)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Stfld && instructionList[i-1].opcode == OpCodes.Add && instructionList[i-2].opcode == OpCodes.Ldc_I4_1 && (FieldInfo)instructionList[i].operand == FI_turnsTaken)
+                        {
+                            yield return new CodeInstruction(OpCodes.Pop);
+
+                            i++;
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+
+            }
+
+            Console.WriteLine("CommunityLib: Completed Task_PerformChallenge_turnTick_Transpiler");
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
