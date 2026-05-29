@@ -4882,35 +4882,49 @@ namespace CommunityLib
         // Perform Challenge
         private static void Task_PerformChallenge_getShort_Postfix(ref string __result, Task_PerformChallenge __instance)
         {
-            if (__instance.challenge.GetType().Name.ToLower(CultureInfo.InvariantCulture).StartsWith("mg_"))
+            if (__instance.challenge.isChannelled())
             {
-                __result = $"Spell {__instance.challenge.getName()}";
+                __result = $"Channelling {__instance.challenge.getName()}";
             }
-            else if (__instance.challenge is Ritual)
+            else
             {
-                __result = $"Ritual {__instance.challenge.getName()}";
+                __result = $"Performing {__instance.challenge.getName()}";
             }
         }
 
         public static void Task_PerformChallenge_getLong_Postfix(ref string __result, Task_PerformChallenge __instance)
         {
-            string challengeString = "performing challenge";
-            if (__instance.challenge.GetType().Name.ToLower(CultureInfo.InvariantCulture).StartsWith("mg_"))
+            string verb = "performing";
+            if (__instance.challenge.isChannelled())
             {
-                challengeString = "casting spell";
-            }
-            else if (__instance.challenge is Ritual)
-            {
-                challengeString = "performing ritual";
+                verb = "channelling";
             }
 
+            string noun = "challenge";
+            if (__instance.challenge is Ritual)
+            {
+                noun = "unit challenge";
+            }
+
+            if (__instance.challenge.GetType().Name.ToLower(CultureInfo.InvariantCulture).StartsWith("mg_"))
+            {
+                noun = "magic " + noun;
+            }
+
+            string period = " ";
             if (__instance.challenge.isIndefinite())
             {
-                __result = $"This agent is {challengeString} at {__instance.challenge.location} (turns: {__instance.turnsTaken}).";
+                period = " indefinite ";
             }
-            else
+
+            __result = $"This agent is {verb} the{period}{noun} \"{__instance.challenge.getName()}\" at {__instance.challenge.location} (progress: {(int)__instance.progress}/{(int)__instance.challenge.getComplexityAfterDifficulty()}).";
+            if (__instance.challenge.isIndefinite())
             {
-                __result = $"This agent is {challengeString} at {__instance.challenge.location} (progress: {(int)__instance.progress}).";
+                __result += $"\nThey will continue until the challenge stops being valid, they are interrupted, or they decide or are told to stop.";
+            }
+            if (__instance.challenge.isChannelled())
+            {
+                __result += $"\n\nChannelled challenges are rare and powerful effects.Hostile mages can bombard a chaneller by using the \"Geomancy: Attack Channeller\" challenge at a Geomantic Loci.";
             }
         }
 
