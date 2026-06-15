@@ -8330,7 +8330,7 @@ namespace CommunityLib
                     {
                         if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i-1].opcode == OpCodes.Nop && instructionList[i-2].opcode == OpCodes.Stloc_0)
                         {
-                            Label continueLabel = ilg.DefineLabel(); // Named true label because it is the label that is origigionally used to set te flag to true. The condition being checked below sets the flag to false if the society is dark, so we want to branch to the true label if it is not dark.
+                            Label continueLabel = ilg.DefineLabel();
                             bool found = false;
                             for (int j = i; j < instructionList.Count; j++) // Find the originial Brfalse instruction that is used to skip the section if the condition resolves to false.
                             {
@@ -8344,7 +8344,7 @@ namespace CommunityLib
 
                             if (!found)
                             {
-                                Console.WriteLine("CommunityLib: ERROR: Society_populateActions_Transpiler failed to find target Brfalse_S.");
+                                Console.WriteLine("CommunityLib: ERROR: Society_populateActions_Transpiler failed to find target Brfalse.");
                             }
                             else
                             {
@@ -8353,6 +8353,8 @@ namespace CommunityLib
                                 yield return new CodeInstruction(OpCodes.Callvirt, MI_ScoetyIsDark);
                                 yield return new CodeInstruction(OpCodes.Brtrue, continueLabel);
                             }
+
+                            targetIndex = 0;
                         }
                     }
                 }
