@@ -9585,6 +9585,7 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
+            MethodInfo MI_SocialGroupIsDark = AccessTools.Method(typeof(SocialGroup), nameof(SocialGroup.isDark), Type.EmptyTypes);
             MethodInfo MI_GetSGLayers = AccessTools.Method(patchType, nameof(GetSocialGroupLayers), new Type[] { typeof(Map) });
             MethodInfo MI_TranspilerBody_Society = AccessTools.Method(patchType, nameof(Society_populateActions_TranspilerBody_Society), new Type[] { typeof(Society), typeof(SocialGroup), typeof(Dictionary <SocialGroup, HashSet<int>>) });
             MethodInfo MI_TranspilerBody_Subsettlement = AccessTools.Method(patchType, nameof(Society_populateActions_TranspilerBody_Subsettlement), new Type[] { typeof(Society), typeof(Subsettlement), typeof(Dictionary<SocialGroup, HashSet<int>>) });
@@ -9593,7 +9594,7 @@ namespace CommunityLib
             FieldInfo FI_Map = AccessTools.Field(typeof(SocialGroup), nameof(SocialGroup.map));
 
             Label incrementLabelA = ilg.DefineLabel();
-            Label incrementLabelB = ilg.DefineLabel();
+            Label continueLabel = ilg.DefineLabel();
 
             int dictIndex = ilg.DeclareLocal(typeof(Dictionary<SocialGroup, HashSet<int>>)).LocalIndex;
 
@@ -9661,7 +9662,7 @@ namespace CommunityLib
                             {
                                 if (instructionList[j].opcode == OpCodes.Brfalse)
                                 {
-                                    incrementLabelB = (Label)instructionList[j].operand;
+                                    continueLabel = (Label)instructionList[j].operand;
                                     found = true;
                                     break;
                                 }
@@ -9675,7 +9676,7 @@ namespace CommunityLib
                             {
                                 // Add the check that society.isDark myst be false and any of the following conditions must be true. This changes the if (A or B or C) block into an if (D and (A or B or C)) block.
                                 yield return new CodeInstruction(OpCodes.Ldarg_0);
-                                yield return new CodeInstruction(OpCodes.Callvirt, MI_ScoetyIsDark);
+                                yield return new CodeInstruction(OpCodes.Callvirt, MI_SocialGroupIsDark);
                                 yield return new CodeInstruction(OpCodes.Brtrue, continueLabel);
                             }
 
@@ -9690,7 +9691,7 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Ldloc_S, 13); // Target subsettlement
                             yield return new CodeInstruction(OpCodes.Ldloc_S, dictIndex); // layer dictionary
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Subsettlement);
-                            yield return new CodeInstruction(OpCodes.Brfalse_S, incrementLabelB); // if cannot access map layer of subsettlement, skip adding action and jump to incrementing the loop variable.
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, continueLabel); // if cannot access map layer of subsettlement, skip adding action and jump to incrementing the loop variable.
 
                             yield return new CodeInstruction(OpCodes.Nop);
 
