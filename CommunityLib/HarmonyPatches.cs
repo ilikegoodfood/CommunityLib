@@ -330,6 +330,9 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Elf_TemptationOfEternity), nameof(Ch_Elf_TemptationOfEternity.getProgressPerTurnInner), new Type[] { typeof(UA), typeof(List<ReasonMsg>) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_Elf_TemptationOfEternity_getProgressPerTurnInner_Transpiler)));
             // Infiltrate
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Infiltrate), nameof(Ch_Infiltrate.getComplexity), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Ch_Infiltrate_getComplexity_Transpiler)));
+            // Bind Tome
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_BindTome), nameof(Ch_BindTome.getUtility), new Type[] { typeof(UA), typeof(List<ReasonMsg>) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_BindTome_getUtility_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_BindTome), nameof(Ch_BindTome.validFor), new Type[] { typeof(UA) }), postfix: new HarmonyMethod(patchType, nameof(Ch_BindTome_validFor_Postfix)));
             // Buy Item
             harmony.Patch(original: AccessTools.Method(typeof(Ch_BuyItem), nameof(Ch_BuyItem.complete), new Type[] { typeof(UA) }), prefix: new HarmonyMethod(patchType, nameof(Ch_BuyItem_complete_Prefix)), postfix: new HarmonyMethod(patchType, nameof(Ch_BuyItem_complete_Postfix)));
             // Corrupt Elfstone
@@ -432,6 +435,9 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Act_FundOutpost), nameof(Act_FundOutpost.getUtility), new Type[] { typeof(SettlementHuman), typeof(Person), typeof(List<ReasonMsg>) }), postfix: new HarmonyMethod(patchType, nameof(Act_FundOutpost_getUtility_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(Act_E_Expand), nameof(Act_E_Expand.valid), new Type[] { typeof(Person), typeof(SettlementHuman) }), transpiler: new HarmonyMethod(patchType, nameof(Act_E_Expand_valid_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(Act_E_Expand), nameof(Act_E_Expand.complete), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Act_E_Expand_complete_Transpiler)));
+
+            // National Action Fixes
+            harmony.Patch(original: AccessTools.Method(typeof(AN_RazeSubsettlement), nameof(AN_RazeSubsettlement.getUtility), new Type[] { typeof(Society), typeof(Person), typeof(List<ReasonMsg>) }), postfix: new HarmonyMethod(patchType, nameof(AN_RazeSubsettlement_getUtility_Postfix)));
 
             // Relationship Interaction Fixes
             harmony.Patch(original: AccessTools.Method(typeof(Society), nameof(Society.populateActions), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Society_populateActions_Transpiler)));
@@ -4287,6 +4293,60 @@ namespace CommunityLib
             }
         }
 
+        private static IEnumerable<CodeInstruction> Ch_BindTome_getUtility_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            FieldInfo FI_Sub = AccessTools.Field(typeof(Ch_Infiltrate), nameof(Ch_Infiltrate.sub));
+            FieldInfo FI_Settlment = AccessTools.Field(typeof(Subsettlement), nameof(Subsettlement.settlement));
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_0)
+                        {
+                            
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Mul)
+                        {
+                            yield return new CodeInstruction(OpCodes.Dup);
+                            yield return new CodeInstruction(OpCodes.Mul);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Ch_BindTome_getUtility_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static void Ch_BindTome_validFor_Postfix(Ch_BindTome __instance, UA ua, ref bool __result)
+        {
+            if (ua.society is Society soc && soc.isDark())
+            {
+                __result = false;
+            }
+            else if (ua.person.shadow >= 0.5)
+            {
+                __result = false;
+            }
+        }
+
         private static void Ch_BuyItem_complete_Prefix(Ch_BuyItem __instance, out string __state)
         {
             __state = __instance.onSale.getName();
@@ -6632,6 +6692,17 @@ namespace CommunityLib
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        // Nation Action Fixes
+        private static void AN_RazeSubsettlement_getUtility_Postfix(Society soc, Person ruler, List<ReasonMsg> reasons, ref double __result)
+        {
+            if (soc.isDark())
+            {
+                double val = -soc.map.param.utility_soc_razeSubsettlementExternal;
+                __result += val;
+                reasons?.Add(new ReasonMsg("Base reluctance", val));
             }
         }
 
