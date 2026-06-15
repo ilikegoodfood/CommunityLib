@@ -383,12 +383,8 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Assets.Code.Action), nameof(Assets.Code.Action.valid), new Type[] { typeof(Person), typeof(SettlementHuman) }), new HarmonyMethod(patchType, nameof(Action_valid_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(Act_FundOutpost), nameof(Act_FundOutpost.getUtility), new Type[] { typeof(SettlementHuman), typeof(Person), typeof(List<ReasonMsg>) }), postfix: new HarmonyMethod(patchType, nameof(Act_FundOutpost_getUtility_Postfix)));
 
-            // National Action Fixes
-            harmony.Patch(original: AccessTools.Method(typeof(AN_RazeSubsettlement), nameof(AN_RazeSubsettlement.getUtility), new Type[] { typeof(Society), typeof(Person), typeof(List<ReasonMsg>) }), postfix: new HarmonyMethod(patchType, nameof(AN_RazeSubsettlement_getUtility_Postfix)));
-
             // Relationship Interaction Fixes
             harmony.Patch(original: AccessTools.Method(typeof(Society), nameof(Society.populateActions), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Society_populateActions_Transpiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(SG_Orc), nameof(SG_Orc.getActions), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(SG_Orc_getActions_Transpiler)));
 
             // Power Fixes
             harmony.Patch(original: AccessTools.Method(typeof(P_Opha_TakeControl), nameof(P_Opha_TakeControl.getDesc), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(P_Opha_TakeControl_getDesc_Postfix)));
@@ -8311,7 +8307,65 @@ namespace CommunityLib
             }
         }
 
+        // Raze Subsettlement Removal Fixes
+        private static IEnumerable<CodeInstruction> Society_populateActions_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
 
+            MethodInfo MI_ScoetyIsDark = AccessTools.Method(typeof(Society), nameof(Society.isDark), Type.EmptyTypes);
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex <= 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloca_S && instructionList[i+1].opcode == OpCodes.Call && instructionList[i+2].opcode == OpCodes.Stloc_S)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i-1].opcode == OpCodes.Nop && instructionList[i-2].opcode == OpCodes.Stloc_0)
+                        {
+                            Label continueLabel = ilg.DefineLabel(); // Named true label because it is the label that is origigionally used to set te flag to true. The condition being checked below sets the flag to false if the society is dark, so we want to branch to the true label if it is not dark.
+                            bool found = false;
+                            for (int j = i; j < instructionList.Count; j++) // Find the originial Brfalse instruction that is used to skip the section if the condition resolves to false.
+                            {
+                                if (instructionList[j].opcode == OpCodes.Brfalse)
+                                {
+                                    continueLabel = (Label)instructionList[j].operand;
+                                    found = true;
+                                    break;
+                                }
+                            }
+
+                            if (!found)
+                            {
+                                Console.WriteLine("CommunityLib: ERROR: Society_populateActions_Transpiler failed to find target Brfalse_S.");
+                            }
+                            else
+                            {
+                                // Add the check that society.isDark myst be false and any of the following conditions must be true. This changes the if (A or B or C) block into an if (D and (A or B or C)) block.
+                                yield return new CodeInstruction(OpCodes.Ldarg_0);
+                                yield return new CodeInstruction(OpCodes.Callvirt, MI_ScoetyIsDark);
+                                yield return new CodeInstruction(OpCodes.Brtrue, continueLabel);
+                            }
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Society_populateActions_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
 
         // Power Fixes
         // Ophanim
