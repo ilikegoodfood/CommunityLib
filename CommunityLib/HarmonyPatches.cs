@@ -6527,7 +6527,7 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Callvirt, MI_Location);
                             yield return new CodeInstruction(OpCodes.Ldfld, FI_map);
                             yield return new CodeInstruction(OpCodes.Ldfld, FI_awarenessOfUnderground);
-                            yield return new CodeInstruction(OpCodes.Ldc_R8, 0.9995);
+                            yield return new CodeInstruction(OpCodes.Ldc_R8, 1.0);
                             yield return new CodeInstruction(OpCodes.Cgt);
                             yield return new CodeInstruction(OpCodes.Brtrue_S, validLabel);
 
@@ -6637,7 +6637,7 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Callvirt, MI_Location);
                             yield return new CodeInstruction(OpCodes.Ldfld, FI_map);
                             yield return new CodeInstruction(OpCodes.Ldfld, FI_awarenessOfUnderground);
-                            yield return new CodeInstruction(OpCodes.Ldc_R8, 0.9995);
+                            yield return new CodeInstruction(OpCodes.Ldc_R8, 1.0);
                             yield return new CodeInstruction(OpCodes.Cgt);
                             yield return new CodeInstruction(OpCodes.Brtrue_S, validLabel);
 
