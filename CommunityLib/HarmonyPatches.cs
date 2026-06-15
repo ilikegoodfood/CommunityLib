@@ -8312,7 +8312,7 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_ScoetyIsDark = AccessTools.Method(typeof(Society), nameof(Society.isDark), Type.EmptyTypes);
+            MethodInfo MI_SocialGroupIsDark = AccessTools.Method(typeof(SocialGroup), nameof(SocialGroup.isDark), Type.EmptyTypes);
 
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
@@ -8350,7 +8350,7 @@ namespace CommunityLib
                             {
                                 // Add the check that society.isDark myst be false and any of the following conditions must be true. This changes the if (A or B or C) block into an if (D and (A or B or C)) block.
                                 yield return new CodeInstruction(OpCodes.Ldarg_0);
-                                yield return new CodeInstruction(OpCodes.Callvirt, MI_ScoetyIsDark);
+                                yield return new CodeInstruction(OpCodes.Callvirt, MI_SocialGroupIsDark);
                                 yield return new CodeInstruction(OpCodes.Brtrue, continueLabel);
                             }
 
@@ -9675,7 +9675,7 @@ namespace CommunityLib
             }
         }
 
-        // Orc REaiders Max HP fix
+        // Orc Raiders Max HP fix
         private static void UM_OrcRaiders_assignMaxHP_Postfix(UM_OrcRaiders __instance)
         {
             if (__instance.person != null && __instance.person.unit == __instance)
