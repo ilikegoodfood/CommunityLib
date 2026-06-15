@@ -9580,7 +9580,7 @@ namespace CommunityLib
             }
         }
 
-        // Relationship Interaction Fixes
+        // National Actions Fixes
         private static IEnumerable<CodeInstruction> Society_populateActions_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
@@ -9606,6 +9606,7 @@ namespace CommunityLib
                     {
                         if (i > 0 && instructionList[i].opcode == OpCodes.Nop && instructionList[i-1].opcode == OpCodes.Nop && instructionList[i-2].opcode == OpCodes.Nop)
                         {
+                            // Build complete map of which social groups are on which map layer before proceeding.
                             CodeInstruction code = new CodeInstruction(OpCodes.Nop);
                             code.labels.AddRange(instructionList[i].labels);
                             instructionList[i].labels.Clear();
@@ -9624,43 +9625,72 @@ namespace CommunityLib
                         {
                             targetIndex++;
 
-                            incrementLabelA = (Label)instructionList[i].operand;
+                            incrementLabelA = (Label)instructionList[i].operand; // Retrieve label for incrementing loop variable after original checks, to instead jump to after our added checks if our conditions fail.
                         }
                     }
                     else if (targetIndex == 3)
                     {
                         if (instructionList[i].opcode == OpCodes.Ldfld)
                         {
+                            // this is already on the stack at this point.
                             yield return new CodeInstruction(OpCodes.Ldloc_S, 5); // Current Enumeration dipRel
                             yield return new CodeInstruction(OpCodes.Ldarg_0); // this
                             yield return new CodeInstruction(OpCodes.Callvirt, MI_DipRelOther); //DipRel.other(this)
                             yield return new CodeInstruction(OpCodes.Ldloc_S, dictIndex);
-                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Society);
-                            yield return new CodeInstruction(OpCodes.Brfalse_S, incrementLabelA);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Society); // Pass this, currentDipRel.other(this), and the map of social group layers to our transpiler body to check if action should be added.
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, incrementLabelA); // If the two Societies should not be aware of each other, skip addinbg the action and jump to incrementing the loop variable.
 
-                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldarg_0); // Put `this` back on the stack for the original code to use.
 
                             targetIndex++;
                         }
                     }
                     else if (targetIndex == 4)
                     {
-                        if (instructionList[i].opcode == OpCodes.Endfinally)
+                        if (instructionList[i].opcode == OpCodes.Endfinally) // Find end of foreach loop.
                         {
                             targetIndex++;
                         }
                     }
                     else if (targetIndex == 5)
                     {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i - 1].opcode == OpCodes.Nop && instructionList[i - 2].opcode == OpCodes.Stloc_0)
+                        {
+                            bool found = false;
+                            for (int j = i; j < instructionList.Count; j++) // Find the originial Brfalse instruction that is used to skip the section if the condition resolves to false.
+                            {
+                                if (instructionList[j].opcode == OpCodes.Brfalse)
+                                {
+                                    incrementLabelB = (Label)instructionList[j].operand;
+                                    found = true;
+                                    break;
+                                }
+                            }
+
+                            if (!found)
+                            {
+                                Console.WriteLine("CommunityLib: ERROR: Society_populateActions_Transpiler failed to find target Brfalse.");
+                            }
+                            else
+                            {
+                                // Add the check that society.isDark myst be false and any of the following conditions must be true. This changes the if (A or B or C) block into an if (D and (A or B or C)) block.
+                                yield return new CodeInstruction(OpCodes.Ldarg_0);
+                                yield return new CodeInstruction(OpCodes.Callvirt, MI_ScoetyIsDark);
+                                yield return new CodeInstruction(OpCodes.Brtrue, continueLabel);
+                            }
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 6)
+                    {
                         if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i + 1].opcode == OpCodes.Ldfld && instructionList[i + 2].opcode == OpCodes.Ldloc_S)
                         {
-                            incrementLabelB = (Label)instructionList[i - 2].operand;
-
-                            yield return new CodeInstruction(OpCodes.Ldarg_0);
-                            yield return new CodeInstruction(OpCodes.Ldloc_S, 13);
-                            yield return new CodeInstruction(OpCodes.Ldloc_S, dictIndex);
+                            yield return new CodeInstruction(OpCodes.Ldarg_0); // this
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 13); // Target subsettlement
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, dictIndex); // layer dictionary
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Subsettlement);
-                            yield return new CodeInstruction(OpCodes.Brfalse_S, incrementLabelB);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, incrementLabelB); // if cannot access map layer of subsettlement, skip adding action and jump to incrementing the loop variable.
 
                             yield return new CodeInstruction(OpCodes.Nop);
 
@@ -9729,13 +9759,7 @@ namespace CommunityLib
 
             if (sgLayers.TryGetValue(soc, out HashSet<int> layers) && sgLayers.TryGetValue(other, out HashSet<int> otherLayers))
             {
-                foreach (int layer in layers)
-                {
-                    if (otherLayers.Contains(layer))
-                    {
-                        return true;
-                    }
-                }
+                return layers.Overlaps(otherLayers);
             }
 
             return false;
