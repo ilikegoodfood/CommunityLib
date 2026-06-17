@@ -128,7 +128,10 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.attackDownRow), new Type[] { typeof(int), typeof(UA), typeof(UA), typeof(PopupBattleAgent) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_AttackDownRow_Minion_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.attackDownRow), new Type[] { typeof(int), typeof(int), typeof(AgentCombatInterface), typeof(UA), typeof(UA), typeof(PopupBattleAgent) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_AttackDownRow_Agent_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.automatic), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(BattleAgents_automatic_Prefix)));
+            harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.terminate), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(BattleAgents_terminate_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.skirmishEnd), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(BattleAgents_skirmishEnd_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(World), nameof(World.bEndTurn), new Type[] { typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(World_bEndTurn_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(AccessTools.Inner(typeof(UA), "<>c__DisplayClass44_0"), "<playerTriesToAttack>b__0", new Type[] { typeof(string) }), transpiler: new HarmonyMethod(patchType, nameof(UA_playerTriesToAttack_b0_Transpiler)));
 
             // Agent Barttle Popup Hooks
             harmony.Patch(original: AccessTools.Method(typeof(PopupBattleAgent), nameof(PopupBattleAgent.populate), new Type[] { typeof(BattleAgents) }), postfix: new HarmonyMethod(patchType, nameof(PopupBattleAgent_populate_Postfix)));
@@ -517,12 +520,12 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(PrefabStore), nameof(PrefabStore.popConfirmOrder), new Type[] { typeof(string), typeof(Action<string>), typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(PrefabStore_popConfirmAction_Transpiler)));
 
             // Check Engaging patches
-            harmony.Patch(original: AccessTools.Method(typeof(UA), "playedOpensMinions", new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(checkEngaging_BulkTranspiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(UA), "playerTriesToAttack", new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(checkEngaging_BulkTranspiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(UA), "playerTriesToDisrupt", new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(checkEngaging_BulkTranspiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(UA), "playerTriesToFollow", new Type[] { typeof(Unit) }), transpiler: new HarmonyMethod(patchType, nameof(checkEngaging_BulkTranspiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(UA), "playedOpensMinions", new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(checkEngaging_BulkTranspiler_2)));
+            harmony.Patch(original: AccessTools.Method(typeof(UA), "playerTriesToAttack", new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(checkEngaging_BulkTranspiler_S)));
+            harmony.Patch(original: AccessTools.Method(typeof(UA), "playerTriesToDisrupt", new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(checkEngaging_BulkTranspiler_2)));
+            harmony.Patch(original: AccessTools.Method(typeof(UA), "playerTriesToFollow", new Type[] { typeof(Unit) }), transpiler: new HarmonyMethod(patchType, nameof(checkEngaging_BulkTranspiler_2)));
             harmony.Patch(original: AccessTools.Method(typeof(UA), "playerTriesToRob", new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(UA_playerTriesToRob_Transpiler)));
-            harmony.Patch(original: AccessTools.Method(typeof(UA), "playerTriesToStartChallenge", new Type[] { typeof(Challenge) }), transpiler: new HarmonyMethod(patchType, nameof(checkEngaging_BulkTranspiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(UA), "playerTriesToStartChallenge", new Type[] { typeof(Challenge) }), transpiler: new HarmonyMethod(patchType, nameof(checkEngaging_BulkTranspiler_S)));
             harmony.Patch(original: AccessTools.Method(typeof(UA), "playerTriesToTrade", new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(UA_playerTriesToTrade_Transpiler)));
 
             harmony.Patch(original: AccessTools.Method(typeof(UIInputs), nameof(UIInputs.rightClickOnHex), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UIInput_rightClickOnHex_Transpiler)));
@@ -4977,7 +4980,7 @@ namespace CommunityLib
                 period = " indefinite ";
             }
 
-            __result = $"This agent is {verb} the{period}{noun} \"{__instance.challenge.getName()}\" at {__instance.challenge.location} (progress: {(int)__instance.progress}/{(int)__instance.challenge.getComplexityAfterDifficulty()}).";
+            __result = $"This agent is {verb} the{period}{noun} \"{__instance.challenge.getName()}\" at {__instance.challenge.location.getName()} (progress: {(int)__instance.progress}/{(int)__instance.challenge.getComplexityAfterDifficulty()}).";
             if (__instance.challenge.isIndefinite())
             {
                 __result += $"\nThey will continue until the challenge stops being valid, they are interrupted, or they decide or are told to stop.";
@@ -6417,11 +6420,12 @@ namespace CommunityLib
         private static bool BattleAgents_automatic_Prefix(BattleAgents __instance)
         {
             BattleAgents battle = null;
+            bool isNewBattle = false;
             if (__instance.GetType().IsSubclassOf(typeof(BattleAgents)))
             {
-                battle = __instance;
+                battle = __instance; // If battole is already a specialized subtype, use that.
             }
-            else
+            else // Otherwise, check if any mods want to replace the vanilla AgentBattles with a specialized subtype.
             {
                 foreach (var hook in ModCore.Get().HookRegistry.Delegate_onAgentBattleStarts)
                 {
@@ -6429,6 +6433,7 @@ namespace CommunityLib
                     if (retValue != null)
                     {
                         battle = retValue;
+                        isNewBattle = true;
                         break;
                     }
                 }
@@ -6440,17 +6445,14 @@ namespace CommunityLib
                         if (retValue != null)
                         {
                             battle = retValue;
+                            isNewBattle = true;
                             break;
                         }
                     }
                 }
             }
 
-            if (battle == null)
-            {
-                return true;
-            }
-            else
+            if (battle == null) // If the battle type is still a vanilla BattleAgents, check if any mod wants to intercept it..
             {
                 foreach (var hook in ModCore.Get().HookRegistry.Delegate_interceptAgentBattleAutomatic)
                 {
@@ -6461,21 +6463,58 @@ namespace CommunityLib
                 }
                 foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
                 {
-                    if (hook.interceptAgentBattleAutomatic(battle))
+                    if (hook.interceptAgentBattleAutomatic(__instance))
                     {
                         return false;
                     }
                 }
+
+                return true; // If not intercepted, allow the vanilla battle to proceed.
+            }
+
+            // If the battle type is a specialized BattleAgents subtype, then check if any mods want to intercept the automatic battle.
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_interceptAgentBattleAutomatic)
+            {
+                if (hook(battle))
+                {
+                    return false;
+                }
+            }
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            {
+                if (hook.interceptAgentBattleAutomatic(battle))
+                {
+                    return false;
+                }
+            }
+
+            if (isNewBattle) // If not intercepted and the vanilla battle was replaced with a specialized battle subtype, then run the new battle's automatic method instead.
+            {
+                battle.automatic();
+                return false;
             }
 
             return true;
+        }
+
+        private static void BattleAgents_terminate_Postfix(BattleAgents __instance)
+        {
+            __instance.att.engagedBy = null;
+            __instance.att.engaging = null;
+            __instance.def.engagedBy = null;
+            __instance.def.engaging = null;
+        }
+
+        private static void BattleAgents_skirmishEnd_Postfix(BattleAgents __instance)
+        {
+            __instance.terminate();
         }
 
         private static IEnumerable<CodeInstruction> World_bEndTurn_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_TranspilerBody_PopBattleAgent = AccessTools.Method(patchType, nameof(World_bEndTurn_TranspilerBody_PopAgentBattle), new Type[] { typeof(UA) });
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(World_bEndTurn_TranspilerBody), new Type[] { typeof(Unit) });
 
             bool returnCode = true;
             int targetIndex = 1;
@@ -6492,10 +6531,10 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 2)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i - 1].opcode == OpCodes.Nop && instructionList[i + 1].opcode == OpCodes.Ldloc_S)
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i - 1].opcode == OpCodes.Stloc_S)
                         {
-                            yield return new CodeInstruction(OpCodes.Ldloc_S, 11);
-                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_PopBattleAgent);
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 7);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
 
                             returnCode = false;
                             targetIndex++;
@@ -6503,8 +6542,10 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 3)
                     {
-                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i + 1].opcode == OpCodes.Nop)
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i+1].opcode == OpCodes.Callvirt && instructionList[i-1].opcode == OpCodes.Nop && instructionList[i-2].opcode == OpCodes.Nop)
                         {
+                            yield return new CodeInstruction(OpCodes.Nop);
+
                             returnCode = true;
                             targetIndex = 0;
                         }
@@ -6524,99 +6565,125 @@ namespace CommunityLib
             }
         }
 
-        private static void World_bEndTurn_TranspilerBody_PopAgentBattle(UA ua)
+        private static IEnumerable<CodeInstruction> UA_playerTriesToAttack_b0_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(UA_playerTriesToAttack_b0_TranspilerBody), new Type[] { typeof(UA), typeof(UA) });
+
+            FieldInfo FI_This = AccessTools.Field(AccessTools.Inner(typeof(UA), "<>c__DisplayClass44_0"), "<>4__this");
+            FieldInfo FI_Other = AccessTools.Field(AccessTools.Inner(typeof(UA), "<>c__DisplayClass44_0"), "other");
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ret)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_This);
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Other);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed UA_playerTriesToAttack_b0_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static void UA_playerTriesToAttack_b0_TranspilerBody(UA ua, UA other)
+        {
+            ua.engaging = other;
+            ua.turnLastEngaged = ua.map.turn;
+            other.engagedBy = ua;
+            other.turnLastEngaged = ua.map.turn;
+        }
+
+        private static void World_bEndTurn_TranspilerBody(Unit u)
+        {
+            if (!u.isCommandable() || u.isDead || !(u is UA ua))
+            {
+                return;
+            }
+
             UA other = null;
             bool amAttacker = false;
             if (ua.engaging is UA engagedAgent)
             {
+                if (ua.task is Task_Disrupted)
+                {
+                    ua.engaging = null;
+                    engagedAgent.engagedBy = null;
+                    return;
+                }
+
                 other = engagedAgent;
                 amAttacker = true;
             }
             else if (ua.engagedBy is UA engagingAgent)
             {
+                if (engagingAgent.task is Task_Disrupted)
+                {
+                    ua.engagedBy = null;
+                    engagingAgent.engaging = null;
+                    return;
+                }
+
                 other = engagingAgent;
             }
-
-            if (other != null)
+            else
             {
-                BattleAgents battle = null;
-                if (amAttacker)
-                {
-                    foreach (var hook in ModCore.Get().HookRegistry.Delegate_onAgentBattleStarts)
-                    {
-                        BattleAgents retValue = hook(ua, other);
-                        if (retValue != null)
-                        {
-                            battle = retValue;
-                            break;
-                        }
-                    }
-                    if (battle == null)
-                    {
-                        foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
-                        {
-                            BattleAgents retValue = hook.onAgentBattleStarts(ua, other);
+                return;
+            }
 
-                            if (retValue != null)
-                            {
-                                battle = retValue;
-                                break;
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    foreach (var hook in ModCore.Get().HookRegistry.Delegate_onAgentBattleStarts)
-                    {
-                        BattleAgents retValue = hook(other, ua);
-                        if (retValue != null)
-                        {
-                            battle = retValue;
-                            break;
-                        }
-                    }
-                    if (battle == null)
-                    {
-                        foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
-                        {
-                            BattleAgents retValue = hook.onAgentBattleStarts(other, ua);
+            BattleAgents battle = null;
+            if (amAttacker)
+            {
+                battle = GetAgentBattle(ua, other);
+            }
+            else
+            {
+                battle = GetAgentBattle(other, ua);
+            }
 
-                            if (retValue != null)
-                            {
-                                battle = retValue;
-                                break;
-                            }
-                        }
-                    }
-                }
+            ua.map.world.prefabStore.popBattle(battle);
+        }
 
-                if (battle == null)
+        private static BattleAgents GetAgentBattle(UA attacker, UA defender)
+        {
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onAgentBattleStarts)
+            {
+                BattleAgents retValue = hook(attacker, defender);
+                if (retValue != null)
                 {
-                    if (amAttacker)
-                    {
-                        battle = new BattleAgents(ua, other);
-                    }
-                    else
-                    {
-                        battle = new BattleAgents(other, ua);
-                    }
-                }
-
-                ua.map.world.prefabStore.popBattle(battle);
-
-                if (ua.engaging != null)
-                {
-                    ua.engaging.engagedBy = null;
-                    ua.engaging = null;
-                }
-                else if (ua.engagedBy != null)
-                {
-                    ua.engagedBy.engaging = null;
-                    ua.engagedBy = null;
+                    return retValue;
                 }
             }
+
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            {
+                BattleAgents retValue = hook.onAgentBattleStarts(attacker, defender);
+
+                if (retValue != null)
+                {
+                    return retValue;
+                }
+            }
+
+            return new BattleAgents(attacker, defender);
         }
 
         // Popup Battle Agent hooks
@@ -11354,15 +11421,146 @@ namespace CommunityLib
         }
 
         // UIE_AgentRoster
-        private static IEnumerable<CodeInstruction> UIE_AgentRoster_setToUA_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        private static bool AgentIsEngaged(UA ua)
+        {
+            if (ua == null)
+            {
+                return false;
+            }
+
+            if (ua.isDead || ua.turnLastEngaged != ua.map.turn)
+            {
+                if (ua.engagedBy != null)
+                {
+                    if (ua.engagedBy.engaging == ua)
+                    {
+                        ua.engagedBy.engaging = null;
+                    }
+                    ua.engagedBy = null;
+                }
+                else if (ua.engaging != null)
+                {
+                    if (ua.engaging.engagedBy == ua)
+                    {
+                        ua.engaging.engagedBy = null;
+                    }
+                    ua.engaging = null;
+                }
+                return false;
+            }
+
+            if (ua.engagedBy != null)
+            {
+                if (ua.engagedBy.isDead || !(ua.engagedBy is UA) || ua.engagedBy.task is Task_Disrupted)
+                {
+                    if (ua.engagedBy.engaging == ua)
+                    {
+                        ua.engagedBy.engaging = null;
+                    }
+                    ua.engagedBy = null;
+                    return false;
+                }
+                return true;
+            }
+
+            if (ua.engaging != null)
+            {
+                if (ua.engaging.isDead || !(ua.engaging is UA) || ua.task is Task_Disrupted)
+                {
+                    if (ua.engaging.engagedBy == ua)
+                    {
+                        ua.engaging.engagedBy = null;
+                    }
+                    ua.engaging = null;
+                    return false;
+                }
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool ArmyIsEngaged(UM um)
+        {
+            if (um == null)
+            {
+                return false;
+            }
+
+            if (um.isDead || um.turnLastEngaged != um.map.turn)
+            {
+                if (um.engagedBy != null)
+                {
+                    if (um.engagedBy.engaging == um)
+                    {
+                        um.engagedBy.engaging = null;
+                    }
+                    um.engagedBy = null;
+                }
+                else if (um.engaging != null)
+                {
+                    if (um.engaging.engagedBy == um)
+                    {
+                        um.engaging.engagedBy = null;
+                    }
+                    um.engaging = null;
+                }
+                return false;
+            }
+
+            if (um.engagedBy != null)
+            {
+                if (um.engagedBy.isDead || !(um.engagedBy is UM) || um.engaging.task is Task_Disrupted)
+                {
+                    if (um.engagedBy.engaging == um)
+                    {
+                        um.engagedBy.engaging = null;
+                    }
+                    um.engagedBy = null;
+                    return false;
+                }
+                return true;
+            }
+
+            if (um.engaging != null)
+            {
+                if (um.engaging.isDead || !(um.engaging is UM) || um.task is Task_Disrupted)
+                {
+                    if (um.engaging.engagedBy == um)
+                    {
+                        um.engaging.engagedBy = null;
+                    }
+                    um.engaging = null;
+                    return false;
+                }
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool UnitISEngaged(Unit unit)
+        {
+            if (unit is UA ua)
+            {
+                return AgentIsEngaged(ua);
+            }
+
+            if (unit is UM um)
+            {
+                return ArmyIsEngaged(um);
+            }
+
+            return false;
+        }
+
+        private static IEnumerable<CodeInstruction> UIE_AgentRoster_setToUA_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            FieldInfo FI_engaging = AccessTools.Field(typeof(Unit), nameof(Unit.engaging));
+            MethodInfo MI_AgentIsEngaged = AccessTools.Method(patchType, nameof(AgentIsEngaged), new Type[] { typeof(UA) });
 
-            Label falseLabel;
-            Label skipLabel = ilg.DefineLabel();
-
+            bool returnCode = true;
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
             {
@@ -11370,25 +11568,42 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i - 1].opcode == OpCodes.Ldfld)
+                        if (i > 2)
                         {
-                            falseLabel = (Label)instructionList[i].operand;
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i-1].opcode == OpCodes.Callvirt && instructionList[i-2].opcode == OpCodes.Ldc_I4_0) // Find the first set active call
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldfld && instructionList[i-1].opcode == OpCodes.Ldarg_2) // Find the ua.engagedBy call
+                        {
+                            yield return new CodeInstruction(OpCodes.Call, MI_AgentIsEngaged);
 
-                            yield return new CodeInstruction(OpCodes.Brtrue_S, skipLabel);
-
-                            yield return new CodeInstruction(OpCodes.Ldarg_2);
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_engaging);
-                            yield return new CodeInstruction(OpCodes.Brfalse_S, falseLabel);
-
-                            instructionList[i + 1].labels.Add(skipLabel);
-
-                            i++;
+                            returnCode = false;
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 4)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Callvirt)
+                        {
+                            returnCode = true;
                             targetIndex = 0;
                         }
                     }
                 }
 
-                yield return instructionList[i];
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
             }
 
             Console.WriteLine("CommunityLib: Completed UIE_AgentRoster_setToUA_Transpiler");
@@ -11398,16 +11613,13 @@ namespace CommunityLib
             }
         }
 
-        private static IEnumerable<CodeInstruction> UIE_AgentRoster_setToUM_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        private static IEnumerable<CodeInstruction> UIE_AgentRoster_setToUM_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            FieldInfo FI_Agent = AccessTools.Field(typeof(UIE_AgentRoster), nameof(UIE_AgentRoster.agent));
-            FieldInfo FI_engaging = AccessTools.Field(typeof(Unit), nameof(Unit.engaging));
+            MethodInfo MI_ArmyIsEngaged = AccessTools.Method(patchType, nameof(ArmyIsEngaged), new Type[] { typeof(UM) });
 
-            Label falseLabel;
-            Label skipLabel = ilg.DefineLabel();
-
+            bool returnCode = true;
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
             {
@@ -11415,26 +11627,42 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i - 1].opcode == OpCodes.Ldfld)
+                        if (i > 2)
                         {
-                            falseLabel = (Label)instructionList[i].operand;
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i - 1].opcode == OpCodes.Callvirt && instructionList[i - 2].opcode == OpCodes.Ldc_I4_0) // Find the first set active call
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldfld && instructionList[i+1].opcode == OpCodes.Ldfld && instructionList[i - 1].opcode == OpCodes.Ldarg_0) // Find the ua.engagedBy call
+                        {
+                            yield return new CodeInstruction(OpCodes.Call, MI_ArmyIsEngaged);
 
-                            yield return new CodeInstruction(OpCodes.Brtrue_S, skipLabel);
-
-                            yield return new CodeInstruction(OpCodes.Ldarg_0);
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_Agent);
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_engaging);
-                            yield return new CodeInstruction(OpCodes.Brfalse_S, falseLabel);
-
-                            instructionList[i + 1].labels.Add(skipLabel);
-
-                            i++;
+                            returnCode = false;
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 4)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Callvirt)
+                        {
+                            returnCode = true;
                             targetIndex = 0;
                         }
                     }
                 }
 
-                yield return instructionList[i];
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
             }
 
             Console.WriteLine("CommunityLib: Completed UIE_AgentRoster_setToUM_Transpiler");
@@ -11482,6 +11710,11 @@ namespace CommunityLib
 
             UA other = null;
             bool amAttacker = false;
+            if (!AgentIsEngaged(ua))
+            {
+                return;
+            }
+
             if (ua.engaging is UA engagedAgent)
             {
                 other = engagedAgent;
@@ -11491,88 +11724,22 @@ namespace CommunityLib
             {
                 other = engagingAgent;
             }
-
-            if (other != null)
+            else
             {
-                BattleAgents battle = null;
-                if (amAttacker)
-                {
-                    foreach (var hook in ModCore.Get().HookRegistry.Delegate_onAgentBattleStarts)
-                    {
-                        BattleAgents retValue = hook(ua, other);
-                        if (retValue != null)
-                        {
-                            battle = retValue;
-                            break;
-                        }
-                    }
-                    if (battle == null)
-                    {
-                        foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
-                        {
-                            BattleAgents retValue = hook.onAgentBattleStarts(ua, other);
-
-                            if (retValue != null)
-                            {
-                                battle = retValue;
-                                break;
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    foreach (var hook in ModCore.Get().HookRegistry.Delegate_onAgentBattleStarts)
-                    {
-                        BattleAgents retValue = hook(other, ua);
-                        if (retValue != null)
-                        {
-                            battle = retValue;
-                            break;
-                        }
-                    }
-                    if (battle == null)
-                    {
-                        foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
-                        {
-                            BattleAgents retValue = hook.onAgentBattleStarts(other, ua);
-
-                            if (retValue != null)
-                            {
-                                battle = retValue;
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                if (battle == null)
-                {
-                    if (amAttacker)
-                    {
-                        battle = new BattleAgents(ua, other);
-                    }
-                    else
-                    {
-                        battle = new BattleAgents(other, ua);
-                    }
-                }
-
-                rosterItem.ui.world.prefabStore.popBattle(battle);
-
-                if (rosterItem.agent.engaging != null)
-                {
-                    rosterItem.agent.engaging.engagedBy = null;
-                    rosterItem.agent.engaging = null;
-                }
-                else if (rosterItem.agent.engagedBy != null)
-                {
-                    rosterItem.agent.engagedBy.engaging = null;
-                    rosterItem.agent.engagedBy = null;
-                }
-
-                rosterItem.ui.checkData();
+                return;
             }
+
+            BattleAgents battle = null;
+            if (amAttacker)
+            {
+                battle = GetAgentBattle(ua, other);
+            }
+            else
+            {
+                battle = GetAgentBattle(ua, other);
+            }
+
+            rosterItem.ui.world.prefabStore.popBattle(battle);
         }
 
         // Other UI tweak
@@ -11631,15 +11798,13 @@ namespace CommunityLib
         }
 
         // engaging Patches
-        private static IEnumerable<CodeInstruction> checkEngaging_BulkTranspiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        
+        private static IEnumerable<CodeInstruction> checkEngaging_BulkTranspiler_2(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
             MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(checkEngaging_BulkTranspilerBody), new Type[] { typeof(UA) });
-
-            FieldInfo FI_engaging = AccessTools.Field(typeof(Unit), nameof(Unit.engaging));
-
-            Label skipLabel = ilg.DefineLabel();
+            MethodInfo MI_AgentIsEngaged = AccessTools.Method(patchType, nameof(AgentIsEngaged), new Type[] { typeof(UA) });
 
             bool returnCode = true;
             int targetIndex = 1;
@@ -11649,18 +11814,23 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i - 1].opcode == OpCodes.Ldfld)
+                        if (instructionList[i].opcode == OpCodes.Ldfld && instructionList[i-1].opcode == OpCodes.Ldarg_0)
                         {
-                            yield return new CodeInstruction(OpCodes.Brtrue_S, skipLabel);
+                            yield return new CodeInstruction(OpCodes.Call, MI_AgentIsEngaged);
 
-                            yield return new CodeInstruction(OpCodes.Ldarg_0);
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_engaging);
-
-                            instructionList[i + 1].labels.Add(skipLabel);
+                            returnCode = false;
                             targetIndex++;
                         }
                     }
-                    if (targetIndex == 2)
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i-1].opcode == OpCodes.Ldloc_2)
+                        {
+                            returnCode = true;
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
                     {
                         if (instructionList[i].opcode == OpCodes.Callvirt)
                         {
@@ -11670,7 +11840,7 @@ namespace CommunityLib
                             targetIndex++;
                         }
                     }
-                    if (targetIndex == 3)
+                    else if (targetIndex == 4)
                     {
                         if (instructionList[i].opcode == OpCodes.Ldc_I4_0 && instructionList[i - 1].opcode == OpCodes.Call)
                         {
@@ -11708,15 +11878,12 @@ namespace CommunityLib
             return "ERROR: " + ua.getName() + " is neither being attacked by or attacking anyone.";
         }
 
-        private static IEnumerable<CodeInstruction> UIInput_rightClickOnHex_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        private static IEnumerable<CodeInstruction> checkEngaging_BulkTranspiler_S(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_TranwspilerBody = AccessTools.Method(patchType, nameof(UIInput_rightClickOnHex_TranspilerBody), new Type[] { typeof(UA) });
-
-            FieldInfo FI_engaging = AccessTools.Field(typeof(Unit), nameof(Unit.engaging));
-
-            Label skipLabel = ilg.DefineLabel();
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(checkEngaging_BulkTranspilerBody), new Type[] { typeof(UA) });
+            MethodInfo MI_AgentIsEngaged = AccessTools.Method(patchType, nameof(AgentIsEngaged), new Type[] { typeof(UA) });
 
             bool returnCode = true;
             int targetIndex = 1;
@@ -11726,28 +11893,95 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i - 1].opcode == OpCodes.Ldfld)
+                        if (instructionList[i].opcode == OpCodes.Ldfld && instructionList[i - 1].opcode == OpCodes.Ldarg_0)
+                        {
+                            yield return new CodeInstruction(OpCodes.Call, MI_AgentIsEngaged);
+
+                            returnCode = false;
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i - 1].opcode == OpCodes.Ldloc_S)
+                        {
+                            returnCode = true;
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Callvirt)
+                        {
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+
+                            returnCode = false;
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 4)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldc_I4_0 && instructionList[i - 1].opcode == OpCodes.Call)
+                        {
+                            returnCode = true;
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
+            }
+
+            Console.WriteLine("CommunityLib: Completed UA_playerTriesToAttack_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> UIInput_rightClickOnHex_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranwspilerBody = AccessTools.Method(patchType, nameof(UIInput_rightClickOnHex_TranspilerBody), new Type[] { typeof(UA) });
+            MethodInfo MI_UnitIsEngaged = AccessTools.Method(patchType, nameof(UnitISEngaged), new Type[] { typeof(Unit) });
+
+            bool returnCode = true;
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i-1].opcode == OpCodes.Ldfld)
                         {
                             targetIndex++;
                         }
                     }
                     else if (targetIndex == 2)
                     {
-                        if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i - 1].opcode == OpCodes.Ldfld)
+                        if (instructionList[i].opcode == OpCodes.Ldfld && instructionList[i-1].opcode == OpCodes.Brfalse_S)
                         {
-                            FieldInfo FI_procU = (FieldInfo)instructionList[i - 2].operand;
+                            
+                            yield return new CodeInstruction(OpCodes.Call, MI_UnitIsEngaged);
 
-                            yield return new CodeInstruction(OpCodes.Brtrue_S, skipLabel);
-
-                            yield return new CodeInstruction(OpCodes.Ldloc_S, 4);
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_procU);
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_engaging);
-
-                            instructionList[i + 1].labels.Add(skipLabel);
+                            returnCode = false;
                             targetIndex++;
                         }
                     }
                     else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i-1].opcode == OpCodes.Ldloc_S)
+                        {
+                            returnCode = true;
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 4)
                     {
                         if (instructionList[i].opcode == OpCodes.Callvirt)
                         {
@@ -11757,7 +11991,7 @@ namespace CommunityLib
                             targetIndex++;
                         }
                     }
-                    else if (targetIndex == 4)
+                    else if (targetIndex == 5)
                     {
                         if (instructionList[i].opcode == OpCodes.Ldc_I4_0 && instructionList[i - 1].opcode == OpCodes.Call)
                         {
@@ -11815,7 +12049,7 @@ namespace CommunityLib
         {
             if (!UIInputs.mouseLockout() && me.isCommandable())
             {
-                if (me.turnLastEngaged == me.map.turn)
+                if (AgentIsEngaged(me))
                 {
                     if (me.engagedBy != null)
                     {
@@ -11829,7 +12063,7 @@ namespace CommunityLib
                     }
                 }
 
-                if (other.turnLastEngaged == other.map.turn)
+                if (AgentIsEngaged(other))
                 {
                     if (other.engagedBy != null)
                     {
@@ -11866,7 +12100,7 @@ namespace CommunityLib
         {
             if (!UIInputs.mouseLockout() && me.isCommandable())
             {
-                if (me.turnLastEngaged == me.map.turn)
+                if (AgentIsEngaged(me))
                 {
                     if (me.engagedBy != null)
                     {
