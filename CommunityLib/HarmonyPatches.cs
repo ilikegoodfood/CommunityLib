@@ -128,10 +128,6 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.attackDownRow), new Type[] { typeof(int), typeof(UA), typeof(UA), typeof(PopupBattleAgent) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_AttackDownRow_Minion_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.attackDownRow), new Type[] { typeof(int), typeof(int), typeof(AgentCombatInterface), typeof(UA), typeof(UA), typeof(PopupBattleAgent) }), transpiler: new HarmonyMethod(patchType, nameof(BattleAgents_AttackDownRow_Agent_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.automatic), Type.EmptyTypes), prefix: new HarmonyMethod(patchType, nameof(BattleAgents_automatic_Prefix)));
-            harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.terminate), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(BattleAgents_terminate_Postfix)));
-            harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.skirmishEnd), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(BattleAgents_skirmishEnd_Postfix)));
-            harmony.Patch(original: AccessTools.Method(typeof(World), nameof(World.bEndTurn), new Type[] { typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(World_bEndTurn_Transpiler)));
-            harmony.Patch(original: AccessTools.Method(AccessTools.Inner(typeof(UA), "<>c__DisplayClass44_0"), "<playerTriesToAttack>b__0", new Type[] { typeof(string) }), transpiler: new HarmonyMethod(patchType, nameof(UA_playerTriesToAttack_b0_Transpiler)));
 
             // Agent Barttle Popup Hooks
             harmony.Patch(original: AccessTools.Method(typeof(PopupBattleAgent), nameof(PopupBattleAgent.populate), new Type[] { typeof(BattleAgents) }), postfix: new HarmonyMethod(patchType, nameof(PopupBattleAgent_populate_Postfix)));
@@ -527,7 +523,9 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(UA), "playerTriesToRob", new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(UA_playerTriesToRob_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(UA), "playerTriesToStartChallenge", new Type[] { typeof(Challenge) }), transpiler: new HarmonyMethod(patchType, nameof(checkEngaging_BulkTranspiler_S)));
             harmony.Patch(original: AccessTools.Method(typeof(UA), "playerTriesToTrade", new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(UA_playerTriesToTrade_Transpiler)));
-
+            harmony.Patch(original: AccessTools.Method(typeof(BattleAgents), nameof(BattleAgents.terminate), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(BattleAgents_terminate_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(World), nameof(World.bEndTurn), new Type[] { typeof(bool) }), transpiler: new HarmonyMethod(patchType, nameof(World_bEndTurn_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(AccessTools.Inner(typeof(UA), "<>c__DisplayClass44_0"), "<playerTriesToAttack>b__0", new Type[] { typeof(string) }), transpiler: new HarmonyMethod(patchType, nameof(UA_playerTriesToAttack_b0_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(UIInputs), nameof(UIInputs.rightClickOnHex), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(UIInput_rightClickOnHex_Transpiler)));
 
             // --- Performance Improvements -- //
@@ -6505,11 +6503,6 @@ namespace CommunityLib
             __instance.def.engaging = null;
         }
 
-        private static void BattleAgents_skirmishEnd_Postfix(BattleAgents __instance)
-        {
-            __instance.terminate();
-        }
-
         private static IEnumerable<CodeInstruction> World_bEndTurn_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
@@ -11428,7 +11421,7 @@ namespace CommunityLib
                 return false;
             }
 
-            if (ua.isDead || ua.turnLastEngaged != ua.map.turn)
+            if (ua.isDead || ua.hp <= 0 || ua.turnLastEngaged != ua.map.turn)
             {
                 if (ua.engagedBy != null)
                 {
@@ -11438,7 +11431,8 @@ namespace CommunityLib
                     }
                     ua.engagedBy = null;
                 }
-                else if (ua.engaging != null)
+                
+                if (ua.engaging != null)
                 {
                     if (ua.engaging.engagedBy == ua)
                     {
@@ -11451,21 +11445,25 @@ namespace CommunityLib
 
             if (ua.engagedBy != null)
             {
-                if (ua.engagedBy.isDead || !(ua.engagedBy is UA) || ua.engagedBy.task is Task_Disrupted)
+                if (ua.engagedBy.engaging != ua)
                 {
-                    if (ua.engagedBy.engaging == ua)
-                    {
-                        ua.engagedBy.engaging = null;
-                    }
                     ua.engagedBy = null;
                     return false;
                 }
+
+                if (ua.engagedBy.isDead || ua.engagedBy.hp <= 0 || !(ua.engagedBy is UA) || ua.engagedBy.task is Task_Disrupted)
+                {
+                    ua.engagedBy.engaging = null;
+                    ua.engagedBy = null;
+                    return false;
+                }
+
                 return true;
             }
 
             if (ua.engaging != null)
             {
-                if (ua.engaging.isDead || !(ua.engaging is UA) || ua.task is Task_Disrupted)
+                if (ua.engaging.isDead || ua.engaging.hp <= 0 || !(ua.engaging is UA) || ua.task is Task_Disrupted)
                 {
                     if (ua.engaging.engagedBy == ua)
                     {
@@ -11474,6 +11472,7 @@ namespace CommunityLib
                     ua.engaging = null;
                     return false;
                 }
+
                 return true;
             }
 
@@ -11487,7 +11486,7 @@ namespace CommunityLib
                 return false;
             }
 
-            if (um.isDead || um.turnLastEngaged != um.map.turn)
+            if (um.isDead || um.hp <= 0 || um.turnLastEngaged != um.map.turn)
             {
                 if (um.engagedBy != null)
                 {
@@ -11497,7 +11496,8 @@ namespace CommunityLib
                     }
                     um.engagedBy = null;
                 }
-                else if (um.engaging != null)
+                
+                if (um.engaging != null)
                 {
                     if (um.engaging.engagedBy == um)
                     {
@@ -11505,12 +11505,19 @@ namespace CommunityLib
                     }
                     um.engaging = null;
                 }
+
                 return false;
             }
 
             if (um.engagedBy != null)
             {
-                if (um.engagedBy.isDead || !(um.engagedBy is UM) || um.engaging.task is Task_Disrupted)
+                if (um.engagedBy.engaging != um)
+                {
+                    um.engagedBy = null;
+                    return false;
+                }
+
+                if (um.engagedBy.isDead || um.engagedBy.hp <= 0 || !(um.engagedBy is UM) || um.engaging.task is Task_Disrupted)
                 {
                     if (um.engagedBy.engaging == um)
                     {
@@ -11519,12 +11526,13 @@ namespace CommunityLib
                     um.engagedBy = null;
                     return false;
                 }
+
                 return true;
             }
 
             if (um.engaging != null)
             {
-                if (um.engaging.isDead || !(um.engaging is UM) || um.task is Task_Disrupted)
+                if (um.engaging.isDead || um.engaging.hp <= 0 || !(um.engaging is UM) || um.task is Task_Disrupted)
                 {
                     if (um.engaging.engagedBy == um)
                     {
@@ -11798,7 +11806,6 @@ namespace CommunityLib
         }
 
         // engaging Patches
-        
         private static IEnumerable<CodeInstruction> checkEngaging_BulkTranspiler_2(IEnumerable<CodeInstruction> codeInstructions)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
