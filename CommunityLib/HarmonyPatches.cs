@@ -15212,6 +15212,7 @@ namespace CommunityLib
 
                 // Process god names based on sorting options
                 godData.ProcessName();
+                godData.ProcessScore();
 
                 if (ModCore.opt_godSort_Random)
                 {

@@ -26,6 +26,8 @@ namespace CommunityLib
 
         public int randomOrderKey = -1;
 
+        public ulong sortScore = 0;
+
         public GodSortData()
         {
 
@@ -71,6 +73,51 @@ namespace CommunityLib
             }
         }
 
+        public void ProcessScore()
+        {
+            ulong score = 0;
+
+            if (!ModCore.opt_godSort)
+            {
+                sortScore = 0;
+                return;
+            }
+
+            // Higher bit positions = higher priority tier
+            if (ModCore.opt_godSort_lastPlayedFirst)
+            {
+                score |= (isLastPlayed ? 0L : 1UL) << 60;
+            }
+
+            if (ModCore.opt_godSort_swwfFirst)
+            {
+                score |= (isSWWF ? 0UL : 1UL) << 55;
+            }
+
+            if (ModCore.opt_godSort_splitModded)
+            {
+                score |= (isVanilla ? 0UL : 1UL) << 50;
+            }
+
+            if (ModCore.opt_godSort_minorLate)
+            {
+                score |= (isMinorGod ? 1UL : 0UL) << 45;
+            }
+
+            if (ModCore.opt_godSort_bonusLast)
+            {
+                score |= (isBonusGod ? 1UL : 0UL) << 40;
+            }
+
+            if (ModCore.opt_godSort_Random && randomOrderKey >= 0)
+            {
+                // Map the random 32-bit int into bits 10-41
+                score |= ((ulong)randomOrderKey) << 10;
+            }
+
+            sortScore = score;
+        }
+
         public int CompareTo(GodSortData other)
         {
             if (!ModCore.opt_godSort)
@@ -79,43 +126,10 @@ namespace CommunityLib
             }
 
             // Handle last played god first
-            if (ModCore.opt_godSort_lastPlayedFirst)
+            int scoreComparison = sortScore.CompareTo(other.sortScore);
+            if (scoreComparison != 0)
             {
-                if (isLastPlayed && !other.isLastPlayed) return -1;
-                if (!isLastPlayed && other.isLastPlayed) return 1;
-            }
-
-            // Handle SWWF god first
-            if (ModCore.opt_godSort_swwfFirst)
-            {
-                if (isSWWF && !other.isSWWF) return -1;
-                if (!isSWWF && other.isSWWF) return 1;
-            }
-
-            // Handle modded vs vanilla splitting
-            if (ModCore.opt_godSort_splitModded)
-            {
-                if (isVanilla && !other.isVanilla) return -1;
-                if (!isVanilla && other.isVanilla) return 1;
-            }
-
-            // Handle minor gods placement
-            if (ModCore.opt_godSort_minorLate)
-            {
-                if (isMinorGod && !other.isMinorGod) return 1;
-                if (!isMinorGod && other.isMinorGod) return -1;
-            }
-
-            // Handle bonus gods placement
-            if (ModCore.opt_godSort_bonusLast)
-            {
-                if (isBonusGod && !other.isBonusGod) return 1;
-                if (!isBonusGod && other.isBonusGod) return -1;
-            }
-
-            if (ModCore.opt_godSort_Random && randomOrderKey >= 0 && other.randomOrderKey >= 0)
-            {
-                return randomOrderKey.CompareTo(other.randomOrderKey);
+                return scoreComparison;
             }
 
             // Finally, compare alphabetically
