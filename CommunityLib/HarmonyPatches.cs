@@ -454,6 +454,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Pr_TunnelsAbove), nameof(Pr_TunnelsAbove.getDesc), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(Pr_TunnelsAbove_getDesc_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(Pr_TunnelsBeneath), nameof(Pr_TunnelsBeneath.getDesc), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(Pr_TunnelsBeneath_getDesc_Postfix)));
             harmony.Patch(original: AccessTools.Method(typeof(Pr_SmugglersInTunnels), nameof(Pr_SmugglersInTunnels.turnTick), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(Pr_SmugglersInTunnels_turnTick_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(Pr_FallenHuman), nameof(Pr_FallenHuman.getName), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(Pr_FallenHuman_getName_Postfix)));
 
             // Religion UI Screen modification
             harmony.Patch(original: AccessTools.Method(typeof(PopupHolyOrder), nameof(PopupHolyOrder.bPrev), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(PopupHolyOrder_bPrevNext_Transpiler)));
@@ -10199,6 +10200,11 @@ namespace CommunityLib
             }
         }
 
+        private static void Pr_FallenHuman_getName_Postfix(ref string __result)
+        {
+            __result = "Soul";
+        }
+
         // Religion UI Screen modification
         private static IEnumerable<CodeInstruction> PopupHolyOrder_bPrevNext_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
         {
@@ -10554,10 +10560,16 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
-            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(HolyOrder_turnTick_TranspilerBody));
+            MethodInfo MI_TranspilerBody_Income = AccessTools.Method(patchType, nameof(HolyOrder_turnTick_TranspilerBody_ManageIncome));
+            MethodInfo MI_TranspilerBody_Subsumed = AccessTools.Method(patchType, nameof(HolyOrder_turnTick_TranspilerBody_Subsumed));
+
+            FieldInfo FI_nAcolytes = AccessTools.Field(typeof(HolyOrder), nameof(HolyOrder.nAcolytes));
+            FieldInfo FI_nTemples = AccessTools.Field(typeof(HolyOrder), nameof(HolyOrder.nTemples));
 
             Label label = ilg.DefineLabel();
+            Label continueLabel = ilg.DefineLabel();
 
+            bool returnCode = true;
             int targetIndex = 1;
             for (int i = 0; i < instructionList.Count; i++)
             {
@@ -10565,7 +10577,117 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Br_S && instructionList[i-1].opcode == OpCodes.Ldfld)
+                        if (instructionList[i].opcode == OpCodes.Ldc_I4_0 && instructionList[i+1].opcode == OpCodes.Stloc_1) // Find initial valyue set of num, which is equivelent to this.nAcolytes.
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_nAcolytes); // Call this.nAcolytes instead of setting to 0, and allow the vanilla code to store it to num..
+                            yield return instructionList[i+1];
+
+                            returnCode = false; // Stop returning code.
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Endfinally) // Find the end of the foreach Unit in map.units loop that previously counted acolytes.
+                        {
+                            i += 2; // The next isntrcution after the Endfinally is the initial constant 0 that is assigned to num2, which is equivelent to this.nTemples.
+                            returnCode = true; // Resume returning code, but two instructions later, thus skipping the Endfinally and the Ldc_I4_0.
+                            // This completely removes the redundant foreach loop that previously counted acolytes in num.
+
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_nTemples); // Load this.nTemples instead of the constant 0, and allow the vanilla code to store it to num2.
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Br) // Find the start of the foreach Location in map.locations loop. We still need some of the loop's contents, but we can cut out the temple counting logic, as that is already available via this.nTemples.
+                        {
+                            continueLabel = (Label)instructionList[i].operand; // Get the flag where the loop performs advancement.
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 4)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Brfalse_S) // Find the next Brfalse_S and change it's label to the next label.
+                        {
+                            instructionList[i].operand = continueLabel;
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 5) // And the same fo the one after that.
+                    {
+                        if (instructionList[i].opcode == OpCodes.Brfalse_S)
+                        {
+                            instructionList[i].operand = continueLabel;
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 6)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i-1].opcode == OpCodes.Stloc_3) // Then allow the vanilla code to increment the worshipping locations count in num3.
+                        {
+                            returnCode = false; // Then stop returning code.
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 7)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Endfinally) // find the end of the inner foreach Subsettlement in location.settlement.subs loop that we want to skip over. It was counting temples, but we already have that value, so we can remove it from this loop.
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 8)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloca_S) // Find the location of the outer loop where the loop advances to the next element. This is where our next/continue label is located.
+                        {
+                            returnCode = true; // Resume returning code, properly closing up the outer foreach loop.
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 9)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldnull) // Find the location where the arguments are being loaded onto the stac for the this.processIncome call. We are replacing this entire section with our TranspilerBody_ManageIncome
+                        {
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Income);
+
+                            returnCode = false; // Stop returning vanilla code.
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 10)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldnull) // Since there is only 1 Ldnull in the block we wish to skip, and once just after the end of that block, we can use them as signposts.
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 11)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldnull) // This second Ldnull puts us a short distance after the end of the block we wish not to return. As such, we need to now backtrack a little.
+                        {
+                            for (int j = i; j >= 0; j--) // Run j backwards to find the actual end of the block we wish to skip.
+                            {
+                                if (instructionList[j].opcode == OpCodes.Nop && instructionList[j+1].opcode == OpCodes.Ldarg_0 && instructionList[j+2].opcode == OpCodes.Ldfld) // Find the Nop at the end of the block we wish to skip.
+                                {
+                                    i = j; // Once found, revise our current index backwards
+                                    break;
+                                }
+                            }
+
+                            returnCode = true; // STart resuming code from our reised index.
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 12)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Br_S && instructionList[i-1].opcode == OpCodes.Ldfld) // Insert isSubsumed check into if prophet dead condition.
                         {
                             label = (Label)instructionList[i].operand;
 
@@ -10573,14 +10695,17 @@ namespace CommunityLib
                             yield return new CodeInstruction(OpCodes.Brfalse_S, label);
                             yield return new CodeInstruction(OpCodes.Pop);
                             yield return new CodeInstruction(OpCodes.Ldarg_0);
-                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Subsumed);
 
                             targetIndex = 0;
                         }
                     }
                 }
 
-                yield return instructionList[i];
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
             }
 
             Console.WriteLine("CommunityLib: Completed HolyOrder_turnTick_Transpiler");
@@ -10590,7 +10715,160 @@ namespace CommunityLib
             }
         }
 
-        private static bool HolyOrder_turnTick_TranspilerBody(HolyOrder order)
+        public static void HolyOrder_turnTick_TranspilerBody_ManageIncome(HolyOrder order)
+        {
+            int income = order.processIncome(null);
+
+            bool isOphanimFaith = order is HolyOrder_Ophanim;
+            bool spawnedAcolyte = false;
+            bool canSpawnAcolyte = order.map.turn % 12 == 0 && !isOphanimFaith && order.nAcolytes < order.map.param.holy_maxAcolytes && order.cashForAcolytes >= order.costAcolyte;
+
+            if (canSpawnAcolyte && !spawnedAcolyte)
+            {
+                order.cashForAcolytes -= order.costAcolyte;
+                order.createAcolyte();
+                order.costAcolyte = 200 * Math.Max(0, order.nAcolytes);
+                spawnedAcolyte = true;
+            }
+
+            if (income > 0)
+            {
+                while (income > 0)
+                {
+                    int acolyteWeight = 0;
+                    if (!isOphanimFaith)
+                    {
+                        if (order.cashForAcolytes < order.costAcolyte * 2)
+                        {
+                            acolyteWeight = 2;
+                        }
+                    }
+
+                    int preachWeight = 0;
+                    if (order.priorityPreach != null && order.cashForPreaching < order.costPreach * 2)
+                    {
+                        preachWeight = order.priorityPreach.status;
+                    }
+
+                    int templeWeight = 0;
+                    if (order.priorityTemples != null && order.cashForTemples < order.costTemple * 2)
+                    {
+                        templeWeight = order.priorityTemples.status;
+                    }
+
+                    int overflow = 0;
+                    if (acolyteWeight == 0 && preachWeight == 0 && templeWeight == 0)
+                    {
+                        if (isOphanimFaith)
+                        {
+                            overflow += order.cashForAcolytes;
+                            order.cashForAcolytes = 0;
+                        }
+                        else
+                        {
+                            overflow += order.cashForAcolytes - (order.costAcolyte * 2);
+                            order.cashForAcolytes = order.costAcolyte * 2;
+                        }
+                        overflow += order.cashForPreaching - (order.costPreach * 2);
+                        order.cashForPreaching = order.costPreach * 2;
+                        overflow += order.cashForTemples - (order.costTemple * 2);
+                        order.cashForTemples = order.costTemple * 2;
+
+                        order.reserves += overflow;
+                        income = 0;
+                        break;
+                    }
+
+                    int weightFactor = acolyteWeight + preachWeight + templeWeight;
+                    int cashForPreaching = (income * preachWeight) / weightFactor;
+                    int cashForTemples = (income * templeWeight) / weightFactor;
+                    int cashForAcolytes = (income * acolyteWeight) / weightFactor;
+                    int remainder = income - (cashForPreaching + cashForTemples + cashForAcolytes);
+                    if (remainder > 0)
+                    {
+                        if (acolyteWeight > 0)
+                        {
+                            cashForAcolytes += remainder;
+                        }
+                        else if (templeWeight > 0)
+                        {
+                            cashForTemples += remainder;
+                        }
+                        else
+                        {
+                            cashForPreaching += remainder;
+                        }
+                    }
+
+                    order.cashForAcolytes += cashForAcolytes;
+                    if (canSpawnAcolyte && !spawnedAcolyte)
+                    {
+                        order.cashForAcolytes -= order.costAcolyte;
+                        order.createAcolyte();
+                        order.nAcolytes++;
+                        order.costAcolyte = 200 * Math.Max(0, order.nAcolytes);
+                        spawnedAcolyte = true;
+                    }
+
+                    int overflowAcolytes = order.cashForAcolytes - (order.costAcolyte * 2);
+                    if (overflowAcolytes > 0)
+                    {
+                        order.cashForAcolytes -= overflowAcolytes;
+                        overflow += overflowAcolytes;
+                    }
+
+                    order.cashForPreaching += cashForPreaching;
+                    int overflowPreaching = order.cashForPreaching - (order.costPreach * 2);
+                    if (overflowPreaching > 0)
+                    {
+                        order.cashForPreaching -= overflowPreaching;
+                        overflow += overflowPreaching;
+                    }
+
+                    order.cashForTemples += cashForTemples;
+                    int overflowTemples = order.cashForTemples - (order.costTemple * 2);
+                    if (overflowTemples > 0)
+                    {
+                        order.cashForTemples -= overflowTemples;
+                        overflow += overflowTemples;
+                    }
+
+                    income = overflow;
+                }
+            }
+            else
+            {
+                int staticOverflow = 0;
+
+                if (isOphanimFaith)
+                {
+                    staticOverflow += order.cashForAcolytes;
+                    order.cashForAcolytes = 0;
+                }
+                else if (order.cashForAcolytes > order.costAcolyte * 2)
+                {
+                    staticOverflow += order.cashForAcolytes - (order.costAcolyte * 2);
+                    order.cashForAcolytes = order.costAcolyte * 2;
+                }
+
+                if (order.cashForPreaching > order.costPreach * 2)
+                {
+                    staticOverflow += order.cashForPreaching - (order.costPreach * 2);
+                    order.cashForPreaching = order.costPreach * 2;
+                }
+
+                if (order.cashForTemples > order.costTemple * 2)
+                {
+                    staticOverflow += order.cashForTemples - (order.costTemple * 2);
+                    order.cashForTemples = order.costTemple * 2;
+                }
+
+                order.reserves += staticOverflow;
+            }
+            order.reserves -= order.getReservesExpenditure();
+        }
+
+        private static bool HolyOrder_turnTick_TranspilerBody_Subsumed(HolyOrder order)
         {
             return !ModCore.Get().checkIsUnitSubsumed(order.prophet);
         }
