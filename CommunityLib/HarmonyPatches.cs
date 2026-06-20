@@ -8992,8 +8992,6 @@ namespace CommunityLib
 
         public static void HolyOrder_turnTick_TranspilerBody_ManageIncome(HolyOrder order)
         {
-            int income = order.processIncome(null);
-
             bool isOphanimFaith = order is HolyOrder_Ophanim;
             bool spawnedAcolyte = false;
             bool canSpawnAcolyte = order.map.turn % 12 == 0 && !isOphanimFaith && order.nAcolytes < order.map.param.holy_maxAcolytes && order.cashForAcolytes >= order.costAcolyte;
@@ -9006,141 +9004,138 @@ namespace CommunityLib
                 spawnedAcolyte = true;
             }
 
-            if (income > 0)
+            int overflow = 0;
+            if (isOphanimFaith)
             {
-                while (income > 0)
-                {
-                    int acolyteWeight = 0;
-                    if (!isOphanimFaith)
-                    {
-                        if (order.cashForAcolytes < order.costAcolyte * 2)
-                        {
-                            acolyteWeight = 2;
-                        }
-                    }
-
-                    int preachWeight = 0;
-                    if (order.priorityPreach != null && order.cashForPreaching < order.costPreach * 2)
-                    {
-                        preachWeight = order.priorityPreach.status;
-                    }
-
-                    int templeWeight = 0;
-                    if (order.priorityTemples != null && order.cashForTemples < order.costTemple * 2)
-                    {
-                        templeWeight = order.priorityTemples.status;
-                    }
-
-                    int overflow = 0;
-                    if (acolyteWeight == 0 && preachWeight == 0 && templeWeight == 0)
-                    {
-                        if (isOphanimFaith)
-                        {
-                            overflow += order.cashForAcolytes;
-                            order.cashForAcolytes = 0;
-                        }
-                        else
-                        {
-                            overflow += order.cashForAcolytes - (order.costAcolyte * 2);
-                            order.cashForAcolytes = order.costAcolyte * 2;
-                        }
-                        overflow += order.cashForPreaching - (order.costPreach * 2);
-                        order.cashForPreaching = order.costPreach * 2;
-                        overflow += order.cashForTemples - (order.costTemple * 2);
-                        order.cashForTemples = order.costTemple * 2;
-
-                        order.reserves += overflow;
-                        income = 0;
-                        break;
-                    }
-
-                    int weightFactor = acolyteWeight + preachWeight + templeWeight;
-                    int cashForPreaching = (income * preachWeight) / weightFactor;
-                    int cashForTemples = (income * templeWeight) / weightFactor;
-                    int cashForAcolytes = (income * acolyteWeight) / weightFactor;
-                    int remainder = income - (cashForPreaching + cashForTemples + cashForAcolytes);
-                    if (remainder > 0)
-                    {
-                        if (acolyteWeight > 0)
-                        {
-                            cashForAcolytes += remainder;
-                        }
-                        else if (templeWeight > 0)
-                        {
-                            cashForTemples += remainder;
-                        }
-                        else
-                        {
-                            cashForPreaching += remainder;
-                        }
-                    }
-
-                    order.cashForAcolytes += cashForAcolytes;
-                    if (canSpawnAcolyte && !spawnedAcolyte)
-                    {
-                        order.cashForAcolytes -= order.costAcolyte;
-                        order.createAcolyte();
-                        order.nAcolytes++;
-                        order.costAcolyte = 200 * Math.Max(0, order.nAcolytes);
-                        spawnedAcolyte = true;
-                    }
-
-                    int overflowAcolytes = order.cashForAcolytes - (order.costAcolyte * 2);
-                    if (overflowAcolytes > 0)
-                    {
-                        order.cashForAcolytes -= overflowAcolytes;
-                        overflow += overflowAcolytes;
-                    }
-
-                    order.cashForPreaching += cashForPreaching;
-                    int overflowPreaching = order.cashForPreaching - (order.costPreach * 2);
-                    if (overflowPreaching > 0)
-                    {
-                        order.cashForPreaching -= overflowPreaching;
-                        overflow += overflowPreaching;
-                    }
-
-                    order.cashForTemples += cashForTemples;
-                    int overflowTemples = order.cashForTemples - (order.costTemple * 2);
-                    if (overflowTemples > 0)
-                    {
-                        order.cashForTemples -= overflowTemples;
-                        overflow += overflowTemples;
-                    }
-
-                    income = overflow;
-                }
+                overflow += order.cashForAcolytes;
+                order.cashForAcolytes = 0;
             }
-            else
+            else if (order.cashForAcolytes > order.costAcolyte * 2)
             {
-                int staticOverflow = 0;
+                overflow += order.cashForAcolytes - (order.costAcolyte * 2);
+                order.cashForAcolytes = order.costAcolyte * 2;
+            }
 
-                if (isOphanimFaith)
+            if (order.cashForPreaching > order.costPreach * 2)
+            {
+                overflow += order.cashForPreaching - (order.costPreach * 2);
+                order.cashForPreaching = order.costPreach * 2;
+            }
+
+            if (order.cashForTemples > order.costTemple * 2)
+            {
+                overflow += order.cashForTemples - (order.costTemple * 2);
+                order.cashForTemples = order.costTemple * 2;
+            }
+
+            order.reserves += overflow;
+            overflow = 0;
+            int reserveDrain = 2 * order.getReservesExpenditure();
+
+            int income = order.processIncome(null);
+            while (income > 0)
+            {
+                int acolyteWeight = 0;
+                if (!isOphanimFaith)
                 {
-                    staticOverflow += order.cashForAcolytes;
-                    order.cashForAcolytes = 0;
-                }
-                else if (order.cashForAcolytes > order.costAcolyte * 2)
-                {
-                    staticOverflow += order.cashForAcolytes - (order.costAcolyte * 2);
-                    order.cashForAcolytes = order.costAcolyte * 2;
+                    if (order.cashForAcolytes < order.costAcolyte * 2)
+                    {
+                        acolyteWeight = 2;
+                    }
                 }
 
-                if (order.cashForPreaching > order.costPreach * 2)
+                int preachWeight = 0;
+                if (order.priorityPreach != null && order.cashForPreaching < order.costPreach * 2)
                 {
-                    staticOverflow += order.cashForPreaching - (order.costPreach * 2);
+                    preachWeight = order.priorityPreach.status;
+                }
+
+                int templeWeight = 0;
+                if (order.priorityTemples != null && order.cashForTemples < order.costTemple * 2)
+                {
+                    templeWeight = order.priorityTemples.status;
+                }
+
+                overflow = 0;
+                if (acolyteWeight == 0 && preachWeight == 0 && templeWeight == 0)
+                {
+                    if (isOphanimFaith)
+                    {
+                        overflow += order.cashForAcolytes;
+                        order.cashForAcolytes = 0;
+                    }
+                    else
+                    {
+                        overflow += order.cashForAcolytes - (order.costAcolyte * 2);
+                        order.cashForAcolytes = order.costAcolyte * 2;
+                    }
+                    overflow += order.cashForPreaching - (order.costPreach * 2);
                     order.cashForPreaching = order.costPreach * 2;
-                }
-
-                if (order.cashForTemples > order.costTemple * 2)
-                {
-                    staticOverflow += order.cashForTemples - (order.costTemple * 2);
+                    overflow += order.cashForTemples - (order.costTemple * 2);
                     order.cashForTemples = order.costTemple * 2;
+
+                    order.reserves += overflow;
+                    income = 0;
+                    break;
                 }
 
-                order.reserves += staticOverflow;
+                int weightFactor = acolyteWeight + preachWeight + templeWeight;
+                int cashForPreaching = (income * preachWeight) / weightFactor;
+                int cashForTemples = (income * templeWeight) / weightFactor;
+                int cashForAcolytes = (income * acolyteWeight) / weightFactor;
+                int remainder = income - (cashForPreaching + cashForTemples + cashForAcolytes);
+                if (remainder > 0)
+                {
+                    if (acolyteWeight > 0)
+                    {
+                        cashForAcolytes += remainder;
+                    }
+                    else if (templeWeight > 0)
+                    {
+                        cashForTemples += remainder;
+                    }
+                    else
+                    {
+                        cashForPreaching += remainder;
+                    }
+                }
+
+                order.cashForAcolytes += cashForAcolytes;
+                if (canSpawnAcolyte && !spawnedAcolyte)
+                {
+                    order.cashForAcolytes -= order.costAcolyte;
+                    order.createAcolyte();
+                    order.nAcolytes++;
+                    order.costAcolyte = 200 * Math.Max(0, order.nAcolytes);
+                    spawnedAcolyte = true;
+                }
+
+                int overflowAcolytes = order.cashForAcolytes - (order.costAcolyte * 2);
+                if (overflowAcolytes > 0)
+                {
+                    order.cashForAcolytes -= overflowAcolytes;
+                    overflow += overflowAcolytes;
+                }
+
+                order.cashForPreaching += cashForPreaching;
+                int overflowPreaching = order.cashForPreaching - (order.costPreach * 2);
+                if (overflowPreaching > 0)
+                {
+                    order.cashForPreaching -= overflowPreaching;
+                    overflow += overflowPreaching;
+                }
+
+                order.cashForTemples += cashForTemples;
+                int overflowTemples = order.cashForTemples - (order.costTemple * 2);
+                if (overflowTemples > 0)
+                {
+                    order.cashForTemples -= overflowTemples;
+                    overflow += overflowTemples;
+                }
+
+                income = overflow;
             }
-            order.reserves -= order.getReservesExpenditure();
+            order.reserves = Math.Max(0, order.reserves - reserveDrain);
         }
 
         private static bool HolyOrder_turnTick_TranspilerBody_Subsumed(HolyOrder order)
