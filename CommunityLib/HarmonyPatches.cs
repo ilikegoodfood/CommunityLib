@@ -10729,6 +10729,7 @@ namespace CommunityLib
                 spawnedAcolyte = true;
             }
 
+            // Shunt any overflow that results from a spending pool shrinking between turns directly into the reserves.
             int overflow = 0;
             if (isOphanimFaith)
             {
@@ -10741,13 +10742,23 @@ namespace CommunityLib
                 order.cashForAcolytes = order.costAcolyte * 2;
             }
 
-            if (order.cashForPreaching > order.costPreach * 2)
+            if (order.priorityPreach == null)
+            {
+                overflow += order.cashForPreaching;
+                order.cashForPreaching = 0;
+            }
+            else if (order.cashForPreaching > order.costPreach * 2)
             {
                 overflow += order.cashForPreaching - (order.costPreach * 2);
                 order.cashForPreaching = order.costPreach * 2;
             }
 
-            if (order.cashForTemples > order.costTemple * 2)
+            if (order.priorityTemples == null)
+            {
+                overflow += order.cashForTemples;
+                order.cashForTemples = 0;
+            }
+            else if (order.cashForTemples > order.costTemple * 2)
             {
                 overflow += order.cashForTemples - (order.costTemple * 2);
                 order.cashForTemples = order.costTemple * 2;
@@ -10755,9 +10766,13 @@ namespace CommunityLib
 
             order.reserves += overflow;
             overflow = 0;
-            int reserveDrain = 2 * order.getReservesExpenditure();
 
-            int income = order.processIncome(null);
+            int reserveDrain = order.getReservesExpenditure(); // Directly capture this turn's reserve expenditure.
+            int income = order.processIncome(null); // Process income includes all sources, including reserve expenditure.
+            order.reserves -= reserveDrain; // Deduct reserve expenditure from from reserves.
+
+            int incomeInitial = income; // Snapshot the initial income value, as income is overridden by the while loop below, and we want to know the initial value for later use.
+            int incomeToReserves = 0; // When the spending pools are filled, all remaining money will be added to the reserves, and the amount added is stored in here.
             while (income > 0)
             {
                 int acolyteWeight = 0;
@@ -10770,40 +10785,32 @@ namespace CommunityLib
                 }
 
                 int preachWeight = 0;
-                if (order.priorityPreach != null && order.cashForPreaching < order.costPreach * 2)
+                if (order.priorityPreach != null)
                 {
-                    preachWeight = order.priorityPreach.status;
+                    if (order.cashForPreaching < order.costPreach * 2)
+                    {
+                        preachWeight = order.priorityPreach.status;
+                    }
                 }
 
                 int templeWeight = 0;
-                if (order.priorityTemples != null && order.cashForTemples < order.costTemple * 2)
+                if (order.priorityTemples != null)
                 {
-                    templeWeight = order.priorityTemples.status;
+                    if (order.cashForTemples < order.costTemple * 2)
+                    {
+                        templeWeight = order.priorityTemples.status;
+                    }
                 }
 
-                overflow = 0;
                 if (acolyteWeight == 0 && preachWeight == 0 && templeWeight == 0)
                 {
-                    if (isOphanimFaith)
-                    {
-                        overflow += order.cashForAcolytes;
-                        order.cashForAcolytes = 0;
-                    }
-                    else
-                    {
-                        overflow += order.cashForAcolytes - (order.costAcolyte * 2);
-                        order.cashForAcolytes = order.costAcolyte * 2;
-                    }
-                    overflow += order.cashForPreaching - (order.costPreach * 2);
-                    order.cashForPreaching = order.costPreach * 2;
-                    overflow += order.cashForTemples - (order.costTemple * 2);
-                    order.cashForTemples = order.costTemple * 2;
-
-                    order.reserves += overflow;
+                    order.reserves += income;
+                    incomeToReserves = income;
                     income = 0;
                     break;
                 }
 
+                overflow = 0; // From this point forwards, overflow is only used for overflow within the loop for this turns income, and should be dsitributed among the other spending pools if at all possible.
                 int weightFactor = acolyteWeight + preachWeight + templeWeight;
                 int cashForPreaching = (income * preachWeight) / weightFactor;
                 int cashForTemples = (income * templeWeight) / weightFactor;
@@ -10860,7 +10867,16 @@ namespace CommunityLib
 
                 income = overflow;
             }
-            order.reserves = Math.Max(0, order.reserves - reserveDrain);
+
+            if (incomeToReserves > 0)
+            {
+                int incomeDistributed = incomeInitial - incomeToReserves;
+                if (incomeDistributed < reserveDrain)
+                {
+                    int recycledReserves = reserveDrain - incomeDistributed;
+                    order.reserves -= recycledReserves; // The reserve amount is always spent before all other income, and is not recouped.
+                }
+            }
         }
 
         private static bool HolyOrder_turnTick_TranspilerBody_Subsumed(HolyOrder order)
