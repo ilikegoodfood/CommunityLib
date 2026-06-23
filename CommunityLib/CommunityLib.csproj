@@ -85,6 +85,7 @@
     <Compile Include="HooksDelegateRegistry.cs" />
     <Compile Include="HexGridUtils.cs" />
     <Compile Include="MapMaskData.cs" />
+    <Compile Include="Pr_EventCustom_SurvivesRuin.cs" />
     <Compile Include="Serilialization\MarkovModelConverter.cs" />
     <Compile Include="Serilialization\NDimensionalArrayConverter.cs" />
     <Compile Include="Serilialization\PathTraceObjectProcessor.cs" />
