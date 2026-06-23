@@ -1,0 +1,46 @@
+{
+	"id": "anw.seerDaughter",
+	"modCredit": "BobbyTwoHands",
+	"imgCredit": "",
+	"image": "default.0_seer.jpg",
+	
+	"type": "LOCATION",
+	"conditional": "($ANW_DAUGHTER_SEER = 0) & (turn > 50) & is_desertlike & is_human",
+	"probability": 0.02,
+
+	"name": "The Daughterhood",
+	"description": "The Daughterhood cult has existed for centuries. Their sect has been weaving through humanity's religious texts and developments. Often, their symbols will be found as a small part of a much larger temple, as a concession of the dominant religion to the faith of the Daughterhood. Their preaching unnerves the listener, as they teach that the creator hates creation and that humanity's very existence is a sin — a sin which may one day be undone. Despite their blasphemous doctrine, they are tolerated and sought out for their uncanny ability to foresee the future. Their guidance allows crops to be gathered before the storm and villages to be evacuated before the flood. Lately, however, the seeing Daughter of %LOCATION_NAME has started screeching in terror, raving that the end has come and that the time of unmaking is near.",
+
+	"choices": [
+		{
+			"name": "She sees clearer than most",
+			"description": "She will disappear back into the ranks of her cult, leaving only faint echoes of her passing.",
+			"outcomes": [
+				{
+					"weight": 0.7,
+					"environment": [
+						{ "key": "ANW_DAUGHTER_SEER", "value": "-1", "local": "False" },
+						{ "key": "ANW_DAUGHTER_INCENSE_HERE", "value": "1", "local": "LOCATION" }
+					]
+				}
+			]
+		},
+		{
+			"name": "Call her to serve",
+			"description": "She will wait in %LOCATION_NAME for an agent to arrive. When they do, they can recruit her as a minion to summon the powerful First Daughter.",
+			"outcomes": [
+				{
+					"weight": 0.7,
+					"effects": [
+						{ "command": "ADD_MODIFIER_SURVIVES_RUIN", "argument": "Daughter Seer;default.icon_daughterSeer.png;The Seer Daughter was found here" },
+						{ "command": "PAN_TO", "argument": "" }
+					],
+					"environment": [
+						{ "key": "ANW_DAUGHTER_SEER", "value": "1", "local": "False" },
+						{ "key": "ANW_DAUGHTER_SEER_HERE", "value": "1", "local": "LOCATION" }
+					]
+				}
+			]
+		}
+	]
+}
