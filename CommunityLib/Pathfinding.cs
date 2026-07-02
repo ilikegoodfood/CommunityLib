@@ -304,10 +304,7 @@ namespace CommunityLib
                         List<Location> neighbourResults = getNeighbourDelegate(pair.Value, currentLocation, u);
                         if (neighbourResults != null)
                         {
-                            foreach (Location neighbour in neighbourResults)
-                            {
-                                neighbours.Add(neighbour);
-                            }
+                            neighbours.UnionWith(neighbourResults);
                         }
                     }
 
@@ -526,10 +523,7 @@ namespace CommunityLib
                         List<Location> neighbourResults = getNeighbourDelegate(pair.Value, currentLocation, u);
                         if (neighbourResults != null)
                         {
-                            foreach (Location neighbour in neighbourResults)
-                            {
-                                neighbours.Add(neighbour);
-                            }
+                            neighbours.UnionWith(neighbourResults);
                         }
                     }
 
@@ -765,10 +759,7 @@ namespace CommunityLib
                         List<Location> neighbourResults = getNeighbourDelegate(pair.Value, currentLocation, u);
                         if (neighbourResults != null)
                         {
-                            foreach (Location neighbour in neighbourResults)
-                            {
-                                neighbours.Add(neighbour);
-                            }
+                            neighbours.UnionWith(neighbourResults);
                         }
                     }
 
@@ -956,10 +947,7 @@ namespace CommunityLib
                     List<Location> neighbourResults = getNeighbourDelegate(pair.Value, currentLocation, u);
                     if (neighbourResults != null)
                     {
-                        foreach (Location neighbour in neighbourResults)
-                        {
-                            neighbours.Add(neighbour);
-                        }
+                        neighbours.UnionWith(neighbourResults);
                     }
                 }
 
@@ -1064,10 +1052,7 @@ namespace CommunityLib
                     List<Location> neighbourResults = getNeighbourDelegate(pair.Value, currentLocation, u);
                     if (neighbourResults != null)
                     {
-                        foreach (Location neighbour in neighbourResults)
-                        {
-                            neighbours.Add(neighbour);
-                        }
+                        neighbours.UnionWith(neighbourResults);
                     }
                 }
 
@@ -1331,7 +1316,7 @@ namespace CommunityLib
 
         #endregion
 
-        #region Mod-Specific TRade Route Pathfinding Delegates
+        #region Mod-Specific Trade Route Pathfinding Delegates
         public static double delegate_TRADE_LIVINGVOID_AVOIDVOID(Location[] currentPath, Location location)
         {
             if (location.map.tempMap[location.hex.x][location.hex.y] < -999f)
