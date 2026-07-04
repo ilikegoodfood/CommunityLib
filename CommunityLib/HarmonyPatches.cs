@@ -5757,17 +5757,6 @@ namespace CommunityLib
                     {
                         if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i-1].opcode == OpCodes.Nop && instructionList[i-2].opcode == OpCodes.Nop) // Immediately after the turnsTaken == 0 block
                         {
-                            CodeInstruction code = new CodeInstruction(OpCodes.Ldarg_0); // Increment turnTaken
-                            code.labels.AddRange(instructionList[i].labels);
-                            instructionList[i].labels.Clear();
-                            yield return code;
-                            yield return new CodeInstruction(OpCodes.Dup);
-                            yield return new CodeInstruction(OpCodes.Ldfld, FI_turnsTaken);
-                            yield return new CodeInstruction(OpCodes.Ldc_I4_1);
-                            yield return new CodeInstruction(OpCodes.Add);
-                            yield return new CodeInstruction(OpCodes.Stfld, FI_turnsTaken);
-                            yield return new CodeInstruction(OpCodes.Nop);
-
                             targetIndex++;
                         }
                     }
@@ -5783,6 +5772,19 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 17)
                     {
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i-1].opcode == OpCodes.Callvirt && instructionList[i-2].opcode == OpCodes.Ldloc_S) // Find the Nop after the turn tick call for UAs
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldarg_0); // Increment turnsTaken for UAs.
+                            yield return new CodeInstruction(OpCodes.Dup);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_turnsTaken);
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_1);
+                            yield return new CodeInstruction(OpCodes.Add);
+                            yield return new CodeInstruction(OpCodes.Stfld, FI_turnsTaken);
+                            yield return new CodeInstruction(OpCodes.Nop);
+                        }
+                    }
+                    else if (targetIndex == 18)
+                    {
                         if (instructionList[i].opcode == OpCodes.Ldstr && instructionList[i-1].opcode == OpCodes.Callvirt)
                         {
                             instructionList[i].operand = " completes ";
@@ -5790,7 +5792,7 @@ namespace CommunityLib
                             targetIndex++;
                         }
                     }
-                    else if (targetIndex == 18)
+                    else if (targetIndex == 19)
                     {
                         if (instructionList[i].opcode == OpCodes.Call && instructionList[i+1].opcode == OpCodes.Ldloc_S)
                         {
@@ -5800,25 +5802,25 @@ namespace CommunityLib
                             targetIndex++;
                         }
                     }
-                    else if (targetIndex == 19)
+                    else if (targetIndex == 20)
                     {
-                        if (instructionList[i].opcode == OpCodes.Stfld && instructionList[i-1].opcode == OpCodes.Add && instructionList[i-2].opcode == OpCodes.Ldc_I4_1)
+                        if (instructionList[i].opcode == OpCodes.Stfld && instructionList[i-1].opcode == OpCodes.Add && instructionList[i-2].opcode == OpCodes.Ldc_I4_1) // Where turnTick is incremented for UAs
                         {
-                            yield return new CodeInstruction(OpCodes.Pop);
+                            yield return new CodeInstruction(OpCodes.Pop); 
                             yield return new CodeInstruction(OpCodes.Pop);
 
                             i++;
                             targetIndex++;
                         }
                     }
-                    else if (targetIndex == 20)
+                    else if (targetIndex == 21)
                     {
                         if (instructionList[i].opcode == OpCodes.Isinst && instructionList[i-1].opcode == OpCodes.Ldarg_1)
                         {
                             targetIndex++;
                         }
                     }
-                    else if (targetIndex == 21)
+                    else if (targetIndex == 22)
                     {
                         if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i+1].opcode == OpCodes.Ldarg_0)
                         {
@@ -5830,7 +5832,7 @@ namespace CommunityLib
                             targetIndex++;
                         }
                     }
-                    else if (targetIndex == 22)
+                    else if (targetIndex == 23)
                     {
                         if (instructionList[i].opcode == OpCodes.Ldloc_S)
                         {
@@ -5839,12 +5841,12 @@ namespace CommunityLib
                             targetIndex++;
                         }
                     }
-                    else if (targetIndex == 23)
+                    else if (targetIndex == 24)
                     {
-                        if (instructionList[i].opcode == OpCodes.Stfld && instructionList[i-1].opcode == OpCodes.Add && instructionList[i-2].opcode == OpCodes.Ldc_I4_1)
+                        if (instructionList[i].opcode == OpCodes.Stfld && instructionList[i-1].opcode == OpCodes.Add && instructionList[i-2].opcode == OpCodes.Ldc_I4_1) // Where turnTick is incremented for UMs
                         {
-                            yield return new CodeInstruction(OpCodes.Pop);
-                            yield return new CodeInstruction(OpCodes.Pop);
+                            //yield return new CodeInstruction(OpCodes.Pop);
+                            //yield return new CodeInstruction(OpCodes.Pop);
 
                             i++;
                             targetIndex = 0;
@@ -14166,25 +14168,8 @@ namespace CommunityLib
 
         private static void UIE_AgentRoster_doAgentBattle_TranspilerBody(UIE_AgentRoster rosterItem)
         {
-            if (rosterItem.agent == null)
+            if (rosterItem.agent == null || !(rosterItem.agent is UA ua))
             {
-                return;
-            }
-
-            if (!(rosterItem.agent is UA ua))
-            {
-                if (rosterItem.agent.engaging != null)
-                {
-                    rosterItem.agent.engaging.engagedBy = null;
-                    rosterItem.agent.engaging = null;
-                }
-                else if (rosterItem.agent.engagedBy != null)
-                {
-                    rosterItem.agent.engagedBy.engaging = null;
-                    rosterItem.agent.engagedBy = null;
-                }
-
-                rosterItem.ui.checkData();
                 return;
             }
 
@@ -14192,6 +14177,7 @@ namespace CommunityLib
             bool amAttacker = false;
             if (!AgentIsEngaged(ua))
             {
+                rosterItem.ui.checkData();
                 return;
             }
 
@@ -14216,7 +14202,7 @@ namespace CommunityLib
             }
             else
             {
-                battle = GetAgentBattle(ua, other);
+                battle = GetAgentBattle(other, ua);
             }
 
             rosterItem.ui.world.prefabStore.popBattle(battle);
