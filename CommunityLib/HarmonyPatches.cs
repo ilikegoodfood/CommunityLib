@@ -174,7 +174,7 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(UIE_HolyTenet), nameof(UIE_HolyTenet.bInfluencePositively), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(UIE_HolyTenet_bInfluence_Postfix)));
 
             // Religion Hooks
-            harmony.Patch(original: AccessTools.Method(typeof(HolyOrder), nameof(HolyOrder.updateData), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(HolyOrder_updateData_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(HolyOrder), nameof(HolyOrder.updateData), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(HolyOrder_updateData_Postfix)), transpiler: new HarmonyMethod(patchType, nameof(HolyOrder_updateData_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(HolyOrder), nameof(HolyOrder.computeInfluenceDark), new Type[] { typeof(List<ReasonMsg>) }), transpiler: new HarmonyMethod(patchType, nameof(HolyOrder_computeInfluenceDark_Transpiler)));
             harmony.Patch(original: AccessTools.Method(typeof(HolyOrder), nameof(HolyOrder.computeInfluenceHuman), new Type[] { typeof(List<ReasonMsg>) }), transpiler: new HarmonyMethod(patchType, nameof(HolyOrder_computeInfluenceHuman_Transpiler)));
 
@@ -5775,12 +5775,14 @@ namespace CommunityLib
                         if (instructionList[i].opcode == OpCodes.Nop && instructionList[i-1].opcode == OpCodes.Callvirt && instructionList[i-2].opcode == OpCodes.Ldloc_S) // Find the Nop after the turn tick call for UAs
                         {
                             yield return new CodeInstruction(OpCodes.Ldarg_0); // Increment turnsTaken for UAs.
-                            yield return new CodeInstruction(OpCodes.Dup);
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
                             yield return new CodeInstruction(OpCodes.Ldfld, FI_turnsTaken);
                             yield return new CodeInstruction(OpCodes.Ldc_I4_1);
                             yield return new CodeInstruction(OpCodes.Add);
                             yield return new CodeInstruction(OpCodes.Stfld, FI_turnsTaken);
                             yield return new CodeInstruction(OpCodes.Nop);
+
+                            targetIndex++;
                         }
                     }
                     else if (targetIndex == 18)
@@ -5815,12 +5817,27 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 21)
                     {
-                        if (instructionList[i].opcode == OpCodes.Isinst && instructionList[i-1].opcode == OpCodes.Ldarg_1)
+                        if (instructionList[i].opcode == OpCodes.Isinst && instructionList[i-1].opcode == OpCodes.Ldarg_1) // Find if is UM check.
                         {
                             targetIndex++;
                         }
                     }
                     else if (targetIndex == 22)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Nop && instructionList[i-1].opcode == OpCodes.Brfalse) // Find the point just after the if is UM check, before increm,enting progress.
+                        {
+                            yield return new CodeInstruction(OpCodes.Nop);
+                            yield return new CodeInstruction(OpCodes.Ldarg_0); // Increment turnsTaken for UMs.
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_turnsTaken);
+                            yield return new CodeInstruction(OpCodes.Ldc_I4_1);
+                            yield return new CodeInstruction(OpCodes.Add);
+                            yield return new CodeInstruction(OpCodes.Stfld, FI_turnsTaken);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 23)
                     {
                         if (instructionList[i].opcode == OpCodes.Ldloc_S && instructionList[i+1].opcode == OpCodes.Ldarg_0)
                         {
@@ -5832,7 +5849,7 @@ namespace CommunityLib
                             targetIndex++;
                         }
                     }
-                    else if (targetIndex == 23)
+                    else if (targetIndex == 24)
                     {
                         if (instructionList[i].opcode == OpCodes.Ldloc_S)
                         {
@@ -5841,12 +5858,12 @@ namespace CommunityLib
                             targetIndex++;
                         }
                     }
-                    else if (targetIndex == 24)
+                    else if (targetIndex == 25)
                     {
                         if (instructionList[i].opcode == OpCodes.Stfld && instructionList[i-1].opcode == OpCodes.Add && instructionList[i-2].opcode == OpCodes.Ldc_I4_1) // Where turnTick is incremented for UMs
                         {
-                            //yield return new CodeInstruction(OpCodes.Pop);
-                            //yield return new CodeInstruction(OpCodes.Pop);
+                            yield return new CodeInstruction(OpCodes.Pop);
+                            yield return new CodeInstruction(OpCodes.Pop);
 
                             i++;
                             targetIndex = 0;
@@ -8521,6 +8538,54 @@ namespace CommunityLib
         }
 
         // Religion Hooks
+        private static IEnumerable<CodeInstruction> HolyOrder_updateData_Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            List<CodeInstruction> instructionList = instructions.ToList();
+
+            bool returnCode = true;
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1) // Find end of temple counting loop.
+                    {
+                        if (instructionList[i].opcode == OpCodes.Endfinally)
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2) // Find location where seat != null bool is loaded.
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldloc_S)
+                        {
+                            returnCode = false; // Do not load the stored bool, and stop returning code.
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Newobj) //Find the first line after the seat is double counted for the temple count.
+                        {
+                            returnCode = true;
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
+            }
+
+            Console.WriteLine("CommunityLib: Completed HolyOrder_updateData_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
         private static void HolyOrder_updateData_Postfix(HolyOrder __instance)
         {
             if (!ModCore.opt_prophetTrait)
@@ -10655,7 +10720,7 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 9)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldnull) // Find the location where the arguments are being loaded onto the stac for the this.processIncome call. We are replacing this entire section with our TranspilerBody_ManageIncome
+                        if (instructionList[i].opcode == OpCodes.Ldnull) // Find the location where the arguments are being loaded onto the stack for the this.processIncome call. We are replacing this entire section with our TranspilerBody_ManageIncome
                         {
                             yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody_Income);
 
@@ -14422,23 +14487,29 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i-1].opcode == OpCodes.Ldfld)
+                        if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i-1].opcode == OpCodes.Ldfld) // End of tutorial check
                         {
                             targetIndex++;
                         }
                     }
                     else if (targetIndex == 2)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldfld && instructionList[i-1].opcode == OpCodes.Brfalse_S)
+                        if (instructionList[i].opcode == OpCodes.Newobj)
                         {
-                            
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldfld && instructionList[i+1].opcode == OpCodes.Brfalse_S) // End of engagedBy check
+                        {
                             yield return new CodeInstruction(OpCodes.Call, MI_UnitIsEngaged);
 
                             returnCode = false;
                             targetIndex++;
                         }
                     }
-                    else if (targetIndex == 3)
+                    else if (targetIndex == 4)
                     {
                         if (instructionList[i].opcode == OpCodes.Brfalse_S && instructionList[i-1].opcode == OpCodes.Ldloc_S)
                         {
@@ -14446,7 +14517,7 @@ namespace CommunityLib
                             targetIndex++;
                         }
                     }
-                    else if (targetIndex == 4)
+                    else if (targetIndex == 5)
                     {
                         if (instructionList[i].opcode == OpCodes.Callvirt)
                         {
@@ -14456,7 +14527,7 @@ namespace CommunityLib
                             targetIndex++;
                         }
                     }
-                    else if (targetIndex == 5)
+                    else if (targetIndex == 6)
                     {
                         if (instructionList[i].opcode == OpCodes.Ldc_I4_0 && instructionList[i - 1].opcode == OpCodes.Call)
                         {
