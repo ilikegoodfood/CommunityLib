@@ -4224,7 +4224,6 @@ namespace CommunityLib
 
             if (newProgress <= oldProgress + progressEstimate)
             {
-
                 if (!preserveProgressOnBacktrack)
                 {
                     if (useEstimateOnBacktrack)

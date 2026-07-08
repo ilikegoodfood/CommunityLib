@@ -4616,44 +4616,79 @@ namespace CommunityLib
             instance.city.arrogance.influences.Add(new ReasonMsg($"{ua.getName()}: {instance.getName()}", 0.75 * progressMade));
         }
 
-        private static IEnumerable<CodeInstruction> Ch_LayLow_turnTick_BulkTranspiler(IEnumerable<CodeInstruction> codeInstructions)
+        private static IEnumerable<CodeInstruction> Ch_LayLow_turnTick_BulkTranspiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
             MethodInfo MI_CalculateProgress = AccessTools.Method(patchType, nameof(CalculateScaledProgressPerTurn), new Type[] { typeof(Challenge), typeof(Unit), typeof(bool), typeof(bool) });
 
+            int progressMadeIndx = ilg.DeclareLocal(typeof(double)).LocalIndex;
+
             int targetIndex = 1;
+            bool returnCode = true;
             for (int i = 0; i < instructionList.Count; i++)
             {
                 if (targetIndex > 0)
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldnull && instructionList[i+1].opcode == OpCodes.Call)
+                        if (instructionList[i].opcode == OpCodes.Call)
                         {
+                            yield return instructionList[i];
+                            yield return new CodeInstruction(OpCodes.Nop);
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Ldarg_1);
                             yield return new CodeInstruction(OpCodes.Ldc_I4_1);
                             yield return new CodeInstruction(OpCodes.Ldc_I4_0);
                             yield return new CodeInstruction(OpCodes.Call, MI_CalculateProgress);
+                            yield return new CodeInstruction(OpCodes.Stloc, progressMadeIndx);
 
-                            i += 2;
+                            i++;
                             targetIndex++;
                         }
                     }
                     else if (targetIndex == 2)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldnull && instructionList[i+1].opcode == OpCodes.Call)
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0)
                         {
-                            yield return new CodeInstruction(OpCodes.Ldc_I4_1);
-                            yield return new CodeInstruction(OpCodes.Ldc_I4_0);
-                            yield return new CodeInstruction(OpCodes.Call, MI_CalculateProgress);
+                            yield return new CodeInstruction(OpCodes.Ldloc, progressMadeIndx);
 
-                            i += 2;
+                            returnCode = false;
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 3)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Mul)
+                        {
+                            returnCode = true;
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 4)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldloc, progressMadeIndx);
+
+                            returnCode = false;
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 5)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Mul)
+                        {
+                            returnCode = true;
                             targetIndex = 0;
                         }
                     }
                 }
 
-                yield return instructionList[i];
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
             }
 
             Console.WriteLine("CommunityLib: Completed Ch_LayLow_turnTick_BulkTranspiler");
@@ -9059,6 +9094,11 @@ namespace CommunityLib
 
         public static void HolyOrder_turnTick_TranspilerBody_ManageIncome(HolyOrder order)
         {
+            if (order is HolyOrder_Witches && order.seat != null && order.seat.settlement is Set_MinorOther)
+            {
+                order.costTemple -= 50;
+            }
+
             bool isOphanimFaith = order is HolyOrder_Ophanim;
             bool spawnedAcolyte = false;
             bool canSpawnAcolyte = order.map.turn % 12 == 0 && !isOphanimFaith && order.nAcolytes < order.map.param.holy_maxAcolytes && order.cashForAcolytes >= order.costAcolyte;
