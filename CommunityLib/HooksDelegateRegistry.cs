@@ -2,6 +2,7 @@
 using Assets.Code.Modding;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace CommunityLib
@@ -1055,8 +1056,21 @@ namespace CommunityLib
             return true;
         }
 
+        // onInfiltarteGetCastFlavour
+        private List<Func<Ch_Infiltrate, Subsettlement, string, string>> _delegate_onGetInfiltrateCastFlavour = new List<Func<Ch_Infiltrate, Subsettlement, string, string>>();
+        public List<Func<Ch_Infiltrate, Subsettlement, string, string>> Delegate_onGetInfiltrateCastFlavour { get { return _delegate_onGetInfiltrateCastFlavour; } }
+        public bool RegisterHook_onGetInfiltrateCastFlavour(Func<Ch_Infiltrate, Subsettlement, string, string> hook)
+        {
+            if (hook == null)
+                return false;
+            if (_delegate_onGetInfiltrateCastFlavour.Contains(hook))
+                return false;
+            _delegate_onGetInfiltrateCastFlavour.Add(hook);
+            return true;
+        }
+
         // onEvent_IsLocationElderTomb
-        
+
         private List<Func<Location, bool>> _delegate_onEvent_IsLocationElderTomb = new List<Func<Location, bool>>();
         public List<Func<Location, bool>> Delegate_onEvent_IsLocationElderTomb { get { return _delegate_onEvent_IsLocationElderTomb; } }
         public bool RegisterHook_onEvent_IsLocationElderTomb(Func<Location, bool> hook)

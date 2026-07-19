@@ -40,6 +40,11 @@ namespace CommunityLib
             {
                 Patching_Ixthus(intDataIxthus);
             }
+
+            if (ModCore.Get().data.tryGetModIntegrationData("Escamrak", out ModIntegrationData intDataEscam))
+            {
+                Pathing_Escamrak(intDataEscam);
+            }
         }
 
         private static void BulkPatches(Map map)
@@ -90,7 +95,7 @@ namespace CommunityLib
                 }
             }
 
-            foreach(ModKernel kernel in map.mods)
+            foreach (ModKernel kernel in map.mods)
             {
                 asm = kernel.GetType().Assembly;
 
@@ -364,7 +369,7 @@ namespace CommunityLib
                     {
                         if (targetIndex == 1)
                         {
-                            if (instructionList[i].opcode == OpCodes.Brtrue_S && instructionList[i-1].opcode == OpCodes.Isinst)
+                            if (instructionList[i].opcode == OpCodes.Brtrue_S && instructionList[i - 1].opcode == OpCodes.Isinst)
                             {
                                 Label trueLabel = (Label)instructionList[i].operand;
 
@@ -417,7 +422,7 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldc_I4_M1 && instructionList[i+1].opcode == OpCodes.Stloc_1)
+                        if (instructionList[i].opcode == OpCodes.Ldc_I4_M1 && instructionList[i + 1].opcode == OpCodes.Stloc_1)
                         {
                             yield return new CodeInstruction(OpCodes.Ldloc_0);
                             yield return new CodeInstruction(OpCodes.Stsfld, FI_selectedUnit);
@@ -452,7 +457,7 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldloc_3 && instructionList[i+1].opcode == OpCodes.Dup)
+                        if (instructionList[i].opcode == OpCodes.Ldloc_3 && instructionList[i + 1].opcode == OpCodes.Dup)
                         {
                             targetIndex++;
                         }
@@ -511,7 +516,7 @@ namespace CommunityLib
                 {
                     if (targetIndex == 1)
                     {
-                        if (instructionList[i].opcode == OpCodes.Callvirt && instructionList[i+1].opcode == OpCodes.Stloc_S)
+                        if (instructionList[i].opcode == OpCodes.Callvirt && instructionList[i + 1].opcode == OpCodes.Stloc_S)
                         {
                             yield return new CodeInstruction(OpCodes.Callvirt, MI_ToList);
 
@@ -524,6 +529,97 @@ namespace CommunityLib
             }
 
             Console.WriteLine("CommunityLib: Completed Set_Crypt_turnTick_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static void Pathing_Escamrak(ModIntegrationData intDataEscam)
+        {
+            if (intDataEscam.methodInfoDict.TryGetValue("ActFleshArmy.complete", out MethodInfo MI_actFleshArmy_complete) && MI_actFleshArmy_complete != null)
+            {
+                harmony.Patch(original: MI_actFleshArmy_complete, transpiler: new HarmonyMethod(patchType, nameof(Act_Ruler3_FleshArmy_complete_Transpiler)));
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> Act_Ruler3_FleshArmy_complete_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_ToList = AccessTools.Method(typeof(Enumerable), nameof(Enumerable.ToList));
+            MI_ToList = MI_ToList.MakeGenericMethod(typeof(Subsettlement));
+
+            MethodInfo MI_GetUnitPerson = AccessTools.PropertyGetter(typeof(Unit), nameof(Unit.person));
+            MethodInfo MI_SetUnitPerson = AccessTools.PropertySetter(typeof(Unit), nameof(Unit.person));
+
+            FieldInfo FI_SettlementSupportedArmy = AccessTools.Field(typeof(SettlementHuman), nameof(SettlementHuman.supportedMilitary));
+            FieldInfo FI_PersonUnit = AccessTools.Field(typeof(Person), nameof(Person.unit));
+
+            Label skipLabel = ilg.DefineLabel();
+
+            int personIndex = ilg.DeclareLocal(typeof(Person)).LocalIndex;
+
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0 && instructionList[i-1].opcode == OpCodes.Ldfld)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldloc_1); // Load settlementHuman
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_SettlementSupportedArmy);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_GetUnitPerson);
+                            yield return new CodeInstruction(OpCodes.Stloc, personIndex); // Store Unit.person in local index.
+
+                            yield return new CodeInstruction(OpCodes.Ldloc_1);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_SettlementSupportedArmy);
+                            yield return new CodeInstruction(OpCodes.Ldnull);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_SetUnitPerson);
+
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Stloc_S && instructionList[i+1].opcode == OpCodes.Ldarg_0)
+                        {
+                            yield return instructionList[i];
+
+                            yield return new CodeInstruction(OpCodes.Ldloc, personIndex);
+                            yield return new CodeInstruction(OpCodes.Ldnull);
+                            yield return new CodeInstruction(OpCodes.Cgt_Un);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, skipLabel);
+
+                            yield return new CodeInstruction(OpCodes.Ldloc, personIndex);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_PersonUnit);
+                            yield return new CodeInstruction(OpCodes.Ldloc_1);
+                            yield return new CodeInstruction(OpCodes.Ldfld, FI_SettlementSupportedArmy);
+                            yield return new CodeInstruction(OpCodes.Ceq);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, skipLabel);
+
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 5);
+                            yield return new CodeInstruction(OpCodes.Ldloc, personIndex);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_SetUnitPerson);
+
+                            yield return new CodeInstruction(OpCodes.Ldloc, personIndex);
+                            yield return new CodeInstruction(OpCodes.Ldloc_S, 5);
+                            yield return new CodeInstruction(OpCodes.Stfld, FI_PersonUnit);
+
+                            instructionList[i+1].labels.Add(skipLabel);
+
+                            i++;
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                yield return instructionList[i];
+            }
+
+            Console.WriteLine("CommunityLib: Completed Act_Ruler3_FleshArmy_complete_Transpiler");
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);

@@ -201,6 +201,7 @@ namespace CommunityLib
 
             // Challenge Hooks
             harmony.Patch(original: AccessTools.Method(typeof(Challenge), nameof(Challenge.getProgressPerTurn), new Type[] { typeof(UA), typeof(List<ReasonMsg>) }), postfix: new HarmonyMethod(patchType, nameof(Challenge_getProgressPerTurn_Postfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_Infiltrate), nameof(Ch_Infiltrate.getCastFlavour), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(Ch_Infiltrate_getCastFlavour_Postfix)));
 
             // onIsElderTomb Hooks
             harmony.Patch(original: AccessTools.Method(typeof(Overmind_Automatic), nameof(Overmind_Automatic.ai_testDark), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Overmind_Automatic_ai_testDark_Transpiler)));
@@ -479,6 +480,7 @@ namespace CommunityLib
 
             // Person fixes
             harmony.Patch(original: AccessTools.Method(typeof(Person), nameof(Person.embedIntoSociety), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(Person_embedIntoSociety_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Person), nameof(Person.loseXP), new Type[] { typeof(int) }), transpiler: new HarmonyMethod(patchType, nameof(Person_loseXP_Transpiler)));
 
             // Pan to Holy Order Screen
             harmony.Patch(original: AccessTools.Method(typeof(PopupMsgUnified), nameof(PopupMsgUnified.dismissAgentA), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(PopupMsgUnified_dismissAgentA_Postfix)));
@@ -10632,6 +10634,96 @@ namespace CommunityLib
             }
         }
 
+        private static IEnumerable<CodeInstruction> Person_loseXP_Transpiler(IEnumerable<CodeInstruction> codeInstructions)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_TranspilerBody = AccessTools.Method(patchType, nameof(Person_loseXp_TranspilerBody), new Type[] { typeof(Person) });
+
+            int targetIndex = 1;
+            bool returnCode = true;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex == 1)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldsfld)
+                        {
+                            yield return new CodeInstruction(OpCodes.Ldarg_0);
+                            yield return new CodeInstruction(OpCodes.Call, MI_TranspilerBody);
+
+                            returnCode = false;
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 2)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Stloc_0)
+                        {
+                            returnCode = true;
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
+            }
+
+            Console.WriteLine("CommunityLib: Completed Person_loseXP_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static int Person_loseXp_TranspilerBody(Person person)
+        {
+            int rollValue = 1;
+            int targetStat = -1;
+            for (int i = 0; i <= 3; i++)
+            {
+                switch (i)
+                {
+                    case 0:
+                        if (person.stat_command <= 1)
+                        {
+                            continue;
+                        }
+                        break;
+                    case 1:
+                        if (person.stat_intrigue <= 1)
+                        {
+                            continue;
+                        }
+                        break;
+                    case 2:
+                        if (person.stat_lore <= 1)
+                        {
+                            continue;
+                        }
+                        break;
+                    case 3:
+                        if (person.stat_might <= 1)
+                        {
+                            continue;
+                        }
+                        break;
+                }
+                
+                if (Eleven.random.Next(rollValue) == 0)
+                {
+                    targetStat = i;
+                }
+                rollValue++;
+            }
+
+            return targetStat;
+        }
+
         // Pan To Holy Order
         private static void PopupMsgUnified_dismissAgentA_Postfix(PopupMsgUnified __instance)
         {
@@ -12322,6 +12414,18 @@ namespace CommunityLib
             foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
             {
                 __result = hook.onGetChallengeProgressPerTurn(__instance, unit, msgs, __result);
+            }
+        }
+
+        private static void Ch_Infiltrate_getCastFlavour_Postfix(Ch_Infiltrate __instance, ref string __result)
+        {
+            foreach (var hook in ModCore.Get().HookRegistry.Delegate_onGetInfiltrateCastFlavour)
+            {
+                __result = hook(__instance, __instance.sub, __result);
+            }
+            foreach (Hooks hook in ModCore.Get().GetRegisteredHooks())
+            {
+                __result = hook.onGetInfltrateCastFlavour(__instance, __instance.sub, __result);
             }
         }
 

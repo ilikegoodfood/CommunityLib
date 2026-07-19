@@ -42,6 +42,7 @@ namespace CommunityLib
             registry.RegisterHook_onMoveTaken(onMoveTaken);
             registry.RegisterHook_interceptAgentAI(interceptAgentAI);
             registry.RegisterHook_onAgentAI_EndOfProcess(onAgentAI_EndOfProcess);
+            registry.RegisterHook_onGetInfiltrateCastFlavour(onGetInfiltarteCastFlavour);
 
             if (ModCore.Get().data.tryGetModIntegrationData("LivingVoid", out ModIntegrationData intDataVoid))
             {
@@ -741,7 +742,7 @@ namespace CommunityLib
 
         public double onSettlementComputesShadowGain(Settlement set, List<ReasonMsg> msgs, double shadowGain)
         {
-            if (msgs == null)
+            if (set.shadowPolicy == Settlement.shadowResponse.DENY || (set.map.tutorial && !set.map.tutorialManager.allowShadowSpread()))
             {
                 return shadowGain;
             }
@@ -778,11 +779,56 @@ namespace CommunityLib
                     ophanimsFaith = ophaFaith;
                     continue;
                 }
+
                 if (malignCatch == null && property is Pr_MalignCatch malign)
                 {
                     malignCatch = malign;
                     continue;
                 }
+            }
+
+            // === Direct Effects === //
+            // None of the shadow gain sources listed in this section directly manipulate the location's shadow on their turn tick.
+            // The do not exist unless injected here.
+
+            double infiltrationFactor = 1.0 + set.infiltration;
+            double wardFactor = Math.Min(1.0, (ward?.charge ?? 0.0) / 100);
+            if (ModCore.opt_shadowSpreadThreshold > 0)
+            {
+                foreach (Location neighbour in set.location.getNeighbours())
+                {
+                    if (neighbour.settlement == null || neighbour.settlement.shadowPolicy != Settlement.shadowResponse.FULL_FLOW || neighbour.settlement.shadow >= ModCore.opt_shadowSpreadThreshold / 100.0)
+                    {
+                        continue;
+                    }
+
+                    if (msgs != null) // If this is the shadow breakdown tooltip populating, we can just find the settlement's reason msg, remove it from the list, and deduct it from the shadow gain.
+                    {
+                        ReasonMsg msg = msgs.FirstOrDefault(m => m.msg == "From " + neighbour.getName(true));
+                        if (msg != null)
+                        {
+                            msgs.Remove(msg);
+                            shadowGain -= msg.value;
+                        }
+                    }
+                    else if (neighbour.settlement.shadow > set.shadow + set.map.param.set_shadowSpreadSpeed * set.map.difficultyMult_shrinkWithDifficulty || neighbour.settlement.shadow == 1.0)
+                    {
+                        double delta = neighbour.settlement.shadow * set.map.param.set_shadowSpreadSpeed * set.map.difficultyMult_shrinkWithDifficulty;
+                        delta *= Math.Max(0.0, 1.0 - wardFactor);
+                        delta *= infiltrationFactor;
+                        shadowGain -= delta;
+                    }
+                }
+            }
+
+            // === Message Only Section === //
+            // All of the shadow gain sources listed in this section directly manipulate the location's shadow on their turn tick.
+            // In vanilla, they have no way of being displayed in the shadow breakdown tooltip.
+            // Only if the tooltip is being populated (msgs != null) should these be added to the shadowGain and msgs.
+
+            if (msgs == null)
+            {
+                return shadowGain;
             }
 
             if (deepOneCult != null)
@@ -859,22 +905,23 @@ namespace CommunityLib
                 if (I_DarkStone_Count > 0)
                 {
                     msgs.Add(new ReasonMsg($"{(I_DarkStone_Count == 1 ? "Dark Stone" : "Dark Stones")}", 0.01 * I_DarkStone_Count));
-                    shadowGain += 0.01;
+                    shadowGain += 0.01 * I_DarkStone_Count;
                 }
                 if (T_DyingLight_Count > 0)
                 {
                     msgs.Add(new ReasonMsg("The Dying Light", 0.01 * T_DyingLight_Count));
-                    shadowGain += 0.01;
+                    shadowGain += 0.01 * T_DyingLight_Count;
                 }
                 if (T_SettingSun_Count > 0)
                 {
                     msgs.Add(new ReasonMsg("The Setting Sun", _map.param.trait_settingSunShadowPerTurn * T_SettingSun_Count));
-                    shadowGain += 0.01;
+                    shadowGain += 0.01 * T_SettingSun_Count;
                 }
+
                 if (T_TheyWillObey_Count > 0 && society != null && society.isDarkEmpire)
                 {
-                    msgs.Add(new ReasonMsg("They Will Obey", _map.param.trait_theyWillObeyShadowPerTurn * T_SettingSun_Count));
-                    shadowGain += 0.01;
+                    msgs.Add(new ReasonMsg("They Will Obey", _map.param.trait_theyWillObeyShadowPerTurn * T_TheyWillObey_Count));
+                    shadowGain += 0.01 * T_TheyWillObey_Count;
                 }
 
                 foreach (UAEN_Ghast ghast in enshadowingGhasts)
@@ -888,7 +935,7 @@ namespace CommunityLib
                 if (desecrateCathedralCount > 0)
                 {
                     msgs.Add(new ReasonMsg("Desecrated Cathedral", 0.01 * desecrateCathedralCount));
-                    shadowGain += 0.01;
+                    shadowGain += 0.01 * desecrateCathedralCount;
                 }
 
                 if (_map.tradeManager.tradeDensity[set.location.index] != null)
@@ -905,7 +952,7 @@ namespace CommunityLib
                     if (snakeTradeRouteCount > 0)
                     {
                         msgs.Add(new ReasonMsg("Serpent's Coils", Math.Max(0.0, 100 - (ward?.charge ?? 0.0)) * 0.01 * _map.param.power_serpentsCoilsShadowGain * snakeTradeRouteCount));
-                        shadowGain += 0.01;
+                        shadowGain += 0.01 * snakeTradeRouteCount;
                     }
                 }
             }
@@ -1440,6 +1487,24 @@ namespace CommunityLib
                     ua.task.turnTick(ua);
                 }
             }
+        }
+
+        private string onGetInfiltarteCastFlavour(Ch_Infiltrate infiltrate, Subsettlement subsettlement, string castFlavour)
+        {
+            if (subsettlement is Sub_Farms && subsettlement.settlement.location.hex.z == 1)
+            {
+                return "Living in the darkness of the world below makes for a suspicious and insular people, wary of any change to practices that have kept them safe for untold generations. Newcomers gain acceptance by proving their worth, whispering to the soft fungi and herding the eyeless creatures of the caves as if born from them. A new way of life emerges, and with it the cult offers liberation, a freedom in the dark that makes eyes shine with a light the surface could never provide.";
+            }
+
+            switch (subsettlement)
+            {
+                case Sub_ElvenCity _:
+                    return "Elves will witness eternities where nothing changes, and be blind to the weeks where everything does.";
+                case Sub_Catacombs _:
+                    return "The grave tenders know well the face of humanity that endures past mortality. Whether through dread or grim fascination, beliefs need only be twisted a little for the cult to gain the loyalty of those closer to corpses than their fellow man.";
+            }
+
+            return castFlavour;
         }
     }
 }
