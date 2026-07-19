@@ -40,6 +40,14 @@
 			"defaultValue":1000
 		},
 		{
+			"name":"Shadow Spread Threshold",
+			"description":"The minimum amount of shadow a settlement needs before shadow starts to spread from it to its neighboring settlements. (default: 0).",
+			"isInteger":"true",
+			"minValue":0,
+			"maxValue":100,
+			"defaultValue":0
+		},
+		{
 			"name":"Ruler Traits Effect Armies",
 			"description":"If enabled, the command stat of rulers will effect the maximum hit points of the armies that they raise.",
 			"defaultBoolValue":"false"
@@ -140,8 +148,13 @@
 			"defaultBoolValue":"false"
 		},
 		{
+			"name":"Dwarves Enabled",
+			"description":"If enabled, dwarves will be present in your game. If disabled, dwarven societies will not be generated during map generation.",
+			"defaultBoolValue":"true"
+		},
+		{
 			"name":"Target Dwarven Civilization Count",
-			"description":"The approximate number of dwarven civilizations that should exist on the map (default 1). To disable dwarfs, turn them off in the new game settings.",
+			"description":"The approximate number of dwarven civilizations that should exist on the map (default 1).",
 			"isInteger":"true",
 			"minValue":1,
 			"maxValue":4,

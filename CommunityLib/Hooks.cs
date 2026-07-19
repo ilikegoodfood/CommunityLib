@@ -894,7 +894,7 @@ namespace CommunityLib
         }
 
         /// <summary>
-        /// This hook fires after the Challenge.getProgressPerTurn function is called. It recieves the Challenge (challenge) for which it is being called, the agent that is or will be performing the challenge (ua), the list of reason messages that are displayed to the player (reasons), and the progress that will be made (progress). It returns the progress that will be mae after modification.
+        /// This hook fires after the Challenge.getProgressPerTurn function is called. It recieves the Challenge (challenge) for which it is being called, the agent that is or will be performing the challenge (ua), the list of reason messages that are displayed to the player (reasons), and the progress that will be made (progress). It returns the progress that will be made after modification.
         /// </summary>
         /// <param name="challenge"></param>
         /// <param name="ua"></param>
@@ -904,6 +904,17 @@ namespace CommunityLib
         public virtual double onGetChallengeProgressPerTurn(Challenge challenge, UA ua, List<ReasonMsg> reasons, double progress)
         {
             return progress;
+        }
+
+        /// <summary>
+        /// This hook fires after the Ch_Infiltrate.getCastFlavour function is called. It receives the infiltrate challenge (infiltrate), the subsettlement that it is associated with (sub), and the current castFlavour (castFlavour). It returns the cast flavour after modification.
+        /// </summary>
+        /// <param name=""></param>
+        /// <param name="castFlavour"></param>
+        /// <returns></returns>
+        public virtual string onGetInfltrateCastFlavour(Ch_Infiltrate infiltrate, Subsettlement sub, string castFlavour)
+        {
+            return castFlavour;
         }
 
         /// <summary>

@@ -87,6 +87,8 @@ namespace CommunityLib
 
         public static bool opt_defeatableVinerva = true;
 
+        public static int opt_shadowSpreadThreshold = 0;
+
         public static bool opt_rulerTraitsEffectArmies = false;
 
         public static bool opt_DynamicOrcCount = false;
@@ -274,6 +276,9 @@ namespace CommunityLib
                 case "Create Agent Panel Scroll Speed":
                     //Console.WriteLine($"CommunityLib: Receiving setting value {value} for 'Create Agent Panel Scroll Speed'.");
                     opt_scrollSpeed_createAgent = value;
+                    break;
+                case "Shadow Spread Threshold":
+                    opt_shadowSpreadThreshold = value;
                     break;
                 case "Orc Horde Respawn Limit":
                     //Console.WriteLine($"CommunityLib: Receiving setting value {value} for 'Orc Horde Respawn Limit'.");
@@ -1622,6 +1627,16 @@ namespace CommunityLib
                             {
                                 Console.WriteLine("CommunityLib: Failed to get Fleshcrafting trait Type (God_Flesh.T_FleshKnowledge)");
                             }
+
+                            Type actFleshArmy = intDataEscam.assembly.GetType("God_Flesh.Act_Ruler3_FleshArmy", false);
+                            if (actFleshArmy != null)
+                            {
+                                intDataEscam.methodInfoDict.Add("ActFleshArmy.complete", AccessTools.Method(actFleshArmy, "complete", Type.EmptyTypes));
+                            }
+                            else
+                            {
+                                Console.WriteLine("CommunityLib: Failed to get Act_Ruler3_FleshArmy local ruler action Type (God_Flesh.Act_Ruler3_FleshArmy)");
+                            }
                         }
                         break;
                     case "ShadowsLib":
@@ -1645,7 +1660,7 @@ namespace CommunityLib
                             if (settlementCryptType != null)
                             {
                                 intDataIxthus.typeDict.Add("Crypt", settlementCryptType);
-                                intDataIxthus.methodInfoDict.Add("Set_Crypt.turnTick", AccessTools.Method(settlementCryptType, "turnTick", new Type[0]));
+                                intDataIxthus.methodInfoDict.Add("Set_Crypt.turnTick", AccessTools.Method(settlementCryptType, "turnTick", Type.EmptyTypes));
                             }
                             else
                             {

@@ -32,6 +32,14 @@
 			"defaultBoolValue":"true"
 		},
 		{
+			"name":"Shadow Spread Threshold",
+			"description":"The minimum amount of shadow a settlement needs before shadow starts to spread from it to its neighboring settlements. (default: 0).",
+			"isInteger":"true",
+			"minValue":0,
+			"maxValue":100,
+			"defaultValue":0
+		},
+		{
 			"name":"Ruler Traits Effect Armies",
 			"description":"If enabled, the command stat of rulers will effect the maximum hit points of the armies that they raise.",
 			"defaultBoolValue":"false"
