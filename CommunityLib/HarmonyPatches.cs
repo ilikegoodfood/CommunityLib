@@ -14200,7 +14200,7 @@ namespace CommunityLib
                     return false;
                 }
 
-                if (um.engagedBy.isDead || um.engagedBy.hp <= 0 || !(um.engagedBy is UM) || um.engaging.task is Task_Disrupted)
+                if (um.engagedBy.isDead || um.engagedBy.hp <= 0 || !(um.engagedBy is UM) || um.engagedBy.task is Task_Disrupted)
                 {
                     if (um.engagedBy.engaging == um)
                     {
