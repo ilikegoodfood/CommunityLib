@@ -9203,10 +9203,9 @@ namespace CommunityLib
         {
             List<CodeInstruction> instructionList = codeInstructions.ToList();
 
+            MethodInfo MI_GetModCore = AccessTools.Method(typeof(ModCore), nameof(ModCore.Get), Type.EmptyTypes);
             MethodInfo MI_KnowsMagic = AccessTools.Method(typeof(ModCore), nameof(ModCore.checkKnowsMagic), new Type[] { typeof(Person) });
             MethodInfo MI_UnitPerson = AccessTools.PropertyGetter(typeof(Unit), nameof(Unit.person));
-
-            Label falseLabel = ilg.DefineLabel();
 
             bool returnCode = true;
             int targetIndex = 1;
@@ -9216,7 +9215,7 @@ namespace CommunityLib
                 {
                     if (targetIndex < 11)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldsfld) // Find initial valyue set of num, which is equivelent to this.nAcolytes.
+                        if (instructionList[i].opcode == OpCodes.Ldsfld)
                         {
                             targetIndex++;
                         }
@@ -9225,13 +9224,15 @@ namespace CommunityLib
                     {
                         if (instructionList[i].opcode == OpCodes.Brfalse_S)
                         {
-                            falseLabel = (Label)instructionList[i].operand;
+                            Label falseLabel = (Label)instructionList[i].operand;
 
                             yield return instructionList[i];
 
+                            yield return new CodeInstruction(OpCodes.Nop);
+                            yield return new CodeInstruction(OpCodes.Call, MI_GetModCore);
                             yield return new CodeInstruction(OpCodes.Ldloc_3);
                             yield return new CodeInstruction(OpCodes.Callvirt, MI_UnitPerson);
-                            yield return new CodeInstruction(OpCodes.Callvirt, MI_KnowsMagic);
+                            yield return new CodeInstruction(OpCodes.Call, MI_KnowsMagic);
                             yield return new CodeInstruction(OpCodes.Brfalse_S, falseLabel);
 
                             targetIndex++;
@@ -9240,8 +9241,9 @@ namespace CommunityLib
                     }
                     else if (targetIndex == 12)
                     {
-                        if (instructionList[i].opcode == OpCodes.Ldarg_0)
+                        if (instructionList[i].opcode == OpCodes.Brfalse_S)
                         {
+                            i++;
                             returnCode = true;
                             targetIndex = 0;
                         }

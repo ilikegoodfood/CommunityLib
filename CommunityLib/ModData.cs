@@ -700,6 +700,11 @@ namespace CommunityLib
 
         internal bool knowsMagic(Person p)
         {
+            if (p == null)
+            {
+                return false;
+            }
+
             foreach (Trait trait in p.traits)
             {
                 if (trait is T_MasteryBlood || trait is T_MasteryDeath || trait is T_MasteryGeomancy || trait is T_MagicMastery)
@@ -722,6 +727,11 @@ namespace CommunityLib
         {
             magicTraits = new List<Trait>();
             bool knowsMagic = false;
+
+            if (p == null)
+            {
+                return false;
+            }
 
             foreach (Trait trait in p.traits)
             {
