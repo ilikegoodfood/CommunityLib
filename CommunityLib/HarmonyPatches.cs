@@ -308,6 +308,8 @@ namespace CommunityLib
             harmony.Patch(original: AccessTools.Method(typeof(Rt_DarkEmpire), nameof(Rt_DarkEmpire.getDesc), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(Rt_DarkEmpire_getDesc_Postfix)));
             // Disrupt Conclave
             harmony.Patch(original: AccessTools.Method(typeof(Ch_DisruptConclave), nameof(Ch_DisruptConclave.getProgressPerTurnInner), new Type[] { typeof(UA), typeof(List<ReasonMsg>) }), postfix: new HarmonyMethod(patchType, nameof(Ch_DisruptConclave_getProgressPerTurnInner_Postfix)));
+            // Elf Find Ruler
+            harmony.Patch(original: AccessTools.Method(typeof(Ch_Elf_FindRuler), nameof(Ch_Elf_FindRuler.valid), Type.EmptyTypes), postfix: new HarmonyMethod(patchType, nameof(Ch_Elf_FindRuler_valid_Postfix)));
             // Orcish Expansion
             harmony.Patch(original: AccessTools.Method(typeof(Ch_Orcs_Expand), nameof(Ch_Orcs_Expand.complete), new Type[] { typeof(UA) }), transpiler: new HarmonyMethod(patchType, nameof(Ch_Orcs_Expand_complete_Transpiler)));
             // Opportunistict Encroachment
@@ -425,6 +427,7 @@ namespace CommunityLib
 
             // Holy Order Fixes
             harmony.Patch(original: AccessTools.Method(typeof(HolyOrder), nameof(HolyOrder.turnTick), Type.EmptyTypes), transpiler: new HarmonyMethod(patchType, nameof(HolyOrder_turnTick_Transpiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(HolyProphecy), nameof(HolyProphecy.getPeoplePassingCond), new Type[] { typeof(HolyOrder), typeof(List<UA>) }), transpiler: new HarmonyMethod(patchType, nameof(HolyProphecy_getPeoplePassingCond_Transpiler)));
 
             // Fallen Human rename
             harmony.Patch(original: AccessTools.Method(typeof(Property), nameof(Property.getInvariantName), new Type[0]), postfix: new HarmonyMethod(patchType, nameof(Property_getInvariantName_Postfix)));
@@ -4050,6 +4053,18 @@ namespace CommunityLib
             }
 
             __result = Math.Max(1, total);
+        }
+
+        // Elf Find Ruler
+        private static void Ch_Elf_FindRuler_valid_Postfix(Ch_Elf_FindRuler __instance, ref bool __result)
+        {
+            if (__result)
+            {
+                if (!(__instance.location.soc is Soc_Elven))
+                {
+                    __result = false;
+                }
+            }
         }
 
         // Cause Orcish Expansion
@@ -9178,6 +9193,68 @@ namespace CommunityLib
             }
 
             Console.WriteLine("CommunityLib: Completed HolyOrder_turnTick_Transpiler");
+            if (targetIndex != 0)
+            {
+                Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
+            }
+        }
+
+        private static IEnumerable<CodeInstruction> HolyProphecy_getPeoplePassingCond_Transpiler(IEnumerable<CodeInstruction> codeInstructions, ILGenerator ilg)
+        {
+            List<CodeInstruction> instructionList = codeInstructions.ToList();
+
+            MethodInfo MI_KnowsMagic = AccessTools.Method(typeof(ModCore), nameof(ModCore.checkKnowsMagic), new Type[] { typeof(Person) });
+            MethodInfo MI_UnitPerson = AccessTools.PropertyGetter(typeof(Unit), nameof(Unit.person));
+
+            Label falseLabel = ilg.DefineLabel();
+
+            bool returnCode = true;
+            int targetIndex = 1;
+            for (int i = 0; i < instructionList.Count; i++)
+            {
+                if (targetIndex > 0)
+                {
+                    if (targetIndex < 11)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldsfld) // Find initial valyue set of num, which is equivelent to this.nAcolytes.
+                        {
+                            targetIndex++;
+                        }
+                    }
+                    else if (targetIndex == 11)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Brfalse_S)
+                        {
+                            falseLabel = (Label)instructionList[i].operand;
+
+                            yield return instructionList[i];
+
+                            yield return new CodeInstruction(OpCodes.Ldloc_3);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_UnitPerson);
+                            yield return new CodeInstruction(OpCodes.Callvirt, MI_KnowsMagic);
+                            yield return new CodeInstruction(OpCodes.Brfalse_S, falseLabel);
+
+                            targetIndex++;
+                            returnCode = false;
+                        }
+                    }
+                    else if (targetIndex == 12)
+                    {
+                        if (instructionList[i].opcode == OpCodes.Ldarg_0)
+                        {
+                            returnCode = true;
+                            targetIndex = 0;
+                        }
+                    }
+                }
+
+                if (returnCode)
+                {
+                    yield return instructionList[i];
+                }
+            }
+
+            Console.WriteLine("CommunityLib: Completed HolyProphecy_getPeoplePassingCond_Transpiler");
             if (targetIndex != 0)
             {
                 Console.WriteLine("CommunityLib: ERROR: Transpiler failed at targetIndex " + targetIndex);
